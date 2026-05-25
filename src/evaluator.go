@@ -54,19 +54,6 @@ type EmptyCollection struct {
 	IsImmutable bool
 }
 
-func NewEmptyCollectionValue() Value {
-	return NewEmptyCollectionValueWithImmutability(false)
-}
-
-func NewEmptyCollectionValueWithImmutability(isImmutable bool) Value {
-	return Value{
-		Kind: ValueEmptyCollection,
-		EmptyCollection: &EmptyCollection{
-			IsImmutable: isImmutable,
-		},
-	}
-}
-
 type Value struct {
 	Kind            ValueKind
 	Number          *big.Float
@@ -81,6 +68,19 @@ type Value struct {
 
 func NewEmptyValue() Value {
 	return Value{Kind: ValueEmpty}
+}
+
+func NewEmptyCollectionValue() Value {
+	return NewEmptyCollectionValueWithImmutability(false)
+}
+
+func NewEmptyCollectionValueWithImmutability(isImmutable bool) Value {
+	return Value{
+		Kind: ValueEmptyCollection,
+		EmptyCollection: &EmptyCollection{
+			IsImmutable: isImmutable,
+		},
+	}
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -524,7 +524,7 @@ func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Valu
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 	if len(stmt.RangeParameters) > 0 {
-		return i.evalMapRangeLoopStatement(stmt)
+		return i.evalCollectionRangeLoopStatement(stmt)
 	}
 
 	return i.evalWhileLoopStatement(stmt)
@@ -550,16 +550,12 @@ func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error)
 		}
 	}
 
-	if stmt.AfterLoopBody != nil {
-		return i.evalStatementBlock(stmt.AfterLoopBody)
-	}
-
-	return NewEmptyValue(), nil
+	return i.evalAfterLoopBody(stmt)
 }
 
-func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, error) {
-	if len(stmt.RangeParameters) != 3 {
-		return Value{}, fmt.Errorf("map range loop must have exactly three parameters")
+func (i *Interpreter) evalCollectionRangeLoopStatement(stmt *LoopStatement) (Value, error) {
+	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
+		return Value{}, fmt.Errorf("collection range loop must have one, two, three, or four parameters")
 	}
 
 	iterable, err := i.evalExpression(stmt.Condition)
@@ -569,45 +565,152 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, err
 
 	iterable = resolveSpecializedValue(iterable)
 
-	if iterable.Kind != ValueMap {
-		return Value{}, fmt.Errorf("map range loop expression must evaluate to a map")
+	switch iterable.Kind {
+	case ValueMap:
+		return i.evalMapRangeLoopStatement(stmt, iterable.Map)
+
+	case ValueArray:
+		return i.evalArrayRangeLoopStatement(stmt, iterable.Array)
+
+	case ValueString:
+		return i.evalStringRangeLoopStatement(stmt, iterable.Text)
+
+	case ValueEmptyCollection:
+		return i.evalAfterLoopBody(stmt)
+
+	default:
+		return Value{}, fmt.Errorf("collection range loop expression must evaluate to a map, array, string, or empty collection")
 	}
+}
 
-	keys := sortedMapKeys(iterable.Map)
+func isValidCollectionRangeParameterCount(count int) bool {
+	return count >= 1 && count <= 4
+}
 
-	for index, key := range keys {
-		binding := iterable.Map.Entries[key]
+func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Value, error) {
+	position := 0
+	lastKey := ""
+	hasLastKey := false
 
-		loopBindings := make(map[string]Binding)
+	for {
+		key, ok := nextMapRangeKey(m, lastKey, hasLastKey)
+		if !ok {
+			break
+		}
 
-		addRangeBinding(
-			loopBindings,
-			stmt.RangeParameters[0],
-			NewNumberValueFromInt(index),
-		)
+		binding, ok := m.Entries[key]
+		if !ok {
+			continue
+		}
 
-		addRangeBinding(
-			loopBindings,
-			stmt.RangeParameters[1],
-			NewStringValue(key),
-		)
-
-		addRangeBinding(
-			loopBindings,
-			stmt.RangeParameters[2],
+		loopBindings := collectionRangeBindings(
+			stmt.RangeParameters,
 			binding.Value,
+			NewStringValue(key),
+			Value{Kind: ValueMap, Map: m},
+			NewNumberValueFromInt(position),
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
 			return Value{}, err
 		}
+
+		lastKey = key
+		hasLastKey = true
+		position++
 	}
 
-	if stmt.AfterLoopBody != nil {
-		return i.evalStatementBlock(stmt.AfterLoopBody)
+	return i.evalAfterLoopBody(stmt)
+}
+
+func nextMapRangeKey(m *Map, lastKey string, hasLastKey bool) (string, bool) {
+	keys := sortedMapKeys(m)
+
+	for _, key := range keys {
+		if !hasLastKey || key > lastKey {
+			return key, true
+		}
 	}
 
-	return NewEmptyValue(), nil
+	return "", false
+}
+
+func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array) (Value, error) {
+	index := 0
+
+	for index < len(a.Elements) {
+		key := NewNumberValueFromInt(index)
+
+		loopBindings := collectionRangeBindings(
+			stmt.RangeParameters,
+			a.Elements[index],
+			key,
+			Value{Kind: ValueArray, Array: a},
+			key,
+		)
+
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			return Value{}, err
+		}
+
+		index++
+	}
+
+	return i.evalAfterLoopBody(stmt)
+}
+
+func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *String) (Value, error) {
+	if s == nil {
+		return Value{}, fmt.Errorf("cannot range over invalid string")
+	}
+
+	index := 0
+
+	for index < len(s.Runes) {
+		key := NewNumberValueFromInt(index)
+
+		loopBindings := collectionRangeBindings(
+			stmt.RangeParameters,
+			NewStringValue(string(s.Runes[index])),
+			key,
+			Value{Kind: ValueString, Text: s},
+			key,
+		)
+
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			return Value{}, err
+		}
+
+		index++
+	}
+
+	return i.evalAfterLoopBody(stmt)
+}
+
+func collectionRangeBindings(parameters []Token, value Value, key Value, collection Value, position Value) map[string]Binding {
+	bindings := make(map[string]Binding)
+
+	switch len(parameters) {
+	case 1:
+		addRangeBinding(bindings, parameters[0], value)
+
+	case 2:
+		addRangeBinding(bindings, parameters[0], value)
+		addRangeBinding(bindings, parameters[1], key)
+
+	case 3:
+		addRangeBinding(bindings, parameters[0], value)
+		addRangeBinding(bindings, parameters[1], key)
+		addRangeBinding(bindings, parameters[2], collection)
+
+	case 4:
+		addRangeBinding(bindings, parameters[0], value)
+		addRangeBinding(bindings, parameters[1], key)
+		addRangeBinding(bindings, parameters[2], collection)
+		addRangeBinding(bindings, parameters[3], position)
+	}
+
+	return bindings
 }
 
 func addRangeBinding(bindings map[string]Binding, parameter Token, value Value) {
@@ -619,6 +722,14 @@ func addRangeBinding(bindings map[string]Binding, parameter Token, value Value) 
 		Value:       value,
 		IsImmutable: parameter.IsImmutable,
 	}
+}
+
+func (i *Interpreter) evalAfterLoopBody(stmt *LoopStatement) (Value, error) {
+	if stmt.AfterLoopBody != nil {
+		return i.evalStatementBlock(stmt.AfterLoopBody)
+	}
+
+	return NewEmptyValue(), nil
 }
 
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
@@ -803,9 +914,11 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 			return Value{}, fmt.Errorf("map index must be a string")
 		}
 
-		binding, ok := object.Map.Entries[index.Text.String()]
+		key := index.Text.String()
+
+		binding, ok := object.Map.Entries[key]
 		if !ok {
-			return Value{}, fmt.Errorf("map has no key %q", index.Text.String())
+			return Value{}, fmt.Errorf("map has no key %q", key)
 		}
 
 		return binding.Value, nil
@@ -826,6 +939,10 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		stringIndex, err := numberToArrayIndex(index)
 		if err != nil {
 			return Value{}, err
+		}
+
+		if object.Text == nil {
+			return Value{}, fmt.Errorf("invalid string")
 		}
 
 		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
@@ -1058,6 +1175,10 @@ func stringAssignmentRune(value Value) (rune, error) {
 
 	if value.Kind != ValueString {
 		return 0, fmt.Errorf("string index assignment requires a string value")
+	}
+
+	if value.Text == nil {
+		return 0, fmt.Errorf("string index assignment requires a valid string value")
 	}
 
 	if len(value.Text.Runes) != 1 {

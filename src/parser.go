@@ -305,7 +305,7 @@ func (p *Parser) looksLikeLoopRangeParameters(openBrace Token) bool {
 	trial := p.cloneForLookahead()
 
 	parameters, ok := trial.parseLoopRangeParameters()
-	if !ok || len(parameters) != 3 {
+	if !ok || !isValidLoopRangeParameterCount(len(parameters)) {
 		return false
 	}
 
@@ -365,8 +365,8 @@ func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
 		}
 	}
 
-	if len(parameters) != 3 {
-		p.errorAtToken(openParen, "map range loop must declare exactly three parameters: index, key, value")
+	if !isValidLoopRangeParameterCount(len(parameters)) {
+		p.errorAtToken(openParen, "collection range loop must declare one, two, three, or four parameters: value; key, value; position, key, value; or position, key, value, collection")
 		return nil, false
 	}
 
@@ -375,6 +375,10 @@ func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
 	}
 
 	return parameters, true
+}
+
+func isValidLoopRangeParameterCount(count int) bool {
+	return count >= 1 && count <= 4
 }
 
 func (p *Parser) cloneForLookahead() *Parser {

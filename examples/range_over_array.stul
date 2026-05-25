@@ -1,0 +1,13 @@
+P = STD["IO"]["PRINT"]
+CS = STD["TYPES"]["COLLECTION"]["SIZE"]
+
+
+DOG_NAMES = { "Rover", "Grover", "Groover", "Doofus" }
+
+((DOG_NAMES)) { ( name, index, collection )
+	SIZE = @CS(collection)
+
+	@P("Dog ", index + 1, " (of ", SIZE, ") is called ", name, ".")
+},{
+	@P("And those are all the dogs I know.")
+}

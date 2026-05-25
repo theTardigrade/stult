@@ -1,0 +1,19 @@
+P = STD["IO"]["PRINT"]
+CS = STD["TYPES"]["COLLECTION"]["SIZE"]
+
+TEXT = "In the beginning was the word."
+
+current_word = ""
+
+(( TEXT )) { ( char )
+	( char == " "  ) {
+		@P(@current_word)
+		@current_word = ""
+	},{
+		@current_word += @char
+	}
+}
+
+( CS( current_word ) > 0 ) {
+	@P(@current_word)
+}
