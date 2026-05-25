@@ -814,6 +814,10 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 		return evalPrefix(e.Operator, value)
 
 	case *BinaryExpression:
+		if e.Operator == "&" || e.Operator == "|" {
+			return i.evalLogicalBinaryExpression(e)
+		}
+
 		left, err := i.evalExpression(e.Left)
 		if err != nil {
 			return Value{}, err
@@ -848,6 +852,60 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 	default:
 		return Value{}, fmt.Errorf("unknown expression type %T", expr)
+	}
+}
+
+func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value, error) {
+	left, err := i.evalExpression(expr.Left)
+	if err != nil {
+		return Value{}, err
+	}
+
+	left = resolveSpecializedValue(left)
+
+	if left.Kind != ValueBool {
+		return Value{}, fmt.Errorf("operator %q requires bool operands", expr.Operator)
+	}
+
+	switch expr.Operator {
+	case "&":
+		if !left.Bool {
+			return NewBoolValue(false), nil
+		}
+
+		right, err := i.evalExpression(expr.Right)
+		if err != nil {
+			return Value{}, err
+		}
+
+		right = resolveSpecializedValue(right)
+
+		if right.Kind != ValueBool {
+			return Value{}, fmt.Errorf("operator %q requires bool operands", expr.Operator)
+		}
+
+		return NewBoolValue(right.Bool), nil
+
+	case "|":
+		if left.Bool {
+			return NewBoolValue(true), nil
+		}
+
+		right, err := i.evalExpression(expr.Right)
+		if err != nil {
+			return Value{}, err
+		}
+
+		right = resolveSpecializedValue(right)
+
+		if right.Kind != ValueBool {
+			return Value{}, fmt.Errorf("operator %q requires bool operands", expr.Operator)
+		}
+
+		return NewBoolValue(right.Bool), nil
+
+	default:
+		return Value{}, fmt.Errorf("unknown logical operator %q", expr.Operator)
 	}
 }
 

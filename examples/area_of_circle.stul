@@ -9,4 +9,6 @@ circle = {
 	"area": { () R = @circle["radius"] (@PI * @SQUARE(R)) }
 }
 
+# Here comes our final calculation! Behold the beauty:
+
 PRINT("Double the area: ", circle["area"]() * 2)

@@ -4,11 +4,13 @@ CS = STD["TYPES"]["COLLECTION"]["SIZE"]
 TEXT = "In the beginning was the word."
 
 current_word = ""
+word_count = 0
 
 (( TEXT )) { ( char )
-	( char == " "  ) {
+	( char == " " & @CS( @current_word ) > 0 ) {
 		@P(@current_word)
 		@current_word = ""
+		@word_count += 1
 	},{
 		@current_word += @char
 	}
@@ -17,3 +19,5 @@ current_word = ""
 ( CS( current_word ) > 0 ) {
 	@P(@current_word)
 }
+
+P("\n(Word count: ", word_count, ".)")

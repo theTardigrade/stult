@@ -28,6 +28,9 @@ const (
 	TokenStar  TokenType = "*"
 	TokenSlash TokenType = "/"
 
+	TokenAnd TokenType = "&"
+	TokenOr  TokenType = "|"
+
 	TokenLParen TokenType = "("
 	TokenRParen TokenType = ")"
 
@@ -182,6 +185,14 @@ func (l *Lexer) NextToken() Token {
 		l.readChar()
 		return l.makeToken(TokenSlash, "/", line, col)
 
+	case '&':
+		l.readChar()
+		return l.makeToken(TokenAnd, "&", line, col)
+
+	case '|':
+		l.readChar()
+		return l.makeToken(TokenOr, "|", line, col)
+
 	case '(':
 		l.readChar()
 		return l.makeToken(TokenLParen, "(", line, col)
@@ -263,35 +274,80 @@ func (l *Lexer) skipIgnored() (Token, bool) {
 			l.readChar()
 		}
 
-		if l.ch != '|' {
+		if l.ch != '#' {
 			return Token{}, false
 		}
 
-		line, col := l.line, l.col
+		if l.countConsecutiveHashes() >= 3 {
+			line, col := l.line, l.col
+			l.readHashRun()
+			return l.makeToken(TokenIllegal, "three or more consecutive '#' symbols are not allowed", line, col), true
+		}
 
-		if l.peekChar() == '|' {
-			// Line comment: || comment until newline
+		if l.peekChar() == '#' {
+			line, col := l.line, l.col
+
+			// Bounded comment: ## comment until next ##
 			l.readChar()
 			l.readChar()
-			for l.ch != 0 && l.ch != '\n' {
+
+			closed := false
+
+			for l.ch != 0 {
+				if l.ch == '#' {
+					hashCount := l.countConsecutiveHashes()
+
+					if hashCount >= 3 {
+						line, col := l.line, l.col
+						l.readHashRun()
+						return l.makeToken(TokenIllegal, "three or more consecutive '#' symbols are not allowed", line, col), true
+					}
+
+					if hashCount == 2 {
+						l.readChar()
+						l.readChar()
+						closed = true
+						break
+					}
+				}
+
 				l.readChar()
 			}
 
-			// Do not consume the newline. It is still a statement separator.
+			if !closed {
+				return l.makeToken(TokenIllegal, "unterminated bounded comment", line, col), true
+			}
+
 			continue
 		}
 
-		// Inline comment: | comment until next |
-		l.readChar()
-		for l.ch != 0 && l.ch != '|' {
+		// Line comment: # comment until newline
+		for l.ch != 0 && l.ch != '\n' {
+			if l.ch == '#' && l.countConsecutiveHashes() >= 3 {
+				line, col := l.line, l.col
+				l.readHashRun()
+				return l.makeToken(TokenIllegal, "three or more consecutive '#' symbols are not allowed", line, col), true
+			}
+
 			l.readChar()
 		}
 
-		if l.ch == 0 {
-			return l.makeToken(TokenIllegal, "unterminated inline comment", line, col), true
-		}
+		// Do not consume the newline. It is still a statement separator.
+	}
+}
 
-		// Consume closing | and continue scanning.
+func (l *Lexer) countConsecutiveHashes() int {
+	count := 0
+
+	for offset := 0; l.peekAhead(offset) == '#'; offset++ {
+		count++
+	}
+
+	return count
+}
+
+func (l *Lexer) readHashRun() {
+	for l.ch == '#' {
 		l.readChar()
 	}
 }
@@ -417,11 +473,16 @@ func (l *Lexer) readChar() {
 }
 
 func (l *Lexer) peekChar() rune {
-	if l.pos >= len(l.input) {
+	return l.peekAhead(1)
+}
+
+func (l *Lexer) peekAhead(offset int) rune {
+	index := l.pos - 1 + offset
+	if index < 0 || index >= len(l.input) {
 		return 0
 	}
 
-	return l.input[l.pos]
+	return l.input[index]
 }
 
 func isIdentStart(ch rune) bool {

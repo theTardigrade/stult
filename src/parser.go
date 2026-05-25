@@ -366,7 +366,7 @@ func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
 	}
 
 	if !isValidLoopRangeParameterCount(len(parameters)) {
-		p.errorAtToken(openParen, "collection range loop must declare one, two, three, or four parameters: value; key, value; position, key, value; or position, key, value, collection")
+		p.errorAtToken(openParen, "collection range loop must declare one, two, three, or four parameters: value; value, key; value, key, collection; or value, key, collection, position")
 		return nil, false
 	}
 
@@ -563,6 +563,8 @@ func (p *Parser) parseStatementBlock(name string) ([]Statement, Token, bool) {
 
 const (
 	precLowest = iota
+	precLogicalOr
+	precLogicalAnd
 	precEquality
 	precComparison
 	precTerm
@@ -572,6 +574,10 @@ const (
 
 func precedence(tok TokenType) int {
 	switch tok {
+	case TokenOr:
+		return precLogicalOr
+	case TokenAnd:
+		return precLogicalAnd
 	case TokenEqual, TokenNotEqual:
 		return precEquality
 	case TokenLess, TokenLessEqual, TokenGreater, TokenGreaterEqual:
