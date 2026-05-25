@@ -1394,13 +1394,13 @@ func evalBinary(operator string, left Value, right Value) (Value, error) {
 	left = resolveSpecializedValue(left)
 	right = resolveSpecializedValue(right)
 
-	if operator == "==" || operator == "!=" {
+	if operator == "=" || operator == "!" {
 		equal, err := valuesEqual(left, right)
 		if err != nil {
 			return Value{}, err
 		}
 
-		if operator == "!=" {
+		if operator == "!" {
 			equal = !equal
 		}
 

@@ -1,6 +1,6 @@
-PRINT = STD["IO"]["PRINT"]
+PRINT : STD["IO"]["PRINT"]
 
-person = {
+person : {
     "NAME": "Henry"
     "age": 66
 }
@@ -8,6 +8,6 @@ person = {
 PRINT("Name:", person["NAME"])
 PRINT("Age before:", person["age"])
 
-person["age"] = 21
+person["age"] : 21
 
 PRINT("Age after:", person["age"])

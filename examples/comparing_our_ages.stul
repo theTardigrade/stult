@@ -1,11 +1,11 @@
-PRINT = STD["IO"]["PRINT"]
+PRINT : STD["IO"]["PRINT"]
 
-my_age = 21
-your_age = 99
+my_age : 21
+your_age : 99
 
 ( my_age < your_age ) {
     @PRINT("I'm younger than you, you old toad!")
-},( my_age == your_age ) {
+},( my_age = your_age ) {
     @PRINT("We're just as sprightly as each other.")
 },{
     @PRINT("Let's not talk about age.")

@@ -1,22 +1,22 @@
-P = STD["IO"]["PRINT"]
-CS = STD["TYPES"]["COLLECTION"]["SIZE"]
+P : STD["IO"]["PRINT"]
+CS : STD["TYPES"]["COLLECTION"]["SIZE"]
 
-TEXT = "In the beginning was the word."
+TEXT : "In the beginning was the word."
 
-current_word = ""
-word_count = 0
+current_word : ""
+word_count : 0
 
 (( TEXT )) { ( char )
-	( char == " " & @CS( @current_word ) > 0 ) {
+	( char = " " & @CS( @current_word ) ! 0 ) {
 		@P(@current_word)
-		@current_word = ""
-		@word_count += 1
+		@current_word : ""
+		@word_count :+ 1
 	},{
-		@current_word += @char
+		@current_word :+ @char
 	}
 }
 
-( CS( current_word ) > 0 ) {
+( CS( current_word ) ! 0 ) {
 	@P(@current_word)
 }
 

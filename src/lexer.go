@@ -16,9 +16,8 @@ const (
 	TokenNumber     TokenType = "NUM"
 	TokenString     TokenType = "STR"
 
-	TokenAssign      TokenType = "="
-	TokenPlusAssign  TokenType = "+="
-	TokenMinusAssign TokenType = "-="
+	TokenPlusAssign  TokenType = ":+"
+	TokenMinusAssign TokenType = ":-"
 	TokenComma       TokenType = ","
 	TokenColon       TokenType = ":"
 	TokenAt          TokenType = "@"
@@ -40,8 +39,8 @@ const (
 	TokenLBrace TokenType = "{"
 	TokenRBrace TokenType = "}"
 
-	TokenEqual        TokenType = "=="
-	TokenNotEqual     TokenType = "!="
+	TokenEqual        TokenType = "="
+	TokenNotEqual     TokenType = "!"
 	TokenLess         TokenType = "<"
 	TokenLessEqual    TokenType = "<="
 	TokenGreater      TokenType = ">"
@@ -108,22 +107,21 @@ func (l *Lexer) NextToken() Token {
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return l.makeToken(TokenEqual, "==", line, col)
+			return l.makeToken(TokenIllegal, "==", line, col)
 		}
 
 		l.readChar()
-		return l.makeToken(TokenAssign, "=", line, col)
+		return l.makeToken(TokenEqual, "=", line, col)
 
 	case '!':
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return l.makeToken(TokenNotEqual, "!=", line, col)
+			return l.makeToken(TokenIllegal, "!=", line, col)
 		}
 
-		literal := string(l.ch)
 		l.readChar()
-		return l.makeToken(TokenIllegal, literal, line, col)
+		return l.makeToken(TokenNotEqual, "!", line, col)
 
 	case '<':
 		if l.peekChar() == '=' {
@@ -150,6 +148,18 @@ func (l *Lexer) NextToken() Token {
 		return l.makeToken(TokenComma, ",", line, col)
 
 	case ':':
+		if l.peekChar() == '+' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenPlusAssign, ":+", line, col)
+		}
+
+		if l.peekChar() == '-' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenMinusAssign, ":-", line, col)
+		}
+
 		l.readChar()
 		return l.makeToken(TokenColon, ":", line, col)
 
@@ -161,7 +171,7 @@ func (l *Lexer) NextToken() Token {
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return l.makeToken(TokenPlusAssign, "+=", line, col)
+			return l.makeToken(TokenIllegal, "+=", line, col)
 		}
 
 		l.readChar()
@@ -171,7 +181,7 @@ func (l *Lexer) NextToken() Token {
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return l.makeToken(TokenMinusAssign, "-=", line, col)
+			return l.makeToken(TokenIllegal, "-=", line, col)
 		}
 
 		l.readChar()

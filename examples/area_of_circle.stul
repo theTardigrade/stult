@@ -1,14 +1,12 @@
-PRINT = STD["IO"]["PRINT"]
+PRINT : STD["IO"]["PRINT"]
 
-MATH = STD["MATH"]
-PI = MATH["PI"]
-SQUARE = MATH["SQUARE"]
+MATH : STD["MATH"]
+PI : MATH["PI"]
+SQUARE : MATH["SQUARE"]
 
-circle = {
+circle : {
 	"radius": 10
-	"area": { () R = @circle["radius"] (@PI * @SQUARE(R)) }
+	"area": { () R : @circle["radius"] (@PI * @SQUARE(R)) }
 }
-
-# Here comes our final calculation! Behold the beauty:
 
 PRINT("Double the area: ", circle["area"]() * 2)

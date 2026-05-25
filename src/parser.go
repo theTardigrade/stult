@@ -136,7 +136,7 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 }
 
 func isAssignmentOperator(tokenType TokenType) bool {
-	return tokenType == TokenAssign ||
+	return tokenType == TokenColon ||
 		tokenType == TokenPlusAssign ||
 		tokenType == TokenMinusAssign
 }

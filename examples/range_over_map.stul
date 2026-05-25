@@ -1,21 +1,20 @@
-PRINT = STD["IO"]["PRINT"]
+PRINT : STD["IO"]["PRINT"]
 
-SCORES = {
+SCORES : {
 	"JILLY": 0.45
 	"JENNIFER": 0.86
     "JODIE": 0.96
     "JUDY": 0.71
 }
 
-sum_of_scores = 0
-number_of_scores = 0
+sum_of_scores : 0, number_of_scores : 0
 
 ((SCORES)) { (current_score)
-    @sum_of_scores += current_score
-    @number_of_scores += 1
+    @sum_of_scores :+ current_score
+    @number_of_scores :+ 1
 }
 
-AVERAGE_DECIMAL_SCORE = ( sum_of_scores / number_of_scores )
-AVERAGE_PERCENTAGE_SCORE = ( AVERAGE_DECIMAL_SCORE * 100 )
+AVERAGE_DECIMAL_SCORE : ( sum_of_scores / number_of_scores )
+AVERAGE_PERCENTAGE_SCORE : ( AVERAGE_DECIMAL_SCORE * 100 )
 
 PRINT("The average score at the biennial shotput championship was ", AVERAGE_PERCENTAGE_SCORE, "%.")
