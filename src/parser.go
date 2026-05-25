@@ -342,21 +342,8 @@ func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
 		return nil, false
 	}
 
-	seen := map[string]bool{}
-
-	for _, parameter := range parameters {
-		name := parameter.Literal
-
-		if name == "_" {
-			continue
-		}
-
-		if seen[name] {
-			p.errorAtToken(parameter, "duplicate loop range parameter "+strconvQuote(name))
-			return nil, false
-		}
-
-		seen[name] = true
+	if !p.validateBindingNames(parameters, "loop range parameter") {
+		return nil, false
 	}
 
 	return parameters, true
@@ -868,6 +855,11 @@ func (p *Parser) parseFunctionParameters() ([]Token, bool) {
 
 		if p.current.Type == TokenRParen {
 			p.advance()
+
+			if !p.validateBindingNames(parameters, "function parameter") {
+				return nil, false
+			}
+
 			return parameters, true
 		}
 
@@ -880,9 +872,35 @@ func (p *Parser) parseFunctionParameters() ([]Token, bool) {
 
 		if p.current.Type == TokenRParen {
 			p.advance()
+
+			if !p.validateBindingNames(parameters, "function parameter") {
+				return nil, false
+			}
+
 			return parameters, true
 		}
 	}
+}
+
+func (p *Parser) validateBindingNames(parameters []Token, name string) bool {
+	seen := map[string]bool{}
+
+	for _, parameter := range parameters {
+		bindingName := parameter.Literal
+
+		if bindingName == "_" {
+			continue
+		}
+
+		if seen[bindingName] {
+			p.errorAtToken(parameter, "duplicate "+name+" "+strconvQuote(bindingName))
+			return false
+		}
+
+		seen[bindingName] = true
+	}
+
+	return true
 }
 
 func (p *Parser) parseMapLiteral(openBrace Token) Expression {

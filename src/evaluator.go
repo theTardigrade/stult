@@ -773,6 +773,10 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 	callEnv := NewChildEnvironment(fn.Env)
 
 	for index, parameter := range fn.Parameters {
+		if parameter.Literal == "_" {
+			continue
+		}
+
 		if err := callEnv.Set(parameter.Literal, args[index], parameter.IsImmutable); err != nil {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: %w",
