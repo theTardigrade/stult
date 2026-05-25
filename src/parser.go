@@ -14,7 +14,6 @@ type Parser struct {
 func NewParser(lexer *Lexer) *Parser {
 	p := &Parser{lexer: lexer}
 
-	// Fill current and peek.
 	p.advance()
 	p.advance()
 
@@ -52,29 +51,40 @@ func (p *Parser) ParseProgram() *Program {
 }
 
 func (p *Parser) parseStatement() Statement {
-	if p.current.Type == TokenIdentifier && p.peek.Type == TokenAssign {
-		return p.parseAssignmentStatement()
-	}
-
-	return p.parseExpressionStatement()
-}
-
-func (p *Parser) parseAssignmentStatement() Statement {
-	name := p.current
-
-	p.advance() // identifier -> =
-	p.advance() // = -> first expression token
-
-	value := p.parseExpression(precLowest)
-	if value == nil {
-		p.errorAtToken(name, "expected expression after assignment")
+	target := p.parseExpression(precLowest)
+	if target == nil {
 		return nil
 	}
 
-	return &AssignmentStatement{
-		Name:        name,
-		Value:       value,
-		IsImmutable: name.IsImmutable,
+	if p.current.Type != TokenAssign {
+		return &ExpressionStatement{Expression: target}
+	}
+
+	p.advance() // consume "="
+
+	value := p.parseExpression(precLowest)
+	if value == nil {
+		p.errorAtCurrent("expected expression after assignment")
+		return nil
+	}
+
+	switch t := target.(type) {
+	case *IdentifierExpression:
+		return &AssignmentStatement{
+			Name:        t.Token,
+			Value:       value,
+			IsImmutable: t.IsImmutable,
+		}
+
+	case *IndexExpression:
+		return &IndexAssignmentStatement{
+			Target: t,
+			Value:  value,
+		}
+
+	default:
+		p.errorAtCurrent("invalid assignment target")
+		return nil
 	}
 }
 
@@ -140,11 +150,13 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	case TokenMinus:
 		operator := p.current
 		p.advance()
+
 		right := p.parseExpression(precPrefix)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after unary '-'")
 			return nil
 		}
+
 		left = &PrefixExpression{
 			Token:    operator,
 			Operator: operator.Literal,
@@ -153,15 +165,24 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 
 	case TokenLParen:
 		p.advance()
+
 		inner := p.parseExpression(precLowest)
 		if inner == nil {
 			return nil
 		}
+
 		if !p.expectCurrent(TokenRParen, "expected ')' after expression") {
 			return nil
 		}
+
 		p.advance()
 		left = inner
+
+	case TokenLBrace:
+		left = p.parseMapLiteral()
+		if left == nil {
+			return nil
+		}
 
 	default:
 		p.errorAtCurrent("expected expression")
@@ -169,6 +190,16 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	}
 
 	for {
+		if p.current.Type == TokenLBracket {
+			index, ok := p.parseIndexExpression(left)
+			if !ok {
+				return nil
+			}
+
+			left = index
+			continue
+		}
+
 		currentPrec := precedence(p.current.Type)
 		if currentPrec == precLowest || currentPrec <= parentPrec {
 			break
@@ -193,6 +224,89 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	return left
 }
 
+func (p *Parser) parseMapLiteral() Expression {
+	openBrace := p.current
+	p.advance() // consume "{"
+
+	entries := []MapEntry{}
+
+	p.skipSeparators()
+
+	if p.current.Type == TokenRBrace {
+		p.advance()
+		return &MapLiteral{Token: openBrace, Entries: entries}
+	}
+
+	for {
+		if p.current.Type != TokenString {
+			p.errorAtCurrent("expected string map key")
+			return nil
+		}
+
+		key := p.current
+		p.advance()
+
+		if !p.expectCurrent(TokenColon, "expected ':' after map key") {
+			return nil
+		}
+
+		p.advance()
+
+		value := p.parseExpression(precLowest)
+		if value == nil {
+			p.errorAtToken(key, "expected expression after map key")
+			return nil
+		}
+
+		entries = append(entries, MapEntry{
+			Key:   key,
+			Value: value,
+		})
+
+		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			p.skipSeparators()
+		}
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
+		}
+
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(openBrace, "unterminated map literal")
+			return nil
+		}
+
+		if p.current.Type != TokenString {
+			p.errorAtCurrent("expected comma, newline, or '}' after map entry")
+			return nil
+		}
+	}
+
+	return &MapLiteral{Token: openBrace, Entries: entries}
+}
+
+func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
+	p.advance() // consume "["
+
+	index := p.parseExpression(precLowest)
+	if index == nil {
+		p.errorAtCurrent("expected index expression")
+		return nil, false
+	}
+
+	if !p.expectCurrent(TokenRBracket, "expected ']' after index expression") {
+		return nil, false
+	}
+
+	p.advance()
+
+	return &IndexExpression{
+		Object: object,
+		Index:  index,
+	}, true
+}
+
 func (p *Parser) skipSeparators() {
 	for p.current.Type == TokenNewline || p.current.Type == TokenComma {
 		p.advance()
@@ -203,6 +317,7 @@ func (p *Parser) synchronize() {
 	for p.current.Type != TokenEOF && p.current.Type != TokenNewline && p.current.Type != TokenComma {
 		p.advance()
 	}
+
 	p.skipSeparators()
 }
 
@@ -225,5 +340,15 @@ func (p *Parser) errorAtCurrent(message string) {
 }
 
 func (p *Parser) errorAtToken(tok Token, message string) {
-	p.errors = append(p.errors, fmt.Sprintf("line %d, column %d: %s, got %s %q", tok.Line, tok.Column, message, tok.Type, tok.Literal))
+	p.errors = append(
+		p.errors,
+		fmt.Sprintf(
+			"line %d, column %d: %s, got %s %q",
+			tok.Line,
+			tok.Column,
+			message,
+			tok.Type,
+			tok.Literal,
+		),
+	)
 }

@@ -69,3 +69,29 @@ type StringLiteral struct {
 }
 
 func (*StringLiteral) expressionNode() {}
+
+type MapLiteral struct {
+	Token   Token
+	Entries []MapEntry
+}
+
+func (*MapLiteral) expressionNode() {}
+
+type MapEntry struct {
+	Key   Token // Type == TokenString
+	Value Expression
+}
+
+type IndexExpression struct {
+	Object Expression
+	Index  Expression
+}
+
+func (*IndexExpression) expressionNode() {}
+
+type IndexAssignmentStatement struct {
+	Target *IndexExpression
+	Value  Expression
+}
+
+func (*IndexAssignmentStatement) statementNode() {}

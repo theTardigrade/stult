@@ -18,6 +18,7 @@ const (
 
 	TokenAssign TokenType = "="
 	TokenComma  TokenType = ","
+	TokenColon  TokenType = ":"
 
 	TokenPlus  TokenType = "+"
 	TokenMinus TokenType = "-"
@@ -26,6 +27,10 @@ const (
 
 	TokenLParen TokenType = "("
 	TokenRParen TokenType = ")"
+
+	TokenLBracket TokenType = "["
+	TokenRBracket TokenType = "]"
+
 	TokenLBrace TokenType = "{"
 	TokenRBrace TokenType = "}"
 
@@ -164,6 +169,18 @@ func (l *Lexer) NextToken() Token {
 		}
 
 		return Token{Type: TokenString, Literal: literal, Line: line, Column: col}
+
+	case ':':
+		l.readChar()
+		return Token{Type: TokenColon, Literal: ":", Line: line, Column: col}
+
+	case '[':
+		l.readChar()
+		return Token{Type: TokenLBracket, Literal: "[", Line: line, Column: col}
+
+	case ']':
+		l.readChar()
+		return Token{Type: TokenRBracket, Literal: "]", Line: line, Column: col}
 	}
 
 	if isIdentStart(l.ch) {
