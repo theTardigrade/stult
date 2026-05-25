@@ -34,6 +34,11 @@ type Function struct {
 
 type BuiltinFunction func(interpreter *Interpreter, args []Value) (Value, error)
 
+type String struct {
+	Runes       []rune
+	IsImmutable bool
+}
+
 type Map struct {
 	Entries     map[string]Binding
 	IsImmutable bool
@@ -46,13 +51,27 @@ type Array struct {
 
 type EmptyCollection struct {
 	Specialized *Value
+	IsImmutable bool
+}
+
+func NewEmptyCollectionValue() Value {
+	return NewEmptyCollectionValueWithImmutability(false)
+}
+
+func NewEmptyCollectionValueWithImmutability(isImmutable bool) Value {
+	return Value{
+		Kind: ValueEmptyCollection,
+		EmptyCollection: &EmptyCollection{
+			IsImmutable: isImmutable,
+		},
+	}
 }
 
 type Value struct {
 	Kind            ValueKind
 	Number          *big.Float
 	Bool            bool
-	Text            string
+	Text            *String
 	Map             *Map
 	Array           *Array
 	EmptyCollection *EmptyCollection
@@ -62,13 +81,6 @@ type Value struct {
 
 func NewEmptyValue() Value {
 	return Value{Kind: ValueEmpty}
-}
-
-func NewEmptyCollectionValue() Value {
-	return Value{
-		Kind:            ValueEmptyCollection,
-		EmptyCollection: &EmptyCollection{},
-	}
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -94,7 +106,17 @@ func NewBoolValue(value bool) Value {
 }
 
 func NewStringValue(value string) Value {
-	return Value{Kind: ValueString, Text: value}
+	return NewStringValueWithImmutability(value, false)
+}
+
+func NewStringValueWithImmutability(value string, isImmutable bool) Value {
+	return Value{
+		Kind: ValueString,
+		Text: &String{
+			Runes:       []rune(value),
+			IsImmutable: isImmutable,
+		},
+	}
 }
 
 func NewMapValue(entries map[string]Binding, isImmutable bool) Value {
@@ -138,6 +160,14 @@ func CloneNumber(x *big.Float) *big.Float {
 		Set(x)
 }
 
+func (s *String) String() string {
+	if s == nil {
+		return ""
+	}
+
+	return string(s.Runes)
+}
+
 func (v Value) String() string {
 	return v.Format(DefaultFractionDigits)
 }
@@ -147,7 +177,7 @@ func (v Value) PrintString() string {
 
 	switch v.Kind {
 	case ValueString:
-		return v.Text
+		return v.Text.String()
 	default:
 		return v.String()
 	}
@@ -173,7 +203,7 @@ func (v Value) Format(fractionDigits int) string {
 		return "false"
 
 	case ValueString:
-		return strconv.Quote(v.Text)
+		return strconv.Quote(v.Text.String())
 
 	case ValueMap:
 		return formatMap(v.Map, fractionDigits)
@@ -209,7 +239,7 @@ func (v Value) DebugString() string {
 		return v.String()
 
 	case ValueString:
-		return strconv.Quote(v.Text)
+		return strconv.Quote(v.Text.String())
 
 	case ValueMap:
 		return formatMap(v.Map, DefaultFractionDigits)
@@ -773,9 +803,9 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 			return Value{}, fmt.Errorf("map index must be a string")
 		}
 
-		binding, ok := object.Map.Entries[index.Text]
+		binding, ok := object.Map.Entries[index.Text.String()]
 		if !ok {
-			return Value{}, fmt.Errorf("map has no key %q", index.Text)
+			return Value{}, fmt.Errorf("map has no key %q", index.Text.String())
 		}
 
 		return binding.Value, nil
@@ -791,6 +821,18 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		}
 
 		return object.Array.Elements[arrayIndex], nil
+
+	case ValueString:
+		stringIndex, err := numberToArrayIndex(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
+			return Value{}, fmt.Errorf("string index %d out of bounds", stringIndex)
+		}
+
+		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
 
 	case ValueEmptyCollection:
 		return Value{}, fmt.Errorf("cannot read from empty collection before it becomes a map or array")
@@ -899,6 +941,9 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 	case ValueArray:
 		return assignArrayIndex(object.Array, index, value)
 
+	case ValueString:
+		return assignStringIndex(object.Text, index, value)
+
 	case ValueEmptyCollection:
 		return specializeEmptyCollection(object, index, value)
 
@@ -916,20 +961,22 @@ func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 		return Value{}, fmt.Errorf("map index must be a string")
 	}
 
-	binding, exists := m.Entries[index.Text]
+	key := index.Text.String()
+
+	binding, exists := m.Entries[key]
 	if exists && binding.IsImmutable {
-		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", index.Text)
+		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", key)
 	}
 
 	if exists {
 		binding.Value = value
-		m.Entries[index.Text] = binding
+		m.Entries[key] = binding
 		return value, nil
 	}
 
-	m.Entries[index.Text] = Binding{
+	m.Entries[key] = Binding{
 		Value:       value,
-		IsImmutable: isImmutableIdentifier(index.Text),
+		IsImmutable: isImmutableIdentifier(key),
 	}
 
 	return value, nil
@@ -966,9 +1013,67 @@ func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
 	return value, nil
 }
 
+func assignStringIndex(s *String, index Value, value Value) (Value, error) {
+	if s == nil {
+		return Value{}, fmt.Errorf("invalid string")
+	}
+
+	if s.IsImmutable {
+		return Value{}, fmt.Errorf("cannot modify immutable string")
+	}
+
+	stringIndex, err := numberToArrayIndex(index)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if stringIndex < 0 {
+		return Value{}, fmt.Errorf("string index cannot be negative")
+	}
+
+	if stringIndex > len(s.Runes) {
+		return Value{}, fmt.Errorf(
+			"string index %d is past the next append position %d",
+			stringIndex,
+			len(s.Runes),
+		)
+	}
+
+	replacement, err := stringAssignmentRune(value)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if stringIndex == len(s.Runes) {
+		s.Runes = append(s.Runes, replacement)
+		return value, nil
+	}
+
+	s.Runes[stringIndex] = replacement
+	return value, nil
+}
+
+func stringAssignmentRune(value Value) (rune, error) {
+	value = resolveSpecializedValue(value)
+
+	if value.Kind != ValueString {
+		return 0, fmt.Errorf("string index assignment requires a string value")
+	}
+
+	if len(value.Text.Runes) != 1 {
+		return 0, fmt.Errorf("string index assignment value must contain exactly one rune")
+	}
+
+	return value.Text.Runes[0], nil
+}
+
 func specializeEmptyCollection(collection Value, index Value, value Value) (Value, error) {
 	if collection.EmptyCollection == nil {
 		return Value{}, fmt.Errorf("invalid empty collection")
+	}
+
+	if collection.EmptyCollection.IsImmutable {
+		return Value{}, fmt.Errorf("cannot modify immutable empty collection")
 	}
 
 	if collection.EmptyCollection.Specialized != nil {
@@ -1124,7 +1229,7 @@ func evalBinary(operator string, left Value, right Value) (Value, error) {
 	}
 
 	if operator == "+" && left.Kind == ValueString && right.Kind == ValueString {
-		return NewStringValue(left.Text + right.Text), nil
+		return NewStringValue(left.Text.String() + right.Text.String()), nil
 	}
 
 	if left.Kind != ValueNumber || right.Kind != ValueNumber {
@@ -1192,7 +1297,7 @@ func valuesEqual(left Value, right Value) (bool, error) {
 		return left.Bool == right.Bool, nil
 
 	case ValueString:
-		return left.Text == right.Text, nil
+		return left.Text.String() == right.Text.String(), nil
 
 	case ValueMap:
 		return false, fmt.Errorf("cannot compare maps")
