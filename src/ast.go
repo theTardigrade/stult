@@ -26,6 +26,26 @@ type ExpressionStatement struct {
 
 func (s *ExpressionStatement) statementNode() {}
 
+type ConditionalStatement struct {
+	Branches []ConditionalBranch
+	ElseBody []Statement
+}
+
+func (s *ConditionalStatement) statementNode() {}
+
+type ConditionalBranch struct {
+	Condition Expression
+	Body      []Statement
+}
+
+type LoopStatement struct {
+	Condition     Expression
+	Body          []Statement
+	AfterLoopBody []Statement
+}
+
+func (s *LoopStatement) statementNode() {}
+
 type NumberLiteral struct {
 	Token Token
 	Value string

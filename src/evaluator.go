@@ -33,7 +33,6 @@ type BuiltinFunction func(interpreter *Interpreter, args []Value) (Value, error)
 
 type Map struct {
 	Entries     map[string]Binding
-	Order       []string
 	IsImmutable bool
 }
 
@@ -315,12 +314,84 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 	case *IndexAssignmentStatement:
 		return i.evalIndexAssignmentStatement(s)
 
+	case *ConditionalStatement:
+		return i.evalConditionalStatement(s)
+
+	case *LoopStatement:
+		return i.evalLoopStatement(s)
+
 	case *ExpressionStatement:
 		return i.evalExpression(s.Expression)
 
 	default:
 		return Value{}, fmt.Errorf("unknown statement type %T", stmt)
 	}
+}
+
+func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Value, error) {
+	for _, branch := range stmt.Branches {
+		condition, err := i.evalExpression(branch.Condition)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if condition.Kind != ValueBool {
+			return Value{}, fmt.Errorf("conditional expression must evaluate to a bool")
+		}
+
+		if condition.Bool {
+			return i.evalStatementBlock(branch.Body)
+		}
+	}
+
+	if stmt.ElseBody != nil {
+		return i.evalStatementBlock(stmt.ElseBody)
+	}
+
+	return NewBoolValue(false), nil
+}
+
+func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
+	result := NewBoolValue(false)
+
+	for {
+		condition, err := i.evalExpression(stmt.Condition)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if condition.Kind != ValueBool {
+			return Value{}, fmt.Errorf("loop condition must evaluate to a bool")
+		}
+
+		if !condition.Bool {
+			if stmt.AfterLoopBody != nil {
+				return i.evalStatementBlock(stmt.AfterLoopBody)
+			}
+
+			return result, nil
+		}
+
+		result, err = i.evalStatementBlock(stmt.Body)
+		if err != nil {
+			return Value{}, err
+		}
+	}
+}
+
+func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
+	result := NewBoolValue(true)
+
+	for _, stmt := range statements {
+		value, err := i.evalStatement(stmt)
+		if err != nil {
+			return Value{}, err
+		}
+
+		result = value
+	}
+
+	return result, nil
 }
 
 func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
@@ -668,7 +739,7 @@ func newFloat() *big.Float {
 
 func newFloatWithPrecision(precision uint) *big.Float {
 	return new(big.Float).
-		SetPrec(precision).
+		SetPrec(FloatPrecision).
 		SetMode(big.ToNearestEven)
 }
 

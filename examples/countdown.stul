@@ -1,0 +1,16 @@
+PRINT = STD["IO"]["PRINT"]
+
+ITERATIONS = 10
+
+i = ITERATIONS
+
+((i > 0)) {
+    PRINT(i)
+
+    i = i - 1
+},{
+	|| code in this block runs just once when the conditional no longer holds true
+
+    PRINT("")
+	PRINT("THE COUNT IS OVER. PACK UP AND GO HOME.")
+}
