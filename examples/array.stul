@@ -16,9 +16,11 @@ singleline_array = { "test", "test2", "test3" }
 PRINT(multiline_array)
 PRINT(singleline_array)
 
+A = STD["TYPES"]["ARRAY"]["APPEND"]
+
 empty_collection = {}
 
-empty_collection[0] = "example text"
+A(empty_collection, "example text", "and some more example text")
 
 PRINT(empty_collection)
 
