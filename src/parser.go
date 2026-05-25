@@ -122,6 +122,13 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		}
 		p.advance()
 
+	case TokenString:
+		left = &StringLiteral{
+			Token: p.current,
+			Value: p.current.Literal,
+		}
+		p.advance()
+
 	case TokenIdentifier:
 		left = &IdentifierExpression{
 			Token:       p.current,

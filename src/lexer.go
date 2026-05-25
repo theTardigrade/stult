@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"unicode"
 )
 
@@ -13,6 +14,7 @@ const (
 
 	TokenIdentifier TokenType = "ID"
 	TokenNumber     TokenType = "NUM"
+	TokenString     TokenType = "STR"
 
 	TokenAssign TokenType = "="
 	TokenComma  TokenType = ","
@@ -154,6 +156,14 @@ func (l *Lexer) NextToken() Token {
 	case '}':
 		l.readChar()
 		return Token{Type: TokenRBrace, Literal: "}", Line: line, Column: col}
+
+	case '"':
+		literal, ok := l.readString()
+		if !ok {
+			return Token{Type: TokenIllegal, Literal: literal, Line: line, Column: col}
+		}
+
+		return Token{Type: TokenString, Literal: literal, Line: line, Column: col}
 	}
 
 	if isIdentStart(l.ch) {
@@ -315,4 +325,51 @@ func isImmutableIdentifier(name string) bool {
 	}
 
 	return hasUpper
+}
+
+func (l *Lexer) readString() (string, bool) {
+	var out strings.Builder
+
+	// Consume opening quote.
+	l.readChar()
+
+	for l.ch != 0 && l.ch != '"' {
+		if l.ch == '\n' {
+			return "unterminated string", false
+		}
+
+		if l.ch == '\\' {
+			l.readChar()
+
+			switch l.ch {
+			case 'n':
+				out.WriteRune('\n')
+			case 't':
+				out.WriteRune('\t')
+			case '"':
+				out.WriteRune('"')
+			case '\\':
+				out.WriteRune('\\')
+			case 0:
+				return "unterminated string", false
+			default:
+				return "invalid escape sequence \\" + string(l.ch), false
+			}
+
+			l.readChar()
+			continue
+		}
+
+		out.WriteRune(l.ch)
+		l.readChar()
+	}
+
+	if l.ch != '"' {
+		return "unterminated string", false
+	}
+
+	// Consume closing quote.
+	l.readChar()
+
+	return out.String(), true
 }

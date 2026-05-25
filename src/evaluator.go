@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -16,12 +17,14 @@ type ValueKind int
 const (
 	ValueNumber ValueKind = iota
 	ValueBool
+	ValueString
 )
 
 type Value struct {
 	Kind   ValueKind
 	Number *big.Float
 	Bool   bool
+	Text   string
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -35,6 +38,10 @@ func NewNumberValueFromString(literal string) (Value, error) {
 
 func NewBoolValue(value bool) Value {
 	return Value{Kind: ValueBool, Bool: value}
+}
+
+func NewStringValue(value string) Value {
+	return Value{Kind: ValueString, Text: value}
 }
 
 func CloneNumber(x *big.Float) *big.Float {
@@ -59,6 +66,9 @@ func (v Value) Format(digits int) string {
 		}
 		return "false"
 
+	case ValueString:
+		return strconv.Quote(v.Text)
+
 	default:
 		return "<unknown>"
 	}
@@ -71,6 +81,9 @@ func (v Value) DebugString() string {
 
 	case ValueBool:
 		return v.String()
+
+	case ValueString:
+		return strconv.Quote(v.Text)
 
 	default:
 		return "<unknown>"
@@ -209,6 +222,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *NumberLiteral:
 		return NewNumberValueFromString(e.Value)
 
+	case *StringLiteral:
+		return NewStringValue(e.Value), nil
+
 	case *IdentifierExpression:
 		binding, ok := i.Env.Get(e.Name)
 		if !ok {
@@ -272,6 +288,10 @@ func evalBinary(operator string, left, right Value) (Value, error) {
 		return NewBoolValue(equal), nil
 	}
 
+	if operator == "+" && left.Kind == ValueString && right.Kind == ValueString {
+		return NewStringValue(left.Text + right.Text), nil
+	}
+
 	if left.Kind != ValueNumber || right.Kind != ValueNumber {
 		return Value{}, fmt.Errorf("operator %q requires numbers", operator)
 	}
@@ -329,6 +349,9 @@ func valuesEqual(left, right Value) (bool, error) {
 
 	case ValueBool:
 		return left.Bool == right.Bool, nil
+
+	case ValueString:
+		return left.Text == right.Text, nil
 
 	default:
 		return false, fmt.Errorf("cannot compare unknown value kind")

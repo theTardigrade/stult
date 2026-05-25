@@ -62,3 +62,10 @@ type GroupedExpression struct {
 }
 
 func (e *GroupedExpression) expressionNode() {}
+
+type StringLiteral struct {
+	Token Token
+	Value string
+}
+
+func (*StringLiteral) expressionNode() {}
