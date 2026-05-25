@@ -308,6 +308,13 @@ type Binding struct {
 	IsImmutable bool
 }
 
+func NewImmutableBinding(value Value) Binding {
+	return Binding{
+		Value:       value,
+		IsImmutable: true,
+	}
+}
+
 type Environment struct {
 	values map[string]Binding
 	parent *Environment

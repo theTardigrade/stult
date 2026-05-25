@@ -6,10 +6,7 @@ import (
 
 func NewStdIOMap() Value {
 	entries := map[string]Binding{
-		"PRINT": {
-			Value:       NewBuiltinFunctionValue(builtinStdIOPrint),
-			IsImmutable: true,
-		},
+		"PRINT": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOPrint)),
 	}
 
 	return NewMapValue(entries, true)

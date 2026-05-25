@@ -2,18 +2,10 @@ package main
 
 func NewStdMap() Value {
 	entries := map[string]Binding{
-		"BOOL": {
-			Value:       NewStdBoolMap(),
-			IsImmutable: true,
-		},
-		"IO": {
-			Value:       NewStdIOMap(),
-			IsImmutable: true,
-		},
-		"MATH": {
-			Value:       NewStdMathMap(),
-			IsImmutable: true,
-		},
+		"BOOL":  NewImmutableBinding(NewStdBoolMap()),
+		"IO":    NewImmutableBinding(NewStdIOMap()),
+		"MATH":  NewImmutableBinding(NewStdMathMap()),
+		"TYPES": NewImmutableBinding(NewStdTypesMap()),
 	}
 
 	return NewMapValue(entries, true)

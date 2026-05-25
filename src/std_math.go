@@ -7,18 +7,9 @@ import (
 
 func NewStdMathMap() Value {
 	entries := map[string]Binding{
-		"PI": {
-			Value:       calculatePiValue(FloatPrecision),
-			IsImmutable: true,
-		},
-		"SQUARE": {
-			Value:       NewBuiltinFunctionValue(builtinStdMathSquare),
-			IsImmutable: true,
-		},
-		"CUBE": {
-			Value:       NewBuiltinFunctionValue(builtinStdMathCube),
-			IsImmutable: true,
-		},
+		"PI":     NewImmutableBinding(calculatePiValue(FloatPrecision)),
+		"SQUARE": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSquare)),
+		"CUBE":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathCube)),
 	}
 
 	return NewMapValue(entries, true)
