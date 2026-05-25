@@ -1,0 +1,23 @@
+PRINT = STD["IO"]["PRINT"]
+
+multiline_array = {
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+}
+
+singleline_array = { "test", "test2", "test3" }
+
+PRINT(multiline_array)
+PRINT(singleline_array)
+
+empty_collection = {}
+
+empty_collection[0] = "example text"
+
+PRINT(empty_collection)

@@ -19,6 +19,8 @@ const (
 	ValueBool
 	ValueString
 	ValueMap
+	ValueArray
+	ValueEmptyCollection
 	ValueFunction
 	ValueBuiltinFunction
 )
@@ -37,18 +39,36 @@ type Map struct {
 	IsImmutable bool
 }
 
+type Array struct {
+	Elements    []Value
+	IsImmutable bool
+}
+
+type EmptyCollection struct {
+	Specialized *Value
+}
+
 type Value struct {
 	Kind            ValueKind
 	Number          *big.Float
 	Bool            bool
 	Text            string
 	Map             *Map
+	Array           *Array
+	EmptyCollection *EmptyCollection
 	Function        *Function
 	BuiltinFunction BuiltinFunction
 }
 
 func NewEmptyValue() Value {
 	return Value{Kind: ValueEmpty}
+}
+
+func NewEmptyCollectionValue() Value {
+	return Value{
+		Kind:            ValueEmptyCollection,
+		EmptyCollection: &EmptyCollection{},
+	}
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -87,6 +107,16 @@ func NewMapValue(entries map[string]Binding, isImmutable bool) Value {
 	}
 }
 
+func NewArrayValue(elements []Value, isImmutable bool) Value {
+	return Value{
+		Kind: ValueArray,
+		Array: &Array{
+			Elements:    elements,
+			IsImmutable: isImmutable,
+		},
+	}
+}
+
 func NewBuiltinFunctionValue(fn BuiltinFunction) Value {
 	return Value{
 		Kind:            ValueBuiltinFunction,
@@ -113,6 +143,8 @@ func (v Value) String() string {
 }
 
 func (v Value) PrintString() string {
+	v = resolveSpecializedValue(v)
+
 	switch v.Kind {
 	case ValueString:
 		return v.Text
@@ -122,9 +154,14 @@ func (v Value) PrintString() string {
 }
 
 func (v Value) Format(digits int) string {
+	v = resolveSpecializedValue(v)
+
 	switch v.Kind {
 	case ValueEmpty:
 		return "_"
+
+	case ValueEmptyCollection:
+		return "{}"
 
 	case ValueNumber:
 		return formatNumber(v.Number, digits)
@@ -141,6 +178,9 @@ func (v Value) Format(digits int) string {
 	case ValueMap:
 		return formatMap(v.Map, digits)
 
+	case ValueArray:
+		return formatArray(v.Array, digits)
+
 	case ValueBuiltinFunction:
 		return "<builtin function>"
 
@@ -153,9 +193,14 @@ func (v Value) Format(digits int) string {
 }
 
 func (v Value) DebugString() string {
+	v = resolveSpecializedValue(v)
+
 	switch v.Kind {
 	case ValueEmpty:
 		return "_"
+
+	case ValueEmptyCollection:
+		return "{}"
 
 	case ValueNumber:
 		return v.Number.Text('g', -1)
@@ -169,6 +214,9 @@ func (v Value) DebugString() string {
 	case ValueMap:
 		return formatMap(v.Map, DefaultDisplayDigits)
 
+	case ValueArray:
+		return formatArray(v.Array, DefaultDisplayDigits)
+
 	case ValueFunction:
 		return "<function>"
 
@@ -178,6 +226,16 @@ func (v Value) DebugString() string {
 	default:
 		return "<unknown>"
 	}
+}
+
+func resolveSpecializedValue(value Value) Value {
+	for value.Kind == ValueEmptyCollection &&
+		value.EmptyCollection != nil &&
+		value.EmptyCollection.Specialized != nil {
+		value = *value.EmptyCollection.Specialized
+	}
+
+	return value
 }
 
 func formatNumber(x *big.Float, digits int) string {
@@ -233,6 +291,16 @@ func sortedMapKeys(m *Map) []string {
 	sort.Strings(keys)
 
 	return keys
+}
+
+func formatArray(a *Array, digits int) string {
+	parts := make([]string, 0, len(a.Elements))
+
+	for _, element := range a.Elements {
+		parts = append(parts, element.Format(digits))
+	}
+
+	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 type Binding struct {
@@ -464,6 +532,8 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, err
 		return Value{}, err
 	}
 
+	iterable = resolveSpecializedValue(iterable)
+
 	if iterable.Kind != ValueMap {
 		return Value{}, fmt.Errorf("map range loop expression must evaluate to a map")
 	}
@@ -552,6 +622,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *EmptyLiteral:
 		return NewEmptyValue(), nil
 
+	case *EmptyCollectionLiteral:
+		return NewEmptyCollectionValue(), nil
+
 	case *NumberLiteral:
 		return NewNumberValueFromString(e.Value)
 
@@ -610,6 +683,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *MapLiteral:
 		return i.evalMapLiteral(e)
 
+	case *ArrayLiteral:
+		return i.evalArrayLiteral(e)
+
 	case *IndexExpression:
 		return i.evalIndexExpression(e)
 
@@ -658,6 +734,21 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 	return NewMapValue(entries, false), nil
 }
 
+func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
+	elements := make([]Value, 0, len(lit.Elements))
+
+	for _, elementExpression := range lit.Elements {
+		element, err := i.evalExpression(elementExpression)
+		if err != nil {
+			return Value{}, err
+		}
+
+		elements = append(elements, element)
+	}
+
+	return NewArrayValue(elements, false), nil
+}
+
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {
 	object, err := i.evalExpression(expr.Object)
 	if err != nil {
@@ -669,20 +760,39 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		return Value{}, err
 	}
 
-	if object.Kind != ValueMap {
-		return Value{}, fmt.Errorf("cannot index non-map value")
-	}
+	object = resolveSpecializedValue(object)
 
-	if index.Kind != ValueString {
-		return Value{}, fmt.Errorf("map index must be a string")
-	}
+	switch object.Kind {
+	case ValueMap:
+		if index.Kind != ValueString {
+			return Value{}, fmt.Errorf("map index must be a string")
+		}
 
-	binding, ok := object.Map.Entries[index.Text]
-	if !ok {
-		return Value{}, fmt.Errorf("map has no key %q", index.Text)
-	}
+		binding, ok := object.Map.Entries[index.Text]
+		if !ok {
+			return Value{}, fmt.Errorf("map has no key %q", index.Text)
+		}
 
-	return binding.Value, nil
+		return binding.Value, nil
+
+	case ValueArray:
+		arrayIndex, err := numberToArrayIndex(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if arrayIndex < 0 || arrayIndex >= len(object.Array.Elements) {
+			return Value{}, fmt.Errorf("array index %d out of bounds", arrayIndex)
+		}
+
+		return object.Array.Elements[arrayIndex], nil
+
+	case ValueEmptyCollection:
+		return Value{}, fmt.Errorf("cannot read from empty collection before it becomes a map or array")
+
+	default:
+		return Value{}, fmt.Errorf("cannot index non-collection value")
+	}
 }
 
 func (i *Interpreter) evalIndexAssignmentStatement(stmt *IndexAssignmentStatement) (Value, error) {
@@ -696,11 +806,30 @@ func (i *Interpreter) evalIndexAssignmentStatement(stmt *IndexAssignmentStatemen
 		return Value{}, err
 	}
 
-	if object.Kind != ValueMap {
-		return Value{}, fmt.Errorf("cannot assign into non-map value")
+	object = resolveSpecializedValue(object)
+
+	value, err := i.evalExpression(stmt.Value)
+	if err != nil {
+		return Value{}, err
 	}
 
-	if object.Map.IsImmutable {
+	switch object.Kind {
+	case ValueMap:
+		return assignMapIndex(object.Map, index, value)
+
+	case ValueArray:
+		return assignArrayIndex(object.Array, index, value)
+
+	case ValueEmptyCollection:
+		return specializeEmptyCollection(object, index, value)
+
+	default:
+		return Value{}, fmt.Errorf("cannot assign into non-collection value")
+	}
+}
+
+func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
+	if m.IsImmutable {
 		return Value{}, fmt.Errorf("cannot modify immutable map")
 	}
 
@@ -708,28 +837,103 @@ func (i *Interpreter) evalIndexAssignmentStatement(stmt *IndexAssignmentStatemen
 		return Value{}, fmt.Errorf("map index must be a string")
 	}
 
-	binding, exists := object.Map.Entries[index.Text]
+	binding, exists := m.Entries[index.Text]
 	if exists && binding.IsImmutable {
 		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", index.Text)
 	}
 
-	value, err := i.evalExpression(stmt.Value)
-	if err != nil {
-		return Value{}, err
-	}
-
 	if exists {
 		binding.Value = value
-		object.Map.Entries[index.Text] = binding
+		m.Entries[index.Text] = binding
 		return value, nil
 	}
 
-	object.Map.Entries[index.Text] = Binding{
+	m.Entries[index.Text] = Binding{
 		Value:       value,
 		IsImmutable: isImmutableIdentifier(index.Text),
 	}
 
 	return value, nil
+}
+
+func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
+	if a.IsImmutable {
+		return Value{}, fmt.Errorf("cannot modify immutable array")
+	}
+
+	arrayIndex, err := numberToArrayIndex(index)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if arrayIndex < 0 {
+		return Value{}, fmt.Errorf("array index cannot be negative")
+	}
+
+	if arrayIndex > len(a.Elements) {
+		return Value{}, fmt.Errorf(
+			"array index %d is past the next append position %d",
+			arrayIndex,
+			len(a.Elements),
+		)
+	}
+
+	if arrayIndex == len(a.Elements) {
+		a.Elements = append(a.Elements, value)
+		return value, nil
+	}
+
+	a.Elements[arrayIndex] = value
+	return value, nil
+}
+
+func specializeEmptyCollection(collection Value, index Value, value Value) (Value, error) {
+	if collection.EmptyCollection == nil {
+		return Value{}, fmt.Errorf("invalid empty collection")
+	}
+
+	if collection.EmptyCollection.Specialized != nil {
+		specialized := resolveSpecializedValue(*collection.EmptyCollection.Specialized)
+
+		switch specialized.Kind {
+		case ValueMap:
+			return assignMapIndex(specialized.Map, index, value)
+
+		case ValueArray:
+			return assignArrayIndex(specialized.Array, index, value)
+
+		default:
+			return Value{}, fmt.Errorf("invalid specialized empty collection")
+		}
+	}
+
+	switch index.Kind {
+	case ValueString:
+		specialized := NewMapValue(make(map[string]Binding), false)
+		collection.EmptyCollection.Specialized = &specialized
+		return assignMapIndex(specialized.Map, index, value)
+
+	case ValueNumber:
+		specialized := NewArrayValue([]Value{}, false)
+		collection.EmptyCollection.Specialized = &specialized
+		return assignArrayIndex(specialized.Array, index, value)
+
+	default:
+		return Value{}, fmt.Errorf("empty collection can only become a map or array through string or numeric indexing")
+	}
+}
+
+func numberToArrayIndex(index Value) (int, error) {
+	if index.Kind != ValueNumber {
+		return 0, fmt.Errorf("array index must be a number")
+	}
+
+	i, accuracy := index.Number.Int64()
+	if accuracy != big.Exact {
+		return 0, fmt.Errorf("array index must be an integer")
+	}
+
+	return int(i), nil
 }
 
 func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
@@ -824,6 +1028,9 @@ func evalPrefix(operator string, right Value) (Value, error) {
 }
 
 func evalBinary(operator string, left Value, right Value) (Value, error) {
+	left = resolveSpecializedValue(left)
+	right = resolveSpecializedValue(right)
+
 	if operator == "==" || operator == "!=" {
 		equal, err := valuesEqual(left, right)
 		if err != nil {
@@ -888,6 +1095,9 @@ func evalBinary(operator string, left Value, right Value) (Value, error) {
 }
 
 func valuesEqual(left Value, right Value) (bool, error) {
+	left = resolveSpecializedValue(left)
+	right = resolveSpecializedValue(right)
+
 	if left.Kind != right.Kind {
 		return false, nil
 	}
@@ -907,6 +1117,12 @@ func valuesEqual(left Value, right Value) (bool, error) {
 
 	case ValueMap:
 		return false, fmt.Errorf("cannot compare maps")
+
+	case ValueArray:
+		return false, fmt.Errorf("cannot compare arrays")
+
+	case ValueEmptyCollection:
+		return false, fmt.Errorf("cannot compare empty collections")
 
 	case ValueFunction, ValueBuiltinFunction:
 		return false, fmt.Errorf("cannot compare functions")

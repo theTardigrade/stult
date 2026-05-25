@@ -54,6 +54,12 @@ type EmptyLiteral struct {
 
 func (e *EmptyLiteral) expressionNode() {}
 
+type EmptyCollectionLiteral struct {
+	Token Token
+}
+
+func (e *EmptyCollectionLiteral) expressionNode() {}
+
 type NumberLiteral struct {
 	Token Token
 	Value string
@@ -104,6 +110,13 @@ type MapEntry struct {
 	Key   Token // Type == TokenString
 	Value Expression
 }
+
+type ArrayLiteral struct {
+	Token    Token
+	Elements []Expression
+}
+
+func (*ArrayLiteral) expressionNode() {}
 
 type IndexExpression struct {
 	Object Expression

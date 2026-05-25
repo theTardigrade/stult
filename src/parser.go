@@ -719,11 +719,20 @@ func (p *Parser) parseBraceLiteral() Expression {
 
 	p.skipNewlines()
 
+	if p.current.Type == TokenRBrace {
+		p.advance()
+		return &EmptyCollectionLiteral{Token: openBrace}
+	}
+
 	if p.current.Type == TokenLParen {
 		return p.parseFunctionLiteral(openBrace)
 	}
 
-	return p.parseMapLiteral(openBrace)
+	if p.current.Type == TokenString && p.peek.Type == TokenColon {
+		return p.parseMapLiteral(openBrace)
+	}
+
+	return p.parseArrayLiteral(openBrace)
 }
 
 func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
@@ -906,13 +915,6 @@ func (p *Parser) validateBindingNames(parameters []Token, name string) bool {
 func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	entries := []MapEntry{}
 
-	p.skipNewlines()
-
-	if p.current.Type == TokenRBrace {
-		p.advance()
-		return &MapLiteral{Token: openBrace, Entries: entries}
-	}
-
 	for {
 		if p.current.Type != TokenString {
 			p.errorAtCurrent("expected string map key")
@@ -963,6 +965,44 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	}
 
 	return &MapLiteral{Token: openBrace, Entries: entries}
+}
+
+func (p *Parser) parseArrayLiteral(openBrace Token) Expression {
+	elements := []Expression{}
+
+	for {
+		element := p.parseExpression(precLowest)
+		if element == nil {
+			p.errorAtToken(openBrace, "expected array element")
+			return nil
+		}
+
+		elements = append(elements, element)
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
+		}
+
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(openBrace, "unterminated array literal")
+			return nil
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or '}' after array element")
+			return nil
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
+		}
+	}
+
+	return &ArrayLiteral{Token: openBrace, Elements: elements}
 }
 
 func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
