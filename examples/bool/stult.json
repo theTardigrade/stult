@@ -1,7 +1,7 @@
 {
 	"alias": {
-		"T": "STD[\"BOOL\"][\"TRUE\"]",
-		"F": "STD[\"BOOL\"][\"FALSE\"]",
+		"T": "STD[\"TYPES\"][\"BOOL\"][\"TRUE\"]",
+		"F": "STD[\"TYPES\"][\"BOOL\"][\"FALSE\"]"
 	},
 	"run": [
 		"bool.stul"
