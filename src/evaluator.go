@@ -55,6 +55,15 @@ func NewNumberValueFromString(literal string) (Value, error) {
 	return Value{Kind: ValueNumber, Number: n}, nil
 }
 
+func NewNumberValueFromInt(value int) Value {
+	n := new(big.Float).
+		SetPrec(FloatPrecision).
+		SetMode(big.ToNearestEven).
+		SetInt64(int64(value))
+
+	return Value{Kind: ValueNumber, Number: n}
+}
+
 func NewBoolValue(value bool) Value {
 	return Value{Kind: ValueBool, Bool: value}
 }
@@ -191,13 +200,7 @@ func trimDecimalZeros(text string) string {
 }
 
 func formatMap(m *Map, digits int) string {
-	keys := make([]string, 0, len(m.Entries))
-
-	for key := range m.Entries {
-		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
+	keys := sortedMapKeys(m)
 
 	parts := make([]string, 0, len(keys))
 
@@ -207,6 +210,18 @@ func formatMap(m *Map, digits int) string {
 	}
 
 	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+func sortedMapKeys(m *Map) []string {
+	keys := make([]string, 0, len(m.Entries))
+
+	for key := range m.Entries {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	return keys
 }
 
 type Binding struct {
@@ -394,6 +409,14 @@ func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Valu
 }
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
+	if len(stmt.RangeParameters) > 0 {
+		return i.evalMapRangeLoopStatement(stmt)
+	}
+
+	return i.evalWhileLoopStatement(stmt)
+}
+
+func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error) {
 	for {
 		condition, err := i.evalExpression(stmt.Condition)
 		if err != nil {
@@ -420,8 +443,62 @@ func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 	return NewBoolValue(false), nil
 }
 
+func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, error) {
+	if len(stmt.RangeParameters) != 3 {
+		return Value{}, fmt.Errorf("map range loop must have exactly three parameters")
+	}
+
+	iterable, err := i.evalExpression(stmt.Condition)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if iterable.Kind != ValueMap {
+		return Value{}, fmt.Errorf("map range loop expression must evaluate to a map")
+	}
+
+	keys := sortedMapKeys(iterable.Map)
+
+	for index, key := range keys {
+		binding := iterable.Map.Entries[key]
+
+		loopBindings := map[string]Binding{
+			stmt.RangeParameters[0].Literal: {
+				Value:       NewNumberValueFromInt(index),
+				IsImmutable: stmt.RangeParameters[0].IsImmutable,
+			},
+			stmt.RangeParameters[1].Literal: {
+				Value:       NewStringValue(key),
+				IsImmutable: stmt.RangeParameters[1].IsImmutable,
+			},
+			stmt.RangeParameters[2].Literal: {
+				Value:       binding.Value,
+				IsImmutable: stmt.RangeParameters[2].IsImmutable,
+			},
+		}
+
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			return Value{}, err
+		}
+	}
+
+	if stmt.AfterLoopBody != nil {
+		return i.evalStatementBlock(stmt.AfterLoopBody)
+	}
+
+	return NewBoolValue(false), nil
+}
+
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
+	return i.evalStatementBlockWithBindings(statements, nil)
+}
+
+func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, initialBindings map[string]Binding) (Value, error) {
 	blockEnv := NewChildEnvironment(i.Env)
+
+	for name, binding := range initialBindings {
+		blockEnv.values[name] = binding
+	}
 
 	previousEnv := i.Env
 	i.Env = blockEnv

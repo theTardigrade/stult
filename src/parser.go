@@ -135,45 +135,45 @@ func (p *Parser) parseLoopStatement() Statement {
 	p.advance() // consume second "(" and move to condition
 
 	if p.current.Type == TokenRParen {
-		p.errorAtToken(outerOpen, "loop condition cannot be empty")
+		p.errorAtToken(outerOpen, "loop expression cannot be empty")
 		return nil
 	}
 
 	condition := p.parseExpression(precLowest)
 	if condition == nil {
-		p.errorAtToken(outerOpen, "expected loop condition")
+		p.errorAtToken(outerOpen, "expected loop expression")
 		return nil
 	}
 
 	innerClose := p.current
-	if !p.expectCurrent(TokenRParen, "expected ')' after loop condition") {
+	if !p.expectCurrent(TokenRParen, "expected ')' after loop expression") {
 		return nil
 	}
 
 	p.advance() // consume inner ")"
 
 	outerClose := p.current
-	if !p.expectCurrent(TokenRParen, "expected second ')' after loop condition") {
+	if !p.expectCurrent(TokenRParen, "expected second ')' after loop expression") {
 		return nil
 	}
 
 	if !tokensTouch(innerClose, outerClose) {
-		p.errorAtToken(outerClose, "expected loop condition to close with touching '))'")
+		p.errorAtToken(outerClose, "expected loop expression to close with touching '))'")
 		return nil
 	}
 
 	p.advance() // consume outer ")"
 
-	if !p.expectCurrent(TokenLBrace, "expected '{' after loop condition") {
+	if !p.expectCurrent(TokenLBrace, "expected '{' after loop expression") {
 		return nil
 	}
 
 	if !tokensOnSameLine(outerClose, p.current) {
-		p.errorAtCurrent("expected loop block to start on the same line as the loop condition")
+		p.errorAtCurrent("expected loop block to start on the same line as the loop expression")
 		return nil
 	}
 
-	body, closeBrace, ok := p.parseStatementBlock("loop block")
+	rangeParameters, body, closeBrace, ok := p.parseLoopBodyBlock("loop block")
 	if !ok {
 		return nil
 	}
@@ -197,10 +197,173 @@ func (p *Parser) parseLoopStatement() Statement {
 	}
 
 	return &LoopStatement{
-		Condition:     condition,
-		Body:          body,
-		AfterLoopBody: afterLoopBody,
+		Condition:       condition,
+		RangeParameters: rangeParameters,
+		Body:            body,
+		AfterLoopBody:   afterLoopBody,
 	}
+}
+
+func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, bool) {
+	openBrace := p.current
+
+	if !p.expectCurrent(TokenLBrace, "expected '{' to start "+name) {
+		return nil, nil, Token{}, false
+	}
+
+	p.advance() // consume "{"
+
+	rangeParameters := []Token{}
+
+	if p.looksLikeLoopRangeParameters(openBrace) {
+		parameters, ok := p.parseLoopRangeParameters()
+		if !ok {
+			return nil, nil, Token{}, false
+		}
+
+		rangeParameters = parameters
+
+		if p.current.Type != TokenComma &&
+			p.current.Type != TokenNewline &&
+			p.current.Type != TokenRBrace &&
+			p.current.Type != TokenEOF {
+			p.errorAtCurrent("expected comma, newline, or '}' after loop range parameters")
+			return nil, nil, Token{}, false
+		}
+	}
+
+	body := []Statement{}
+
+	for {
+		p.skipSeparators()
+
+		switch p.current.Type {
+		case TokenEOF:
+			p.errorAtToken(openBrace, "unterminated "+name)
+			return nil, nil, Token{}, false
+
+		case TokenRBrace:
+			closeBrace := p.current
+			p.advance()
+			return rangeParameters, body, closeBrace, true
+		}
+
+		stmt := p.parseStatement()
+		if stmt == nil {
+			return nil, nil, Token{}, false
+		}
+
+		body = append(body, stmt)
+
+		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			p.skipSeparators()
+			continue
+		}
+
+		if p.current.Type == TokenRBrace || p.current.Type == TokenEOF {
+			continue
+		}
+
+		p.errorAtCurrent("expected comma, newline, or '}' after statement")
+		return nil, nil, Token{}, false
+	}
+}
+
+func (p *Parser) looksLikeLoopRangeParameters(openBrace Token) bool {
+	if p.current.Type != TokenLParen || !tokensOnSameLine(openBrace, p.current) {
+		return false
+	}
+
+	trial := p.cloneForLookahead()
+
+	parameters, ok := trial.parseLoopRangeParameters()
+	if !ok || len(parameters) != 3 {
+		return false
+	}
+
+	return trial.current.Type == TokenComma ||
+		trial.current.Type == TokenNewline ||
+		trial.current.Type == TokenRBrace ||
+		trial.current.Type == TokenEOF
+}
+
+func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
+	openParen := p.current
+
+	if !p.expectCurrent(TokenLParen, "expected '(' before loop range parameters") {
+		return nil, false
+	}
+
+	p.advance() // consume "("
+
+	parameters := []Token{}
+
+	p.skipNewlines()
+
+	for {
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(openParen, "unterminated loop range parameter list")
+			return nil, false
+		}
+
+		if p.current.Type == TokenRParen {
+			p.errorAtToken(openParen, "loop range parameter list cannot be empty")
+			return nil, false
+		}
+
+		if p.current.Type != TokenIdentifier {
+			p.errorAtCurrent("expected loop range parameter name")
+			return nil, false
+		}
+
+		parameters = append(parameters, p.current)
+		p.advance()
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			break
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or ')' after loop range parameter")
+			return nil, false
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRParen {
+			p.errorAtCurrent("expected loop range parameter name")
+			return nil, false
+		}
+	}
+
+	if len(parameters) != 3 {
+		p.errorAtToken(openParen, "map range loop must declare exactly three parameters: index, key, value")
+		return nil, false
+	}
+
+	seen := map[string]bool{}
+
+	for _, parameter := range parameters {
+		name := parameter.Literal
+
+		if seen[name] {
+			p.errorAtToken(parameter, "duplicate loop range parameter "+strconvQuote(name))
+			return nil, false
+		}
+
+		seen[name] = true
+	}
+
+	return parameters, true
+}
+
+func (p *Parser) cloneForLookahead() *Parser {
+	lexerCopy := *p.lexer
+	parserCopy := *p
+	parserCopy.lexer = &lexerCopy
+	parserCopy.errors = nil
+	return &parserCopy
 }
 
 func (p *Parser) finishConditionalStatement(condition Expression, closeParen Token) (Statement, bool) {
@@ -900,4 +1063,8 @@ func tokensTouch(left Token, right Token) bool {
 
 func tokensOnSameLine(left Token, right Token) bool {
 	return left.EndOfLine == right.StartOfLine
+}
+
+func strconvQuote(text string) string {
+	return fmt.Sprintf("%q", text)
 }

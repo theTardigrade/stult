@@ -40,9 +40,10 @@ type ConditionalBranch struct {
 }
 
 type LoopStatement struct {
-	Condition     Expression
-	Body          []Statement
-	AfterLoopBody []Statement
+	Condition       Expression
+	RangeParameters []Token
+	Body            []Statement
+	AfterLoopBody   []Statement
 }
 
 func (s *LoopStatement) statementNode() {}
