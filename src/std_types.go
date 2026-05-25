@@ -7,8 +7,9 @@ import (
 
 func NewStdTypesMap() Value {
 	entries := map[string]Binding{
-		"ARRAY": NewImmutableBinding(NewStdTypesArrayMap()),
-		"SIZE":  NewImmutableBinding(NewBuiltinFunctionValue(stdTypesSize)),
+		"ARRAY":  NewImmutableBinding(NewStdTypesArrayMap()),
+		"NUMBER": NewImmutableBinding(NewStdTypesNumberMap()),
+		"SIZE":   NewImmutableBinding(NewBuiltinFunctionValue(stdTypesSize)),
 	}
 
 	return NewMapValue(entries, true)
