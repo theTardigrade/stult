@@ -48,6 +48,12 @@ type LoopStatement struct {
 
 func (s *LoopStatement) statementNode() {}
 
+type EmptyLiteral struct {
+	Token Token
+}
+
+func (e *EmptyLiteral) expressionNode() {}
+
 type NumberLiteral struct {
 	Token Token
 	Value string

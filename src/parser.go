@@ -132,7 +132,7 @@ func (p *Parser) parseLoopStatement() Statement {
 	outerOpen := p.current
 
 	p.advance() // consume first "(" and move to second "("
-	p.advance() // consume second "(" and move to condition
+	p.advance() // consume second "(" and move to loop expression
 
 	if p.current.Type == TokenRParen {
 		p.errorAtToken(outerOpen, "loop expression cannot be empty")
@@ -581,12 +581,19 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		p.advance()
 
 	case TokenIdentifier:
-		left = &IdentifierExpression{
-			Token:       p.current,
-			Name:        p.current.Literal,
-			IsImmutable: p.current.IsImmutable,
+		if p.current.Literal == "_" {
+			left = &EmptyLiteral{
+				Token: p.current,
+			}
+			p.advance()
+		} else {
+			left = &IdentifierExpression{
+				Token:       p.current,
+				Name:        p.current.Literal,
+				IsImmutable: p.current.IsImmutable,
+			}
+			p.advance()
 		}
-		p.advance()
 
 	case TokenAt:
 		outer, ok := p.parseOuterIdentifierExpression()
@@ -640,6 +647,11 @@ func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
 
 	if p.current.Type != TokenIdentifier {
 		p.errorAtToken(at, "expected identifier after '@'")
+		return nil, false
+	}
+
+	if p.current.Literal == "_" {
+		p.errorAtToken(p.current, "'_' is an empty literal, not an outer binding")
 		return nil, false
 	}
 

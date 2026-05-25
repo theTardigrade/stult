@@ -14,7 +14,8 @@ const DefaultDisplayDigits = 20
 type ValueKind int
 
 const (
-	ValueNumber ValueKind = iota
+	ValueEmpty ValueKind = iota
+	ValueNumber
 	ValueBool
 	ValueString
 	ValueMap
@@ -44,6 +45,10 @@ type Value struct {
 	Map             *Map
 	Function        *Function
 	BuiltinFunction BuiltinFunction
+}
+
+func NewEmptyValue() Value {
+	return Value{Kind: ValueEmpty}
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -118,6 +123,9 @@ func (v Value) PrintString() string {
 
 func (v Value) Format(digits int) string {
 	switch v.Kind {
+	case ValueEmpty:
+		return "_"
+
 	case ValueNumber:
 		return formatNumber(v.Number, digits)
 
@@ -146,6 +154,9 @@ func (v Value) Format(digits int) string {
 
 func (v Value) DebugString() string {
 	switch v.Kind {
+	case ValueEmpty:
+		return "_"
+
 	case ValueNumber:
 		return v.Number.Text('g', -1)
 
@@ -405,7 +416,7 @@ func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Valu
 		return i.evalStatementBlock(stmt.ElseBody)
 	}
 
-	return NewBoolValue(false), nil
+	return NewEmptyValue(), nil
 }
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
@@ -440,7 +451,7 @@ func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error)
 		return i.evalStatementBlock(stmt.AfterLoopBody)
 	}
 
-	return NewBoolValue(false), nil
+	return NewEmptyValue(), nil
 }
 
 func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, error) {
@@ -486,7 +497,7 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, err
 		return i.evalStatementBlock(stmt.AfterLoopBody)
 	}
 
-	return NewBoolValue(false), nil
+	return NewEmptyValue(), nil
 }
 
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
@@ -506,7 +517,7 @@ func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, ini
 		i.Env = previousEnv
 	}()
 
-	var result Value = NewBoolValue(false)
+	result := NewEmptyValue()
 
 	for _, stmt := range statements {
 		value, err := i.evalStatement(stmt)
@@ -522,6 +533,9 @@ func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, ini
 
 func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	switch e := expr.(type) {
+	case *EmptyLiteral:
+		return NewEmptyValue(), nil
+
 	case *NumberLiteral:
 		return NewNumberValueFromString(e.Value)
 
@@ -859,6 +873,9 @@ func valuesEqual(left Value, right Value) (bool, error) {
 	}
 
 	switch left.Kind {
+	case ValueEmpty:
+		return true, nil
+
 	case ValueNumber:
 		return left.Number.Cmp(right.Number) == 0, nil
 

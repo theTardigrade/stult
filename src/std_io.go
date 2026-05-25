@@ -16,15 +16,11 @@ func NewStdIOMap() Value {
 }
 
 func builtinStdIOPrint(_ *Interpreter, args []Value) (Value, error) {
-	for index, arg := range args {
-		if index > 0 {
-			fmt.Print(" ")
-		}
-
+	for _, arg := range args {
 		fmt.Print(arg.PrintString())
 	}
 
 	fmt.Println()
 
-	return NewBoolValue(true), nil
+	return NewEmptyValue(), nil
 }

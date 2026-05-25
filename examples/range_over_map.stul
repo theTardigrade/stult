@@ -16,5 +16,6 @@ number_of_scores = 0
 }
 
 AVERAGE_SCORE = sum_of_scores / number_of_scores
+AVERAGE_PERCENTAGE = AVERAGE_SCORE * 100
 
-PRINT("The average score at the biennial shotput championship was:", AVERAGE_SCORE)
+PRINT("The average score at the biennial shotput championship was ", AVERAGE_PERCENTAGE, "%.")
