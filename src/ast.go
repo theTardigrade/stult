@@ -57,12 +57,6 @@ type BinaryExpression struct {
 
 func (e *BinaryExpression) expressionNode() {}
 
-type GroupedExpression struct {
-	Expression Expression
-}
-
-func (e *GroupedExpression) expressionNode() {}
-
 type StringLiteral struct {
 	Token Token
 	Value string
