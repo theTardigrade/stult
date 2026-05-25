@@ -43,11 +43,13 @@ const (
 )
 
 type Token struct {
-	Type        TokenType
-	Literal     string
-	Line        int
-	Column      int
-	IsImmutable bool // true for all-uppercase identifiers such as PI or MAX_SIZE
+	Type          TokenType
+	Literal       string
+	StartOfLine   int
+	StartOfColumn int
+	EndOfLine     int
+	EndOfColumn   int
+	IsImmutable   bool // true for all-uppercase identifiers such as PI or MAX_SIZE
 }
 
 type Lexer struct {
@@ -83,128 +85,157 @@ func (l *Lexer) NextToken() Token {
 
 	switch l.ch {
 	case 0:
-		return Token{Type: TokenEOF, Literal: "", Line: line, Column: col}
+		return Token{
+			Type:          TokenEOF,
+			Literal:       "",
+			StartOfLine:   line,
+			StartOfColumn: col,
+			EndOfLine:     line,
+			EndOfColumn:   col,
+		}
 
 	case '\n':
 		l.readChar()
-		return Token{Type: TokenNewline, Literal: "\n", Line: line, Column: col}
+		return l.makeToken(TokenNewline, "\n", line, col)
 
 	case '=':
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return Token{Type: TokenEqual, Literal: "==", Line: line, Column: col}
+			return l.makeToken(TokenEqual, "==", line, col)
 		}
+
 		l.readChar()
-		return Token{Type: TokenAssign, Literal: "=", Line: line, Column: col}
+		return l.makeToken(TokenAssign, "=", line, col)
 
 	case '!':
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return Token{Type: TokenNotEqual, Literal: "!=", Line: line, Column: col}
+			return l.makeToken(TokenNotEqual, "!=", line, col)
 		}
+
 		literal := string(l.ch)
 		l.readChar()
-		return Token{Type: TokenIllegal, Literal: literal, Line: line, Column: col}
+		return l.makeToken(TokenIllegal, literal, line, col)
 
 	case '<':
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return Token{Type: TokenLessEqual, Literal: "<=", Line: line, Column: col}
+			return l.makeToken(TokenLessEqual, "<=", line, col)
 		}
+
 		l.readChar()
-		return Token{Type: TokenLess, Literal: "<", Line: line, Column: col}
+		return l.makeToken(TokenLess, "<", line, col)
 
 	case '>':
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()
-			return Token{Type: TokenGreaterEqual, Literal: ">=", Line: line, Column: col}
+			return l.makeToken(TokenGreaterEqual, ">=", line, col)
 		}
+
 		l.readChar()
-		return Token{Type: TokenGreater, Literal: ">", Line: line, Column: col}
+		return l.makeToken(TokenGreater, ">", line, col)
 
 	case ',':
 		l.readChar()
-		return Token{Type: TokenComma, Literal: ",", Line: line, Column: col}
+		return l.makeToken(TokenComma, ",", line, col)
+
+	case ':':
+		l.readChar()
+		return l.makeToken(TokenColon, ":", line, col)
 
 	case '+':
 		l.readChar()
-		return Token{Type: TokenPlus, Literal: "+", Line: line, Column: col}
+		return l.makeToken(TokenPlus, "+", line, col)
 
 	case '-':
 		l.readChar()
-		return Token{Type: TokenMinus, Literal: "-", Line: line, Column: col}
+		return l.makeToken(TokenMinus, "-", line, col)
 
 	case '*':
 		l.readChar()
-		return Token{Type: TokenStar, Literal: "*", Line: line, Column: col}
+		return l.makeToken(TokenStar, "*", line, col)
 
 	case '/':
 		l.readChar()
-		return Token{Type: TokenSlash, Literal: "/", Line: line, Column: col}
+		return l.makeToken(TokenSlash, "/", line, col)
 
 	case '(':
 		l.readChar()
-		return Token{Type: TokenLParen, Literal: "(", Line: line, Column: col}
+		return l.makeToken(TokenLParen, "(", line, col)
 
 	case ')':
 		l.readChar()
-		return Token{Type: TokenRParen, Literal: ")", Line: line, Column: col}
+		return l.makeToken(TokenRParen, ")", line, col)
+
+	case '[':
+		l.readChar()
+		return l.makeToken(TokenLBracket, "[", line, col)
+
+	case ']':
+		l.readChar()
+		return l.makeToken(TokenRBracket, "]", line, col)
 
 	case '{':
 		l.readChar()
-		return Token{Type: TokenLBrace, Literal: "{", Line: line, Column: col}
+		return l.makeToken(TokenLBrace, "{", line, col)
 
 	case '}':
 		l.readChar()
-		return Token{Type: TokenRBrace, Literal: "}", Line: line, Column: col}
+		return l.makeToken(TokenRBrace, "}", line, col)
 
 	case '"':
 		literal, ok := l.readString()
 		if !ok {
-			return Token{Type: TokenIllegal, Literal: literal, Line: line, Column: col}
+			return l.makeToken(TokenIllegal, literal, line, col)
 		}
 
-		return Token{Type: TokenString, Literal: literal, Line: line, Column: col}
-
-	case ':':
-		l.readChar()
-		return Token{Type: TokenColon, Literal: ":", Line: line, Column: col}
-
-	case '[':
-		l.readChar()
-		return Token{Type: TokenLBracket, Literal: "[", Line: line, Column: col}
-
-	case ']':
-		l.readChar()
-		return Token{Type: TokenRBracket, Literal: "]", Line: line, Column: col}
+		return l.makeToken(TokenString, literal, line, col)
 	}
 
 	if isIdentStart(l.ch) {
 		literal := l.readIdentifier()
-		return Token{
-			Type:        TokenIdentifier,
-			Literal:     literal,
-			Line:        line,
-			Column:      col,
-			IsImmutable: isImmutableIdentifier(literal),
-		}
+		return l.makeIdentifierToken(literal, line, col)
 	}
 
 	if unicode.IsDigit(l.ch) || (l.ch == '.' && unicode.IsDigit(l.peekChar())) {
 		literal, ok := l.readNumber()
 		if !ok {
-			return Token{Type: TokenIllegal, Literal: literal, Line: line, Column: col}
+			return l.makeToken(TokenIllegal, literal, line, col)
 		}
-		return Token{Type: TokenNumber, Literal: literal, Line: line, Column: col}
+
+		return l.makeToken(TokenNumber, literal, line, col)
 	}
 
 	literal := string(l.ch)
 	l.readChar()
-	return Token{Type: TokenIllegal, Literal: literal, Line: line, Column: col}
+	return l.makeToken(TokenIllegal, literal, line, col)
+}
+
+func (l *Lexer) makeToken(tokenType TokenType, literal string, line int, column int) Token {
+	return Token{
+		Type:          tokenType,
+		Literal:       literal,
+		StartOfLine:   line,
+		StartOfColumn: column,
+		EndOfLine:     l.line,
+		EndOfColumn:   l.col,
+	}
+}
+
+func (l *Lexer) makeIdentifierToken(literal string, line int, column int) Token {
+	return Token{
+		Type:          TokenIdentifier,
+		Literal:       literal,
+		StartOfLine:   line,
+		StartOfColumn: column,
+		EndOfLine:     l.line,
+		EndOfColumn:   l.col,
+		IsImmutable:   isImmutableIdentifier(literal),
+	}
 }
 
 func (l *Lexer) skipIgnored() (Token, bool) {
@@ -226,6 +257,7 @@ func (l *Lexer) skipIgnored() (Token, bool) {
 			for l.ch != 0 && l.ch != '\n' {
 				l.readChar()
 			}
+
 			// Do not consume the newline. It is still a statement separator.
 			continue
 		}
@@ -237,7 +269,7 @@ func (l *Lexer) skipIgnored() (Token, bool) {
 		}
 
 		if l.ch == 0 {
-			return Token{Type: TokenIllegal, Literal: "unterminated inline comment", Line: line, Column: col}, true
+			return l.makeToken(TokenIllegal, "unterminated inline comment", line, col), true
 		}
 
 		// Consume closing | and continue scanning.
@@ -247,9 +279,11 @@ func (l *Lexer) skipIgnored() (Token, bool) {
 
 func (l *Lexer) readIdentifier() string {
 	start := l.pos - 1
+
 	for isIdentPart(l.ch) {
 		l.readChar()
 	}
+
 	return string(l.input[start:l.literalEnd()])
 }
 
@@ -262,6 +296,7 @@ func (l *Lexer) readNumber() (string, bool) {
 
 	if l.ch == '.' {
 		l.readChar()
+
 		for unicode.IsDigit(l.ch) {
 			l.readChar()
 		}
@@ -284,64 +319,6 @@ func (l *Lexer) readNumber() (string, bool) {
 	}
 
 	return string(l.input[start:l.literalEnd()]), true
-}
-
-func (l *Lexer) literalEnd() int {
-	if l.ch == 0 {
-		return l.pos
-	}
-	return l.pos - 1
-}
-
-func (l *Lexer) readChar() {
-	if l.pos >= len(l.input) {
-		l.ch = 0
-		l.line = l.nextLine
-		l.col = l.nextCol
-		return
-	}
-
-	l.ch = l.input[l.pos]
-	l.line = l.nextLine
-	l.col = l.nextCol
-	l.pos++
-
-	if l.ch == '\n' {
-		l.nextLine++
-		l.nextCol = 1
-	} else {
-		l.nextCol++
-	}
-}
-
-func (l *Lexer) peekChar() rune {
-	if l.pos >= len(l.input) {
-		return 0
-	}
-	return l.input[l.pos]
-}
-
-func isIdentStart(ch rune) bool {
-	return ch == '_' || unicode.IsLetter(ch)
-}
-
-func isIdentPart(ch rune) bool {
-	return ch == '_' || unicode.IsLetter(ch) || unicode.IsDigit(ch)
-}
-
-func isImmutableIdentifier(name string) bool {
-	hasUpper := false
-
-	for _, ch := range name {
-		if unicode.IsLower(ch) {
-			return false
-		}
-		if unicode.IsUpper(ch) {
-			hasUpper = true
-		}
-	}
-
-	return hasUpper
 }
 
 func (l *Lexer) readString() (string, bool) {
@@ -389,4 +366,65 @@ func (l *Lexer) readString() (string, bool) {
 	l.readChar()
 
 	return out.String(), true
+}
+
+func (l *Lexer) literalEnd() int {
+	if l.ch == 0 {
+		return l.pos
+	}
+
+	return l.pos - 1
+}
+
+func (l *Lexer) readChar() {
+	if l.pos >= len(l.input) {
+		l.ch = 0
+		l.line = l.nextLine
+		l.col = l.nextCol
+		return
+	}
+
+	l.ch = l.input[l.pos]
+	l.line = l.nextLine
+	l.col = l.nextCol
+	l.pos++
+
+	if l.ch == '\n' {
+		l.nextLine++
+		l.nextCol = 1
+	} else {
+		l.nextCol++
+	}
+}
+
+func (l *Lexer) peekChar() rune {
+	if l.pos >= len(l.input) {
+		return 0
+	}
+
+	return l.input[l.pos]
+}
+
+func isIdentStart(ch rune) bool {
+	return ch == '_' || unicode.IsLetter(ch)
+}
+
+func isIdentPart(ch rune) bool {
+	return ch == '_' || unicode.IsLetter(ch) || unicode.IsDigit(ch)
+}
+
+func isImmutableIdentifier(name string) bool {
+	hasUpper := false
+
+	for _, ch := range name {
+		if unicode.IsLower(ch) {
+			return false
+		}
+
+		if unicode.IsUpper(ch) {
+			hasUpper = true
+		}
+	}
+
+	return hasUpper
 }

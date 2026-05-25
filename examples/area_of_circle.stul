@@ -1,0 +1,11 @@
+PRINT = STD["IO"]["PRINT"]
+PI = STD["MATH"]["PI"]
+
+square = { (x) (x * x) }
+
+circle = {
+	"radius": 10
+	"area": { () R = circle["radius"] (PI * square(R)) }
+}
+
+PRINT("Double the area:", circle["area"]() * 2)

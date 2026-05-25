@@ -5,8 +5,9 @@ import "fmt"
 type Parser struct {
 	lexer *Lexer
 
-	current Token
-	peek    Token
+	previous Token
+	current  Token
+	peek     Token
 
 	errors []string
 }
@@ -41,7 +42,7 @@ func (p *Parser) ParseProgram() *Program {
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
 			p.skipSeparators()
-		} else if p.current.Type != TokenEOF && p.current.Type != TokenRBrace {
+		} else if p.current.Type != TokenEOF {
 			p.errorAtCurrent("expected comma, newline, or end of file after statement")
 			p.synchronize()
 		}
@@ -60,11 +61,12 @@ func (p *Parser) parseStatement() Statement {
 		return &ExpressionStatement{Expression: target}
 	}
 
+	assignToken := p.current
 	p.advance() // consume "="
 
 	value := p.parseExpression(precLowest)
 	if value == nil {
-		p.errorAtCurrent("expected expression after assignment")
+		p.errorAtToken(assignToken, "expected expression after assignment")
 		return nil
 	}
 
@@ -83,18 +85,9 @@ func (p *Parser) parseStatement() Statement {
 		}
 
 	default:
-		p.errorAtCurrent("invalid assignment target")
+		p.errorAtToken(assignToken, "invalid assignment target")
 		return nil
 	}
-}
-
-func (p *Parser) parseExpressionStatement() Statement {
-	expr := p.parseExpression(precLowest)
-	if expr == nil {
-		return nil
-	}
-
-	return &ExpressionStatement{Expression: expr}
 }
 
 const (
@@ -179,7 +172,7 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		left = inner
 
 	case TokenLBrace:
-		left = p.parseMapLiteral()
+		left = p.parseBraceLiteral()
 		if left == nil {
 			return nil
 		}
@@ -197,6 +190,16 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 			}
 
 			left = index
+			continue
+		}
+
+		if p.current.Type == TokenLParen && tokensTouch(p.previous, p.current) {
+			call, ok := p.parseCallExpression(left)
+			if !ok {
+				return nil
+			}
+
+			left = call
 			continue
 		}
 
@@ -224,13 +227,184 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	return left
 }
 
-func (p *Parser) parseMapLiteral() Expression {
+func (p *Parser) parseBraceLiteral() Expression {
 	openBrace := p.current
 	p.advance() // consume "{"
 
+	p.skipNewlines()
+
+	if p.current.Type == TokenLParen {
+		return p.parseFunctionLiteral(openBrace)
+	}
+
+	return p.parseMapLiteral(openBrace)
+}
+
+func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
+	parameters, ok := p.parseFunctionParameters()
+	if !ok {
+		return nil
+	}
+
+	body := []Statement{}
+
+	for {
+		p.skipSeparators()
+
+		switch p.current.Type {
+		case TokenEOF:
+			p.errorAtToken(openBrace, "unterminated function literal")
+			return nil
+
+		case TokenRBrace:
+			p.errorAtCurrent("expected return list before '}'")
+			return nil
+
+		case TokenLParen:
+			returns, ok := p.parseReturnList()
+			if !ok {
+				return nil
+			}
+
+			if len(returns) != 1 {
+				p.errorAtCurrent("functions must return exactly one value for now")
+				return nil
+			}
+
+			p.skipSeparators()
+
+			if !p.expectCurrent(TokenRBrace, "expected '}' after function literal") {
+				return nil
+			}
+
+			p.advance()
+
+			return &FunctionLiteral{
+				Token:      openBrace,
+				Parameters: parameters,
+				Body:       body,
+				Returns:    returns,
+			}
+
+		default:
+			stmt := p.parseStatement()
+			if stmt != nil {
+				body = append(body, stmt)
+			}
+
+			if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+				p.skipSeparators()
+				continue
+			}
+
+			if p.current.Type == TokenLParen || p.current.Type == TokenRBrace || p.current.Type == TokenEOF {
+				continue
+			}
+
+			p.errorAtCurrent("expected comma, newline, return list, or '}' after function statement")
+			return nil
+		}
+	}
+}
+
+func (p *Parser) parseFunctionParameters() ([]Token, bool) {
+	openParen := p.current
+	p.advance() // consume "("
+
+	parameters := []Token{}
+
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.advance()
+		return parameters, true
+	}
+
+	for {
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(openParen, "unterminated parameter list")
+			return nil, false
+		}
+
+		if p.current.Type != TokenIdentifier {
+			p.errorAtCurrent("expected parameter name")
+			return nil, false
+		}
+
+		parameters = append(parameters, p.current)
+		p.advance()
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			return parameters, true
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or ')' after parameter")
+			return nil, false
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			return parameters, true
+		}
+	}
+}
+
+func (p *Parser) parseReturnList() ([]Expression, bool) {
+	openParen := p.current
+	p.advance() // consume "("
+
+	returns := []Expression{}
+
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.errorAtToken(openParen, "return list must contain exactly one expression")
+		return nil, false
+	}
+
+	for {
+		expr := p.parseExpression(precLowest)
+		if expr == nil {
+			p.errorAtCurrent("expected return expression")
+			return nil, false
+		}
+
+		returns = append(returns, expr)
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			break
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or ')' after return expression")
+			return nil, false
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			break
+		}
+	}
+
+	if len(returns) != 1 {
+		p.errorAtToken(openParen, "multiple return values are not supported yet")
+		return nil, false
+	}
+
+	return returns, true
+}
+
+func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	entries := []MapEntry{}
 
-	p.skipSeparators()
+	p.skipNewlines()
 
 	if p.current.Type == TokenRBrace {
 		p.advance()
@@ -263,10 +437,6 @@ func (p *Parser) parseMapLiteral() Expression {
 			Value: value,
 		})
 
-		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
-			p.skipSeparators()
-		}
-
 		if p.current.Type == TokenRBrace {
 			p.advance()
 			break
@@ -277,9 +447,16 @@ func (p *Parser) parseMapLiteral() Expression {
 			return nil
 		}
 
-		if p.current.Type != TokenString {
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
 			p.errorAtCurrent("expected comma, newline, or '}' after map entry")
 			return nil
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
 		}
 	}
 
@@ -289,11 +466,15 @@ func (p *Parser) parseMapLiteral() Expression {
 func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
 	p.advance() // consume "["
 
+	p.skipNewlines()
+
 	index := p.parseExpression(precLowest)
 	if index == nil {
 		p.errorAtCurrent("expected index expression")
 		return nil, false
 	}
+
+	p.skipNewlines()
 
 	if !p.expectCurrent(TokenRBracket, "expected ']' after index expression") {
 		return nil, false
@@ -307,8 +488,62 @@ func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
 	}, true
 }
 
+func (p *Parser) parseCallExpression(callee Expression) (Expression, bool) {
+	p.advance() // consume "("
+
+	args := []Expression{}
+
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.advance()
+		return &CallExpression{
+			Callee:    callee,
+			Arguments: args,
+		}, true
+	}
+
+	for {
+		arg := p.parseExpression(precLowest)
+		if arg == nil {
+			p.errorAtCurrent("expected function argument")
+			return nil, false
+		}
+
+		args = append(args, arg)
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			break
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or ')' after function argument")
+			return nil, false
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRParen {
+			p.advance()
+			break
+		}
+	}
+
+	return &CallExpression{
+		Callee:    callee,
+		Arguments: args,
+	}, true
+}
+
 func (p *Parser) skipSeparators() {
 	for p.current.Type == TokenNewline || p.current.Type == TokenComma {
+		p.advance()
+	}
+}
+
+func (p *Parser) skipNewlines() {
+	for p.current.Type == TokenNewline {
 		p.advance()
 	}
 }
@@ -322,6 +557,7 @@ func (p *Parser) synchronize() {
 }
 
 func (p *Parser) advance() {
+	p.previous = p.current
 	p.current = p.peek
 	p.peek = p.lexer.NextToken()
 }
@@ -344,11 +580,15 @@ func (p *Parser) errorAtToken(tok Token, message string) {
 		p.errors,
 		fmt.Sprintf(
 			"line %d, column %d: %s, got %s %q",
-			tok.Line,
-			tok.Column,
+			tok.StartOfLine,
+			tok.StartOfColumn,
 			message,
 			tok.Type,
 			tok.Literal,
 		),
 	)
+}
+
+func tokensTouch(left Token, right Token) bool {
+	return left.EndOfLine == right.StartOfLine && left.EndOfColumn == right.StartOfColumn
 }

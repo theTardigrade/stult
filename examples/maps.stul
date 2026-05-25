@@ -1,14 +1,13 @@
-THIS_IS_AN_IMMUTABLE_MAP = {
+PRINT = STD["IO"]["PRINT"]
+
+person = {
     "NAME": "Henry"
     "age": 66
 }
 
-person_name = THIS_IS_AN_IMMUTABLE_MAP["NAME"]
-person_age = THIS_IS_AN_IMMUTABLE_MAP["age"]
+PRINT("Name:", person["NAME"])
+PRINT("Age before:", person["age"])
 
-another_map = { "x": 10, "y": 20 }
+person["age"] = 21
 
-x_value = another_map["x"]
-y_value = another_map["y"]
-
-THIS_IS_AN_IMMUTABLE_MAP["age"] = "44"
+PRINT("Age after:", person["age"])

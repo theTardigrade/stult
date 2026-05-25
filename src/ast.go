@@ -95,3 +95,19 @@ type IndexAssignmentStatement struct {
 }
 
 func (*IndexAssignmentStatement) statementNode() {}
+
+type FunctionLiteral struct {
+	Token      Token
+	Parameters []Token
+	Body       []Statement
+	Returns    []Expression
+}
+
+func (*FunctionLiteral) expressionNode() {}
+
+type CallExpression struct {
+	Callee    Expression
+	Arguments []Expression
+}
+
+func (*CallExpression) expressionNode() {}
