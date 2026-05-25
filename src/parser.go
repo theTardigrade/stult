@@ -184,6 +184,11 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 
 	for {
 		if p.current.Type == TokenLBracket {
+			if !tokensTouch(p.previous, p.current) {
+				p.errorAtCurrent("expected '[' to touch indexed expression")
+				return nil
+			}
+
 			index, ok := p.parseIndexExpression(left)
 			if !ok {
 				return nil

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -63,12 +64,11 @@ func NewStringValue(value string) Value {
 	return Value{Kind: ValueString, Text: value}
 }
 
-func NewMapValue(entries map[string]Binding, order []string, isImmutable bool) Value {
+func NewMapValue(entries map[string]Binding, isImmutable bool) Value {
 	return Value{
 		Kind: ValueMap,
 		Map: &Map{
 			Entries:     entries,
-			Order:       order,
 			IsImmutable: isImmutable,
 		},
 	}
@@ -185,9 +185,17 @@ func trimDecimalZeros(text string) string {
 }
 
 func formatMap(m *Map, digits int) string {
-	parts := make([]string, 0, len(m.Order))
+	keys := make([]string, 0, len(m.Entries))
 
-	for _, key := range m.Order {
+	for key := range m.Entries {
+		keys = append(keys, key)
+	}
+
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+
+	for _, key := range keys {
 		binding := m.Entries[key]
 		parts = append(parts, strconv.Quote(key)+": "+binding.Value.Format(digits))
 	}
@@ -376,7 +384,6 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 	entries := make(map[string]Binding)
-	order := []string{}
 
 	for _, entry := range lit.Entries {
 		key := entry.Key.Literal
@@ -399,10 +406,9 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 			Value:       value,
 			IsImmutable: isImmutableIdentifier(key),
 		}
-		order = append(order, key)
 	}
 
-	return NewMapValue(entries, order, false), nil
+	return NewMapValue(entries, false), nil
 }
 
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {
@@ -475,7 +481,6 @@ func (i *Interpreter) evalIndexAssignmentStatement(stmt *IndexAssignmentStatemen
 		Value:       value,
 		IsImmutable: isImmutableIdentifier(index.Text),
 	}
-	object.Map.Order = append(object.Map.Order, index.Text)
 
 	return value, nil
 }

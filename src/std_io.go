@@ -1,6 +1,8 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func NewStdIOMap() Value {
 	entries := map[string]Binding{
@@ -10,9 +12,7 @@ func NewStdIOMap() Value {
 		},
 	}
 
-	order := []string{"PRINT"}
-
-	return NewMapValue(entries, order, true)
+	return NewMapValue(entries, true)
 }
 
 func builtinStdIOPrint(_ *Interpreter, args []Value) (Value, error) {

@@ -1,6 +1,9 @@
 package main
 
-import "math/big"
+import (
+	"fmt"
+	"math/big"
+)
 
 func NewStdMathMap() Value {
 	entries := map[string]Binding{
@@ -8,11 +11,17 @@ func NewStdMathMap() Value {
 			Value:       calculatePiValue(FloatPrecision),
 			IsImmutable: true,
 		},
+		"SQUARE": {
+			Value:       NewBuiltinFunctionValue(builtinStdMathSquare),
+			IsImmutable: true,
+		},
+		"CUBE": {
+			Value:       NewBuiltinFunctionValue(builtinStdMathCube),
+			IsImmutable: true,
+		},
 	}
 
-	order := []string{"PI"}
-
-	return NewMapValue(entries, order, true)
+	return NewMapValue(entries, true)
 }
 
 func calculatePiValue(precision uint) Value {
@@ -102,4 +111,41 @@ func factorial(n int) *big.Int {
 	}
 
 	return result
+}
+
+func builtinStdMathSquare(_ *Interpreter, args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Value{}, fmt.Errorf("MATH.SQUARE expected 1 argument")
+	}
+
+	value := args[0]
+
+	if value.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("MATH.SQUARE expected a number")
+	}
+
+	out := newFloat()
+
+	out.Mul(value.Number, value.Number)
+
+	return Value{Kind: ValueNumber, Number: out}, nil
+}
+
+func builtinStdMathCube(_ *Interpreter, args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Value{}, fmt.Errorf("MATH.CUBE expected 1 argument")
+	}
+
+	value := args[0]
+
+	if value.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("MATH.CUBE expected a number")
+	}
+
+	out := newFloat()
+
+	out.Mul(value.Number, value.Number)
+	out.Mul(out, value.Number)
+
+	return Value{Kind: ValueNumber, Number: out}, nil
 }

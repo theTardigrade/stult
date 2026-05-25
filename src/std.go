@@ -12,7 +12,5 @@ func NewStdMap() Value {
 		},
 	}
 
-	order := []string{"IO", "MATH"}
-
-	return NewMapValue(entries, order, true)
+	return NewMapValue(entries, true)
 }
