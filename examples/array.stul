@@ -24,4 +24,4 @@ A(empty_collection, "example text", "and some more example text")
 
 PRINT(empty_collection)
 
-PRINT(STD["TYPES"]["SIZE"](multiline_array))
+PRINT(STD["TYPES"]["COLLECTION"]["SIZE"](multiline_array))
