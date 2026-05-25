@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const expectedFileExtension = ".stul"
+const expectedFileExtension = ".stult"
 
 func main() {
 	if err := run(); err != nil {
