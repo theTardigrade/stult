@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-const FloatPrecision uint = 1024
-const DefaultDisplayDigits = 20
+const FloatPrecision uint = 2048
+const DefaultFractionDigits = 32
 
 type ValueKind int
 
@@ -139,7 +139,7 @@ func CloneNumber(x *big.Float) *big.Float {
 }
 
 func (v Value) String() string {
-	return v.Format(DefaultDisplayDigits)
+	return v.Format(DefaultFractionDigits)
 }
 
 func (v Value) PrintString() string {
@@ -153,7 +153,7 @@ func (v Value) PrintString() string {
 	}
 }
 
-func (v Value) Format(digits int) string {
+func (v Value) Format(fractionDigits int) string {
 	v = resolveSpecializedValue(v)
 
 	switch v.Kind {
@@ -164,7 +164,7 @@ func (v Value) Format(digits int) string {
 		return "{}"
 
 	case ValueNumber:
-		return formatNumber(v.Number, digits)
+		return formatNumber(v.Number, fractionDigits)
 
 	case ValueBool:
 		if v.Bool {
@@ -176,10 +176,10 @@ func (v Value) Format(digits int) string {
 		return strconv.Quote(v.Text)
 
 	case ValueMap:
-		return formatMap(v.Map, digits)
+		return formatMap(v.Map, fractionDigits)
 
 	case ValueArray:
-		return formatArray(v.Array, digits)
+		return formatArray(v.Array, fractionDigits)
 
 	case ValueBuiltinFunction:
 		return "<builtin function>"
@@ -203,7 +203,7 @@ func (v Value) DebugString() string {
 		return "{}"
 
 	case ValueNumber:
-		return v.Number.Text('g', -1)
+		return formatNumber(v.Number, DefaultFractionDigits)
 
 	case ValueBool:
 		return v.String()
@@ -212,10 +212,10 @@ func (v Value) DebugString() string {
 		return strconv.Quote(v.Text)
 
 	case ValueMap:
-		return formatMap(v.Map, DefaultDisplayDigits)
+		return formatMap(v.Map, DefaultFractionDigits)
 
 	case ValueArray:
-		return formatArray(v.Array, DefaultDisplayDigits)
+		return formatArray(v.Array, DefaultFractionDigits)
 
 	case ValueFunction:
 		return "<function>"
@@ -238,17 +238,12 @@ func resolveSpecializedValue(value Value) Value {
 	return value
 }
 
-func formatNumber(x *big.Float, digits int) string {
-	if digits <= 0 {
-		digits = DefaultDisplayDigits
+func formatNumber(x *big.Float, fractionDigits int) string {
+	if fractionDigits < 0 {
+		fractionDigits = DefaultFractionDigits
 	}
 
-	text := x.Text('g', digits)
-
-	if idx := strings.IndexAny(text, "eE"); idx >= 0 {
-		mantissa := trimDecimalZeros(text[:idx])
-		return mantissa + text[idx:]
-	}
+	text := x.Text('f', fractionDigits)
 
 	return trimDecimalZeros(text)
 }
@@ -268,14 +263,14 @@ func trimDecimalZeros(text string) string {
 	return text
 }
 
-func formatMap(m *Map, digits int) string {
+func formatMap(m *Map, fractionDigits int) string {
 	keys := sortedMapKeys(m)
 
 	parts := make([]string, 0, len(keys))
 
 	for _, key := range keys {
 		binding := m.Entries[key]
-		parts = append(parts, strconv.Quote(key)+": "+binding.Value.Format(digits))
+		parts = append(parts, strconv.Quote(key)+": "+binding.Value.Format(fractionDigits))
 	}
 
 	return "{" + strings.Join(parts, ", ") + "}"
@@ -293,11 +288,11 @@ func sortedMapKeys(m *Map) []string {
 	return keys
 }
 
-func formatArray(a *Array, digits int) string {
+func formatArray(a *Array, fractionDigits int) string {
 	parts := make([]string, 0, len(a.Elements))
 
 	for _, element := range a.Elements {
-		parts = append(parts, element.Format(digits))
+		parts = append(parts, element.Format(fractionDigits))
 	}
 
 	return "{" + strings.Join(parts, ", ") + "}"
@@ -453,6 +448,9 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 		}
 
 		return value, nil
+
+	case *CompoundAssignmentStatement:
+		return i.evalCompoundAssignmentStatement(s)
 
 	case *IndexAssignmentStatement:
 		return i.evalIndexAssignmentStatement(s)
@@ -803,22 +801,96 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 }
 
 func (i *Interpreter) evalIndexAssignmentStatement(stmt *IndexAssignmentStatement) (Value, error) {
-	object, err := i.evalExpression(stmt.Target.Object)
+	value, err := i.evalExpression(stmt.Value)
 	if err != nil {
 		return Value{}, err
 	}
 
-	index, err := i.evalExpression(stmt.Target.Index)
+	return i.assignIndexExpression(stmt.Target, value)
+}
+
+func (i *Interpreter) evalCompoundAssignmentStatement(stmt *CompoundAssignmentStatement) (Value, error) {
+	currentValue, err := i.evalExpression(stmt.Target)
+	if err != nil {
+		return Value{}, err
+	}
+
+	rightValue, err := i.evalExpression(stmt.Value)
+	if err != nil {
+		return Value{}, err
+	}
+
+	operator, err := compoundAssignmentBinaryOperator(stmt.Operator)
+	if err != nil {
+		return Value{}, err
+	}
+
+	newValue, err := evalBinary(operator, currentValue, rightValue)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return i.assignExpressionTarget(stmt.Target, newValue)
+}
+
+func compoundAssignmentBinaryOperator(operator Token) (string, error) {
+	switch operator.Type {
+	case TokenPlusAssign:
+		return "+", nil
+
+	case TokenMinusAssign:
+		return "-", nil
+
+	default:
+		return "", fmt.Errorf("unknown compound assignment operator %q", operator.Literal)
+	}
+}
+
+func (i *Interpreter) assignExpressionTarget(target Expression, value Value) (Value, error) {
+	switch t := target.(type) {
+	case *IdentifierExpression:
+		if t.IsOuter {
+			if err := i.Env.SetOuter(t.Name, value); err != nil {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: %w",
+					t.Token.StartOfLine,
+					t.Token.StartOfColumn,
+					err,
+				)
+			}
+		} else {
+			if err := i.Env.Set(t.Name, value, t.IsImmutable); err != nil {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: %w",
+					t.Token.StartOfLine,
+					t.Token.StartOfColumn,
+					err,
+				)
+			}
+		}
+
+		return value, nil
+
+	case *IndexExpression:
+		return i.assignIndexExpression(t, value)
+
+	default:
+		return Value{}, fmt.Errorf("invalid assignment target")
+	}
+}
+
+func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value) (Value, error) {
+	object, err := i.evalExpression(target.Object)
+	if err != nil {
+		return Value{}, err
+	}
+
+	index, err := i.evalExpression(target.Index)
 	if err != nil {
 		return Value{}, err
 	}
 
 	object = resolveSpecializedValue(object)
-
-	value, err := i.evalExpression(stmt.Value)
-	if err != nil {
-		return Value{}, err
-	}
 
 	switch object.Kind {
 	case ValueMap:

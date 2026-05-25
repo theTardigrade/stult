@@ -11,8 +11,8 @@ sum_of_scores = 0
 number_of_scores = 0
 
 ((SCORES)) { (_, _, current_score)
-    @sum_of_scores = @sum_of_scores + current_score
-    @number_of_scores = @number_of_scores + 1
+    @sum_of_scores += current_score
+    @number_of_scores += 1
 }
 
 AVERAGE_SCORE = sum_of_scores / number_of_scores

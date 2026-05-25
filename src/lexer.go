@@ -16,10 +16,12 @@ const (
 	TokenNumber     TokenType = "NUM"
 	TokenString     TokenType = "STR"
 
-	TokenAssign TokenType = "="
-	TokenComma  TokenType = ","
-	TokenColon  TokenType = ":"
-	TokenAt     TokenType = "@"
+	TokenAssign      TokenType = "="
+	TokenPlusAssign  TokenType = "+="
+	TokenMinusAssign TokenType = "-="
+	TokenComma       TokenType = ","
+	TokenColon       TokenType = ":"
+	TokenAt          TokenType = "@"
 
 	TokenPlus  TokenType = "+"
 	TokenMinus TokenType = "-"
@@ -153,10 +155,22 @@ func (l *Lexer) NextToken() Token {
 		return l.makeToken(TokenAt, "@", line, col)
 
 	case '+':
+		if l.peekChar() == '=' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenPlusAssign, "+=", line, col)
+		}
+
 		l.readChar()
 		return l.makeToken(TokenPlus, "+", line, col)
 
 	case '-':
+		if l.peekChar() == '=' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenMinusAssign, "-=", line, col)
+		}
+
 		l.readChar()
 		return l.makeToken(TokenMinus, "-", line, col)
 

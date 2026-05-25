@@ -7,7 +7,7 @@ i = ITERATIONS
 ((i > 0)) {
     @PRINT(@i) || Using the at symbol allows us to access a variable from outside the current scope
 
-    @i = @i - 1
+    @i -= 1
 },{
 	|| code in this block runs just once when the conditional no longer holds true
 

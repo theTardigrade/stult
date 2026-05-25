@@ -21,6 +21,14 @@ type AssignmentStatement struct {
 
 func (s *AssignmentStatement) statementNode() {}
 
+type CompoundAssignmentStatement struct {
+	Target   Expression
+	Operator Token
+	Value    Expression
+}
+
+func (s *CompoundAssignmentStatement) statementNode() {}
+
 type ExpressionStatement struct {
 	Expression Expression
 }

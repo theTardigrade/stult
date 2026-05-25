@@ -88,17 +88,30 @@ func (p *Parser) parseStatement() Statement {
 }
 
 func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statement {
-	if p.current.Type != TokenAssign {
+	if !isAssignmentOperator(p.current.Type) {
 		return &ExpressionStatement{Expression: target}
 	}
 
 	assignToken := p.current
-	p.advance() // consume "="
+	p.advance() // consume assignment operator
 
 	value := p.parseExpression(precLowest)
 	if value == nil {
 		p.errorAtToken(assignToken, "expected expression after assignment")
 		return nil
+	}
+
+	if assignToken.Type == TokenPlusAssign || assignToken.Type == TokenMinusAssign {
+		if !isAssignableExpression(target) {
+			p.errorAtToken(assignToken, "invalid assignment target")
+			return nil
+		}
+
+		return &CompoundAssignmentStatement{
+			Target:   target,
+			Operator: assignToken,
+			Value:    value,
+		}
 	}
 
 	switch t := target.(type) {
@@ -119,6 +132,21 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 	default:
 		p.errorAtToken(assignToken, "invalid assignment target")
 		return nil
+	}
+}
+
+func isAssignmentOperator(tokenType TokenType) bool {
+	return tokenType == TokenAssign ||
+		tokenType == TokenPlusAssign ||
+		tokenType == TokenMinusAssign
+}
+
+func isAssignableExpression(expr Expression) bool {
+	switch expr.(type) {
+	case *IdentifierExpression, *IndexExpression:
+		return true
+	default:
+		return false
 	}
 }
 

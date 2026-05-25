@@ -1,0 +1,6 @@
+P = STD["IO"]["PRINT"]
+
+P("TRUE: ", T)
+P("FALSE: ", F)
+
+P("Check if TRUE is the same as FALSE: ", T == F)
