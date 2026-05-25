@@ -10,7 +10,7 @@ SCORES = {
 sum_of_scores = 0
 number_of_scores = 0
 
-((SCORES)) { (index, name, current_score)
+((SCORES)) { (_, _, current_score)
     @sum_of_scores = @sum_of_scores + current_score
     @number_of_scores = @number_of_scores + 1
 }

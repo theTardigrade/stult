@@ -473,20 +473,25 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, err
 	for index, key := range keys {
 		binding := iterable.Map.Entries[key]
 
-		loopBindings := map[string]Binding{
-			stmt.RangeParameters[0].Literal: {
-				Value:       NewNumberValueFromInt(index),
-				IsImmutable: stmt.RangeParameters[0].IsImmutable,
-			},
-			stmt.RangeParameters[1].Literal: {
-				Value:       NewStringValue(key),
-				IsImmutable: stmt.RangeParameters[1].IsImmutable,
-			},
-			stmt.RangeParameters[2].Literal: {
-				Value:       binding.Value,
-				IsImmutable: stmt.RangeParameters[2].IsImmutable,
-			},
-		}
+		loopBindings := make(map[string]Binding)
+
+		addRangeBinding(
+			loopBindings,
+			stmt.RangeParameters[0],
+			NewNumberValueFromInt(index),
+		)
+
+		addRangeBinding(
+			loopBindings,
+			stmt.RangeParameters[1],
+			NewStringValue(key),
+		)
+
+		addRangeBinding(
+			loopBindings,
+			stmt.RangeParameters[2],
+			binding.Value,
+		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
 			return Value{}, err
@@ -498,6 +503,17 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement) (Value, err
 	}
 
 	return NewEmptyValue(), nil
+}
+
+func addRangeBinding(bindings map[string]Binding, parameter Token, value Value) {
+	if parameter.Literal == "_" {
+		return
+	}
+
+	bindings[parameter.Literal] = Binding{
+		Value:       value,
+		IsImmutable: parameter.IsImmutable,
+	}
 }
 
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {

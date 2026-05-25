@@ -347,6 +347,10 @@ func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
 	for _, parameter := range parameters {
 		name := parameter.Literal
 
+		if name == "_" {
+			continue
+		}
+
 		if seen[name] {
 			p.errorAtToken(parameter, "duplicate loop range parameter "+strconvQuote(name))
 			return nil, false
