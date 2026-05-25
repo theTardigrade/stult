@@ -80,6 +80,13 @@ func NewBuiltinFunctionValue(fn BuiltinFunction) Value {
 	}
 }
 
+func NewFunctionValue(fn *Function) Value {
+	return Value{
+		Kind:     ValueFunction,
+		Function: fn,
+	}
+}
+
 func CloneNumber(x *big.Float) *big.Float {
 	return new(big.Float).
 		SetPrec(FloatPrecision).
@@ -209,7 +216,6 @@ type Binding struct {
 
 type Environment struct {
 	values map[string]Binding
-	order  []string
 	parent *Environment
 }
 
@@ -220,19 +226,20 @@ func NewEnvironment() *Environment {
 func NewChildEnvironment(parent *Environment) *Environment {
 	return &Environment{
 		values: make(map[string]Binding),
-		order:  []string{},
 		parent: parent,
 	}
 }
 
 func (e *Environment) Get(name string) (Binding, bool) {
 	binding, ok := e.values[name]
-	if ok {
-		return binding, true
-	}
+	return binding, ok
+}
 
-	if e.parent != nil {
-		return e.parent.Get(name)
+func (e *Environment) GetOuter(name string) (Binding, bool) {
+	for env := e.parent; env != nil; env = env.parent {
+		if binding, ok := env.values[name]; ok {
+			return binding, true
+		}
 	}
 
 	return Binding{}, false
@@ -255,13 +262,42 @@ func (e *Environment) Set(name string, value Value, isImmutable bool) error {
 		Value:       value,
 		IsImmutable: isImmutable,
 	}
-	e.order = append(e.order, name)
 
 	return nil
 }
 
+func (e *Environment) SetOuter(name string, value Value) error {
+	for env := e.parent; env != nil; env = env.parent {
+		existing, ok := env.values[name]
+		if !ok {
+			continue
+		}
+
+		if existing.IsImmutable {
+			return fmt.Errorf("cannot reassign immutable outer constant %q", name)
+		}
+
+		env.values[name] = Binding{
+			Value:       value,
+			IsImmutable: existing.IsImmutable,
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("no outer binding named %q", name)
+}
+
 func (e *Environment) Dump() {
-	for _, name := range e.order {
+	keys := make([]string, 0, len(e.values))
+
+	for name := range e.values {
+		keys = append(keys, name)
+	}
+
+	sort.Strings(keys)
+
+	for _, name := range keys {
 		binding := e.values[name]
 
 		mutability := "mutable"
@@ -305,8 +341,14 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 			return Value{}, err
 		}
 
-		if err := i.Env.Set(s.Name.Literal, value, s.IsImmutable); err != nil {
-			return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
+		if s.IsOuter {
+			if err := i.Env.SetOuter(s.Name.Literal, value); err != nil {
+				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
+			}
+		} else {
+			if err := i.Env.Set(s.Name.Literal, value, s.IsImmutable); err != nil {
+				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
+			}
 		}
 
 		return value, nil
@@ -314,14 +356,14 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 	case *IndexAssignmentStatement:
 		return i.evalIndexAssignmentStatement(s)
 
+	case *ExpressionStatement:
+		return i.evalExpression(s.Expression)
+
 	case *ConditionalStatement:
 		return i.evalConditionalStatement(s)
 
 	case *LoopStatement:
 		return i.evalLoopStatement(s)
-
-	case *ExpressionStatement:
-		return i.evalExpression(s.Expression)
 
 	default:
 		return Value{}, fmt.Errorf("unknown statement type %T", stmt)
@@ -352,8 +394,6 @@ func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Valu
 }
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
-	result := NewBoolValue(false)
-
 	for {
 		condition, err := i.evalExpression(stmt.Condition)
 		if err != nil {
@@ -365,22 +405,31 @@ func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 		}
 
 		if !condition.Bool {
-			if stmt.AfterLoopBody != nil {
-				return i.evalStatementBlock(stmt.AfterLoopBody)
-			}
-
-			return result, nil
+			break
 		}
 
-		result, err = i.evalStatementBlock(stmt.Body)
-		if err != nil {
+		if _, err := i.evalStatementBlock(stmt.Body); err != nil {
 			return Value{}, err
 		}
 	}
+
+	if stmt.AfterLoopBody != nil {
+		return i.evalStatementBlock(stmt.AfterLoopBody)
+	}
+
+	return NewBoolValue(false), nil
 }
 
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
-	result := NewBoolValue(true)
+	blockEnv := NewChildEnvironment(i.Env)
+
+	previousEnv := i.Env
+	i.Env = blockEnv
+	defer func() {
+		i.Env = previousEnv
+	}()
+
+	var result Value = NewBoolValue(false)
 
 	for _, stmt := range statements {
 		value, err := i.evalStatement(stmt)
@@ -403,9 +452,29 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 		return NewStringValue(e.Value), nil
 
 	case *IdentifierExpression:
-		binding, ok := i.Env.Get(e.Name)
-		if !ok {
-			return Value{}, fmt.Errorf("line %d, column %d: undefined identifier %q", e.Token.StartOfLine, e.Token.StartOfColumn, e.Name)
+		var binding Binding
+		var ok bool
+
+		if e.IsOuter {
+			binding, ok = i.Env.GetOuter(e.Name)
+			if !ok {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: no outer binding named %q",
+					e.Token.StartOfLine,
+					e.Token.StartOfColumn,
+					e.Name,
+				)
+			}
+		} else {
+			binding, ok = i.Env.Get(e.Name)
+			if !ok {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: undefined identifier %q in current scope",
+					e.Token.StartOfLine,
+					e.Token.StartOfColumn,
+					e.Name,
+				)
+			}
 		}
 
 		return binding.Value, nil
@@ -643,7 +712,7 @@ func evalPrefix(operator string, right Value) (Value, error) {
 	}
 }
 
-func evalBinary(operator string, left, right Value) (Value, error) {
+func evalBinary(operator string, left Value, right Value) (Value, error) {
 	if operator == "==" || operator == "!=" {
 		equal, err := valuesEqual(left, right)
 		if err != nil {
@@ -707,7 +776,7 @@ func evalBinary(operator string, left, right Value) (Value, error) {
 	}
 }
 
-func valuesEqual(left, right Value) (bool, error) {
+func valuesEqual(left Value, right Value) (bool, error) {
 	if left.Kind != right.Kind {
 		return false, nil
 	}
@@ -739,13 +808,6 @@ func newFloat() *big.Float {
 
 func newFloatWithPrecision(precision uint) *big.Float {
 	return new(big.Float).
-		SetPrec(FloatPrecision).
+		SetPrec(precision).
 		SetMode(big.ToNearestEven)
-}
-
-func NewFunctionValue(fn *Function) Value {
-	return Value{
-		Kind:     ValueFunction,
-		Function: fn,
-	}
 }

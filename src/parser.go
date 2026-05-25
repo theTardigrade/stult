@@ -107,6 +107,7 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 			Name:        t.Token,
 			Value:       value,
 			IsImmutable: t.IsImmutable,
+			IsOuter:     t.IsOuter,
 		}
 
 	case *IndexExpression:
@@ -424,6 +425,14 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		}
 		p.advance()
 
+	case TokenAt:
+		outer, ok := p.parseOuterIdentifierExpression()
+		if !ok {
+			return nil
+		}
+
+		left = outer
+
 	case TokenMinus:
 		operator := p.current
 		p.advance()
@@ -460,6 +469,31 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	}
 
 	return p.parseExpressionTail(left, parentPrec)
+}
+
+func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
+	at := p.current
+	p.advance() // consume "@"
+
+	if p.current.Type != TokenIdentifier {
+		p.errorAtToken(at, "expected identifier after '@'")
+		return nil, false
+	}
+
+	if !tokensTouch(at, p.current) {
+		p.errorAtToken(p.current, "expected '@' to touch outer identifier")
+		return nil, false
+	}
+
+	identifier := p.current
+	p.advance()
+
+	return &IdentifierExpression{
+		Token:       identifier,
+		Name:        identifier.Literal,
+		IsImmutable: identifier.IsImmutable,
+		IsOuter:     true,
+	}, true
 }
 
 func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression {

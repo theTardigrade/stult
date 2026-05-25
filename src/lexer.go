@@ -19,6 +19,7 @@ const (
 	TokenAssign TokenType = "="
 	TokenComma  TokenType = ","
 	TokenColon  TokenType = ":"
+	TokenAt     TokenType = "@"
 
 	TokenPlus  TokenType = "+"
 	TokenMinus TokenType = "-"
@@ -146,6 +147,10 @@ func (l *Lexer) NextToken() Token {
 	case ':':
 		l.readChar()
 		return l.makeToken(TokenColon, ":", line, col)
+
+	case '@':
+		l.readChar()
+		return l.makeToken(TokenAt, "@", line, col)
 
 	case '+':
 		l.readChar()

@@ -16,6 +16,7 @@ type AssignmentStatement struct {
 	Name        Token
 	Value       Expression
 	IsImmutable bool
+	IsOuter     bool
 }
 
 func (s *AssignmentStatement) statementNode() {}
@@ -57,6 +58,7 @@ type IdentifierExpression struct {
 	Token       Token
 	Name        string
 	IsImmutable bool
+	IsOuter     bool
 }
 
 func (e *IdentifierExpression) expressionNode() {}

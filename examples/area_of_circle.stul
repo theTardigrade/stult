@@ -6,13 +6,7 @@ SQUARE = MATH["SQUARE"]
 
 circle = {
 	"radius": 10
-	"area": { () R = circle["radius"] (PI * SQUARE(R)) }
+	"area": { () R = @circle["radius"] (@PI * @SQUARE(R)) }
 }
 
 PRINT("Double the area:", circle["area"]() * 2)
-
-
-(circle){ (index, key, value)
-	PRINT(index, key, value)
-	(TRUE)
-}
