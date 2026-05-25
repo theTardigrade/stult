@@ -54,7 +54,7 @@ func run() error {
 		return runSourceFile(interpreter, target)
 
 	default:
-		return fmt.Errorf("Usage:\n  interpreter\n  interpreter <file.stul>\n  interpreter <directory>\n  interpreter <%s>", DefaultManifestFilename)
+		return fmt.Errorf("Usage:\n  interpreter\n  interpreter <file.stul>\n  interpreter <directory>\n  interpreter <stult.json>")
 	}
 }
 
@@ -134,10 +134,6 @@ func isManifestFilename(filename string) bool {
 func runManifest(manifest *Manifest) error {
 	interpreter := NewInterpreter()
 
-	if err := applyManifestAliases(interpreter, manifest); err != nil {
-		return err
-	}
-
 	for _, filename := range manifest.RunFiles {
 		if err := runSourceFile(interpreter, filename); err != nil {
 			return err
@@ -145,62 +141,6 @@ func runManifest(manifest *Manifest) error {
 	}
 
 	return nil
-}
-
-func applyManifestAliases(interpreter *Interpreter, manifest *Manifest) error {
-	for _, name := range manifest.AliasNames {
-		expressionSource := manifest.Alias[name]
-
-		value, err := evalManifestAliasExpression(interpreter, name, expressionSource)
-		if err != nil {
-			return err
-		}
-
-		if err := interpreter.Env.Set(name, value, isImmutableIdentifier(name)); err != nil {
-			return fmt.Errorf("Could not set manifest alias %q: %w", name, err)
-		}
-	}
-
-	return nil
-}
-
-func evalManifestAliasExpression(interpreter *Interpreter, name string, source string) (Value, error) {
-	expression, err := parseManifestAliasExpression(name, source)
-	if err != nil {
-		return Value{}, err
-	}
-
-	value, err := interpreter.evalExpression(expression)
-	if err != nil {
-		return Value{}, fmt.Errorf("Could not evaluate manifest alias %q: %w", name, err)
-	}
-
-	return value, nil
-}
-
-func parseManifestAliasExpression(name string, source string) (Expression, error) {
-	lexer := NewLexer(source)
-	parser := NewParser(lexer)
-
-	expression := parser.parseExpression(precLowest)
-
-	if expression != nil {
-		parser.skipSeparators()
-
-		if parser.current.Type != TokenEOF {
-			parser.errorAtCurrent("expected end of alias expression")
-		}
-	}
-
-	if len(parser.Errors()) > 0 {
-		return nil, formatManifestAliasParserErrors(name, parser.Errors())
-	}
-
-	if expression == nil {
-		return nil, fmt.Errorf("Could not parse manifest alias %q", name)
-	}
-
-	return expression, nil
 }
 
 func runSourceFile(interpreter *Interpreter, filename string) error {
@@ -237,18 +177,6 @@ func formatParserErrors(filename string, errors []string) error {
 	var builder strings.Builder
 
 	fmt.Fprintf(&builder, "Parser errors in %q:", filename)
-
-	for _, err := range errors {
-		fmt.Fprintf(&builder, "\n  - %s", err)
-	}
-
-	return fmt.Errorf("%s", builder.String())
-}
-
-func formatManifestAliasParserErrors(name string, errors []string) error {
-	var builder strings.Builder
-
-	fmt.Fprintf(&builder, "Parser errors in manifest alias %q:", name)
 
 	for _, err := range errors {
 		fmt.Fprintf(&builder, "\n  - %s", err)

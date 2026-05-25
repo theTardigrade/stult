@@ -1,0 +1,3 @@
+
+T : STD["TYPES"]["BOOL"]["TRUE"]
+F : STD["TYPES"]["BOOL"]["FALSE"]

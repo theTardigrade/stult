@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"unicode"
 )
 
 const DefaultManifestFilename = "stult.json"
@@ -16,16 +14,12 @@ type Manifest struct {
 	Path string
 	Dir  string
 
-	Alias      map[string]string
-	AliasNames []string
-
 	Run      []string
 	RunFiles []string
 }
 
 type manifestFile struct {
-	Alias map[string]string `json:"alias"`
-	Run   manifestRunList   `json:"run"`
+	Run manifestRunList `json:"run"`
 }
 
 type manifestRunList []string
@@ -57,13 +51,10 @@ func LoadManifest(filename string) (*Manifest, error) {
 	dir := filepath.Dir(absolutePath)
 
 	manifest := &Manifest{
-		Path:  absolutePath,
-		Dir:   dir,
-		Alias: normalizeManifestAliases(file.Alias),
-		Run:   []string(file.Run),
+		Path: absolutePath,
+		Dir:  dir,
+		Run:  []string(file.Run),
 	}
-
-	manifest.AliasNames = sortedManifestAliasNames(manifest.Alias)
 
 	if err := manifest.validate(); err != nil {
 		return nil, err
@@ -72,32 +63,6 @@ func LoadManifest(filename string) (*Manifest, error) {
 	manifest.RunFiles = resolveManifestRunFiles(manifest.Dir, manifest.Run)
 
 	return manifest, nil
-}
-
-func normalizeManifestAliases(aliases map[string]string) map[string]string {
-	if aliases == nil {
-		return map[string]string{}
-	}
-
-	normalized := make(map[string]string, len(aliases))
-
-	for name, expression := range aliases {
-		normalized[name] = expression
-	}
-
-	return normalized
-}
-
-func sortedManifestAliasNames(aliases map[string]string) []string {
-	names := make([]string, 0, len(aliases))
-
-	for name := range aliases {
-		names = append(names, name)
-	}
-
-	sort.Strings(names)
-
-	return names
 }
 
 func (manifest *Manifest) validate() error {
@@ -111,47 +76,7 @@ func (manifest *Manifest) validate() error {
 		}
 	}
 
-	for _, name := range manifest.AliasNames {
-		expression := manifest.Alias[name]
-
-		if !isValidManifestAliasName(name) {
-			return fmt.Errorf("Manifest %q has invalid alias name %q", manifest.Path, name)
-		}
-
-		if strings.TrimSpace(expression) == "" {
-			return fmt.Errorf("Manifest %q has an empty expression for alias %q", manifest.Path, name)
-		}
-	}
-
 	return nil
-}
-
-func isValidManifestAliasName(name string) bool {
-	if name == "" || name == "_" {
-		return false
-	}
-
-	runes := []rune(name)
-
-	if !isManifestIdentifierStart(runes[0]) {
-		return false
-	}
-
-	for _, ch := range runes[1:] {
-		if !isManifestIdentifierPart(ch) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func isManifestIdentifierStart(ch rune) bool {
-	return ch == '_' || unicode.IsLetter(ch)
-}
-
-func isManifestIdentifierPart(ch rune) bool {
-	return ch == '_' || unicode.IsLetter(ch) || unicode.IsDigit(ch)
 }
 
 func resolveManifestRunFiles(baseDir string, runFiles []string) []string {
