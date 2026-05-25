@@ -1,37 +1,43 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 func main() {
-	source := `|| Interpreter test program
-PI = 3.14159
-radius = 10
-area = PI * radius * radius
-x = 5, y = 9
-z = -(x + y) * 2
-is_big = area > 100
-`
+	if len(os.Args) != 2 {
+		fmt.Fprintln(os.Stderr, "Usage: interpreter <file>")
+		os.Exit(1)
+	}
 
-	lexer := NewLexer(source)
+	filename := os.Args[1]
+
+	sourceBytes, err := os.ReadFile(filename)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not read %q: %v\n", filename, err)
+		os.Exit(1)
+	}
+
+	lexer := NewLexer(string(sourceBytes))
 	parser := NewParser(lexer)
 	program := parser.ParseProgram()
 
 	if len(parser.Errors()) > 0 {
-		fmt.Println("Parser errors:")
+		fmt.Fprintln(os.Stderr, "Parser errors:")
 		for _, err := range parser.Errors() {
-			fmt.Println("  -", err)
+			fmt.Fprintln(os.Stderr, "  -", err)
 		}
-		return
+		os.Exit(1)
 	}
 
 	interpreter := NewInterpreter()
 
 	if err := interpreter.EvalProgram(program); err != nil {
-		fmt.Println("Runtime error:")
-		fmt.Println("  -", err)
-		return
+		fmt.Fprintln(os.Stderr, "Runtime error:")
+		fmt.Fprintln(os.Stderr, "  -", err)
+		os.Exit(1)
 	}
 
-	fmt.Println("Final environment:")
 	interpreter.Env.Dump()
 }
