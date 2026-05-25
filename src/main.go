@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
+
+const expectedFileExtension = ".stul"
 
 func main() {
 	if len(os.Args) != 2 {
@@ -12,6 +15,15 @@ func main() {
 	}
 
 	filename := os.Args[1]
+
+	if filepath.Ext(filename) != expectedFileExtension {
+		fmt.Fprintf(
+			os.Stderr,
+			"Warning: expected %s file extension, got %q\n",
+			expectedFileExtension,
+			filepath.Ext(filename),
+		)
+	}
 
 	sourceBytes, err := os.ReadFile(filename)
 	if err != nil {

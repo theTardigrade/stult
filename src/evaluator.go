@@ -11,8 +11,6 @@ const FloatPrecision uint = 1024
 
 const DefaultDisplayDigits = 20
 
-// ValueKind identifies the kind of runtime value.
-// For now, the language only has Number and Bool.
 type ValueKind int
 
 const (

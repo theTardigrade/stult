@@ -1,0 +1,15 @@
+|| Basic interpreter test
+
+PI = 3.14159
+radius = 10
+area = PI * radius * radius
+
+x = 5, y = 9
+z = -(x + y) * 2
+
+is_big = area > 100
+is_exact = area == 314.159
+
+|| Constants cannot be reassigned.
+|| Uncomment this later to test the runtime error:
+|| PI = 4
