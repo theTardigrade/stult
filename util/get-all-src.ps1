@@ -1,5 +1,6 @@
 $includeExtensions = @(
-	'.go'
+	'.go',
+	'.yaml'
 )
 
 $includeFileNames = @()

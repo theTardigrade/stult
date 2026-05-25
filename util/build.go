@@ -44,7 +44,7 @@ func run() error {
 		case "dist":
 			return buildDist()
 		case "run":
-			return runInterpreter()
+			return runInterpreter(os.Args[2:])
 		case "test":
 			return goTest()
 		case "fmt":
@@ -64,13 +64,13 @@ func run() error {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  go run ./tools/build.go              build all dist binaries")
-	fmt.Println("  go run ./tools/build.go dist         build all dist binaries")
-	fmt.Println("  go run ./tools/build.go build        build local binary")
-	fmt.Println("  go run ./tools/build.go run          run interpreter")
-	fmt.Println("  go run ./tools/build.go test         run tests")
-	fmt.Println("  go run ./tools/build.go fmt          format code")
-	fmt.Println("  go run ./tools/build.go clean        remove build outputs")
+	fmt.Println("  go run ./tools/build.go                        build all dist binaries")
+	fmt.Println("  go run ./tools/build.go dist                   build all dist binaries")
+	fmt.Println("  go run ./tools/build.go build                  build local binary")
+	fmt.Println("  go run ./util/build.go run <file.stul>         run interpreter")
+	fmt.Println("  go run ./tools/build.go test                   run tests")
+	fmt.Println("  go run ./tools/build.go fmt                    format code")
+	fmt.Println("  go run ./tools/build.go clean                  remove build outputs")
 }
 
 func buildDist() error {
@@ -123,8 +123,10 @@ func clean() error {
 	return nil
 }
 
-func runInterpreter() error {
-	return runCommand("go", "run", "./"+srcDir)
+func runInterpreter(args []string) error {
+	cmdArgs := append([]string{"run", "./" + srcDir}, args...)
+
+	return runCommand("go", cmdArgs...)
 }
 
 func goTest() error {
