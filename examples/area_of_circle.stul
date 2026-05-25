@@ -10,3 +10,9 @@ circle = {
 }
 
 PRINT("Double the area:", circle["area"]() * 2)
+
+
+(circle){ (index, key, value)
+	PRINT(index, key, value)
+	(TRUE)
+}

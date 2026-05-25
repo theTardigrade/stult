@@ -1,0 +1,9 @@
+PRINT = STD["IO"]["PRINT"]
+
+T = STD["BOOL"]["TRUE"]
+F = STD["BOOL"]["FALSE"]
+
+PRINT("TRUE:", T)
+PRINT("FALSE:", F)
+
+PRINT("Check if TRUE is the same as FALSE:", T == F)
