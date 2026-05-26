@@ -18,10 +18,10 @@ PRINT(singleline_array)
 
 A = STD["TYPES"]["ARRAY"]["APPEND"]
 
-empty_collection : {}
+another_array : {}
 
-A(empty_collection, "example text", "and some more example text")
+A(another_array, "example text", "and some more example text")
 
-PRINT(empty_collection)
+PRINT(another_array)
 
-PRINT(STD["TYPES"]["COLLECTION"]["SIZE"](multiline_array))
+PRINT(STD["TYPES"]["COLLECTION"]["SIZE"](another_array))

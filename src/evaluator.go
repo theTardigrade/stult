@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -21,7 +20,6 @@ const (
 	ValueString
 	ValueMap
 	ValueArray
-	ValueEmptyCollection
 	ValueFunction
 	ValueBuiltinFunction
 )
@@ -50,11 +48,6 @@ type Array struct {
 	IsImmutable bool
 }
 
-type EmptyCollection struct {
-	Specialized *Value
-	IsImmutable bool
-}
-
 type Value struct {
 	Kind            ValueKind
 	Number          *big.Float
@@ -62,69 +55,18 @@ type Value struct {
 	Text            *String
 	Map             *Map
 	Array           *Array
-	EmptyCollection *EmptyCollection
 	Function        *Function
 	BuiltinFunction BuiltinFunction
 }
 
-type breakSignal struct {
-	Token Token
-}
-
-func (s *breakSignal) Error() string {
-	return fmt.Sprintf(
-		"line %d, column %d: break used outside loop",
-		s.Token.StartOfLine,
-		s.Token.StartOfColumn,
-	)
-}
-
-type returnSignal struct {
-	Token Token
-	Value Value
-}
-
-func (s *returnSignal) Error() string {
-	return fmt.Sprintf(
-		"line %d, column %d: return used outside function",
-		s.Token.StartOfLine,
-		s.Token.StartOfColumn,
-	)
-}
-
-func asBreakSignal(err error) (*breakSignal, bool) {
-	var signal *breakSignal
-	if errors.As(err, &signal) {
-		return signal, true
-	}
-
-	return nil, false
-}
-
-func asReturnSignal(err error) (*returnSignal, bool) {
-	var signal *returnSignal
-	if errors.As(err, &signal) {
-		return signal, true
-	}
-
-	return nil, false
-}
+const ValueEmpty = ValueVoid
 
 func NewVoidValue() Value {
 	return Value{Kind: ValueVoid}
 }
 
-func NewEmptyCollectionValue() Value {
-	return NewEmptyCollectionValueWithImmutability(false)
-}
-
-func NewEmptyCollectionValueWithImmutability(isImmutable bool) Value {
-	return Value{
-		Kind: ValueEmptyCollection,
-		EmptyCollection: &EmptyCollection{
-			IsImmutable: isImmutable,
-		},
-	}
+func NewEmptyValue() Value {
+	return NewVoidValue()
 }
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -141,6 +83,15 @@ func NewNumberValueFromInt(value int) Value {
 		SetPrec(FloatPrecision).
 		SetMode(big.ToNearestEven).
 		SetInt64(int64(value))
+
+	return Value{Kind: ValueNumber, Number: n}
+}
+
+func NewNumberValueFromInt64(value int64) Value {
+	n := new(big.Float).
+		SetPrec(FloatPrecision).
+		SetMode(big.ToNearestEven).
+		SetInt64(value)
 
 	return Value{Kind: ValueNumber, Number: n}
 }
@@ -234,9 +185,6 @@ func (v Value) Format(fractionDigits int) string {
 	case ValueVoid:
 		return "_"
 
-	case ValueEmptyCollection:
-		return "{}"
-
 	case ValueNumber:
 		return formatNumber(v.Number, fractionDigits)
 
@@ -273,9 +221,6 @@ func (v Value) DebugString() string {
 	case ValueVoid:
 		return "_"
 
-	case ValueEmptyCollection:
-		return "{}"
-
 	case ValueNumber:
 		return formatNumber(v.Number, DefaultFractionDigits)
 
@@ -303,12 +248,6 @@ func (v Value) DebugString() string {
 }
 
 func resolveSpecializedValue(value Value) Value {
-	for value.Kind == ValueEmptyCollection &&
-		value.EmptyCollection != nil &&
-		value.EmptyCollection.Specialized != nil {
-		value = *value.EmptyCollection.Specialized
-	}
-
 	return value
 }
 
@@ -338,6 +277,10 @@ func trimDecimalZeros(text string) string {
 }
 
 func formatMap(m *Map, fractionDigits int) string {
+	if m == nil || len(m.Entries) == 0 {
+		return "{:}"
+	}
+
 	keys := sortedMapKeys(m)
 
 	parts := make([]string, 0, len(keys))
@@ -351,6 +294,10 @@ func formatMap(m *Map, fractionDigits int) string {
 }
 
 func sortedMapKeys(m *Map) []string {
+	if m == nil {
+		return []string{}
+	}
+
 	keys := make([]string, 0, len(m.Entries))
 
 	for key := range m.Entries {
@@ -363,6 +310,10 @@ func sortedMapKeys(m *Map) []string {
 }
 
 func formatArray(a *Array, fractionDigits int) string {
+	if a == nil {
+		return "{}"
+	}
+
 	parts := make([]string, 0, len(a.Elements))
 
 	for _, element := range a.Elements {
@@ -401,13 +352,8 @@ func NewChildEnvironment(parent *Environment) *Environment {
 }
 
 func (e *Environment) Get(name string) (Binding, bool) {
-	for env := e; env != nil; env = env.parent {
-		if binding, ok := env.values[name]; ok {
-			return binding, true
-		}
-	}
-
-	return Binding{}, false
+	binding, ok := e.values[name]
+	return binding, ok
 }
 
 func (e *Environment) GetOuter(name string) (Binding, bool) {
@@ -531,20 +477,6 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 	case *CompoundAssignmentStatement:
 		return i.evalCompoundAssignmentStatement(s)
 
-	case *BreakStatement:
-		return Value{}, &breakSignal{Token: s.Token}
-
-	case *ReturnStatement:
-		value, err := i.evalExpression(s.Value)
-		if err != nil {
-			return Value{}, err
-		}
-
-		return Value{}, &returnSignal{
-			Token: s.Token,
-			Value: value,
-		}
-
 	case *IndexAssignmentStatement:
 		return i.evalIndexAssignmentStatement(s)
 
@@ -609,10 +541,6 @@ func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error)
 		}
 
 		if _, err := i.evalStatementBlock(stmt.Body); err != nil {
-			if _, ok := asBreakSignal(err); ok {
-				break
-			}
-
 			return Value{}, err
 		}
 	}
@@ -642,11 +570,8 @@ func (i *Interpreter) evalCollectionRangeLoopStatement(stmt *LoopStatement) (Val
 	case ValueString:
 		return i.evalStringRangeLoopStatement(stmt, iterable.Text)
 
-	case ValueEmptyCollection:
-		return i.evalAfterLoopBody(stmt)
-
 	default:
-		return Value{}, fmt.Errorf("collection range loop expression must evaluate to a map, array, string, or empty collection")
+		return Value{}, fmt.Errorf("collection range loop expression must evaluate to a map, array, or string")
 	}
 }
 
@@ -679,10 +604,6 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
-			if _, ok := asBreakSignal(err); ok {
-				break
-			}
-
 			return Value{}, err
 		}
 
@@ -721,10 +642,6 @@ func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array)
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
-			if _, ok := asBreakSignal(err); ok {
-				break
-			}
-
 			return Value{}, err
 		}
 
@@ -753,10 +670,6 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
-			if _, ok := asBreakSignal(err); ok {
-				break
-			}
-
 			return Value{}, err
 		}
 
@@ -847,9 +760,6 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *VoidLiteral:
 		return NewVoidValue(), nil
 
-	case *EmptyCollectionLiteral:
-		return NewEmptyCollectionValue(), nil
-
 	case *NumberLiteral:
 		return NewNumberValueFromString(e.Value)
 
@@ -874,7 +784,7 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 			binding, ok = i.Env.Get(e.Name)
 			if !ok {
 				return Value{}, fmt.Errorf(
-					"line %d, column %d: undefined identifier %q",
+					"line %d, column %d: undefined identifier %q in current scope",
 					e.Token.StartOfLine,
 					e.Token.StartOfColumn,
 					e.Name,
@@ -1018,7 +928,7 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 }
 
 func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
-	elements := []Value{}
+	elements := make([]Value, 0, len(lit.Elements))
 
 	for _, arrayElement := range lit.Elements {
 		values, err := i.evalArrayElement(arrayElement)
@@ -1035,7 +945,7 @@ func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
 func (i *Interpreter) evalArrayElement(element ArrayElement) ([]Value, error) {
 	switch e := element.(type) {
 	case *ExpressionArrayElement:
-		value, err := i.evalExpression(e.Value)
+		value, err := i.evalExpression(e.Expression)
 		if err != nil {
 			return nil, err
 		}
@@ -1061,78 +971,56 @@ func (i *Interpreter) evalRangeArrayElement(element *RangeArrayElement) ([]Value
 		return nil, err
 	}
 
-	start, err := rangeInteger(startValue, "start")
-	if err != nil {
-		return nil, err
-	}
-
-	end, err := rangeInteger(endValue, "end")
-	if err != nil {
-		return nil, err
-	}
-
-	step := 1
-
+	step := int64(1)
 	if element.Step != nil {
 		stepValue, err := i.evalExpression(element.Step)
 		if err != nil {
 			return nil, err
 		}
 
-		step, err = rangeInteger(stepValue, "step")
+		step, err = numberToInt64(stepValue, "range step")
 		if err != nil {
 			return nil, err
 		}
 
 		if step <= 0 {
-			return nil, fmt.Errorf("array range step must be a positive integer")
+			return nil, fmt.Errorf("range step must be positive")
 		}
+	}
+
+	start, err := numberToInt64(startValue, "range start")
+	if err != nil {
+		return nil, err
+	}
+
+	end, err := numberToInt64(endValue, "range end")
+	if err != nil {
+		return nil, err
 	}
 
 	values := []Value{}
 
 	if start <= end {
-		for value := start; ; value += step {
-			if element.IsExclusive {
-				if value >= end {
-					break
-				}
-			} else if value > end {
-				break
-			}
+		limit := end
+		if !element.IsInclusive {
+			limit = end - 1
+		}
 
-			values = append(values, NewNumberValueFromInt(value))
+		for current := start; current <= limit; current += step {
+			values = append(values, NewNumberValueFromInt64(current))
 		}
 	} else {
-		for value := start; ; value -= step {
-			if element.IsExclusive {
-				if value <= end {
-					break
-				}
-			} else if value < end {
-				break
-			}
+		limit := end
+		if !element.IsInclusive {
+			limit = end + 1
+		}
 
-			values = append(values, NewNumberValueFromInt(value))
+		for current := start; current >= limit; current -= step {
+			values = append(values, NewNumberValueFromInt64(current))
 		}
 	}
 
 	return values, nil
-}
-
-func rangeInteger(value Value, name string) (int, error) {
-	value = resolveSpecializedValue(value)
-
-	if value.Kind != ValueNumber {
-		return 0, fmt.Errorf("array range %s must be a number", name)
-	}
-
-	integer, accuracy := value.Number.Int64()
-	if accuracy != big.Exact {
-		return 0, fmt.Errorf("array range %s must be an integer", name)
-	}
-
-	return int(integer), nil
 }
 
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {
@@ -1190,9 +1078,6 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		}
 
 		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
-
-	case ValueEmptyCollection:
-		return Value{}, fmt.Errorf("cannot read from empty collection before it becomes a map or array")
 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")
@@ -1300,9 +1185,6 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 
 	case ValueString:
 		return assignStringIndex(object.Text, index, value)
-
-	case ValueEmptyCollection:
-		return specializeEmptyCollection(object, index, value)
 
 	default:
 		return Value{}, fmt.Errorf("cannot assign into non-collection value")
@@ -1428,46 +1310,6 @@ func stringAssignmentRune(value Value) (rune, error) {
 	return value.Text.Runes[0], nil
 }
 
-func specializeEmptyCollection(collection Value, index Value, value Value) (Value, error) {
-	if collection.EmptyCollection == nil {
-		return Value{}, fmt.Errorf("invalid empty collection")
-	}
-
-	if collection.EmptyCollection.IsImmutable {
-		return Value{}, fmt.Errorf("cannot modify immutable empty collection")
-	}
-
-	if collection.EmptyCollection.Specialized != nil {
-		specialized := resolveSpecializedValue(*collection.EmptyCollection.Specialized)
-
-		switch specialized.Kind {
-		case ValueMap:
-			return assignMapIndex(specialized.Map, index, value)
-
-		case ValueArray:
-			return assignArrayIndex(specialized.Array, index, value)
-
-		default:
-			return Value{}, fmt.Errorf("invalid specialized empty collection")
-		}
-	}
-
-	switch index.Kind {
-	case ValueString:
-		specialized := NewMapValue(make(map[string]Binding), false)
-		collection.EmptyCollection.Specialized = &specialized
-		return assignMapIndex(specialized.Map, index, value)
-
-	case ValueNumber:
-		specialized := NewArrayValue([]Value{}, false)
-		collection.EmptyCollection.Specialized = &specialized
-		return assignArrayIndex(specialized.Array, index, value)
-
-	default:
-		return Value{}, fmt.Errorf("empty collection can only become a map or array through string or numeric indexing")
-	}
-}
-
 func numberToArrayIndex(index Value) (int, error) {
 	if index.Kind != ValueNumber {
 		return 0, fmt.Errorf("array index must be a number")
@@ -1479,6 +1321,21 @@ func numberToArrayIndex(index Value) (int, error) {
 	}
 
 	return int(i), nil
+}
+
+func numberToInt64(value Value, name string) (int64, error) {
+	value = resolveSpecializedValue(value)
+
+	if value.Kind != ValueNumber {
+		return 0, fmt.Errorf("%s must be a number", name)
+	}
+
+	out, accuracy := value.Number.Int64()
+	if accuracy != big.Exact {
+		return 0, fmt.Errorf("%s must be an integer", name)
+	}
+
+	return out, nil
 }
 
 func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
@@ -1544,10 +1401,6 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 
 	for _, stmt := range fn.Body {
 		if _, err := i.evalStatement(stmt); err != nil {
-			if signal, ok := asReturnSignal(err); ok {
-				return signal.Value, nil
-			}
-
 			return Value{}, err
 		}
 	}
@@ -1669,9 +1522,6 @@ func valuesEqual(left Value, right Value) (bool, error) {
 
 	case ValueArray:
 		return false, fmt.Errorf("cannot compare arrays")
-
-	case ValueEmptyCollection:
-		return false, fmt.Errorf("cannot compare empty collections")
 
 	case ValueFunction, ValueBuiltinFunction:
 		return false, fmt.Errorf("cannot compare functions")

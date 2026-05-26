@@ -7,8 +7,8 @@ import (
 
 func NewStdTypesBoolMap() Value {
 	entries := map[string]Binding{
-		"TRUE":  NewImmutableBinding(NewBoolValue(true)),
 		"FALSE": NewImmutableBinding(NewBoolValue(false)),
+		"TRUE":  NewImmutableBinding(NewBoolValue(true)),
 
 		"NEW": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesBoolNew)),
 	}
@@ -51,7 +51,6 @@ func stdTypesBoolNew(_ *Interpreter, args []Value) (Value, error) {
 	case ValueVoid,
 		ValueMap,
 		ValueArray,
-		ValueEmptyCollection,
 		ValueFunction,
 		ValueBuiltinFunction:
 		return NewVoidValue(), nil

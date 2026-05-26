@@ -15,7 +15,6 @@ func NewStdTypesMap() Value {
 		"IS_BOOL":             NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsBool)),
 		"IS_BUILTIN_FUNCTION": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsBuiltinFunction)),
 		"IS_COLLECTION":       NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsCollection)),
-		"IS_EMPTY_COLLECTION": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsEmptyCollection)),
 		"IS_FUNCTION":         NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsFunction)),
 		"IS_MAP":              NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsMap)),
 		"IS_NUMBER":           NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsNumber)),
@@ -47,17 +46,11 @@ func stdTypesIsBuiltinFunction(_ *Interpreter, args []Value) (Value, error) {
 func stdTypesIsCollection(_ *Interpreter, args []Value) (Value, error) {
 	return stdTypesPredicate("TYPES.IS_COLLECTION", args, func(value Value) bool {
 		switch value.Kind {
-		case ValueMap, ValueArray, ValueString, ValueEmptyCollection:
+		case ValueMap, ValueArray, ValueString:
 			return true
 		default:
 			return false
 		}
-	})
-}
-
-func stdTypesIsEmptyCollection(_ *Interpreter, args []Value) (Value, error) {
-	return stdTypesPredicate("TYPES.IS_EMPTY_COLLECTION", args, func(value Value) bool {
-		return value.Kind == ValueEmptyCollection
 	})
 }
 

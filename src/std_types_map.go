@@ -20,6 +20,10 @@ func stdTypesMapKeys(_ *Interpreter, args []Value) (Value, error) {
 
 	switch value.Kind {
 	case ValueMap:
+		if value.Map == nil {
+			return Value{}, fmt.Errorf("TYPES.MAP.KEYS cannot inspect invalid map")
+		}
+
 		keys := sortedMapKeys(value.Map)
 		elements := make([]Value, 0, len(keys))
 
@@ -34,7 +38,6 @@ func stdTypesMapKeys(_ *Interpreter, args []Value) (Value, error) {
 		ValueBool,
 		ValueString,
 		ValueArray,
-		ValueEmptyCollection,
 		ValueFunction,
 		ValueBuiltinFunction:
 		return NewVoidValue(), nil
@@ -53,6 +56,10 @@ func stdTypesMapValues(_ *Interpreter, args []Value) (Value, error) {
 
 	switch value.Kind {
 	case ValueMap:
+		if value.Map == nil {
+			return Value{}, fmt.Errorf("TYPES.MAP.VALUES cannot inspect invalid map")
+		}
+
 		keys := sortedMapKeys(value.Map)
 		elements := make([]Value, 0, len(keys))
 
@@ -67,7 +74,6 @@ func stdTypesMapValues(_ *Interpreter, args []Value) (Value, error) {
 		ValueBool,
 		ValueString,
 		ValueArray,
-		ValueEmptyCollection,
 		ValueFunction,
 		ValueBuiltinFunction:
 		return NewVoidValue(), nil

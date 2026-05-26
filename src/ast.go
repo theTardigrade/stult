@@ -12,10 +12,6 @@ type Expression interface {
 	expressionNode()
 }
 
-type ArrayElement interface {
-	arrayElementNode()
-}
-
 type AssignmentStatement struct {
 	Name        Token
 	Value       Expression
@@ -32,19 +28,6 @@ type CompoundAssignmentStatement struct {
 }
 
 func (s *CompoundAssignmentStatement) statementNode() {}
-
-type BreakStatement struct {
-	Token Token
-}
-
-func (s *BreakStatement) statementNode() {}
-
-type ReturnStatement struct {
-	Token Token
-	Value Expression
-}
-
-func (s *ReturnStatement) statementNode() {}
 
 type ExpressionStatement struct {
 	Expression Expression
@@ -78,12 +61,6 @@ type VoidLiteral struct {
 }
 
 func (e *VoidLiteral) expressionNode() {}
-
-type EmptyCollectionLiteral struct {
-	Token Token
-}
-
-func (e *EmptyCollectionLiteral) expressionNode() {}
 
 type NumberLiteral struct {
 	Token Token
@@ -132,7 +109,7 @@ type MapLiteral struct {
 func (*MapLiteral) expressionNode() {}
 
 type MapEntry struct {
-	Key   Token // Type == TokenString
+	Key   Token
 	Value Expression
 }
 
@@ -143,8 +120,12 @@ type ArrayLiteral struct {
 
 func (*ArrayLiteral) expressionNode() {}
 
+type ArrayElement interface {
+	arrayElementNode()
+}
+
 type ExpressionArrayElement struct {
-	Value Expression
+	Expression Expression
 }
 
 func (*ExpressionArrayElement) arrayElementNode() {}
@@ -153,8 +134,7 @@ type RangeArrayElement struct {
 	Start       Expression
 	End         Expression
 	Step        Expression
-	RangeToken  Token
-	IsExclusive bool
+	IsInclusive bool
 }
 
 func (*RangeArrayElement) arrayElementNode() {}

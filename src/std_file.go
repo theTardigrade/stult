@@ -204,7 +204,7 @@ func builtinStdFileSize(_ *Interpreter, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewNumberValueFromInt(int(info.Size())), nil
+	return NewNumberValueFromInt64(info.Size()), nil
 }
 
 func stdFilePathArg(name string, arg Value, position int) (string, error) {
@@ -233,7 +233,6 @@ func stdFileContentArg(name string, arg Value, position int) (string, error) {
 		ValueBool,
 		ValueMap,
 		ValueArray,
-		ValueEmptyCollection,
 		ValueFunction,
 		ValueBuiltinFunction:
 		return value.PrintString(), nil

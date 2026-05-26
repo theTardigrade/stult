@@ -59,7 +59,6 @@ func stdTypesNumberNew(_ *Interpreter, args []Value) (Value, error) {
 	case ValueVoid,
 		ValueMap,
 		ValueArray,
-		ValueEmptyCollection,
 		ValueFunction,
 		ValueBuiltinFunction:
 		return NewVoidValue(), nil

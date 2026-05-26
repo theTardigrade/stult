@@ -52,10 +52,6 @@ func (p *Parser) ParseProgram() *Program {
 }
 
 func (p *Parser) parseStatement() Statement {
-	if p.current.Type == TokenCaret {
-		return p.parseCaretStatement()
-	}
-
 	if p.isLoopStart() {
 		return p.parseLoopStatement()
 	}
@@ -154,30 +150,6 @@ func isAssignableExpression(expr Expression) bool {
 	}
 }
 
-func (p *Parser) parseCaretStatement() Statement {
-	caret := p.current
-	p.advance() // consume "^"
-
-	if p.current.Type != TokenLParen {
-		return &BreakStatement{Token: caret}
-	}
-
-	if !tokensTouch(caret, p.current) {
-		p.errorAtCurrent("expected '^' to touch '(' in early return statement")
-		return nil
-	}
-
-	value, _, ok := p.parseParenthesizedExpression("return expression cannot be empty")
-	if !ok {
-		return nil
-	}
-
-	return &ReturnStatement{
-		Token: caret,
-		Value: value,
-	}
-}
-
 func (p *Parser) isLoopStart() bool {
 	return p.current.Type == TokenLParen &&
 		p.peek.Type == TokenLParen &&
@@ -268,24 +240,22 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 	}
 
 	p.advance() // consume "{"
+	p.skipSeparators()
 
 	rangeParameters := []Token{}
 
-	if p.looksLikeLoopRangeParameters(openBrace) {
-		parameters, ok := p.parseLoopRangeParameters()
+	if p.current.Type == TokenLParen && !p.isLoopStart() {
+		parameters, ok := p.parseBindingParameters("range parameter")
 		if !ok {
 			return nil, nil, Token{}, false
 		}
 
-		rangeParameters = parameters
-
-		if p.current.Type != TokenComma &&
-			p.current.Type != TokenNewline &&
-			p.current.Type != TokenRBrace &&
-			p.current.Type != TokenEOF {
-			p.errorAtCurrent("expected comma, newline, or '}' after loop range parameters")
+		if len(parameters) == 0 {
+			p.errorAtToken(openBrace, "range parameter list cannot be empty")
 			return nil, nil, Token{}, false
 		}
+
+		rangeParameters = parameters
 	}
 
 	body := []Statement{}
@@ -320,109 +290,17 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 			continue
 		}
 
-		p.errorAtCurrent("expected comma, newline, or '}' after statement")
+		p.errorAtCurrent("expected comma, newline, or '}' after loop statement")
 		return nil, nil, Token{}, false
 	}
 }
 
-func (p *Parser) looksLikeLoopRangeParameters(openBrace Token) bool {
-	if p.current.Type != TokenLParen || !tokensOnSameLine(openBrace, p.current) {
-		return false
-	}
-
-	trial := p.cloneForLookahead()
-
-	parameters, ok := trial.parseLoopRangeParameters()
-	if !ok || !isValidLoopRangeParameterCount(len(parameters)) {
-		return false
-	}
-
-	return trial.current.Type == TokenComma ||
-		trial.current.Type == TokenNewline ||
-		trial.current.Type == TokenRBrace ||
-		trial.current.Type == TokenEOF
-}
-
-func (p *Parser) parseLoopRangeParameters() ([]Token, bool) {
-	openParen := p.current
-
-	if !p.expectCurrent(TokenLParen, "expected '(' before loop range parameters") {
-		return nil, false
-	}
-
-	p.advance() // consume "("
-
-	parameters := []Token{}
-
-	p.skipNewlines()
-
-	for {
-		if p.current.Type == TokenEOF {
-			p.errorAtToken(openParen, "unterminated loop range parameter list")
-			return nil, false
-		}
-
-		if p.current.Type == TokenRParen {
-			p.errorAtToken(openParen, "loop range parameter list cannot be empty")
-			return nil, false
-		}
-
-		if p.current.Type != TokenIdentifier {
-			p.errorAtCurrent("expected loop range parameter name")
-			return nil, false
-		}
-
-		parameters = append(parameters, p.current)
-		p.advance()
-
-		if p.current.Type == TokenRParen {
-			p.advance()
-			break
-		}
-
-		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
-			p.errorAtCurrent("expected comma, newline, or ')' after loop range parameter")
-			return nil, false
-		}
-
-		p.skipSeparators()
-
-		if p.current.Type == TokenRParen {
-			p.errorAtCurrent("expected loop range parameter name")
-			return nil, false
-		}
-	}
-
-	if !isValidLoopRangeParameterCount(len(parameters)) {
-		p.errorAtToken(openParen, "collection range loop must declare one, two, three, or four parameters: value; value, key; value, key, collection; or value, key, collection, position")
-		return nil, false
-	}
-
-	if !p.validateBindingNames(parameters, "loop range parameter") {
-		return nil, false
-	}
-
-	return parameters, true
-}
-
-func isValidLoopRangeParameterCount(count int) bool {
-	return count >= 1 && count <= 4
-}
-
-func (p *Parser) cloneForLookahead() *Parser {
-	lexerCopy := *p.lexer
-	parserCopy := *p
-	parserCopy.lexer = &lexerCopy
-	parserCopy.errors = nil
-	return &parserCopy
-}
-
-func (p *Parser) finishConditionalStatement(condition Expression, closeParen Token) (Statement, bool) {
+func (p *Parser) finishConditionalStatement(firstCondition Expression, firstCloseParen Token) (Statement, bool) {
 	if !p.expectCurrent(TokenLBrace, "expected '{' after conditional expression") {
 		return nil, false
 	}
 
-	if !tokensOnSameLine(closeParen, p.current) {
+	if !tokensOnSameLine(firstCloseParen, p.current) {
 		p.errorAtCurrent("expected conditional block to start on the same line as the condition")
 		return nil, false
 	}
@@ -434,7 +312,7 @@ func (p *Parser) finishConditionalStatement(condition Expression, closeParen Tok
 
 	branches := []ConditionalBranch{
 		{
-			Condition: condition,
+			Condition: firstCondition,
 			Body:      body,
 		},
 	}
@@ -444,20 +322,21 @@ func (p *Parser) finishConditionalStatement(condition Expression, closeParen Tok
 	for p.current.Type == TokenComma {
 		comma := p.current
 
-		if p.peek.Type != TokenLParen && p.peek.Type != TokenLBrace {
-			break
-		}
-
-		if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
-			p.errorAtToken(comma, "expected conditional separator to be written without whitespace as '},(' or '},{'")
-			return nil, false
-		}
-
 		switch p.peek.Type {
 		case TokenLParen:
+			if elseBody != nil {
+				p.errorAtToken(comma, "else-if cannot appear after else")
+				return nil, false
+			}
+
+			if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
+				p.errorAtToken(comma, "expected else-if separator to be written without whitespace as '},('")
+				return nil, false
+			}
+
 			p.advance() // consume "," and move to "("
 
-			condition, closeParen, ok := p.parseParenthesizedExpression("else-if expression cannot be empty")
+			condition, conditionCloseParen, ok := p.parseParenthesizedExpression("else-if expression cannot be empty")
 			if !ok {
 				return nil, false
 			}
@@ -466,12 +345,12 @@ func (p *Parser) finishConditionalStatement(condition Expression, closeParen Tok
 				return nil, false
 			}
 
-			if !tokensOnSameLine(closeParen, p.current) {
-				p.errorAtCurrent("expected else-if block to start on the same line as the else-if condition")
+			if !tokensOnSameLine(conditionCloseParen, p.current) {
+				p.errorAtCurrent("expected else-if block to start on the same line as the condition")
 				return nil, false
 			}
 
-			body, closeBrace, ok = p.parseStatementBlock("else-if block")
+			body, nextCloseBrace, ok := p.parseStatementBlock("else-if block")
 			if !ok {
 				return nil, false
 			}
@@ -481,22 +360,29 @@ func (p *Parser) finishConditionalStatement(condition Expression, closeParen Tok
 				Body:      body,
 			})
 
+			closeBrace = nextCloseBrace
+
 		case TokenLBrace:
+			if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
+				p.errorAtToken(comma, "expected else separator to be written without whitespace as '},{'")
+				return nil, false
+			}
+
 			p.advance() // consume "," and move to "{"
 
-			elseBody, closeBrace, ok = p.parseStatementBlock("else block")
+			body, _, ok := p.parseStatementBlock("else block")
 			if !ok {
 				return nil, false
 			}
 
-			if p.current.Type == TokenComma &&
-				tokensTouch(closeBrace, p.current) &&
-				tokensTouch(p.current, p.peek) &&
-				(p.peek.Type == TokenLParen || p.peek.Type == TokenLBrace) {
-				p.errorAtCurrent("else block must be the final conditional branch")
-				return nil, false
-			}
+			elseBody = body
 
+			return &ConditionalStatement{
+				Branches: branches,
+				ElseBody: elseBody,
+			}, true
+
+		default:
 			return &ConditionalStatement{
 				Branches: branches,
 				ElseBody: elseBody,
@@ -623,11 +509,11 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 	return p.parseExpressionWithOptions(parentPrec, false)
 }
 
-func (p *Parser) parseRangeEndExpression(parentPrec int) Expression {
-	return p.parseExpressionWithOptions(parentPrec, true)
+func (p *Parser) parseRangeEndExpression() Expression {
+	return p.parseExpressionWithOptions(precLowest, true)
 }
 
-func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeIndex bool) Expression {
+func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIndex bool) Expression {
 	var left Expression
 
 	switch p.current.Type {
@@ -672,7 +558,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeIndex bool
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpressionWithOptions(precPrefix, stopBeforeIndex)
+		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after unary '-'")
 			return nil
@@ -703,7 +589,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeIndex bool
 		return nil
 	}
 
-	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeIndex)
+	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeTouchingIndex)
 }
 
 func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
@@ -716,7 +602,7 @@ func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
 	}
 
 	if p.current.Literal == "_" {
-		p.errorAtToken(p.current, "'_' is the void literal, not an outer binding")
+		p.errorAtToken(p.current, "'_' is a void literal, not an outer binding")
 		return nil, false
 	}
 
@@ -740,10 +626,10 @@ func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression
 	return p.parseExpressionTailWithOptions(left, parentPrec, false)
 }
 
-func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeIndex bool) Expression {
+func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeTouchingIndex bool) Expression {
 	for {
 		if p.current.Type == TokenLBracket {
-			if stopBeforeIndex {
+			if stopBeforeTouchingIndex && tokensTouch(p.previous, p.current) {
 				break
 			}
 
@@ -779,7 +665,7 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpressionWithOptions(currentPrec, stopBeforeIndex)
+		right := p.parseExpressionWithOptions(currentPrec, stopBeforeTouchingIndex)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after operator")
 			return nil
@@ -803,7 +689,26 @@ func (p *Parser) parseBraceLiteral() Expression {
 
 	if p.current.Type == TokenRBrace {
 		p.advance()
-		return &EmptyCollectionLiteral{Token: openBrace}
+		return &ArrayLiteral{
+			Token:    openBrace,
+			Elements: []ArrayElement{},
+		}
+	}
+
+	if p.current.Type == TokenColon {
+		p.advance()
+		p.skipNewlines()
+
+		if !p.expectCurrent(TokenRBrace, "expected '}' after ':' in empty map literal") {
+			return nil
+		}
+
+		p.advance()
+
+		return &MapLiteral{
+			Token:   openBrace,
+			Entries: []MapEntry{},
+		}
 	}
 
 	if p.current.Type == TokenLParen {
@@ -918,6 +823,10 @@ func (p *Parser) finishFunctionBodyStatement() bool {
 }
 
 func (p *Parser) parseFunctionParameters() ([]Token, bool) {
+	return p.parseBindingParameters("function parameter")
+}
+
+func (p *Parser) parseBindingParameters(name string) ([]Token, bool) {
 	openParen := p.current
 	p.advance() // consume "("
 
@@ -947,7 +856,7 @@ func (p *Parser) parseFunctionParameters() ([]Token, bool) {
 		if p.current.Type == TokenRParen {
 			p.advance()
 
-			if !p.validateBindingNames(parameters, "function parameter") {
+			if !p.validateBindingNames(parameters, name) {
 				return nil, false
 			}
 
@@ -964,7 +873,7 @@ func (p *Parser) parseFunctionParameters() ([]Token, bool) {
 		if p.current.Type == TokenRParen {
 			p.advance()
 
-			if !p.validateBindingNames(parameters, "function parameter") {
+			if !p.validateBindingNames(parameters, name) {
 				return nil, false
 			}
 
@@ -1083,10 +992,7 @@ func (p *Parser) parseArrayLiteral(openBrace Token) Expression {
 		}
 	}
 
-	return &ArrayLiteral{
-		Token:    openBrace,
-		Elements: elements,
-	}
+	return &ArrayLiteral{Token: openBrace, Elements: elements}
 }
 
 func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
@@ -1097,20 +1003,13 @@ func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
 	}
 
 	if p.current.Type != TokenRangeInclusive && p.current.Type != TokenRangeExclusive {
-		return &ExpressionArrayElement{Value: start}, true
+		return &ExpressionArrayElement{Expression: start}, true
 	}
 
 	rangeToken := p.current
-	isExclusive := rangeToken.Type == TokenRangeExclusive
+	p.advance()
 
-	p.advance() // consume ".." or "..."
-
-	if isArrayElementTerminator(p.current.Type) {
-		p.errorAtToken(rangeToken, "expected range end expression")
-		return nil, false
-	}
-
-	end := p.parseRangeEndExpression(precLowest)
+	end := p.parseRangeEndExpression()
 	if end == nil {
 		p.errorAtToken(rangeToken, "expected range end expression")
 		return nil, false
@@ -1120,62 +1019,43 @@ func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
 
 	if p.current.Type == TokenLBracket {
 		if !tokensTouch(p.previous, p.current) {
-			p.errorAtCurrent("expected range step '[' to touch range end expression")
+			p.errorAtCurrent("expected '[' to touch range end expression")
 			return nil, false
 		}
 
-		parsedStep, ok := p.parseRangeStep()
+		var ok bool
+		step, ok = p.parseRangeStepExpression()
 		if !ok {
 			return nil, false
 		}
-
-		step = parsedStep
 	}
 
 	return &RangeArrayElement{
 		Start:       start,
 		End:         end,
 		Step:        step,
-		RangeToken:  rangeToken,
-		IsExclusive: isExclusive,
+		IsInclusive: rangeToken.Type == TokenRangeInclusive,
 	}, true
 }
 
-func isArrayElementTerminator(tokenType TokenType) bool {
-	return tokenType == TokenComma ||
-		tokenType == TokenNewline ||
-		tokenType == TokenRBrace ||
-		tokenType == TokenEOF
-}
-
-func (p *Parser) parseRangeStep() (Expression, bool) {
-	openBracket := p.current
-
-	if !p.expectCurrent(TokenLBracket, "expected '[' before range step") {
-		return nil, false
-	}
-
+func (p *Parser) parseRangeStepExpression() (Expression, bool) {
 	p.advance() // consume "["
-	p.skipNewlines()
 
-	if p.current.Type == TokenRBracket {
-		p.errorAtToken(openBracket, "range step cannot be empty")
-		return nil, false
-	}
+	p.skipNewlines()
 
 	step := p.parseExpression(precLowest)
 	if step == nil {
-		p.errorAtToken(openBracket, "expected range step expression")
+		p.errorAtCurrent("expected range step expression")
 		return nil, false
 	}
 
 	p.skipNewlines()
 
-	if !p.expectCurrent(TokenRBracket, "expected ']' after range step") {
+	if !p.expectCurrent(TokenRBracket, "expected ']' after range step expression") {
 		return nil, false
 	}
 
-	p.advance() // consume "]"
+	p.advance()
 
 	return step, true
 }
@@ -1265,27 +1145,30 @@ func (p *Parser) skipNewlines() {
 	}
 }
 
-func (p *Parser) synchronize() {
-	for p.current.Type != TokenEOF && p.current.Type != TokenNewline && p.current.Type != TokenComma {
-		p.advance()
-	}
-
-	p.skipSeparators()
-}
-
 func (p *Parser) advance() {
 	p.previous = p.current
 	p.current = p.peek
 	p.peek = p.lexer.NextToken()
 }
 
-func (p *Parser) expectCurrent(expected TokenType, message string) bool {
-	if p.current.Type == expected {
+func (p *Parser) expectCurrent(tokenType TokenType, message string) bool {
+	if p.current.Type == tokenType {
 		return true
 	}
 
 	p.errorAtCurrent(message)
 	return false
+}
+
+func (p *Parser) synchronize() {
+	for p.current.Type != TokenEOF {
+		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			p.skipSeparators()
+			return
+		}
+
+		p.advance()
+	}
 }
 
 func (p *Parser) errorAtCurrent(message string) {
