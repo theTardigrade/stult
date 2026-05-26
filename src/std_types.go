@@ -9,6 +9,7 @@ func NewStdTypesMap() Value {
 		"COLLECTION": NewImmutableBinding(NewStdTypesCollectionMap()),
 		"MAP":        NewImmutableBinding(NewStdTypesMapMap()),
 		"NUMBER":     NewImmutableBinding(NewStdTypesNumberMap()),
+		"STRING":     NewImmutableBinding(NewStdTypesStringMap()),
 
 		"IS_ARRAY":            NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsArray)),
 		"IS_BOOL":             NewImmutableBinding(NewBuiltinFunctionValue(stdTypesIsBool)),
