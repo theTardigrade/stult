@@ -620,6 +620,14 @@ func precedence(tok TokenType) int {
 }
 
 func (p *Parser) parseExpression(parentPrec int) Expression {
+	return p.parseExpressionWithOptions(parentPrec, false)
+}
+
+func (p *Parser) parseRangeEndExpression(parentPrec int) Expression {
+	return p.parseExpressionWithOptions(parentPrec, true)
+}
+
+func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeIndex bool) Expression {
 	var left Expression
 
 	switch p.current.Type {
@@ -664,7 +672,7 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpression(precPrefix)
+		right := p.parseExpressionWithOptions(precPrefix, stopBeforeIndex)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after unary '-'")
 			return nil
@@ -695,7 +703,7 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 		return nil
 	}
 
-	return p.parseExpressionTail(left, parentPrec)
+	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeIndex)
 }
 
 func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
@@ -729,8 +737,16 @@ func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
 }
 
 func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression {
+	return p.parseExpressionTailWithOptions(left, parentPrec, false)
+}
+
+func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeIndex bool) Expression {
 	for {
 		if p.current.Type == TokenLBracket {
+			if stopBeforeIndex {
+				break
+			}
+
 			if !tokensTouch(p.previous, p.current) {
 				p.errorAtCurrent("expected '[' to touch indexed expression")
 				return nil
@@ -763,7 +779,7 @@ func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpression(currentPrec)
+		right := p.parseExpressionWithOptions(currentPrec, stopBeforeIndex)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after operator")
 			return nil
@@ -1034,12 +1050,11 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 }
 
 func (p *Parser) parseArrayLiteral(openBrace Token) Expression {
-	elements := []Expression{}
+	elements := []ArrayElement{}
 
 	for {
-		element := p.parseExpression(precLowest)
-		if element == nil {
-			p.errorAtToken(openBrace, "expected array element")
+		element, ok := p.parseArrayElement(openBrace)
+		if !ok {
 			return nil
 		}
 
@@ -1068,7 +1083,101 @@ func (p *Parser) parseArrayLiteral(openBrace Token) Expression {
 		}
 	}
 
-	return &ArrayLiteral{Token: openBrace, Elements: elements}
+	return &ArrayLiteral{
+		Token:    openBrace,
+		Elements: elements,
+	}
+}
+
+func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
+	start := p.parseExpression(precLowest)
+	if start == nil {
+		p.errorAtToken(openBrace, "expected array element")
+		return nil, false
+	}
+
+	if p.current.Type != TokenRangeInclusive && p.current.Type != TokenRangeExclusive {
+		return &ExpressionArrayElement{Value: start}, true
+	}
+
+	rangeToken := p.current
+	isExclusive := rangeToken.Type == TokenRangeExclusive
+
+	p.advance() // consume ".." or "..."
+
+	if isArrayElementTerminator(p.current.Type) {
+		p.errorAtToken(rangeToken, "expected range end expression")
+		return nil, false
+	}
+
+	end := p.parseRangeEndExpression(precLowest)
+	if end == nil {
+		p.errorAtToken(rangeToken, "expected range end expression")
+		return nil, false
+	}
+
+	var step Expression
+
+	if p.current.Type == TokenLBracket {
+		if !tokensTouch(p.previous, p.current) {
+			p.errorAtCurrent("expected range step '[' to touch range end expression")
+			return nil, false
+		}
+
+		parsedStep, ok := p.parseRangeStep()
+		if !ok {
+			return nil, false
+		}
+
+		step = parsedStep
+	}
+
+	return &RangeArrayElement{
+		Start:       start,
+		End:         end,
+		Step:        step,
+		RangeToken:  rangeToken,
+		IsExclusive: isExclusive,
+	}, true
+}
+
+func isArrayElementTerminator(tokenType TokenType) bool {
+	return tokenType == TokenComma ||
+		tokenType == TokenNewline ||
+		tokenType == TokenRBrace ||
+		tokenType == TokenEOF
+}
+
+func (p *Parser) parseRangeStep() (Expression, bool) {
+	openBracket := p.current
+
+	if !p.expectCurrent(TokenLBracket, "expected '[' before range step") {
+		return nil, false
+	}
+
+	p.advance() // consume "["
+	p.skipNewlines()
+
+	if p.current.Type == TokenRBracket {
+		p.errorAtToken(openBracket, "range step cannot be empty")
+		return nil, false
+	}
+
+	step := p.parseExpression(precLowest)
+	if step == nil {
+		p.errorAtToken(openBracket, "expected range step expression")
+		return nil, false
+	}
+
+	p.skipNewlines()
+
+	if !p.expectCurrent(TokenRBracket, "expected ']' after range step") {
+		return nil, false
+	}
+
+	p.advance() // consume "]"
+
+	return step, true
 }
 
 func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {

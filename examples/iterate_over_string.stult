@@ -18,6 +18,7 @@ word_count : 0
 
 ( CS( current_word ) ! 0 ) {
 	@P(@current_word)
+	@word_count :+ 1
 }
 
 P("\n(Word count: ", word_count, ".)")

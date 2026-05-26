@@ -1018,18 +1018,121 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 }
 
 func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
-	elements := make([]Value, 0, len(lit.Elements))
+	elements := []Value{}
 
-	for _, elementExpression := range lit.Elements {
-		element, err := i.evalExpression(elementExpression)
+	for _, arrayElement := range lit.Elements {
+		values, err := i.evalArrayElement(arrayElement)
 		if err != nil {
 			return Value{}, err
 		}
 
-		elements = append(elements, element)
+		elements = append(elements, values...)
 	}
 
 	return NewArrayValue(elements, false), nil
+}
+
+func (i *Interpreter) evalArrayElement(element ArrayElement) ([]Value, error) {
+	switch e := element.(type) {
+	case *ExpressionArrayElement:
+		value, err := i.evalExpression(e.Value)
+		if err != nil {
+			return nil, err
+		}
+
+		return []Value{value}, nil
+
+	case *RangeArrayElement:
+		return i.evalRangeArrayElement(e)
+
+	default:
+		return nil, fmt.Errorf("unknown array element type %T", element)
+	}
+}
+
+func (i *Interpreter) evalRangeArrayElement(element *RangeArrayElement) ([]Value, error) {
+	startValue, err := i.evalExpression(element.Start)
+	if err != nil {
+		return nil, err
+	}
+
+	endValue, err := i.evalExpression(element.End)
+	if err != nil {
+		return nil, err
+	}
+
+	start, err := rangeInteger(startValue, "start")
+	if err != nil {
+		return nil, err
+	}
+
+	end, err := rangeInteger(endValue, "end")
+	if err != nil {
+		return nil, err
+	}
+
+	step := 1
+
+	if element.Step != nil {
+		stepValue, err := i.evalExpression(element.Step)
+		if err != nil {
+			return nil, err
+		}
+
+		step, err = rangeInteger(stepValue, "step")
+		if err != nil {
+			return nil, err
+		}
+
+		if step <= 0 {
+			return nil, fmt.Errorf("array range step must be a positive integer")
+		}
+	}
+
+	values := []Value{}
+
+	if start <= end {
+		for value := start; ; value += step {
+			if element.IsExclusive {
+				if value >= end {
+					break
+				}
+			} else if value > end {
+				break
+			}
+
+			values = append(values, NewNumberValueFromInt(value))
+		}
+	} else {
+		for value := start; ; value -= step {
+			if element.IsExclusive {
+				if value <= end {
+					break
+				}
+			} else if value < end {
+				break
+			}
+
+			values = append(values, NewNumberValueFromInt(value))
+		}
+	}
+
+	return values, nil
+}
+
+func rangeInteger(value Value, name string) (int, error) {
+	value = resolveSpecializedValue(value)
+
+	if value.Kind != ValueNumber {
+		return 0, fmt.Errorf("array range %s must be a number", name)
+	}
+
+	integer, accuracy := value.Number.Int64()
+	if accuracy != big.Exact {
+		return 0, fmt.Errorf("array range %s must be an integer", name)
+	}
+
+	return int(integer), nil
 }
 
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {

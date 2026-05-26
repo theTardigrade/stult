@@ -23,6 +23,9 @@ const (
 	TokenAt          TokenType = "@"
 	TokenCaret       TokenType = "^"
 
+	TokenRangeInclusive TokenType = ".."
+	TokenRangeExclusive TokenType = "..."
+
 	TokenPlus  TokenType = "+"
 	TokenMinus TokenType = "-"
 	TokenStar  TokenType = "*"
@@ -172,6 +175,32 @@ func (l *Lexer) NextToken() Token {
 		l.readChar()
 		return l.makeToken(TokenCaret, "^", line, col)
 
+	case '.':
+		if l.peekChar() == '.' {
+			if l.peekAhead(2) == '.' {
+				l.readChar()
+				l.readChar()
+				l.readChar()
+				return l.makeToken(TokenRangeExclusive, "...", line, col)
+			}
+
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenRangeInclusive, "..", line, col)
+		}
+
+		if unicode.IsDigit(l.peekChar()) {
+			literal, ok := l.readNumber()
+			if !ok {
+				return l.makeToken(TokenIllegal, literal, line, col)
+			}
+
+			return l.makeToken(TokenNumber, literal, line, col)
+		}
+
+		l.readChar()
+		return l.makeToken(TokenIllegal, ".", line, col)
+
 	case '+':
 		if l.peekChar() == '=' {
 			l.readChar()
@@ -246,7 +275,7 @@ func (l *Lexer) NextToken() Token {
 		return l.makeIdentifierToken(literal, line, col)
 	}
 
-	if unicode.IsDigit(l.ch) || (l.ch == '.' && unicode.IsDigit(l.peekChar())) {
+	if unicode.IsDigit(l.ch) {
 		literal, ok := l.readNumber()
 		if !ok {
 			return l.makeToken(TokenIllegal, literal, line, col)
@@ -380,15 +409,27 @@ func (l *Lexer) readIdentifier() string {
 func (l *Lexer) readNumber() (string, bool) {
 	start := l.pos - 1
 
-	for unicode.IsDigit(l.ch) {
-		l.readChar()
-	}
-
 	if l.ch == '.' {
 		l.readChar()
 
+		if !unicode.IsDigit(l.ch) {
+			return string(l.input[start:l.literalEnd()]), false
+		}
+
 		for unicode.IsDigit(l.ch) {
 			l.readChar()
+		}
+	} else {
+		for unicode.IsDigit(l.ch) {
+			l.readChar()
+		}
+
+		if l.ch == '.' && unicode.IsDigit(l.peekChar()) {
+			l.readChar()
+
+			for unicode.IsDigit(l.ch) {
+				l.readChar()
+			}
 		}
 	}
 

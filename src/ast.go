@@ -12,6 +12,10 @@ type Expression interface {
 	expressionNode()
 }
 
+type ArrayElement interface {
+	arrayElementNode()
+}
+
 type AssignmentStatement struct {
 	Name        Token
 	Value       Expression
@@ -134,10 +138,26 @@ type MapEntry struct {
 
 type ArrayLiteral struct {
 	Token    Token
-	Elements []Expression
+	Elements []ArrayElement
 }
 
 func (*ArrayLiteral) expressionNode() {}
+
+type ExpressionArrayElement struct {
+	Value Expression
+}
+
+func (*ExpressionArrayElement) arrayElementNode() {}
+
+type RangeArrayElement struct {
+	Start       Expression
+	End         Expression
+	Step        Expression
+	RangeToken  Token
+	IsExclusive bool
+}
+
+func (*RangeArrayElement) arrayElementNode() {}
 
 type IndexExpression struct {
 	Object Expression
