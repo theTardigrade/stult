@@ -5,6 +5,7 @@ func NewStdMap() Value {
 		"FILE":  NewImmutableBinding(NewStdFileMap()),
 		"IO":    NewImmutableBinding(NewStdIOMap()),
 		"MATH":  NewImmutableBinding(NewStdMathMap()),
+		"TIME":  NewImmutableBinding(NewStdTimeMap()),
 		"TYPES": NewImmutableBinding(NewStdTypesMap()),
 	}
 
