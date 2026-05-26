@@ -29,6 +29,7 @@ func NewStdMathMap() Value {
 		"SQRT":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSqrt)),
 		"SQUARE": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSquare)),
 		"TAU":    NewImmutableBinding(multiplyNumberByInt(pi, 2)),
+		"TRIG":   NewImmutableBinding(NewStdMathTrigMap()),
 		"TRUNC":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathTrunc)),
 	}
 
