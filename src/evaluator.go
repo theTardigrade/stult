@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"sort"
@@ -64,6 +65,49 @@ type Value struct {
 	EmptyCollection *EmptyCollection
 	Function        *Function
 	BuiltinFunction BuiltinFunction
+}
+
+type breakSignal struct {
+	Token Token
+}
+
+func (s *breakSignal) Error() string {
+	return fmt.Sprintf(
+		"line %d, column %d: break used outside loop",
+		s.Token.StartOfLine,
+		s.Token.StartOfColumn,
+	)
+}
+
+type returnSignal struct {
+	Token Token
+	Value Value
+}
+
+func (s *returnSignal) Error() string {
+	return fmt.Sprintf(
+		"line %d, column %d: return used outside function",
+		s.Token.StartOfLine,
+		s.Token.StartOfColumn,
+	)
+}
+
+func asBreakSignal(err error) (*breakSignal, bool) {
+	var signal *breakSignal
+	if errors.As(err, &signal) {
+		return signal, true
+	}
+
+	return nil, false
+}
+
+func asReturnSignal(err error) (*returnSignal, bool) {
+	var signal *returnSignal
+	if errors.As(err, &signal) {
+		return signal, true
+	}
+
+	return nil, false
 }
 
 func NewEmptyValue() Value {
@@ -482,6 +526,20 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 	case *CompoundAssignmentStatement:
 		return i.evalCompoundAssignmentStatement(s)
 
+	case *BreakStatement:
+		return Value{}, &breakSignal{Token: s.Token}
+
+	case *ReturnStatement:
+		value, err := i.evalExpression(s.Value)
+		if err != nil {
+			return Value{}, err
+		}
+
+		return Value{}, &returnSignal{
+			Token: s.Token,
+			Value: value,
+		}
+
 	case *IndexAssignmentStatement:
 		return i.evalIndexAssignmentStatement(s)
 
@@ -546,6 +604,10 @@ func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error)
 		}
 
 		if _, err := i.evalStatementBlock(stmt.Body); err != nil {
+			if _, ok := asBreakSignal(err); ok {
+				break
+			}
+
 			return Value{}, err
 		}
 	}
@@ -612,6 +674,10 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if _, ok := asBreakSignal(err); ok {
+				break
+			}
+
 			return Value{}, err
 		}
 
@@ -650,6 +716,10 @@ func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array)
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if _, ok := asBreakSignal(err); ok {
+				break
+			}
+
 			return Value{}, err
 		}
 
@@ -678,6 +748,10 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if _, ok := asBreakSignal(err); ok {
+				break
+			}
+
 			return Value{}, err
 		}
 
@@ -1362,6 +1436,10 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 
 	for _, stmt := range fn.Body {
 		if _, err := i.evalStatement(stmt); err != nil {
+			if signal, ok := asReturnSignal(err); ok {
+				return signal.Value, nil
+			}
+
 			return Value{}, err
 		}
 	}

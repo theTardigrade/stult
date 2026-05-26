@@ -29,6 +29,19 @@ type CompoundAssignmentStatement struct {
 
 func (s *CompoundAssignmentStatement) statementNode() {}
 
+type BreakStatement struct {
+	Token Token
+}
+
+func (s *BreakStatement) statementNode() {}
+
+type ReturnStatement struct {
+	Token Token
+	Value Expression
+}
+
+func (s *ReturnStatement) statementNode() {}
+
 type ExpressionStatement struct {
 	Expression Expression
 }

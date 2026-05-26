@@ -1,6 +1,6 @@
 $includeExtensions = @(
 	'.go',
-	'.stul',
+	'.stult',
 	'.json',
 	'.yaml'
 )
