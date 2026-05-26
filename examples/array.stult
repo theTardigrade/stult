@@ -16,7 +16,7 @@ singleline_array : { "test", "test2", "test3" }
 PRINT(multiline_array)
 PRINT(singleline_array)
 
-A = STD["TYPES"]["ARRAY"]["APPEND"]
+A : STD["TYPES"]["ARRAY"]["APPEND"]
 
 another_array : {}
 

@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -59,7 +61,7 @@ func run() error {
 				"  interpreter\n" +
 				"  interpreter <file.stult>\n" +
 				"  interpreter <directory>\n" +
-				"  interpreter <manifest.stult>\n" +
+				"  interpreter <manifest.stulton>\n" +
 				"  interpreter <manifest.json>",
 		)
 	}
@@ -200,9 +202,24 @@ func isManifestFilename(filename string) bool {
 
 func runManifest(manifest *Manifest) error {
 	interpreter := NewInterpreter()
+	files := os.DirFS(manifest.Dir)
 
-	for _, filename := range manifest.RunFiles {
-		if err := runSourceFile(interpreter, filename); err != nil {
+	return runManifestFromFS(interpreter, files, manifest.Run)
+}
+
+func runManifestFromFS(interpreter *Interpreter, files fs.FS, runFiles []string) error {
+	for _, filename := range runFiles {
+		if filepath.IsAbs(filename) {
+			if err := runSourceFile(interpreter, filename); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		fsPath := cleanFSPath(filename)
+
+		if err := runSourceFileFromFS(interpreter, files, fsPath); err != nil {
 			return err
 		}
 	}
@@ -211,18 +228,36 @@ func runManifest(manifest *Manifest) error {
 }
 
 func runSourceFile(interpreter *Interpreter, filename string) error {
-	if filepath.Ext(filename) != expectedFileExtension {
+	absolutePath, err := filepath.Abs(filename)
+	if err != nil {
+		return fmt.Errorf("Could not resolve source path %q: %w", filename, err)
+	}
+
+	files := os.DirFS(filepath.Dir(absolutePath))
+	fsPath := filepath.Base(absolutePath)
+
+	return runSourceFileFromFSNamed(interpreter, files, fsPath, absolutePath)
+}
+
+func runSourceFileFromFS(interpreter *Interpreter, files fs.FS, filename string) error {
+	return runSourceFileFromFSNamed(interpreter, files, filename, filename)
+}
+
+func runSourceFileFromFSNamed(interpreter *Interpreter, files fs.FS, filename string, displayName string) error {
+	fsPath := cleanFSPath(filename)
+
+	if path.Ext(fsPath) != expectedFileExtension {
 		fmt.Fprintf(
 			os.Stderr,
 			"Warning: Expected %s file extension, got %q\n",
 			expectedFileExtension,
-			filepath.Ext(filename),
+			path.Ext(fsPath),
 		)
 	}
 
-	sourceBytes, err := os.ReadFile(filename)
+	sourceBytes, err := fs.ReadFile(files, fsPath)
 	if err != nil {
-		return fmt.Errorf("Could not read %q: %w", filename, err)
+		return fmt.Errorf("Could not read %q: %w", displayName, err)
 	}
 
 	lexer := NewLexer(string(sourceBytes))
@@ -230,14 +265,22 @@ func runSourceFile(interpreter *Interpreter, filename string) error {
 	program := parser.ParseProgram()
 
 	if len(parser.Errors()) > 0 {
-		return formatParserErrors(filename, parser.Errors())
+		return formatParserErrors(displayName, parser.Errors())
 	}
 
 	if err := interpreter.EvalProgram(program); err != nil {
-		return fmt.Errorf("Runtime error in %q: %w", filename, err)
+		return fmt.Errorf("Runtime error in %q: %w", displayName, err)
 	}
 
 	return nil
+}
+
+func cleanFSPath(filename string) string {
+	cleaned := filepath.Clean(filename)
+	cleaned = filepath.ToSlash(cleaned)
+	cleaned = strings.TrimPrefix(cleaned, "./")
+
+	return cleaned
 }
 
 func formatParserErrors(filename string, errors []string) error {

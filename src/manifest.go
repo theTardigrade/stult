@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 )
@@ -55,13 +57,8 @@ func LoadManifest(filename string) (*Manifest, error) {
 
 	dir := filepath.Dir(absolutePath)
 
-	manifest := &Manifest{
-		Path: absolutePath,
-		Dir:  dir,
-		Run:  []string(file.Run),
-	}
-
-	if err := manifest.validate(); err != nil {
+	manifest, err := newManifest(absolutePath, dir, file)
+	if err != nil {
 		return nil, err
 	}
 
@@ -70,8 +67,55 @@ func LoadManifest(filename string) (*Manifest, error) {
 	return manifest, nil
 }
 
+func LoadManifestFromFS(files fs.FS, filename string) (*Manifest, error) {
+	if strings.TrimSpace(filename) == "" {
+		filename = DefaultManifestFilename
+	}
+
+	if filepath.IsAbs(filename) {
+		return nil, fmt.Errorf("manifest path inside fs must be relative, got %q", filename)
+	}
+
+	fsPath := cleanManifestFSPath(filename)
+
+	bytes, err := fs.ReadFile(files, fsPath)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read manifest %q: %w", fsPath, err)
+	}
+
+	file, err := parseManifestFile(fsPath, bytes)
+	if err != nil {
+		return nil, fmt.Errorf("Could not parse manifest %q: %w", fsPath, err)
+	}
+
+	dir := manifestFSDir(fsPath)
+
+	manifest, err := newManifest(fsPath, dir, file)
+	if err != nil {
+		return nil, err
+	}
+
+	manifest.RunFiles = resolveManifestRunFilesFromFS(manifest.Dir, manifest.Run)
+
+	return manifest, nil
+}
+
+func newManifest(filename string, dir string, file manifestFile) (*Manifest, error) {
+	manifest := &Manifest{
+		Path: filename,
+		Dir:  dir,
+		Run:  []string(file.Run),
+	}
+
+	if err := manifest.validate(); err != nil {
+		return nil, err
+	}
+
+	return manifest, nil
+}
+
 func parseManifestFile(filename string, bytes []byte) (manifestFile, error) {
-	switch filepath.Base(filename) {
+	switch manifestBaseName(filename) {
 	case ManifestStultonFilename:
 		return parseStultonManifest(bytes)
 
@@ -81,7 +125,7 @@ func parseManifestFile(filename string, bytes []byte) (manifestFile, error) {
 	default:
 		return manifestFile{}, fmt.Errorf(
 			"unsupported manifest filename %q; expected %s or %s",
-			filepath.Base(filename),
+			manifestBaseName(filename),
 			ManifestStultonFilename,
 			ManifestJSONFilename,
 		)
@@ -231,6 +275,50 @@ func resolveManifestRunFiles(baseDir string, runFiles []string) []string {
 	}
 
 	return resolved
+}
+
+func resolveManifestRunFilesFromFS(baseDir string, runFiles []string) []string {
+	resolved := make([]string, 0, len(runFiles))
+
+	for _, runFile := range runFiles {
+		if filepath.IsAbs(runFile) {
+			resolved = append(resolved, filepath.Clean(runFile))
+			continue
+		}
+
+		cleanedRunFile := filepath.ToSlash(filepath.Clean(runFile))
+
+		if baseDir == "" {
+			resolved = append(resolved, cleanedRunFile)
+			continue
+		}
+
+		resolved = append(resolved, path.Clean(path.Join(baseDir, cleanedRunFile)))
+	}
+
+	return resolved
+}
+
+func cleanManifestFSPath(filename string) string {
+	cleaned := filepath.Clean(filename)
+	cleaned = filepath.ToSlash(cleaned)
+	cleaned = strings.TrimPrefix(cleaned, "./")
+
+	return cleaned
+}
+
+func manifestFSDir(filename string) string {
+	dir := path.Dir(cleanManifestFSPath(filename))
+
+	if dir == "." {
+		return ""
+	}
+
+	return dir
+}
+
+func manifestBaseName(filename string) string {
+	return path.Base(filepath.ToSlash(filename))
 }
 
 func (runList *manifestRunList) UnmarshalJSON(bytes []byte) error {
