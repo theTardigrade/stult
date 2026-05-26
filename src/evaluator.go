@@ -760,6 +760,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *VoidLiteral:
 		return NewVoidValue(), nil
 
+	case *BoolLiteral:
+		return NewBoolValue(e.Value), nil
+
 	case *NumberLiteral:
 		return NewNumberValueFromString(e.Value)
 

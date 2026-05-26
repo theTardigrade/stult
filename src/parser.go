@@ -517,6 +517,13 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 	var left Expression
 
 	switch p.current.Type {
+	case TokenBool:
+		left = &BoolLiteral{
+			Token: p.current,
+			Value: p.current.Literal == "\\/",
+		}
+		p.advance()
+
 	case TokenNumber:
 		left = &NumberLiteral{
 			Token: p.current,

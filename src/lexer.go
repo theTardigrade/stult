@@ -15,6 +15,7 @@ const (
 	TokenIdentifier TokenType = "ID"
 	TokenNumber     TokenType = "NUM"
 	TokenString     TokenType = "STR"
+	TokenBool       TokenType = "BOOL"
 
 	TokenPlusAssign  TokenType = ":+"
 	TokenMinusAssign TokenType = ":-"
@@ -226,8 +227,24 @@ func (l *Lexer) NextToken() Token {
 		return l.makeToken(TokenStar, "*", line, col)
 
 	case '/':
+		if l.peekChar() == '\\' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenBool, "/\\", line, col)
+		}
+
 		l.readChar()
 		return l.makeToken(TokenSlash, "/", line, col)
+
+	case '\\':
+		if l.peekChar() == '/' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenBool, "\\/", line, col)
+		}
+
+		l.readChar()
+		return l.makeToken(TokenIllegal, "\\", line, col)
 
 	case '&':
 		l.readChar()

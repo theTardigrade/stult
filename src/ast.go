@@ -62,6 +62,13 @@ type VoidLiteral struct {
 
 func (e *VoidLiteral) expressionNode() {}
 
+type BoolLiteral struct {
+	Token Token
+	Value bool
+}
+
+func (e *BoolLiteral) expressionNode() {}
+
 type NumberLiteral struct {
 	Token Token
 	Value string
