@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -30,42 +29,6 @@ type manifestFile struct {
 }
 
 type manifestRunList []string
-
-func LoadDefaultManifest() (*Manifest, error) {
-	return LoadManifest(DefaultManifestFilename)
-}
-
-func LoadManifest(filename string) (*Manifest, error) {
-	if strings.TrimSpace(filename) == "" {
-		filename = DefaultManifestFilename
-	}
-
-	absolutePath, err := filepath.Abs(filename)
-	if err != nil {
-		return nil, fmt.Errorf("Could not resolve manifest path %q: %w", filename, err)
-	}
-
-	bytes, err := os.ReadFile(absolutePath)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read manifest %q: %w", filename, err)
-	}
-
-	file, err := parseManifestFile(absolutePath, bytes)
-	if err != nil {
-		return nil, fmt.Errorf("Could not parse manifest %q: %w", filename, err)
-	}
-
-	dir := filepath.Dir(absolutePath)
-
-	manifest, err := newManifest(absolutePath, dir, file)
-	if err != nil {
-		return nil, err
-	}
-
-	manifest.RunFiles = resolveManifestRunFiles(manifest.Dir, manifest.Run)
-
-	return manifest, nil
-}
 
 func LoadManifestFromFS(files fs.FS, filename string) (*Manifest, error) {
 	if strings.TrimSpace(filename) == "" {
@@ -260,21 +223,6 @@ func (manifest *Manifest) validate() error {
 	}
 
 	return nil
-}
-
-func resolveManifestRunFiles(baseDir string, runFiles []string) []string {
-	resolved := make([]string, 0, len(runFiles))
-
-	for _, runFile := range runFiles {
-		if filepath.IsAbs(runFile) {
-			resolved = append(resolved, filepath.Clean(runFile))
-			continue
-		}
-
-		resolved = append(resolved, filepath.Clean(filepath.Join(baseDir, runFile)))
-	}
-
-	return resolved
 }
 
 func resolveManifestRunFilesFromFS(baseDir string, runFiles []string) []string {

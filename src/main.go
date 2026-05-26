@@ -28,12 +28,7 @@ func run() error {
 			return err
 		}
 
-		manifest, err := LoadManifest(manifestPath)
-		if err != nil {
-			return err
-		}
-
-		return runManifest(manifest)
+		return runManifestFile(manifestPath)
 
 	case 1:
 		target := args[0]
@@ -44,12 +39,7 @@ func run() error {
 		}
 
 		if isManifest {
-			manifest, err := LoadManifest(manifestPath)
-			if err != nil {
-				return err
-			}
-
-			return runManifest(manifest)
+			return runManifestFile(manifestPath)
 		}
 
 		interpreter := NewInterpreter()
@@ -65,6 +55,36 @@ func run() error {
 				"  interpreter <manifest.json>",
 		)
 	}
+}
+
+func runManifestFile(filename string) error {
+	manifest, files, err := loadManifestFileFromFS(filename)
+	if err != nil {
+		return err
+	}
+
+	interpreter := NewInterpreter()
+
+	return runManifestFromFS(interpreter, files, manifest.RunFiles)
+}
+
+func loadManifestFileFromFS(filename string) (*Manifest, fs.FS, error) {
+	absolutePath, err := filepath.Abs(filename)
+	if err != nil {
+		return nil, nil, fmt.Errorf("Could not resolve manifest path %q: %w", filename, err)
+	}
+
+	dir := filepath.Dir(absolutePath)
+	base := filepath.Base(absolutePath)
+
+	files := os.DirFS(dir)
+
+	manifest, err := LoadManifestFromFS(files, base)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return manifest, files, nil
 }
 
 func manifestPathFromArgument(target string) (string, bool, error) {
@@ -198,13 +218,6 @@ func isManifestFilename(filename string) bool {
 	base := filepath.Base(filename)
 
 	return base == ManifestStultonFilename || base == ManifestJSONFilename
-}
-
-func runManifest(manifest *Manifest) error {
-	interpreter := NewInterpreter()
-	files := os.DirFS(manifest.Dir)
-
-	return runManifestFromFS(interpreter, files, manifest.Run)
 }
 
 func runManifestFromFS(interpreter *Interpreter, files fs.FS, runFiles []string) error {
