@@ -10,3 +10,6 @@ P("Check if both TRUE and FALSE: ", T & F)
 
 P("Check if TRUE is the same as TRUE: ", T = \/)
 P("Check if FALSE is the same as FALSE: ", F = /\)
+
+P("NOT TRUE: ", !\/)
+P("NOT FALSE: ", !/\)

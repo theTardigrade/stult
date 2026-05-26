@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const DefaultManifestFilename = "stult.json"
+const DefaultManifestFilename = "manifest.stult"
 
 type Manifest struct {
 	Path string

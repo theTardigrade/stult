@@ -1416,6 +1416,8 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 }
 
 func evalPrefix(operator string, right Value) (Value, error) {
+	right = resolveSpecializedValue(right)
+
 	switch operator {
 	case "-":
 		if right.Kind != ValueNumber {
@@ -1426,6 +1428,13 @@ func evalPrefix(operator string, right Value) (Value, error) {
 		out.Neg(out)
 
 		return Value{Kind: ValueNumber, Number: out}, nil
+
+	case "!":
+		if right.Kind != ValueBool {
+			return Value{}, fmt.Errorf("unary '!' requires a bool")
+		}
+
+		return NewBoolValue(!right.Bool), nil
 
 	default:
 		return Value{}, fmt.Errorf("unknown prefix operator %q", operator)

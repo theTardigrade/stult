@@ -561,13 +561,13 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		left = outer
 
-	case TokenMinus:
+	case TokenMinus, TokenNotEqual:
 		operator := p.current
 		p.advance()
 
 		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
 		if right == nil {
-			p.errorAtToken(operator, "expected expression after unary '-'")
+			p.errorAtToken(operator, "expected expression after unary "+strconvQuote(operator.Literal))
 			return nil
 		}
 

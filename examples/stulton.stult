@@ -1,0 +1,29 @@
+PRINT : STD["IO"]["PRINT"]
+STULTON : STD["DATA"]["STULTON"]
+
+text : STULTON["NEW"]({
+	"NAME": "example"
+	"active": \/
+    "hobbies": {
+        "carpetry"
+        "carpentry"
+        "woodwork"
+        "marquetry"
+        "fingerpainting"
+    }
+    "baggage": {
+	    "empty_array": {}
+	    "empty_map": {:}
+    }
+    "num": 8428535988035835038824.5835734
+})
+
+is_text_valid : STULTON["IS_VALID"](text)
+parsed_text : STULTON["PARSE"](text)
+
+PRINT("VALID: ", is_text_valid)
+PRINT(parsed_text)
+
+parsed_text_reencoded : STULTON["NEW"](parsed_text)
+
+PRINT(parsed_text_reencoded)
