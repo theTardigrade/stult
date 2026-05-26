@@ -1,0 +1,6 @@
+IO : STD["IO"]
+
+name : IO["PROMPT"]("Name: ")
+age : IO["PROMPT"]("Age: ")
+
+IO["WRITE_LINE"]("Hello ", name, ", age ", age)

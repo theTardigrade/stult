@@ -1,0 +1,63 @@
+P : STD["IO"]["WRITE_LINE"]
+F : STD["FILE"]
+
+path : "std-file-example.txt"
+copy_path : "std-file-example-copy.txt"
+moved_path : "std-file-example-moved.txt"
+
+P("STD FILE example")
+
+# Clean up old files from previous runs.
+
+(F["EXISTS"](path)) {
+	F["DELETE"](path)
+}
+
+(F["EXISTS"](copy_path)) {
+	F["DELETE"](copy_path)
+}
+
+(F["EXISTS"](moved_path)) {
+	F["DELETE"](moved_path)
+}
+
+P("Writing file...")
+F["WRITE"](path, "Hello from Stul")
+
+P("Appending file...")
+F["APPEND"](path, "\nThis line was appended.")
+F["APPEND"](path, "\nNumbers stringify too: ")
+F["APPEND"](path, 12345)
+
+P("File exists: ", F["EXISTS"](path))
+P("File size in bytes: ", F["SIZE"](path))
+
+content : F["READ"](path)
+
+P("File content:")
+P(content)
+
+P("Copying file...")
+F["COPY"](path, copy_path)
+
+P("Copy exists: ", F["EXISTS"](copy_path))
+P("Copy content:")
+P(F["READ"](copy_path))
+
+P("Renaming copy...")
+F["RENAME"](copy_path, moved_path)
+
+P("Old copy path exists: ", F["EXISTS"](copy_path))
+P("Moved path exists: ", F["EXISTS"](moved_path))
+
+P("Moved content:")
+P(F["READ"](moved_path))
+
+P("Deleting files...")
+F["DELETE"](path)
+F["DELETE"](moved_path)
+
+P("Original exists after delete: ", F["EXISTS"](path))
+P("Moved exists after delete: ", F["EXISTS"](moved_path))
+
+P("Done.")
