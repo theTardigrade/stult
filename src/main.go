@@ -54,7 +54,14 @@ func run() error {
 		return runSourceFile(interpreter, target)
 
 	default:
-		return fmt.Errorf("Usage:\n  interpreter\n  interpreter <file.stul>\n  interpreter <directory>\n  interpreter <stult.json>")
+		return fmt.Errorf(
+			"Usage:\n" +
+				"  interpreter\n" +
+				"  interpreter <file.stult>\n" +
+				"  interpreter <directory>\n" +
+				"  interpreter <manifest.stult>\n" +
+				"  interpreter <manifest.json>",
+		)
 	}
 }
 
@@ -107,12 +114,13 @@ func findManifestUpwards(startDir string) (string, error) {
 	dir := absoluteDir
 
 	for {
-		manifestPath := filepath.Join(dir, DefaultManifestFilename)
+		manifestPath, found, err := findManifestInDirectory(dir)
+		if err != nil {
+			return "", err
+		}
 
-		if _, err := os.Stat(manifestPath); err == nil {
+		if found {
 			return manifestPath, nil
-		} else if !os.IsNotExist(err) {
-			return "", fmt.Errorf("Could not inspect manifest %q: %w", manifestPath, err)
 		}
 
 		parent := filepath.Dir(dir)
@@ -124,11 +132,70 @@ func findManifestUpwards(startDir string) (string, error) {
 		dir = parent
 	}
 
-	return "", fmt.Errorf("Could not find %s in %q or any parent directory", DefaultManifestFilename, absoluteDir)
+	return "", fmt.Errorf(
+		"Could not find %s or %s in %q or any parent directory",
+		ManifestStultonFilename,
+		ManifestJSONFilename,
+		absoluteDir,
+	)
+}
+
+func findManifestInDirectory(dir string) (string, bool, error) {
+	stultonPath := filepath.Join(dir, ManifestStultonFilename)
+	jsonPath := filepath.Join(dir, ManifestJSONFilename)
+
+	hasStulton, err := manifestFileExists(stultonPath)
+	if err != nil {
+		return "", false, err
+	}
+
+	hasJSON, err := manifestFileExists(jsonPath)
+	if err != nil {
+		return "", false, err
+	}
+
+	if hasStulton && hasJSON {
+		return "", false, fmt.Errorf(
+			"Found both %q and %q in %q; use only one manifest file",
+			ManifestStultonFilename,
+			ManifestJSONFilename,
+			dir,
+		)
+	}
+
+	if hasStulton {
+		return stultonPath, true, nil
+	}
+
+	if hasJSON {
+		return jsonPath, true, nil
+	}
+
+	return "", false, nil
+}
+
+func manifestFileExists(filename string) (bool, error) {
+	info, err := os.Stat(filename)
+
+	if err == nil {
+		if info.IsDir() {
+			return false, fmt.Errorf("Expected manifest %q to be a file, got directory", filename)
+		}
+
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, fmt.Errorf("Could not inspect manifest %q: %w", filename, err)
 }
 
 func isManifestFilename(filename string) bool {
-	return filepath.Base(filename) == DefaultManifestFilename || filepath.Ext(filename) == ".json"
+	base := filepath.Base(filename)
+
+	return base == ManifestStultonFilename || base == ManifestJSONFilename
 }
 
 func runManifest(manifest *Manifest) error {
