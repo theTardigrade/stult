@@ -25,7 +25,7 @@ func stdTypesArrayAppend(interpreter *Interpreter, args []Value) (Value, error) 
 		target = resolveSpecializedValue(target)
 	}
 
-	return NewEmptyValue(), nil
+	return NewVoidValue(), nil
 }
 
 func appendArrayValue(target Value, value Value) error {

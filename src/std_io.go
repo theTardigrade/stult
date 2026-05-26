@@ -19,5 +19,5 @@ func builtinStdIOPrint(_ *Interpreter, args []Value) (Value, error) {
 
 	fmt.Println()
 
-	return NewEmptyValue(), nil
+	return NewVoidValue(), nil
 }

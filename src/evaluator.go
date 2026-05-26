@@ -15,7 +15,7 @@ const DefaultFractionDigits = 32
 type ValueKind int
 
 const (
-	ValueEmpty ValueKind = iota
+	ValueVoid ValueKind = iota
 	ValueNumber
 	ValueBool
 	ValueString
@@ -110,8 +110,8 @@ func asReturnSignal(err error) (*returnSignal, bool) {
 	return nil, false
 }
 
-func NewEmptyValue() Value {
-	return Value{Kind: ValueEmpty}
+func NewVoidValue() Value {
+	return Value{Kind: ValueVoid}
 }
 
 func NewEmptyCollectionValue() Value {
@@ -231,7 +231,7 @@ func (v Value) Format(fractionDigits int) string {
 	v = resolveSpecializedValue(v)
 
 	switch v.Kind {
-	case ValueEmpty:
+	case ValueVoid:
 		return "_"
 
 	case ValueEmptyCollection:
@@ -270,7 +270,7 @@ func (v Value) DebugString() string {
 	v = resolveSpecializedValue(v)
 
 	switch v.Kind {
-	case ValueEmpty:
+	case ValueVoid:
 		return "_"
 
 	case ValueEmptyCollection:
@@ -582,7 +582,7 @@ func (i *Interpreter) evalConditionalStatement(stmt *ConditionalStatement) (Valu
 		return i.evalStatementBlock(stmt.ElseBody)
 	}
 
-	return NewEmptyValue(), nil
+	return NewVoidValue(), nil
 }
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
@@ -808,7 +808,7 @@ func (i *Interpreter) evalAfterLoopBody(stmt *LoopStatement) (Value, error) {
 		return i.evalStatementBlock(stmt.AfterLoopBody)
 	}
 
-	return NewEmptyValue(), nil
+	return NewVoidValue(), nil
 }
 
 func (i *Interpreter) evalStatementBlock(statements []Statement) (Value, error) {
@@ -828,7 +828,7 @@ func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, ini
 		i.Env = previousEnv
 	}()
 
-	result := NewEmptyValue()
+	result := NewVoidValue()
 
 	for _, stmt := range statements {
 		value, err := i.evalStatement(stmt)
@@ -844,8 +844,8 @@ func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, ini
 
 func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	switch e := expr.(type) {
-	case *EmptyLiteral:
-		return NewEmptyValue(), nil
+	case *VoidLiteral:
+		return NewVoidValue(), nil
 
 	case *EmptyCollectionLiteral:
 		return NewEmptyCollectionValue(), nil
@@ -1549,7 +1549,7 @@ func valuesEqual(left Value, right Value) (bool, error) {
 	}
 
 	switch left.Kind {
-	case ValueEmpty:
+	case ValueVoid:
 		return true, nil
 
 	case ValueNumber:

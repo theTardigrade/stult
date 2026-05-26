@@ -69,11 +69,11 @@ type LoopStatement struct {
 
 func (s *LoopStatement) statementNode() {}
 
-type EmptyLiteral struct {
+type VoidLiteral struct {
 	Token Token
 }
 
-func (e *EmptyLiteral) expressionNode() {}
+func (e *VoidLiteral) expressionNode() {}
 
 type EmptyCollectionLiteral struct {
 	Token Token

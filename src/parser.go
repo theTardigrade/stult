@@ -639,7 +639,7 @@ func (p *Parser) parseExpression(parentPrec int) Expression {
 
 	case TokenIdentifier:
 		if p.current.Literal == "_" {
-			left = &EmptyLiteral{
+			left = &VoidLiteral{
 				Token: p.current,
 			}
 			p.advance()
@@ -708,7 +708,7 @@ func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
 	}
 
 	if p.current.Literal == "_" {
-		p.errorAtToken(p.current, "'_' is an empty literal, not an outer binding")
+		p.errorAtToken(p.current, "'_' is the void literal, not an outer binding")
 		return nil, false
 	}
 
