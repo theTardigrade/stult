@@ -18,6 +18,7 @@ func NewStdMathMap() Value {
 		"CUBE":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathCube)),
 		"E":      NewImmutableBinding(calculateEValue(FloatPrecision)),
 		"FLOOR":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathFloor)),
+		"LERP":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathLerp)),
 		"MAX":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMax)),
 		"MIN":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMin)),
 		"MOD":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMod)),
@@ -209,6 +210,52 @@ func builtinStdMathSign(_ *Interpreter, args []Value) (Value, error) {
 	}
 
 	return NewNumberValueFromInt(value.Number.Sign()), nil
+}
+
+func builtinStdMathLerp(_ *Interpreter, args []Value) (Value, error) {
+	if len(args) != 3 {
+		return Value{}, fmt.Errorf("MATH.LERP expected 3 arguments, got %d", len(args))
+	}
+
+	start, err := stdMathNumberArg("MATH.LERP", args[0], 1)
+	if err != nil {
+		return Value{}, err
+	}
+
+	end, err := stdMathNumberArg("MATH.LERP", args[1], 2)
+	if err != nil {
+		return Value{}, err
+	}
+
+	amount, err := stdMathNumberArg("MATH.LERP", args[2], 3)
+	if err != nil {
+		return Value{}, err
+	}
+
+	workPrecision := stdMathWorkingPrecision(FloatPrecision)
+
+	startNumber := newFloatWithPrecision(workPrecision)
+	startNumber.Set(start.Number)
+
+	endNumber := newFloatWithPrecision(workPrecision)
+	endNumber.Set(end.Number)
+
+	amountNumber := newFloatWithPrecision(workPrecision)
+	amountNumber.Set(amount.Number)
+
+	difference := newFloatWithPrecision(workPrecision)
+	difference.Sub(endNumber, startNumber)
+
+	scaledDifference := newFloatWithPrecision(workPrecision)
+	scaledDifference.Mul(difference, amountNumber)
+
+	out := newFloatWithPrecision(workPrecision)
+	out.Add(startNumber, scaledDifference)
+
+	rounded := newFloat()
+	rounded.Set(out)
+
+	return Value{Kind: ValueNumber, Number: rounded}, nil
 }
 
 func builtinStdMathMin(_ *Interpreter, args []Value) (Value, error) {
