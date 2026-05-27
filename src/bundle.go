@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -211,7 +212,7 @@ func parseBuildCommandArgs(args []string) (string, string, error) {
 			index++
 
 		case "-h", "--help":
-			return "", "", fmt.Errorf(buildUsage())
+			return "", "", errors.New(buildUsage())
 
 		default:
 			if strings.HasPrefix(arg, "-") {
