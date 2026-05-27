@@ -45,6 +45,12 @@ func compoundAssignmentBinaryOperator(operator Token) (string, error) {
 	case TokenMinusAssign:
 		return "-", nil
 
+	case TokenStarAssign:
+		return "*", nil
+
+	case TokenSlashAssign:
+		return "/", nil
+
 	default:
 		return "", fmt.Errorf("unknown compound assignment operator %q", operator.Literal)
 	}

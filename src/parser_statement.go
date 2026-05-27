@@ -54,7 +54,7 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 		return nil
 	}
 
-	if assignToken.Type == TokenPlusAssign || assignToken.Type == TokenMinusAssign {
+	if isCompoundAssignmentOperator(assignToken.Type) {
 		if !isAssignableExpression(target) {
 			p.errorAtToken(assignToken, "invalid assignment target")
 			return nil
@@ -89,9 +89,14 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 }
 
 func isAssignmentOperator(tokenType TokenType) bool {
-	return tokenType == TokenColon ||
-		tokenType == TokenPlusAssign ||
-		tokenType == TokenMinusAssign
+	return tokenType == TokenColon || isCompoundAssignmentOperator(tokenType)
+}
+
+func isCompoundAssignmentOperator(tokenType TokenType) bool {
+	return tokenType == TokenPlusAssign ||
+		tokenType == TokenMinusAssign ||
+		tokenType == TokenStarAssign ||
+		tokenType == TokenSlashAssign
 }
 
 func isAssignableExpression(expr Expression) bool {

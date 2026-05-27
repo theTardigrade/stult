@@ -108,6 +108,18 @@ func (l *Lexer) NextToken() Token {
 			return l.makeToken(TokenMinusAssign, ":-", line, col)
 		}
 
+		if l.peekChar() == '*' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenStarAssign, ":*", line, col)
+		}
+
+		if l.peekChar() == '/' {
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenSlashAssign, ":/", line, col)
+		}
+
 		l.readChar()
 		return l.makeToken(TokenColon, ":", line, col)
 

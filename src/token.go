@@ -14,10 +14,13 @@ const (
 
 	TokenPlusAssign  TokenType = ":+"
 	TokenMinusAssign TokenType = ":-"
-	TokenComma       TokenType = ","
-	TokenColon       TokenType = ":"
-	TokenAt          TokenType = "@"
-	TokenCaret       TokenType = "^"
+	TokenStarAssign  TokenType = ":*"
+	TokenSlashAssign TokenType = ":/"
+
+	TokenComma TokenType = ","
+	TokenColon TokenType = ":"
+	TokenAt    TokenType = "@"
+	TokenCaret TokenType = "^"
 
 	TokenRangeInclusive TokenType = ".."
 	TokenRangeExclusive TokenType = "..."
