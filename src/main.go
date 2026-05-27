@@ -19,7 +19,15 @@ func main() {
 }
 
 func run() error {
+	if handled, err := runEmbeddedBundleIfPresent(); handled || err != nil {
+		return err
+	}
+
 	args := os.Args[1:]
+
+	if len(args) > 0 && args[0] == "build" {
+		return runBuildCommand(args[1:])
+	}
 
 	switch len(args) {
 	case 0:
@@ -49,6 +57,7 @@ func run() error {
 		return fmt.Errorf(
 			"Usage:\n" +
 				"  interpreter\n" +
+				"  interpreter build [project-directory] -o <output-executable>\n" +
 				"  interpreter <file.stult>\n" +
 				"  interpreter <directory>\n" +
 				"  interpreter <manifest.stulton>\n" +
