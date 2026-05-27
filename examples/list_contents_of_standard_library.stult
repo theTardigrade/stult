@@ -1,0 +1,59 @@
+IO : STD["IO"]
+W : IO["WRITE"]
+WL : IO["WRITE_LINE"]
+T : STD["TYPES"]
+C : T["COLLECTION"]
+
+print_title_border : { ( length )
+	(( { 0..length } )) { ( _ )
+		W("=")
+	}
+	WL()
+	(_)
+}
+
+iterate_map_recursively : { ( MAP, MAP_NAME, seen_maps )
+	MAP_NAME_SIZE : C["SIZE"](MAP_NAME)
+
+	print_title_border(MAP_NAME_SIZE)
+	WL(MAP_NAME)
+	print_title_border(MAP_NAME_SIZE)
+	WL()
+
+	UNSEEN_MAPS : {:}
+
+	( !T["IS_MAP"](seen_maps) ) {
+		@seen_maps : {:}
+	}
+
+	( !C["HAS"](seen_maps, MAP_NAME) ) {
+		seen_maps[MAP_NAME] : MAP
+	}
+
+	(( MAP )) { ( VALUE, KEY )
+		( T["IS_BUILTIN_FUNCTION"](VALUE) ) {
+			WL(KEY + " (function)")
+		},( T["IS_MAP"](VALUE) ) {
+			WL(KEY + " (collection)")
+
+			SUB_MAP_NAME_FORMATTED : (MAP_NAME + "[\"" + KEY + "\"]")
+
+			UNSEEN_MAPS[SUB_MAP_NAME_FORMATTED] : VALUE
+		}
+	}
+
+	(( UNSEEN_MAPS )) { ( SUB_MAP, SUB_MAP_NAME )
+		( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
+			WL()
+			iterate_map_recursively(SUB_MAP, SUB_MAP_NAME, seen_maps)
+
+			( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
+				seen_maps[SUB_MAP_NAME] : SUB_MAP
+			}
+		}
+	}
+
+	(_)
+}
+
+iterate_map_recursively(STD, "STD", {:})

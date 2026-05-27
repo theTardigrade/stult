@@ -352,8 +352,13 @@ func NewChildEnvironment(parent *Environment) *Environment {
 }
 
 func (e *Environment) Get(name string) (Binding, bool) {
-	binding, ok := e.values[name]
-	return binding, ok
+	for env := e; env != nil; env = env.parent {
+		if binding, ok := env.values[name]; ok {
+			return binding, true
+		}
+	}
+
+	return Binding{}, false
 }
 
 func (e *Environment) GetOuter(name string) (Binding, bool) {
@@ -787,7 +792,7 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 			binding, ok = i.Env.Get(e.Name)
 			if !ok {
 				return Value{}, fmt.Errorf(
-					"line %d, column %d: undefined identifier %q in current scope",
+					"line %d, column %d: undefined identifier %q",
 					e.Token.StartOfLine,
 					e.Token.StartOfColumn,
 					e.Name,
@@ -1530,13 +1535,16 @@ func valuesEqual(left Value, right Value) (bool, error) {
 		return left.Text.String() == right.Text.String(), nil
 
 	case ValueMap:
-		return false, fmt.Errorf("cannot compare maps")
+		return left.Map == right.Map, nil
 
 	case ValueArray:
-		return false, fmt.Errorf("cannot compare arrays")
+		return left.Array == right.Array, nil
 
-	case ValueFunction, ValueBuiltinFunction:
-		return false, fmt.Errorf("cannot compare functions")
+	case ValueFunction:
+		return left.Function == right.Function, nil
+
+	case ValueBuiltinFunction:
+		return false, fmt.Errorf("cannot compare builtin functions")
 
 	default:
 		return false, fmt.Errorf("cannot compare unknown value kind")
