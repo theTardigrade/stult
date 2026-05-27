@@ -28,15 +28,17 @@ PRINT_TITLE : { ( TITLE )
 ITERATE_MAP_WITH_RECURSIVE_PRINTING : { ( MAP, MAP_NAME, seen_maps )
 	PRINT_TITLE(MAP_NAME)
 
-	NEXT_MAPS : {:}
-
 	( !T["IS_MAP"](seen_maps) ) {
 		@seen_maps : {:}
 	}
 
-	( !C["HAS"](seen_maps, MAP_NAME) ) {
+	IS_KEY_NOT_FOUND_IN_SEEN_MAPS : { (KEY) (!C["HAS"](seen_maps, KEY)) }
+
+	( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(MAP_NAME) ) {
 		seen_maps[MAP_NAME] : MAP
 	}
+
+	NEXT_MAPS : {:}
 
 	(( MAP )) { ( VALUE, KEY )
 		( T["IS_BUILTIN_FUNCTION"](VALUE) ) {
@@ -51,11 +53,11 @@ ITERATE_MAP_WITH_RECURSIVE_PRINTING : { ( MAP, MAP_NAME, seen_maps )
 	}
 
 	(( NEXT_MAPS )) { ( SUB_MAP, SUB_MAP_NAME )
-		( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
+		( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(SUB_MAP_NAME) ) {
 			WL()
 			ITERATE_MAP_WITH_RECURSIVE_PRINTING(SUB_MAP, SUB_MAP_NAME, seen_maps)
 
-			( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
+			( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(SUB_MAP_NAME) ) {
 				seen_maps[SUB_MAP_NAME] : SUB_MAP
 			}
 		}

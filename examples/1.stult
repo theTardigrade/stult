@@ -1,0 +1,6 @@
+
+str : "dog"
+
+str :+ "face"
+
+STD["IO"]["PRINT"](str)
