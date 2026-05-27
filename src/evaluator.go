@@ -88,10 +88,7 @@ func NewNumberValueFromInt(value int) Value {
 }
 
 func NewNumberValueFromInt64(value int64) Value {
-	n := new(big.Float).
-		SetPrec(FloatPrecision).
-		SetMode(big.ToNearestEven).
-		SetInt64(value)
+	n := newFloatWithPrecision(FloatPrecision).SetInt64(value)
 
 	return Value{Kind: ValueNumber, Number: n}
 }
