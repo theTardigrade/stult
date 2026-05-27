@@ -2,23 +2,23 @@ package main
 
 import "fmt"
 
-func NewStdTypesArrayMap() Value {
+func NewStdTypeArrayMap() Value {
 	entries := map[string]Binding{
-		"APPEND": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesArrayAppend)),
+		"APPEND": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeArrayAppend)),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func stdTypesArrayAppend(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeArrayAppend(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) < 2 {
-		return Value{}, fmt.Errorf("TYPES.ARRAY.APPEND expected at least 2 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.ARRAY.APPEND expected at least 2 arguments, got %d", len(args))
 	}
 
 	target := resolveSpecializedValue(args[0])
 
 	if target.Kind != ValueArray {
-		return Value{}, fmt.Errorf("TYPES.ARRAY.APPEND expected an array")
+		return Value{}, fmt.Errorf("TYPE.ARRAY.APPEND expected an array")
 	}
 
 	for _, value := range args[1:] {
@@ -32,7 +32,7 @@ func stdTypesArrayAppend(_ *Interpreter, args []Value) (Value, error) {
 
 func appendArrayValue(target Value, value Value) error {
 	if target.Kind != ValueArray {
-		return fmt.Errorf("TYPES.ARRAY.APPEND expected an array")
+		return fmt.Errorf("TYPE.ARRAY.APPEND expected an array")
 	}
 
 	_, err := assignArrayIndex(

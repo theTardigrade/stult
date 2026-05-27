@@ -1,6 +1,6 @@
 P : STD["IO"]["PRINT"]
-SIZE : STD["TYPES"]["COLLECTION"]["SIZE"]
-HAS : STD["TYPES"]["COLLECTION"]["HAS"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+HAS : STD["TYPE"]["COLLECTION"]["HAS"]
 
 P("inclusive ascending: ", {1..5})
 P("exclusive ascending: ", {1...5})

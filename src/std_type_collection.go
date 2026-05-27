@@ -2,20 +2,20 @@ package main
 
 import "fmt"
 
-func NewStdTypesCollectionMap() Value {
+func NewStdTypeCollectionMap() Value {
 	entries := map[string]Binding{
-		"CLEAR":    NewImmutableBinding(NewBuiltinFunctionValue(stdTypesCollectionClear)),
-		"HAS":      NewImmutableBinding(NewBuiltinFunctionValue(stdTypesCollectionHas)),
-		"IS_EMPTY": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesCollectionIsEmpty)),
-		"SIZE":     NewImmutableBinding(NewBuiltinFunctionValue(stdTypesCollectionSize)),
+		"CLEAR":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClear)),
+		"HAS":      NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionHas)),
+		"IS_EMPTY": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsEmpty)),
+		"SIZE":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionSize)),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func stdTypesCollectionSize(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionSize(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.SIZE expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -23,21 +23,21 @@ func stdTypesCollectionSize(_ *Interpreter, args []Value) (Value, error) {
 	switch value.Kind {
 	case ValueMap:
 		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.SIZE cannot determine size of invalid map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid map")
 		}
 
 		return NewNumberValueFromInt(len(value.Map.Entries)), nil
 
 	case ValueArray:
 		if value.Array == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.SIZE cannot determine size of invalid array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid array")
 		}
 
 		return NewNumberValueFromInt(len(value.Array.Elements)), nil
 
 	case ValueString:
 		if value.Text == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.SIZE cannot determine size of invalid string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid string")
 		}
 
 		return NewNumberValueFromInt(len(value.Text.Runes)), nil
@@ -50,13 +50,13 @@ func stdTypesCollectionSize(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.SIZE cannot determine size of unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of unknown value kind")
 	}
 }
 
-func stdTypesCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.IS_EMPTY expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -64,21 +64,21 @@ func stdTypesCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
 	switch value.Kind {
 	case ValueMap:
 		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.IS_EMPTY cannot determine emptiness of invalid map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid map")
 		}
 
 		return NewBoolValue(len(value.Map.Entries) == 0), nil
 
 	case ValueArray:
 		if value.Array == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.IS_EMPTY cannot determine emptiness of invalid array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid array")
 		}
 
 		return NewBoolValue(len(value.Array.Elements) == 0), nil
 
 	case ValueString:
 		if value.Text == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.IS_EMPTY cannot determine emptiness of invalid string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid string")
 		}
 
 		return NewBoolValue(len(value.Text.Runes) == 0), nil
@@ -91,13 +91,13 @@ func stdTypesCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.IS_EMPTY cannot determine emptiness of unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of unknown value kind")
 	}
 }
 
-func stdTypesCollectionHas(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 2 {
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.HAS expected 2 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS expected 2 arguments, got %d", len(args))
 	}
 
 	collection := resolveSpecializedValue(args[0])
@@ -106,7 +106,7 @@ func stdTypesCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 	switch collection.Kind {
 	case ValueMap:
 		if collection.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.HAS cannot inspect invalid map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid map")
 		}
 
 		if key.Kind != ValueString || key.Text == nil {
@@ -118,7 +118,7 @@ func stdTypesCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 
 	case ValueArray:
 		if collection.Array == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.HAS cannot inspect invalid array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid array")
 		}
 
 		index, err := numberToArrayIndex(key)
@@ -130,7 +130,7 @@ func stdTypesCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 
 	case ValueString:
 		if collection.Text == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.HAS cannot inspect invalid string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid string")
 		}
 
 		index, err := numberToArrayIndex(key)
@@ -148,13 +148,13 @@ func stdTypesCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.HAS cannot inspect unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect unknown value kind")
 	}
 }
 
-func stdTypesCollectionClear(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionClear(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -162,11 +162,11 @@ func stdTypesCollectionClear(_ *Interpreter, args []Value) (Value, error) {
 	switch value.Kind {
 	case ValueMap:
 		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot clear invalid map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid map")
 		}
 
 		if value.Map.IsImmutable {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot modify immutable map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable map")
 		}
 
 		value.Map.Entries = make(map[string]Binding)
@@ -174,11 +174,11 @@ func stdTypesCollectionClear(_ *Interpreter, args []Value) (Value, error) {
 
 	case ValueArray:
 		if value.Array == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot clear invalid array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid array")
 		}
 
 		if value.Array.IsImmutable {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot modify immutable array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable array")
 		}
 
 		value.Array.Elements = nil
@@ -186,11 +186,11 @@ func stdTypesCollectionClear(_ *Interpreter, args []Value) (Value, error) {
 
 	case ValueString:
 		if value.Text == nil {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot clear invalid string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid string")
 		}
 
 		if value.Text.IsImmutable {
-			return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot modify immutable string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable string")
 		}
 
 		value.Text.Runes = nil
@@ -204,6 +204,6 @@ func stdTypesCollectionClear(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.COLLECTION.CLEAR cannot clear unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear unknown value kind")
 	}
 }

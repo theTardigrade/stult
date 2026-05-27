@@ -1,5 +1,5 @@
 P : STD["IO"]["PRINT"]
-CS : STD["TYPES"]["COLLECTION"]["SIZE"]
+CS : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 TEXT : "In the beginning was the word."
 

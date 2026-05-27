@@ -2,18 +2,18 @@ package main
 
 import "fmt"
 
-func NewStdTypesMapMap() Value {
+func NewStdTypeMapMap() Value {
 	entries := map[string]Binding{
-		"KEYS":   NewImmutableBinding(NewBuiltinFunctionValue(stdTypesMapKeys)),
-		"VALUES": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesMapValues)),
+		"KEYS":   NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapKeys)),
+		"VALUES": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapValues)),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func stdTypesMapKeys(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeMapKeys(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.MAP.KEYS expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.MAP.KEYS expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -21,7 +21,7 @@ func stdTypesMapKeys(_ *Interpreter, args []Value) (Value, error) {
 	switch value.Kind {
 	case ValueMap:
 		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.MAP.KEYS cannot inspect invalid map")
+			return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect invalid map")
 		}
 
 		keys := sortedMapKeys(value.Map)
@@ -43,13 +43,13 @@ func stdTypesMapKeys(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.MAP.KEYS cannot inspect unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect unknown value kind")
 	}
 }
 
-func stdTypesMapValues(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeMapValues(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.MAP.VALUES expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.MAP.VALUES expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -57,7 +57,7 @@ func stdTypesMapValues(_ *Interpreter, args []Value) (Value, error) {
 	switch value.Kind {
 	case ValueMap:
 		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPES.MAP.VALUES cannot inspect invalid map")
+			return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect invalid map")
 		}
 
 		keys := sortedMapKeys(value.Map)
@@ -79,6 +79,6 @@ func stdTypesMapValues(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.MAP.VALUES cannot inspect unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect unknown value kind")
 	}
 }

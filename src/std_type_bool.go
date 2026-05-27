@@ -5,20 +5,20 @@ import (
 	"strings"
 )
 
-func NewStdTypesBoolMap() Value {
+func NewStdTypeBoolMap() Value {
 	entries := map[string]Binding{
 		"FALSE": NewImmutableBinding(NewBoolValue(false)),
 		"TRUE":  NewImmutableBinding(NewBoolValue(true)),
 
-		"NEW": NewImmutableBinding(NewBuiltinFunctionValue(stdTypesBoolNew)),
+		"NEW": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeBoolNew)),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func stdTypesBoolNew(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeBoolNew(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.BOOL.NEW expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.BOOL.NEW expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -56,6 +56,6 @@ func stdTypesBoolNew(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.BOOL.NEW cannot convert unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.BOOL.NEW cannot convert unknown value kind")
 	}
 }

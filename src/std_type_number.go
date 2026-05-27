@@ -6,21 +6,21 @@ import (
 	"strings"
 )
 
-func NewStdTypesNumberMap() Value {
+func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
 		"FRACTION_DIGITS":  NewImmutableBinding(NewNumberValueFromInt(DefaultFractionDigits)),
 		"MAX_SAFE_INTEGER": NewImmutableBinding(newNumberValueFromBigInt(maxSafeIntegerBigInt())),
 		"MIN_SAFE_INTEGER": NewImmutableBinding(newNumberValueFromBigInt(minSafeIntegerBigInt())),
-		"NEW":              NewImmutableBinding(NewBuiltinFunctionValue(stdTypesNumberNew)),
+		"NEW":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
 		"PRECISION":        NewImmutableBinding(NewNumberValueFromInt(int(FloatPrecision))),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func stdTypesNumberNew(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeNumberNew(_ *Interpreter, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPES.NUMBER.NEW expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.NUMBER.NEW expected 1 argument, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
@@ -64,7 +64,7 @@ func stdTypesNumberNew(_ *Interpreter, args []Value) (Value, error) {
 		return NewVoidValue(), nil
 
 	default:
-		return Value{}, fmt.Errorf("TYPES.NUMBER.NEW cannot convert unknown value kind")
+		return Value{}, fmt.Errorf("TYPE.NUMBER.NEW cannot convert unknown value kind")
 	}
 }
 

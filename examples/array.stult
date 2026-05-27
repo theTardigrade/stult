@@ -16,7 +16,7 @@ singleline_array : { "test1", "test2", "test3" }
 PRINT(multiline_array)
 PRINT(singleline_array)
 
-A : STD["TYPES"]["ARRAY"]["APPEND"]
+A : STD["TYPE"]["ARRAY"]["APPEND"]
 
 another_array : {}
 
@@ -24,4 +24,4 @@ A(another_array, "example text", "and some more example text")
 
 PRINT(another_array)
 
-PRINT(STD["TYPES"]["COLLECTION"]["SIZE"](another_array))
+PRINT(STD["TYPE"]["COLLECTION"]["SIZE"](another_array))

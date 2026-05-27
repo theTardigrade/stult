@@ -61,7 +61,7 @@ total : 0
 }
 
 P("total: ", total)
-P("average-ish: ", total / STD["TYPES"]["COLLECTION"]["SIZE"](values))
+P("average-ish: ", total / STD["TYPE"]["COLLECTION"]["SIZE"](values))
 
 # These should error if uncommented:
 # P(M["SQRT"](-1))

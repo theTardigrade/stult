@@ -1,7 +1,7 @@
 IO : STD["IO"]
 W : IO["WRITE"]
 WL : IO["WRITE_LINE"]
-T : STD["TYPES"]
+T : STD["TYPE"]
 C : T["COLLECTION"]
 
 PRINT_TITLE_BORDER : { ( length )
