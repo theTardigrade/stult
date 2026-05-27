@@ -4,9 +4,13 @@ MATH : STD["MATH"]
 PI : MATH["PI"]
 SQUARE : MATH["SQUARE"]
 
-circle : {
+CIRCLE : {
 	"radius": 10
-	"area": { () R : @circle["radius"] (@PI * @SQUARE(R)) }
+	"AREA": { () R : CIRCLE["radius"] (@PI * @SQUARE(R)) }
 }
 
-PRINT("Double the area: ", circle["area"]() * 2)
+PRINT("The area of the small circle:  ", CIRCLE["AREA"]())
+
+CIRCLE["radius"] : 20
+
+PRINT("The area of the big circle:    ", CIRCLE["AREA"]())

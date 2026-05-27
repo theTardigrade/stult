@@ -439,6 +439,34 @@ type Interpreter struct {
 	Env *Environment
 }
 
+type controlFlowKind int
+
+const (
+	controlFlowBreak controlFlowKind = iota
+	controlFlowReturn
+)
+
+type controlFlow struct {
+	Kind  controlFlowKind
+	Value Value
+}
+
+func (flow *controlFlow) Error() string {
+	switch flow.Kind {
+	case controlFlowBreak:
+		return "break outside loop"
+	case controlFlowReturn:
+		return "return outside function"
+	default:
+		return "unknown control flow"
+	}
+}
+
+func asControlFlow(err error) (*controlFlow, bool) {
+	flow, ok := err.(*controlFlow)
+	return flow, ok
+}
+
 func NewInterpreter() *Interpreter {
 	env := NewEnvironment()
 
@@ -452,6 +480,15 @@ func NewInterpreter() *Interpreter {
 func (i *Interpreter) EvalProgram(program *Program) error {
 	for _, stmt := range program.Statements {
 		if _, err := i.evalStatement(stmt); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return fmt.Errorf("break used outside loop")
+				case controlFlowReturn:
+					return fmt.Errorf("return used outside function")
+				}
+			}
+
 			return err
 		}
 	}
@@ -487,6 +524,20 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 
 	case *ExpressionStatement:
 		return i.evalExpression(s.Expression)
+
+	case *BreakStatement:
+		return NewVoidValue(), &controlFlow{Kind: controlFlowBreak}
+
+	case *ReturnStatement:
+		value, err := i.evalExpression(s.Value)
+		if err != nil {
+			return Value{}, err
+		}
+
+		return value, &controlFlow{
+			Kind:  controlFlowReturn,
+			Value: value,
+		}
 
 	case *ConditionalStatement:
 		return i.evalConditionalStatement(s)
@@ -586,6 +637,15 @@ func (i *Interpreter) evalWhileLoopStatementWithInitialCondition(stmt *LoopState
 		}
 
 		if _, err := i.evalStatementBlock(stmt.Body); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
 			return Value{}, err
 		}
 	}
@@ -649,6 +709,15 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
 			return Value{}, err
 		}
 
@@ -687,6 +756,15 @@ func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array)
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
 			return Value{}, err
 		}
 
@@ -715,6 +793,15 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
 			return Value{}, err
 		}
 
@@ -1449,6 +1536,15 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 
 	for _, stmt := range fn.Body {
 		if _, err := i.evalStatement(stmt); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return Value{}, fmt.Errorf("break used outside loop")
+				case controlFlowReturn:
+					return flow.Value, nil
+				}
+			}
+
 			return Value{}, err
 		}
 	}

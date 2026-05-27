@@ -11,7 +11,7 @@ multiline_array : {
     8
 }
 
-singleline_array : { "test", "test2", "test3" }
+singleline_array : { "test1", "test2", "test3" }
 
 PRINT(multiline_array)
 PRINT(singleline_array)

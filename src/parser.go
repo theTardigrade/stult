@@ -58,6 +58,10 @@ func (p *Parser) ParseProgram() *Program {
 }
 
 func (p *Parser) parseStatement() Statement {
+	if p.current.Type == TokenCaret {
+		return p.parseCaretStatement()
+	}
+
 	if p.isLoopStart() {
 		return p.parseLoopStatement()
 	}
@@ -153,6 +157,25 @@ func isAssignableExpression(expr Expression) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func (p *Parser) parseCaretStatement() Statement {
+	caret := p.current
+	p.advance() // consume "^"
+
+	if p.current.Type != TokenLParen || !tokensTouch(caret, p.current) {
+		return &BreakStatement{Token: caret}
+	}
+
+	value, _, ok := p.parseParenthesizedExpression("return expression cannot be empty")
+	if !ok {
+		return nil
+	}
+
+	return &ReturnStatement{
+		Token: caret,
+		Value: value,
 	}
 }
 
