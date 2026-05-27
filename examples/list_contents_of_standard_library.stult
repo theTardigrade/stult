@@ -5,7 +5,7 @@ T : STD["TYPES"]
 C : T["COLLECTION"]
 
 print_title_border : { ( length )
-	(( { 0..length } )) { ( _ )
+	(( { 1..length } )) {
 		W("=")
 	}
 	WL()

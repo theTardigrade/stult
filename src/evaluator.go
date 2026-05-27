@@ -527,15 +527,55 @@ func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 		return i.evalCollectionRangeLoopStatement(stmt)
 	}
 
-	return i.evalWhileLoopStatement(stmt)
+	loopValue, err := i.evalExpression(stmt.Condition)
+	if err != nil {
+		return Value{}, err
+	}
+
+	loopValue = resolveSpecializedValue(loopValue)
+
+	switch loopValue.Kind {
+	case ValueBool:
+		return i.evalWhileLoopStatementWithInitialCondition(stmt, loopValue)
+
+	case ValueMap:
+		return i.evalMapRangeLoopStatement(stmt, loopValue.Map)
+
+	case ValueArray:
+		return i.evalArrayRangeLoopStatement(stmt, loopValue.Array)
+
+	case ValueString:
+		return i.evalStringRangeLoopStatement(stmt, loopValue.Text)
+
+	default:
+		return Value{}, fmt.Errorf("loop expression must evaluate to a bool, map, array, or string")
+	}
 }
 
 func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error) {
+	condition, err := i.evalExpression(stmt.Condition)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return i.evalWhileLoopStatementWithInitialCondition(stmt, resolveSpecializedValue(condition))
+}
+
+func (i *Interpreter) evalWhileLoopStatementWithInitialCondition(stmt *LoopStatement, firstCondition Value) (Value, error) {
+	condition := firstCondition
+	hasCondition := true
+
 	for {
-		condition, err := i.evalExpression(stmt.Condition)
-		if err != nil {
-			return Value{}, err
+		if !hasCondition {
+			value, err := i.evalExpression(stmt.Condition)
+			if err != nil {
+				return Value{}, err
+			}
+
+			condition = resolveSpecializedValue(value)
 		}
+
+		hasCondition = false
 
 		if condition.Kind != ValueBool {
 			return Value{}, fmt.Errorf("loop condition must evaluate to a bool")
@@ -555,7 +595,7 @@ func (i *Interpreter) evalWhileLoopStatement(stmt *LoopStatement) (Value, error)
 
 func (i *Interpreter) evalCollectionRangeLoopStatement(stmt *LoopStatement) (Value, error) {
 	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
-		return Value{}, fmt.Errorf("collection range loop must have one, two, three, or four parameters")
+		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
 	}
 
 	iterable, err := i.evalExpression(stmt.Condition)
@@ -581,7 +621,7 @@ func (i *Interpreter) evalCollectionRangeLoopStatement(stmt *LoopStatement) (Val
 }
 
 func isValidCollectionRangeParameterCount(count int) bool {
-	return count >= 1 && count <= 4
+	return count >= 0 && count <= 4
 }
 
 func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Value, error) {

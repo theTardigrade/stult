@@ -250,11 +250,6 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 			return nil, nil, Token{}, false
 		}
 
-		if len(parameters) == 0 {
-			p.errorAtToken(openBrace, "range parameter list cannot be empty")
-			return nil, nil, Token{}, false
-		}
-
 		rangeParameters = parameters
 	}
 
