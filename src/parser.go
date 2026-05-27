@@ -36,13 +36,19 @@ func (p *Parser) ParseProgram() *Program {
 		}
 
 		stmt := p.parseStatement()
+		canFollowTightly := statementAllowsTightFollower(stmt) && p.previous.Type == TokenRBrace
+
 		if stmt != nil {
 			program.Statements = append(program.Statements, stmt)
 		}
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
 			p.skipSeparators()
-		} else if p.current.Type != TokenEOF {
+		} else if p.current.Type == TokenEOF {
+			break
+		} else if canFollowTightly {
+			continue
+		} else {
 			p.errorAtCurrent("expected comma, newline, or end of file after statement")
 			p.synchronize()
 		}
@@ -144,6 +150,15 @@ func isAssignmentOperator(tokenType TokenType) bool {
 func isAssignableExpression(expr Expression) bool {
 	switch expr.(type) {
 	case *IdentifierExpression, *IndexExpression:
+		return true
+	default:
+		return false
+	}
+}
+
+func statementAllowsTightFollower(stmt Statement) bool {
+	switch stmt.(type) {
+	case *ConditionalStatement, *LoopStatement:
 		return true
 	default:
 		return false
@@ -270,6 +285,8 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 		}
 
 		stmt := p.parseStatement()
+		canFollowTightly := statementAllowsTightFollower(stmt) && p.previous.Type == TokenRBrace
+
 		if stmt == nil {
 			return nil, nil, Token{}, false
 		}
@@ -282,6 +299,10 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 		}
 
 		if p.current.Type == TokenRBrace || p.current.Type == TokenEOF {
+			continue
+		}
+
+		if canFollowTightly {
 			continue
 		}
 
@@ -450,6 +471,8 @@ func (p *Parser) parseStatementBlock(name string) ([]Statement, Token, bool) {
 		}
 
 		stmt := p.parseStatement()
+		canFollowTightly := statementAllowsTightFollower(stmt) && p.previous.Type == TokenRBrace
+
 		if stmt == nil {
 			return nil, Token{}, false
 		}
@@ -462,6 +485,10 @@ func (p *Parser) parseStatementBlock(name string) ([]Statement, Token, bool) {
 		}
 
 		if p.current.Type == TokenRBrace || p.current.Type == TokenEOF {
+			continue
+		}
+
+		if canFollowTightly {
 			continue
 		}
 
@@ -753,7 +780,7 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 
 				body = append(body, stmt)
 
-				if !p.finishFunctionBodyStatement() {
+				if !p.finishFunctionBodyStatement(stmt) {
 					return nil
 				}
 
@@ -773,7 +800,7 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 
 				body = append(body, stmt)
 
-				if !p.finishFunctionBodyStatement() {
+				if !p.finishFunctionBodyStatement(stmt) {
 					return nil
 				}
 
@@ -803,20 +830,24 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 				body = append(body, stmt)
 			}
 
-			if !p.finishFunctionBodyStatement() {
+			if !p.finishFunctionBodyStatement(stmt) {
 				return nil
 			}
 		}
 	}
 }
 
-func (p *Parser) finishFunctionBodyStatement() bool {
+func (p *Parser) finishFunctionBodyStatement(stmt Statement) bool {
 	if p.current.Type == TokenComma || p.current.Type == TokenNewline {
 		p.skipSeparators()
 		return true
 	}
 
 	if p.current.Type == TokenLParen || p.current.Type == TokenRBrace || p.current.Type == TokenEOF {
+		return true
+	}
+
+	if statementAllowsTightFollower(stmt) && p.previous.Type == TokenRBrace {
 		return true
 	}
 

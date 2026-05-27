@@ -4,7 +4,7 @@ WL : IO["WRITE_LINE"]
 T : STD["TYPES"]
 C : T["COLLECTION"]
 
-print_title_border : { ( length )
+PRINT_TITLE_BORDER : { ( length )
 	(( { 1..length } )) {
 		W("=")
 	}
@@ -12,12 +12,12 @@ print_title_border : { ( length )
 	(_)
 }
 
-iterate_map_recursively : { ( MAP, MAP_NAME, seen_maps )
+ITERATE_MAP_WITH_RECURSIVE_PRINTING : { ( MAP, MAP_NAME, seen_maps )
 	MAP_NAME_SIZE : C["SIZE"](MAP_NAME)
 
-	print_title_border(MAP_NAME_SIZE)
+	PRINT_TITLE_BORDER(MAP_NAME_SIZE)
 	WL(MAP_NAME)
-	print_title_border(MAP_NAME_SIZE)
+	PRINT_TITLE_BORDER(MAP_NAME_SIZE)
 	WL()
 
 	UNSEEN_MAPS : {:}
@@ -45,7 +45,7 @@ iterate_map_recursively : { ( MAP, MAP_NAME, seen_maps )
 	(( UNSEEN_MAPS )) { ( SUB_MAP, SUB_MAP_NAME )
 		( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
 			WL()
-			iterate_map_recursively(SUB_MAP, SUB_MAP_NAME, seen_maps)
+			ITERATE_MAP_WITH_RECURSIVE_PRINTING(SUB_MAP, SUB_MAP_NAME, seen_maps)
 
 			( !C["HAS"](seen_maps, SUB_MAP_NAME) ) {
 				seen_maps[SUB_MAP_NAME] : SUB_MAP
@@ -56,4 +56,4 @@ iterate_map_recursively : { ( MAP, MAP_NAME, seen_maps )
 	(_)
 }
 
-iterate_map_recursively(STD, "STD", {:})
+ITERATE_MAP_WITH_RECURSIVE_PRINTING(STD, "STD", {:})
