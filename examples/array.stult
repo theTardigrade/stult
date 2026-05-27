@@ -1,6 +1,6 @@
 PRINT : STD["IO"]["PRINT"]
 
-multiline_array : {
+MULTILINE_ARRAY : {
     1
     2
     3
@@ -11,17 +11,17 @@ multiline_array : {
     8
 }
 
-singleline_array : { "test1", "test2", "test3" }
+SINGLELINE_ARRAY : { "test1", "test2", "test3" }
 
-PRINT(multiline_array)
-PRINT(singleline_array)
+PRINT(MULTILINE_ARRAY)
+PRINT(SINGLELINE_ARRAY)
 
-A : STD["TYPE"]["ARRAY"]["APPEND"]
+APPEND_TO_ARRAY : STD["TYPE"]["ARRAY"]["APPEND"]
 
-another_array : {}
+ANOTHER_ARRAY : {}
 
-A(another_array, "example text", "and some more example text")
+APPEND_TO_ARRAY(ANOTHER_ARRAY, "example text", "and some more example text")
 
-PRINT(another_array)
+PRINT(ANOTHER_ARRAY)
 
-PRINT(STD["TYPE"]["COLLECTION"]["SIZE"](another_array))
+PRINT(STD["TYPE"]["COLLECTION"]["SIZE"](ANOTHER_ARRAY))

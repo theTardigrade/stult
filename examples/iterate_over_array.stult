@@ -4,10 +4,10 @@ CS : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 DOG_NAMES : { "Rover", "Grover", "Groover", "Doofus" }
 
-((DOG_NAMES)) { ( name, index, collection )
-	SIZE : @CS(collection)
+((DOG_NAMES)) { ( NAME, INDEX, COLLECTION )
+	SIZE : @CS(COLLECTION)
 
-	@P("Dog ", index + 1, " (of ", SIZE, ") is called ", name, ".")
+	@P("Dog ", INDEX + 1, " (of ", SIZE, ") is called ", NAME, ".")
 },{
 	@P("And those are all the dogs I know.")
 }

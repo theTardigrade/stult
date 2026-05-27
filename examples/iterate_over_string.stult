@@ -6,13 +6,13 @@ TEXT : "In the beginning was the word."
 current_word : ""
 word_count : 0
 
-(( TEXT )) { ( char )
-	( char = " " & @CS( @current_word ) ! 0 ) {
+(( TEXT )) { ( CHAR )
+	( CHAR = " " & @CS( @current_word ) ! 0 ) {
 		@P(@current_word)
 		@current_word : ""
 		@word_count :+ 1
 	},{
-		@current_word :+ @char
+		@current_word :+ @CHAR
 	}
 }
 

@@ -1,35 +1,37 @@
 P : STD["IO"]["PRINT"]
 
-numbers : { 1, 2, 3, 4, 5, 6, 7, 8 }
+NUMBERS : { 1, 2, 3, 4, 5, 6, 7, 8 }
 
-find_first_greater_than : { (items, limit)
-	((items)) { (item)
-		(item > @limit) {
-			^(@item)
+FIND_FIRST_GREATER_THAN : { (ITEMS, LIMIT)
+	((ITEMS)) { (ITEM)
+		(ITEM > @LIMIT) {
+			^(@ITEM)
 		}
 	}
 
 	(_)
 }
 
-sum_until : { (items, stop_at)
+SUM_UNTIL : { (ITEMS, STOP_AT_VALUE)
 	total : 0
 
-	((items)) { (item)
-		(item = @stop_at) {
+	((ITEMS)) { (ITEM)
+		(ITEM = @STOP_AT_VALUE) {
 			^
 		}
 
-		@total :+ item
-	},{
-		@P("sum_until loop has ended")
+		@total :+ ITEM
 	}
 
 	(total)
 }
 
-P("First number greater than 4: ", find_first_greater_than(numbers, 4))
-P("First number greater than 99: ", find_first_greater_than(numbers, 99))
+P("NUMBERS: ", NUMBERS)
 
-P("Sum until 5: ", sum_until(numbers, 5))
-P("Sum until 99: ", sum_until(numbers, 99))
+P()
+P("The first number greater than 4 is ", FIND_FIRST_GREATER_THAN(NUMBERS, 4), ".")
+P("The first number greater than 99 is ", FIND_FIRST_GREATER_THAN(NUMBERS, 99), ".")
+
+P()
+P("The sum of the numbers until reaching 5 is: ", SUM_UNTIL(NUMBERS, 5))
+P("The sum of the numbers until reaching 99 is: ", SUM_UNTIL(NUMBERS, 99))

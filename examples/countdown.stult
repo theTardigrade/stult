@@ -5,11 +5,13 @@ ITERATIONS : 10
 i : ITERATIONS
 
 ((i > 0)) {
-    @PRINT(@i) # Using the at symbol allows us to access a variable from outside the current scope
+    # Using the at symbol tells the interpreter that we want to access a variable from outside the current scope.
+    # The at symbol is optional for reads, but required for writes.
+    @PRINT(@i) 
 
     @i :- 1
 },{
-	# code within this block runs just once when the conditional no longer holds true
+	# Code within this block runs just once when the conditional no longer holds true.
 
     @PRINT("")
 	@PRINT("THE COUNT IS OVER. PACK UP AND GO HOME.")

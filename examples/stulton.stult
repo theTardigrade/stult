@@ -1,7 +1,7 @@
 PRINT : STD["IO"]["PRINT"]
 STULTON : STD["DATA"]["STULTON"]
 
-text : STULTON["NEW"]({
+TEXT : STULTON["NEW"]({
 	"NAME": "example"
 	"active": \/
     "hobbies": {
@@ -18,12 +18,12 @@ text : STULTON["NEW"]({
     "num": 8428535988035835038824.5835734
 })
 
-is_text_valid : STULTON["IS_VALID"](text)
-parsed_text : STULTON["PARSE"](text)
+IS_TEXT_VALID : STULTON["IS_VALID"](TEXT)
+PARSED_TEXT : STULTON["PARSE"](TEXT)
 
-PRINT("VALID: ", is_text_valid)
-PRINT(parsed_text)
+PRINT("VALID: ", IS_TEXT_VALID)
+PRINT(PARSED_TEXT)
 
-parsed_text_reencoded : STULTON["NEW"](parsed_text)
+PARSED_TEXT_REENCODED : STULTON["NEW"](PARSED_TEXT)
 
-PRINT(parsed_text_reencoded)
+PRINT(PARSED_TEXT_REENCODED)

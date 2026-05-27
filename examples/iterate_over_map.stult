@@ -9,8 +9,8 @@ SCORES : {
 
 sum_of_scores : 0, number_of_scores : 0
 
-((SCORES)) { (current_score)
-    @sum_of_scores :+ current_score
+((SCORES)) { (CURRENT_SCORE)
+    @sum_of_scores :+ CURRENT_SCORE
     @number_of_scores :+ 1
 }
 
