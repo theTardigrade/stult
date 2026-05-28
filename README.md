@@ -1,6 +1,17 @@
 # Stult
 
-Stult is a small interpreted language. It is built around explicit literals, lexical scopes, uppercase immutable bindings, lowercase mutable bindings, terse syntax and a map-shaped standard library.
+Stult is a small interpreted programming language and interpreter written in Go.
+
+It is designed as a terse scripting language with uppercase immutable bindings, lowercase mutable bindings, lexical scopes with explicit outer writes and a map-shaped standard library.
+
+The language prioritizes the following features:
+
+- explicit literals,
+- lexical scopes,
+- uppercase immutable bindings,
+- lowercase mutable bindings,
+- terse (but not cryptic) syntax *and*
+- a map-shaped standard library.
 
 Source files use the `.stult` extension.
 
@@ -8,9 +19,11 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
 ## Status
 
-Stult is experimental; that is to say, the language is a **work in progress**.
+Stult is experimental.
 
-Syntax, standard-library names and runtime behavior may still change.
+That is to say, the programming language, interpreter and standard library are each a **work in progress**.
+
+Syntax, standard-library names and runtime behavior may still evolve, adapt and change.
 
 The language has not yet reached version 1.0.0.
 
@@ -166,6 +179,22 @@ When the generated executable starts, it checks for an embedded bundle and runs 
 
 ## Language overview
 
+### Comments
+
+Line comments use `#`.
+
+```stult
+# This is a line comment.
+```
+
+Bounded comments use `##`.
+
+```stult
+## This is a bounded comment follow by some code. ## x : 10
+```
+
+Three or more consecutive `#` symbols are invalid.
+
 ### Values
 
 ```stult
@@ -184,6 +213,42 @@ _          # void
 ```
 
 Map keys preserve case. Uppercase map keys create immutable map entries.
+
+### Numbers
+
+Stult has one numeric type: **number**.
+
+There is no separate integer type.
+
+Whole numbers, decimal numbers and negative numbers are all represented as numbers.
+
+```stult
+1
+-10
+123.45
+0.000001
+```
+
+Internally, Stult numbers use high-precision floating-point values with 2048 bits of precision.
+
+This means that a Stult number can safely store very large and very small integer values without losing integer precision in the range that ordinary programming languages often struggle with.
+
+For example, values far beyond JavaScript’s usual safe integer range can still be represented exactly as integers in Stult.
+
+Decimals are also supported, but they are still floating-point values, not a separate type.
+
+```stult
+1 / 3
+```
+
+By default, numbers are printed with up to 20 digits after the decimal point.
+
+This is only the display format. Internally, numbers are stored with much higher precision, since Stult currently uses 2048-bit floating-point numbers. That means a number may store more precision than is shown when printed.
+
+```
+# 0.33333333333333333333
+STD["IO"]["PRINT"](1/3)
+```
 
 ### Bindings
 
@@ -471,22 +536,6 @@ Ranges can descend too:
 {10...1[3]}
 ```
 
-### Comments
-
-Line comments use `#`.
-
-```stult
-# This is a line comment.
-```
-
-Bounded comments use `##`.
-
-```stult
-## This is a bounded comment follow by some code. ## x : 10
-```
-
-Three or more consecutive `#` symbols are invalid.
-
 ## Standard library
 
 The standard library is available as the immutable binding `STD`.
@@ -502,7 +551,7 @@ STD["TYPE"]
 STD["DATA"]
 ```
 
-Here is an example that uses the standard library:
+Here is some example code using some functions from the standard library:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
@@ -512,6 +561,8 @@ MATH : STD["MATH"]
 PRINT("size: ", SIZE({"a", "b", "c"}))
 PRINT("square: ", MATH["SQUARE"](9))
 ```
+
+For the full standard library reference, please see [docs/std.md](docs/std.md).
 
 ## STULTON
 
