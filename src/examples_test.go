@@ -10,6 +10,7 @@ import (
 
 func TestStandaloneExamplesRun(t *testing.T) {
 	examplesDir := examplesDirForTest(t)
+	manifestDirs := manifestExampleDirsForTest(t, examplesDir)
 
 	err := filepath.WalkDir(examplesDir, func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -31,7 +32,7 @@ func TestStandaloneExamplesRun(t *testing.T) {
 
 		relativePath = filepath.ToSlash(relativePath)
 
-		if shouldSkipStandaloneExample(relativePath) {
+		if shouldSkipStandaloneExample(relativePath, manifestDirs) {
 			return nil
 		}
 
@@ -50,20 +51,28 @@ func TestStandaloneExamplesRun(t *testing.T) {
 	}
 }
 
-func TestBoolExampleRunsWithBindings(t *testing.T) {
+func TestManifestExamplesRun(t *testing.T) {
 	examplesDir := examplesDirForTest(t)
 
-	interpreter := NewInterpreter()
+	manifestFiles := manifestExampleFilesForTest(t, examplesDir)
 
-	files := []string{
-		filepath.Join(examplesDir, "bool", "bindings.stult"),
-		filepath.Join(examplesDir, "bool", "bool.stult"),
+	if len(manifestFiles) == 0 {
+		t.Fatal("expected at least one manifest example")
 	}
 
-	for _, filename := range files {
-		if err := runSourceFile(interpreter, filename); err != nil {
-			t.Fatalf("example %q failed: %v", filename, err)
+	for _, manifestFile := range manifestFiles {
+		relativePath, err := filepath.Rel(examplesDir, manifestFile)
+		if err != nil {
+			t.Fatalf("could not make manifest path relative: %v", err)
 		}
+
+		relativePath = filepath.ToSlash(relativePath)
+
+		t.Run(relativePath, func(t *testing.T) {
+			if err := runManifestFile(manifestFile); err != nil {
+				t.Fatalf("manifest example failed: %v", err)
+			}
+		})
 	}
 }
 
@@ -86,19 +95,87 @@ func examplesDirForTest(t *testing.T) string {
 	return ""
 }
 
-func shouldSkipStandaloneExample(relativePath string) bool {
+func manifestExampleFilesForTest(t *testing.T, examplesDir string) []string {
+	t.Helper()
+
+	manifestFiles := []string{}
+
+	err := filepath.WalkDir(examplesDir, func(filename string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+
+		if entry.IsDir() {
+			if shouldSkipExampleDir(filename, examplesDir) {
+				return filepath.SkipDir
+			}
+
+			return nil
+		}
+
+		if isManifestFilename(filename) {
+			manifestFiles = append(manifestFiles, filename)
+		}
+
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("could not walk examples directory for manifests: %v", err)
+	}
+
+	return manifestFiles
+}
+
+func manifestExampleDirsForTest(t *testing.T, examplesDir string) map[string]bool {
+	t.Helper()
+
+	manifestDirs := map[string]bool{}
+
+	for _, manifestFile := range manifestExampleFilesForTest(t, examplesDir) {
+		dir := filepath.Dir(manifestFile)
+
+		relativeDir, err := filepath.Rel(examplesDir, dir)
+		if err != nil {
+			t.Fatalf("could not make manifest dir relative: %v", err)
+		}
+
+		relativeDir = filepath.ToSlash(relativeDir)
+
+		if relativeDir == "." {
+			relativeDir = ""
+		}
+
+		manifestDirs[relativeDir] = true
+	}
+
+	return manifestDirs
+}
+
+func shouldSkipStandaloneExample(relativePath string, manifestDirs map[string]bool) bool {
 	if strings.HasPrefix(relativePath, "__ignore/") {
 		return true
 	}
 
-	switch relativePath {
-	case "bool/bindings.stult":
-		return true
+	for manifestDir := range manifestDirs {
+		if manifestDir == "" {
+			continue
+		}
 
-	case "bool/bool.stult":
-		return true
+		if relativePath == manifestDir || strings.HasPrefix(relativePath, manifestDir+"/") {
+			return true
+		}
+	}
 
-	default:
+	return false
+}
+
+func shouldSkipExampleDir(filename string, examplesDir string) bool {
+	relativePath, err := filepath.Rel(examplesDir, filename)
+	if err != nil {
 		return false
 	}
+
+	relativePath = filepath.ToSlash(relativePath)
+
+	return relativePath == "__ignore"
 }

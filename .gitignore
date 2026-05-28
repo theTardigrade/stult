@@ -1,3 +1,6 @@
-**/all-src.txt
 
 dist/
+examples/__ignore/
+
+*.txt
+*.ps1
