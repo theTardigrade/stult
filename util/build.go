@@ -41,19 +41,29 @@ func run() error {
 		switch os.Args[1] {
 		case "clean":
 			return clean()
+
 		case "dist":
 			return buildDist()
+
+		case "local", "build":
+			return buildLocal()
+
+		case "bundle":
+			return buildBundle(os.Args[2:])
+
 		case "run":
 			return runInterpreter(os.Args[2:])
+
 		case "test":
 			return goTest()
+
 		case "fmt":
 			return goFmt()
-		case "build":
-			return buildLocal()
+
 		case "help", "-h", "--help":
 			printHelp()
 			return nil
+
 		default:
 			return fmt.Errorf("unknown command %q", os.Args[1])
 		}
@@ -64,13 +74,19 @@ func run() error {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  go run ./tools/build.go                        build all dist binaries")
-	fmt.Println("  go run ./tools/build.go dist                   build all dist binaries")
-	fmt.Println("  go run ./tools/build.go build                  build local binary")
-	fmt.Println("  go run ./util/build.go run <file.stul>         run interpreter")
-	fmt.Println("  go run ./tools/build.go test                   run tests")
-	fmt.Println("  go run ./tools/build.go fmt                    format code")
-	fmt.Println("  go run ./tools/build.go clean                  remove build outputs")
+	fmt.Println("  go run ./util/build.go                         build all dist binaries")
+	fmt.Println("  go run ./util/build.go dist                    build all dist binaries")
+	fmt.Println("  go run ./util/build.go local                   build local interpreter binary")
+	fmt.Println("  go run ./util/build.go build                   build local interpreter binary")
+	fmt.Println("  go run ./util/build.go bundle [args...]        run interpreter build [args...]")
+	fmt.Println("  go run ./util/build.go run [args...]           run interpreter [args...]")
+	fmt.Println("  go run ./util/build.go test                    run tests")
+	fmt.Println("  go run ./util/build.go fmt                     format source")
+	fmt.Println("  go run ./util/build.go clean                   remove build outputs")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  go run ./util/build.go run examples/1.stult")
+	fmt.Println("  go run ./util/build.go bundle examples/bool -o bool-app")
 }
 
 func buildDist() error {
@@ -101,8 +117,13 @@ func buildLocal() error {
 		out += ".exe"
 	}
 
-	fmt.Printf("building local binary -> %s\n", out)
+	fmt.Printf("building local interpreter binary -> %s\n", out)
 	return goBuild(out, runtime.GOOS, runtime.GOARCH)
+}
+
+func buildBundle(args []string) error {
+	cmdArgs := append([]string{"run", "./" + srcDir, "build"}, args...)
+	return runCommand("go", cmdArgs...)
 }
 
 func clean() error {
@@ -125,7 +146,6 @@ func clean() error {
 
 func runInterpreter(args []string) error {
 	cmdArgs := append([]string{"run", "./" + srcDir}, args...)
-
 	return runCommand("go", cmdArgs...)
 }
 
