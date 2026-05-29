@@ -2,16 +2,17 @@
 
 Stult is a small interpreted programming language and interpreter written in Go.
 
-It is designed as a terse scripting language with uppercase immutable bindings, lowercase mutable bindings, lexical scopes with explicit outer writes and a map-shaped standard library.
+It is designed as a terse but readable scripting language with:
 
-The language prioritizes the following features:
+- uppercase immutable bindings and lowercase mutable bindings,
+- explicit outer-scope writes using `@`,
+- one high-precision 2048-bit number type,
+- concise literals for void, booleans, arrays and maps,
+- arrays, maps, strings, functions, conditionals, loops and ranges,
+- manifest-based projects and bundled executables *and*
+- a map-shaped standard library available through `STD`.
 
-- explicit literals,
-- lexical scopes,
-- uppercase immutable bindings,
-- lowercase mutable bindings,
-- terse (but not cryptic) syntax *and*
-- a map-shaped standard library.
+Idiomatic Stult code should be light on syntax without being deliberately cryptic.
 
 Source files use the `.stult` extension.
 
@@ -19,20 +20,20 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
 ## Status
 
-Stult is experimental.
+Stult is still experimental.
 
-That is to say, the programming language, interpreter and standard library are each a **work in progress**.
+That is to say, the programming language, interpreter and standard library are all **works in progress**.
 
-Syntax, standard-library names and runtime behavior may still evolve, adapt and change.
+The language has not yet reached **version 1.0.0**, so its syntax, standard-library names and runtime behavior may evolve, adapt and change before the first stable release.
 
-The language has not yet reached version 1.0.0.
+Even so, Stult can definitely be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
 
 ## Quick start
 
 Run a single source file:
 
 ```bash
-go run ./src examples/1.stult
+go run ./src examples/area_of_circle.stult
 ```
 
 Run a manifest-based project:
@@ -56,13 +57,13 @@ go build -o interpreter ./src
 Then run:
 
 ```bash
-./interpreter examples/1.stult
+./interpreter examples/area_of_circle.stult
 ```
 
 On Windows:
 
 ```bash
-interpreter.exe examples/1.stult
+interpreter.exe examples/area_of_circle.stult
 ```
 
 ## Development commands
@@ -84,7 +85,7 @@ go run ./util/build.go build
 Run the interpreter through Go:
 
 ```bash
-go run ./util/build.go run examples/1.stult
+go run ./util/build.go run examples/area_of_circle.stult
 ```
 
 Run tests:
@@ -608,8 +609,10 @@ src/
   bundle.go                   embedded bundle support
   main.go                     CLI entrypoint
 
-examples/
-  example Stult programs
+examples/                     example Stult programs
+
+docs/
+  std.md                      reference documentation for the standard library
 
 util/
   build.go                    development/release helper
