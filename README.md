@@ -635,7 +635,7 @@ src/
 
   std*.go                     standard library maps and functions
 
-  bundle*.go                  embedded bundle loading, building, archives and footers
+  bundle*.go                  embedded bundle loading and building
 
   manifest.go                 manifest loading
   main.go                     CLI entrypoint
