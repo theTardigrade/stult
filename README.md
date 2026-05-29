@@ -18,6 +18,33 @@ Source files use the `.stult` extension.
 
 STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
+## Contents
+
+- [Status](#status)
+- [Quick start](#quick-start)
+- [Development commands](#development-commands)
+- [Running programs](#running-programs)
+  - [Evaluating source strings](#evaluating-source-strings)
+- [Manifests](#manifests)
+- [Bundled executables](#bundled-executables)
+- [Language overview](#language-overview)
+  - [Comments](#comments)
+  - [Values](#values)
+  - [Numbers](#numbers)
+  - [Bindings](#bindings)
+  - [Outer bindings](#outer-bindings)
+  - [Operators](#operators)
+  - [Compound assignment](#compound-assignment)
+  - [Conditionals](#conditionals)
+  - [Creating a local scope](#creating-a-local-scope)
+  - [Loops](#loops)
+  - [Break and early return](#break-and-early-return)
+  - [Functions](#functions)
+  - [Collections](#collections)
+- [Standard library](#standard-library)
+- [STULTON](#stulton)
+- [Repository layout](#repository-layout)
+
 ## Status
 
 Stult is still experimental.
@@ -137,6 +164,26 @@ With a manifest argument, it runs the files listed by that manifest.
 
 With `-e` or `--eval`, it runs the provided source string directly.
 
+### Evaluating source strings
+
+Stult can run source code passed directly on the command line with `-e` or `--eval`.
+
+This is useful for quick experiments, shell scripts and short one-off commands.
+
+For example:
+
+```bash
+stult -e 'X : 10,STD["IO"]["PRINT"](X*20)'
+```
+
+On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
+
+```powershell
+stult -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
+```
+
+The evaluated source runs in a fresh interpreter with the standard library available as `STD`.
+
 ## Manifests
 
 A project may define either one of the two following files:
@@ -187,26 +234,6 @@ Or, after building the local binary:
 The project directory must contain either `manifest.stulton` or `manifest.json`.
 
 When the generated executable starts, it checks for an embedded bundle and runs the bundled manifest automatically.
-
-### Evaluating source strings
-
-Stult can run source code passed directly on the command line with `-e` or `--eval`.
-
-This is useful for quick experiments, shell scripts and short one-off commands.
-
-For example:
-
-```bash
-stult -e 'X : 10,STD["IO"]["PRINT"](X*20)'
-```
-
-On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
-
-```powershell
-stult -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
-```
-
-The evaluated source runs in a fresh interpreter with the standard library available as `STD`.
 
 ## Language overview
 
