@@ -635,8 +635,9 @@ src/
 
   std*.go                     standard library maps and functions
 
+  bundle*.go                  embedded bundle loading, building, archives and footers
+
   manifest.go                 manifest loading
-  bundle.go                   embedded bundle support
   main.go                     CLI entrypoint
 
 examples/                     example Stult programs
