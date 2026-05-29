@@ -29,7 +29,6 @@ All standard library names are uppercase because standard library maps and funct
 ## Contents
 
 - [Top-level maps](#top-level-maps)
-
 - [IO](#io)
 - [FILE](#file)
 - [TIME](#time)
