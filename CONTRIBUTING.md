@@ -1,6 +1,6 @@
 ## Maintenance
 
-When changing syntax, standard-library behavior, manifest files or repository layouts, please also take some time to update the relevant documentation, example code and tests.
+When changing syntax, standard-library behaviour, manifest files or repository layouts, please take some time to update the relevant documentation, example code and tests.
 
 At very least, check these files for prospective changes:
 
