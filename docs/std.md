@@ -26,6 +26,28 @@ PRINT("size: ", SIZE({"a", "b", "c"}))
 
 All standard library names are uppercase because standard library maps and functions are intended to be immutable.
 
+## Contents
+
+- [Top-level maps](#top-level-maps)
+
+- [IO](#io)
+- [FILE](#file)
+- [TIME](#time)
+- [MATH](#math)
+  - [TRIG](#trig)
+- [TYPE](#type)
+  - [TYPE predicates](#type-predicates)
+  - [BOOL](#bool)
+  - [NUMBER](#number)
+  - [STRING](#string)
+  - [ARRAY](#array)
+  - [MAP](#map)
+  - [COLLECTION](#collection)
+- [DATA](#data)
+  - [CSV](#csv)
+  - [JSON](#json)
+  - [STULTON](#stulton)
+
 ## Top-level maps
 
 ### `STD["IO"]`
@@ -865,7 +887,7 @@ DATA["JSON"]
 DATA["STULTON"]
 ```
 
-## DATA
+## CSV
 
 ```stult
 CSV : STD["DATA"]["CSV"]
@@ -911,7 +933,7 @@ Returns a boolean.
 
 Rows may have different field counts.
 
-## DATA.JSON
+## JSON
 
 ```stult
 JSON : STD["DATA"]["JSON"]
