@@ -116,6 +116,7 @@ interpreter <file.stult>
 interpreter <directory>
 interpreter <manifest.stulton>
 interpreter <manifest.json>
+interpreter -e <code-string>
 interpreter build [project-directory] -o <output-executable>
 ```
 
