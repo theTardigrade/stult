@@ -9,7 +9,7 @@ It is designed as a terse but readable scripting language with:
 - one high-precision 2048-bit number type,
 - arrays, maps, strings, functions, conditionals, loops and ranges,
 - concise literals for booleans, arrays, maps and void,
-- manifest-based projects, direct source-string evaluation and bundled executables *and*
+- manifest-based projects and bundled executables *and*
 - a map-shaped standard library available through `STD`.
 
 Idiomatic Stult code should be light on syntax without being deliberately cryptic.
@@ -42,34 +42,28 @@ Run a manifest-based project:
 go run ./src examples/bool
 ```
 
-Evaluate a source string directly:
-
-```bash
-go run ./src -e 'STD["IO"]["PRINT"]("hello")'
-```
-
 Run from the current directory by discovering a manifest upward from `.`:
 
 ```bash
 go run ./src
 ```
 
-Build a local Stult binary:
+Build a local interpreter binary:
 
 ```bash
-go build -o stult ./src
+go build -o interpreter ./src
 ```
 
 Then run:
 
 ```bash
-./stult examples/area_of_circle.stult
+./interpreter examples/area_of_circle.stult
 ```
 
-Or on Windows:
+On Windows:
 
 ```bash
-stult.exe examples/area_of_circle.stult
+interpreter.exe examples/area_of_circle.stult
 ```
 
 ## Development commands
@@ -82,13 +76,13 @@ Build all release binaries into `dist/`:
 go run ./util/build.go dist
 ```
 
-Build a local Stult binary:
+Build a local interpreter binary:
 
 ```bash
 go run ./util/build.go build
 ```
 
-Run Stult through Go:
+Run the interpreter through Go:
 
 ```bash
 go run ./util/build.go run examples/area_of_circle.stult
@@ -114,28 +108,25 @@ go run ./util/build.go clean
 
 ## Running programs
 
-The `stult` command accepts:
+The interpreter accepts:
 
 ```text
-stult
-stult <file.stult>
-stult <directory>
-stult <manifest.stulton>
-stult <manifest.json>
-stult -e <code-string>
-stult --eval <code-string>
-stult build [project-directory] -o <output-executable>
+interpreter
+interpreter <file.stult>
+interpreter <directory>
+interpreter <manifest.stulton>
+interpreter <manifest.json>
+interpreter -e <code-string>
+interpreter build [project-directory] -o <output-executable>
 ```
 
-With no arguments, `stult` searches upward from the current directory for a manifest.
+With no arguments, the interpreter searches upward from the current directory for a manifest.
 
 With a `.stult` file argument, it runs that file.
 
 With a directory argument, it looks for a manifest in that directory.
 
 With a manifest argument, it runs the files listed by that manifest.
-
-With `-e` or `--eval`, it runs the provided source string directly.
 
 ## Manifests
 
@@ -178,10 +169,10 @@ Stult can build a project into a standalone executable with the project files em
 go run ./src build examples/bool -o bool-app
 ```
 
-Or, after building the local binary:
+Or, after building the interpreter:
 
 ```bash
-./stult build examples/bool -o bool-app
+./interpreter build examples/bool -o bool-app
 ```
 
 The project directory must contain either `manifest.stulton` or `manifest.json`.
@@ -190,20 +181,20 @@ When the generated executable starts, it checks for an embedded bundle and runs 
 
 ### Evaluating source strings
 
-Stult can run source code passed directly on the command line with `-e` or `--eval`.
+The interpreter can run Stult code passed directly on the command line with `-e` or `--eval`.
 
 This is useful for quick experiments, shell scripts and short one-off commands.
 
 For example:
 
 ```bash
-stult -e 'X : 10,STD["IO"]["PRINT"](X*20)'
+interpreter -e 'X : 10,STD["IO"]["PRINT"](X*20)'
 ```
 
-On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
+However, on Windows PowerShell, quotes inside the evaluated source may need to be escaped:
 
 ```powershell
-stult -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
+interpreter -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
 ```
 
 The evaluated source runs in a fresh interpreter with the standard library available as `STD`.
@@ -276,7 +267,7 @@ By default, numbers are printed with up to 20 digits after the decimal point.
 
 This is only the display format. Internally, numbers are stored with much higher precision, since Stult currently uses 2048-bit floating-point numbers. That means a number may store more precision than is shown when printed.
 
-```stult
+```
 # 0.33333333333333333333
 STD["IO"]["PRINT"](1/3)
 ```
@@ -354,6 +345,7 @@ Stult uses `=` for equality, not `==`.
 
 Stult uses `!` for inequality, not `!=`.
 
+
 ### Compound assignment
 
 The following syntax is available for performing arithmetic updates:
@@ -413,7 +405,6 @@ x : 10
 	STD["IO"]["PRINT"](x)
 	STD["IO"]["PRINT"](@x)
 }
-```
 
 ### Loops
 
@@ -441,7 +432,7 @@ i : 0
 }
 ```
 
-Collection loops work with arrays, maps and strings:
+Collection loops work with arrays, maps, and strings:
 
 ```stult
 items : {"a", "b", "c"}

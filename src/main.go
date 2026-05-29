@@ -73,14 +73,14 @@ func isEvalOption(arg string) bool {
 
 func usage() string {
 	return "Usage:\n" +
-		"  interpreter\n" +
-		"  interpreter -e <source>\n" +
-		"  interpreter --eval <source>\n" +
-		"  interpreter build [project-directory] -o <output-executable>\n" +
-		"  interpreter <file.stult>\n" +
-		"  interpreter <directory>\n" +
-		"  interpreter <manifest.stulton>\n" +
-		"  interpreter <manifest.json>"
+		"  stult\n" +
+		"  stult -e <source>\n" +
+		"  stult --eval <source>\n" +
+		"  stult build [project-directory] -o <output-executable>\n" +
+		"  stult <file.stult>\n" +
+		"  stult <directory>\n" +
+		"  stult <manifest.stulton>\n" +
+		"  stult <manifest.json>"
 }
 
 func runManifestFile(filename string) error {

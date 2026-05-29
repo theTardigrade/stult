@@ -237,8 +237,8 @@ func parseBuildCommandArgs(args []string) (string, string, error) {
 
 func buildUsage() string {
 	return "Usage:\n" +
-		"  interpreter build [project-directory] -o <output-executable>\n" +
-		"  interpreter build [project-directory]"
+		"  stult build [project-directory] -o <output-executable>\n" +
+		"  stult build [project-directory]"
 }
 
 func defaultBundleOutputPath(projectDir string) string {

@@ -10,7 +10,7 @@ import (
 	"runtime"
 )
 
-const appName = "interpreter"
+const appName = "stult"
 const distDir = "dist"
 const srcDir = "src"
 
