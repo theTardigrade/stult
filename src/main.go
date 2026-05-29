@@ -308,11 +308,11 @@ func runSourceString(interpreter *Interpreter, source string, displayName string
 	program := parser.ParseProgram()
 
 	if len(parser.Errors()) > 0 {
-		return formatParserErrors(displayName, parser.Errors())
+		return formatParserErrors(displayName, source, parser.Errors())
 	}
 
 	if err := interpreter.EvalProgram(program); err != nil {
-		return fmt.Errorf("Runtime error in %q: %w", displayName, err)
+		return formatRuntimeError(displayName, source, err)
 	}
 
 	return nil
@@ -324,16 +324,4 @@ func cleanFSPath(filename string) string {
 	cleaned = strings.TrimPrefix(cleaned, "./")
 
 	return cleaned
-}
-
-func formatParserErrors(filename string, errors []string) error {
-	var builder strings.Builder
-
-	fmt.Fprintf(&builder, "Parser errors in %q:", filename)
-
-	for _, err := range errors {
-		fmt.Fprintf(&builder, "\n  - %s", err)
-	}
-
-	return fmt.Errorf("%s", builder.String())
 }
