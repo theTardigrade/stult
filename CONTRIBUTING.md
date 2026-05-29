@@ -4,7 +4,7 @@ When changing syntax, standard-library behavior, manifest files or repository la
 
 At very least, check these files for prospective changes:
 
-- `README.md`
-- `docs/`
-- `examples/`
-- tests
+- `README.md`,
+- `docs/`,
+- `examples/` *and*
+- tests.
