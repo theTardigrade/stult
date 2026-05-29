@@ -29,6 +29,15 @@ func run() error {
 		return runBuildCommand(args[1:])
 	}
 
+	if len(args) > 0 && isEvalOption(args[0]) {
+		if len(args) != 2 {
+			return fmt.Errorf("%s", usage())
+		}
+
+		interpreter := NewInterpreter()
+		return runSourceString(interpreter, args[1], "<eval>")
+	}
+
 	switch len(args) {
 	case 0:
 		manifestPath, err := findManifestUpwards(".")
@@ -54,16 +63,24 @@ func run() error {
 		return runSourceFile(interpreter, target)
 
 	default:
-		return fmt.Errorf(
-			"Usage:\n" +
-				"  interpreter\n" +
-				"  interpreter build [project-directory] -o <output-executable>\n" +
-				"  interpreter <file.stult>\n" +
-				"  interpreter <directory>\n" +
-				"  interpreter <manifest.stulton>\n" +
-				"  interpreter <manifest.json>",
-		)
+		return fmt.Errorf("%s", usage())
 	}
+}
+
+func isEvalOption(arg string) bool {
+	return arg == "-e" || arg == "--eval"
+}
+
+func usage() string {
+	return "Usage:\n" +
+		"  interpreter\n" +
+		"  interpreter -e <source>\n" +
+		"  interpreter --eval <source>\n" +
+		"  interpreter build [project-directory] -o <output-executable>\n" +
+		"  interpreter <file.stult>\n" +
+		"  interpreter <directory>\n" +
+		"  interpreter <manifest.stulton>\n" +
+		"  interpreter <manifest.json>"
 }
 
 func runManifestFile(filename string) error {
@@ -282,7 +299,11 @@ func runSourceFileFromFSNamed(interpreter *Interpreter, files fs.FS, filename st
 		return fmt.Errorf("Could not read %q: %w", displayName, err)
 	}
 
-	lexer := NewLexer(string(sourceBytes))
+	return runSourceString(interpreter, string(sourceBytes), displayName)
+}
+
+func runSourceString(interpreter *Interpreter, source string, displayName string) error {
+	lexer := NewLexer(source)
 	parser := NewParser(lexer)
 	program := parser.ParseProgram()
 

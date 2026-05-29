@@ -7,8 +7,8 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision 2048-bit number type,
-- concise literals for void, booleans, arrays and maps,
 - arrays, maps, strings, functions, conditionals, loops and ranges,
+- concise literals for booleans, arrays, maps and void,
 - manifest-based projects and bundled executables *and*
 - a map-shaped standard library available through `STD`.
 
@@ -24,9 +24,9 @@ Stult is still experimental.
 
 That is to say, the programming language, interpreter and standard library are all **works in progress**.
 
-The language has not yet reached **version 1.0.0**, so its syntax, standard-library names and runtime behavior may evolve, adapt and change before the first stable release.
+The language has not yet reached version 1.0.0, so its syntax, standard-library names and runtime behavior may evolve, adapt and change before the first stable release.
 
-Even so, Stult can definitely be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
+Even so, Stult can certainly be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
 
 ## Quick start
 
@@ -177,6 +177,26 @@ Or, after building the interpreter:
 The project directory must contain either `manifest.stulton` or `manifest.json`.
 
 When the generated executable starts, it checks for an embedded bundle and runs the bundled manifest automatically.
+
+### Evaluating source strings
+
+The interpreter can run Stult code passed directly on the command line with `-e` or `--eval`.
+
+This is useful for quick experiments, shell scripts and short one-off commands.
+
+For example:
+
+```bash
+interpreter -e 'X : 10,STD["IO"]["PRINT"](X*20)'
+```
+
+However, on Windows PowerShell, quotes inside the evaluated source may need to be escaped:
+
+```powershell
+interpreter -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
+```
+
+The evaluated source runs in a fresh interpreter with the standard library available as `STD`.
 
 ## Language overview
 
