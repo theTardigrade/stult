@@ -78,7 +78,7 @@ Stult may be useful when you want:
 
 Stult is implemented in Go, but Stult programs are written in Stult.
 
-You do not need to know Go to write, run or bundle Stult code.
+You do *not* need to know Go to write, run or bundle Stult code.
 
 ## Quick start
 
