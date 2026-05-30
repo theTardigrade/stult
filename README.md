@@ -79,6 +79,8 @@ Stult is implemented in Go, but Stult programs are written in Stult.
 
 You do *not* need to know Go to write, run or bundle Stult code.
 
+When you download a distributed Stult binary, you do not need Go installed on your computer at all.
+
 ## Quick start
 
 Run a single source file:
