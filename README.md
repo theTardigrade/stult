@@ -267,6 +267,9 @@ The project directory must contain either `manifest.stulton` or `manifest.json`.
 
 When the generated executable starts, it checks for an embedded bundle and runs the bundled manifest automatically.
 
+For more detail on building, distributing and running bundled executables, please see
+[docs/bundling.md](docs/bundling.md).
+
 ## Language overview
 
 ### Comments
