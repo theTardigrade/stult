@@ -246,6 +246,8 @@ The bundled executable still runs the Stult source through the interpreter. The
 bundle changes how the source files are stored and loaded, not the language
 semantics.
 
+For more information about bundling, please see [bundling.md](bundling.md).
+
 ## Command-line entrypoint
 
 The command-line entrypoint handles direct source evaluation, single-file
