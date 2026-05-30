@@ -4,7 +4,9 @@ The Stult standard library is available through the immutable binding `STD`.
 
 ```stult
 STD["IO"]
+STD["SYSTEM"]
 STD["FILE"]
+STD["PATH"]
 STD["TIME"]
 STD["MATH"]
 STD["TYPE"]
@@ -50,6 +52,13 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`FILE["RENAME"](old_path, new_path)`](#filerenameold_path-new_path)
   - [`FILE["COPY"](source_path, destination_path)`](#filecopysource_path-destination_path)
   - [`FILE["SIZE"](path)`](#filesizepath)
+- [PATH](#path)
+  - [`PATH["JOIN"](...parts)`](#pathjoinparts)
+  - [`PATH["ABS"](path)`](#pathabspath)
+  - [`PATH["BASE"](path)`](#pathbasepath)
+  - [`PATH["CLEAN"](path)`](#pathcleanpath)
+  - [`PATH["DIR"](path)`](#pathdirpath)
+  - [`PATH["EXT"](path)`](#pathextpath)
 - [TIME](#time)
   - [`TIME["MILLI_TIMESTAMP"]()`](#timemilli_timestamp)
   - [`TIME["NANO_TIMESTAMP"]()`](#timenano_timestamp)
@@ -404,6 +413,102 @@ size : FILE["SIZE"]("notes.txt")
 ```
 
 Returns a number.
+
+## PATH
+
+```stult
+PATH : STD["PATH"]
+```
+
+`PATH` contains helpers for working with file-system paths.
+
+Path behaviour follows the operating system that Stult is running on.
+
+### `PATH["JOIN"](...parts)`
+
+Joins path parts into one path.
+
+```stult
+path : PATH["JOIN"]("data", "input.csv")
+
+STD["IO"]["PRINT"](path)
+```
+
+Requires at least one argument.
+
+Each argument must be a string.
+
+Returns a string.
+
+### `PATH["ABS"](path)`
+
+Returns an absolute version of a path.
+
+```stult
+absolute_path : PATH["ABS"]("input.csv")
+
+STD["IO"]["PRINT"](absolute_path)
+```
+
+The argument must be a string.
+
+Returns a string.
+
+### `PATH["BASE"](path)`
+
+Returns the final element of a path.
+
+```stult
+name : PATH["BASE"]("data/input.csv")
+
+STD["IO"]["PRINT"](name)
+```
+
+The argument must be a string.
+
+Returns a string.
+
+### `PATH["CLEAN"](path)`
+
+Cleans a path by removing redundant path elements.
+
+```stult
+clean_path : PATH["CLEAN"]("./data/../data/input.csv")
+
+STD["IO"]["PRINT"](clean_path)
+```
+
+The argument must be a string.
+
+Returns a string.
+
+### `PATH["DIR"](path)`
+
+Returns the directory part of a path.
+
+```stult
+dir : PATH["DIR"]("data/input.csv")
+
+STD["IO"]["PRINT"](dir)
+```
+
+The argument must be a string.
+
+Returns a string.
+
+### `PATH["EXT"](path)`
+
+Returns the file extension of a path.
+
+```stult
+extension : PATH["EXT"]("data/input.csv")
+
+STD["IO"]["PRINT"](extension)
+```
+
+The argument must be a string.
+
+Returns a string.
 
 ## TIME
 

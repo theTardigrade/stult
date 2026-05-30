@@ -4,9 +4,9 @@ EXAMPLE: csv_to_json_converter.stult
 
 This code converts a CSV file into JSON text.
 
-It demonstrates command-line data processing, program arguments, file input,
-file output, CSV parsing, JSON encoding, arrays, maps, loops and mutable
-accumulation.
+It demonstrates command-line data processing, program arguments, path handling,
+file input, file output, CSV parsing, JSON encoding, arrays, maps, loops and
+mutable accumulation.
 
 Run it with:
 
@@ -17,6 +17,7 @@ stult examples/csv_to_json_converter.stult input.csv output.json
 
 IO : STD["IO"]
 FILE : STD["FILE"]
+PATH : STD["PATH"]
 SYSTEM : STD["SYSTEM"]
 
 CSV : STD["DATA"]["CSV"]
@@ -81,7 +82,12 @@ CSV_ROWS_TO_MAPS : { (rows)
 	USAGE()
 }
 
-input_path : ARGS[0]
+input_path : PATH["CLEAN"](ARGS[0])
+
+(PATH["EXT"](input_path) ! ".csv") {
+	WRITE_ERROR("Warning: input file does not use the .csv extension: ", input_path)
+}
+
 csv_text : READ(input_path)
 
 rows : CSV["PARSE"](csv_text)
@@ -89,7 +95,11 @@ records : CSV_ROWS_TO_MAPS(rows)
 json_text : JSON["NEW"](records)
 
 (SIZE(ARGS) = 2) {
-	output_path : ARGS[1]
+	output_path : PATH["CLEAN"](ARGS[1])
+
+	(PATH["EXT"](output_path) ! ".json") {
+		WRITE_ERROR("Warning: output file does not use the .json extension: ", output_path)
+	}
 
 	WRITE(output_path, json_text)
 	PRINT("Wrote JSON to ", output_path)

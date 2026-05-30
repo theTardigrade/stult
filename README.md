@@ -701,12 +701,13 @@ STATUS : ({ ()
 
 The standard library is available as the immutable binding `STD`.
 
-It is a map containing functions and other maps.
+It is a map containing other maps that, in turn, contain functions.
 
 ```stult
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]
+STD["PATH"]
 STD["TIME"]
 STD["MATH"]
 STD["TYPE"]
