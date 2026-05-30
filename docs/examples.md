@@ -37,6 +37,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [STULTON encoding and parsing](../examples/stulton.stult)  
   Encodes a Stult map as STULTON text, validates it, parses it back into a Stult value and encodes it again.
 
+- [CSV score report](../examples/csv_score_report.stult)  
+  Parses CSV text, converts score fields to numbers, builds row maps and prints summary statistics.
+
 ## Projects
 
 - [Boolean manifest project](../examples/bool/)  

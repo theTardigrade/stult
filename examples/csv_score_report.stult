@@ -1,0 +1,106 @@
+##
+
+EXAMPLE: csv_score_report.stult
+
+This code parses CSV text containing item scores, builds row maps,
+calculates summary statistics and prints a report.
+
+It demonstrates the use of CSV parsing, numeric conversion, arrays, maps,
+functions, collection loops, conditionals and mutable accumulators.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+CSV : STD["DATA"]["CSV"]
+NUMBER : STD["TYPE"]["NUMBER"]
+ARRAY : STD["TYPE"]["ARRAY"]
+STRING : STD["TYPE"]["STRING"]
+
+TEXT : "name,team,score\nAda,red,91\nBeatrice,blue,74\nCarl,red,88\nDee,blue,59\nElliot,red,96\n"
+ROWS : CSV["PARSE"](TEXT)
+
+records : {}
+summary : {
+	"count": 0
+	"total": 0
+	"highest_name": ""
+	"highest_score": 0
+	"passing": 0
+	"failing": 0
+}
+
+grade_for : { (score)
+	(score >= 90) {
+		^("A")
+	}
+
+	(score >= 80) {
+		^("B")
+	}
+
+	(score >= 70) {
+		^("C")
+	}
+
+	(score >= 60) {
+		^("D")
+	}
+
+	("F")
+}
+
+describe_record : { (record)
+	(record["name"] + " scored " + STRING["NEW"](record["score"]) + " (" + record["grade"] + ")")
+}
+
+average : { (total, count)
+	(count = 0) {
+		^(0)
+	}
+
+	(total / count)
+}
+
+((ROWS)) { (row, index)
+	(index > 0) {
+		score : NUMBER["NEW"](row[2])
+		grade : grade_for(score)
+
+		record : {
+			"name": row[0]
+			"team": row[1]
+			"score": score
+			"grade": grade
+		}
+
+		ARRAY["APPEND"](records, record)
+
+		summary["count"] :+ 1
+		summary["total"] :+ score
+
+		(score > summary["highest_score"]) {
+			summary["highest_score"] : score
+			summary["highest_name"] : row[0]
+		}
+
+		(score >= 70) {
+			summary["passing"] :+ 1
+		},{
+			summary["failing"] :+ 1
+		}
+	}
+}
+
+PRINT("Score report")
+PRINT("------------")
+
+((records)) { (record)
+	PRINT(describe_record(record))
+}
+
+PRINT("")
+PRINT("Rows: ", summary["count"])
+PRINT("Average: ", average(summary["total"], summary["count"]))
+PRINT("Passing: ", summary["passing"])
+PRINT("Failing: ", summary["failing"])
+PRINT("Highest: ", summary["highest_name"], " with ", summary["highest_score"])
