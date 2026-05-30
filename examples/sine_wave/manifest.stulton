@@ -1,0 +1,9 @@
+{
+	"RUN": {
+		"bindings.stult"
+		"config.stult"
+		"wave.stult"
+		"screen.stult"
+		"main.stult"
+	}
+}

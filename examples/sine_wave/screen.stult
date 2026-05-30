@@ -1,0 +1,51 @@
+##
+
+EXAMPLE: animated_sine_wave/screen.stult
+
+This code defines screen-rendering helpers for the animated sine wave.
+
+It demonstrates the use of reusable functions, nested loops, mutable strings,
+cached clear text, array-backed frame construction and single-write frame output.
+
+##
+
+GENERATE_CLEAR_TEXT : { ()
+	lines : {}
+
+	((CLEAR_LINES)) {
+		APPEND(lines, "")
+	}
+
+	(JOIN(lines, "\n") + "\n")
+}
+
+CLEAR_TEXT : GENERATE_CLEAR_TEXT()
+
+GENERATE_FRAME_TEXT : { (frame, elapsed_ms)
+	lines : {}
+	wave_rows : WAVE_ROWS(elapsed_ms)
+
+	APPEND(lines, "Animated sine wave")
+	APPEND(lines, "==================")
+	APPEND(lines, "Frame: " + STRING["NEW"](frame))
+	APPEND(lines, "Elapsed ms: " + STRING["NEW"](elapsed_ms))
+	APPEND(lines, "")
+
+	((Y_POINTS)) { (y)
+		line : ""
+
+		((X_POINTS)) { (x)
+			@line :+ POINT_CHAR(x, y, wave_rows)
+		}
+
+		APPEND(lines, line)
+	}
+
+	(JOIN(lines, "\n") + "\n")
+}
+
+DRAW_FRAME : { (frame, elapsed_ms)
+	WRITE(CLEAR_TEXT + GENERATE_FRAME_TEXT(frame, elapsed_ms))
+
+	(_)
+}

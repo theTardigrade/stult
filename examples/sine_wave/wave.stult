@@ -1,0 +1,158 @@
+##
+
+EXAMPLE: animated_sine_wave/wave.stult
+
+This code defines helper functions for converting grid coordinates
+into a smooth moving ASCII sine wave.
+
+It demonstrates the use of trigonometric functions, radians, numeric scaling,
+cached fractional wave rows, shape-aware characters, soft trace rendering,
+functions, conditionals and elapsed-time animation.
+
+##
+
+PHASE_AT : { (elapsed_ms)
+	(elapsed_ms / 1000 * MATH["TAU"] * WAVE_SPEED)
+}
+
+ANGLE_AT : { (x, elapsed_ms)
+	(x / LAST_X * MATH["TAU"] * CYCLES + PHASE_AT(elapsed_ms))
+}
+
+WAVE_Y_AT : { (x, elapsed_ms)
+	angle : ANGLE_AT(x, elapsed_ms)
+
+	(CENTER_Y - SIN(angle) * AMPLITUDE)
+}
+
+WAVE_ROWS : { (elapsed_ms)
+	rows : {}
+
+	((X_POINTS)) { (x)
+		rows[x] : WAVE_Y_AT(x, elapsed_ms)
+	}
+
+	(rows)
+}
+
+CURVE_DISTANCE : { (x, y, wave_rows)
+	distance : ABS(y - wave_rows[x])
+
+	(x > 0) {
+		left_mid_y : (wave_rows[x - 1] + wave_rows[x]) / 2
+		left_distance : ABS(y - left_mid_y)
+
+		(left_distance < @distance) {
+			@distance : left_distance
+		}
+	}
+
+	(x < LAST_X) {
+		right_mid_y : (wave_rows[x] + wave_rows[x + 1]) / 2
+		right_distance : ABS(y - right_mid_y)
+
+		(right_distance < @distance) {
+			@distance : right_distance
+		}
+	}
+
+	(distance)
+}
+
+WAVE_CORE_CHAR_AT : { (x, wave_rows)
+	current_y : wave_rows[x]
+
+	(x = 0) {
+		next_y : wave_rows[x + 1]
+
+		(next_y < current_y) {
+			^(WAVE_RISING_CHAR)
+		}
+
+		(next_y > current_y) {
+			^(WAVE_FALLING_CHAR)
+		}
+
+		^(WAVE_FLAT_CHAR)
+	}
+
+	(x = LAST_X) {
+		previous_y : wave_rows[x - 1]
+
+		(current_y < previous_y) {
+			^(WAVE_RISING_CHAR)
+		}
+
+		(current_y > previous_y) {
+			^(WAVE_FALLING_CHAR)
+		}
+
+		^(WAVE_FLAT_CHAR)
+	}
+
+	previous_y : wave_rows[x - 1]
+	next_y : wave_rows[x + 1]
+
+	(current_y < previous_y & current_y < next_y) {
+		^(WAVE_CREST_CHAR)
+	}
+
+	(current_y > previous_y & current_y > next_y) {
+		^(WAVE_TROUGH_CHAR)
+	}
+
+	(next_y < previous_y) {
+		^(WAVE_RISING_CHAR)
+	}
+
+	(next_y > previous_y) {
+		^(WAVE_FALLING_CHAR)
+	}
+
+	(WAVE_FLAT_CHAR)
+}
+
+WAVE_CHAR_AT : { (x, y, wave_rows)
+	wave_y : wave_rows[x]
+	core_y : ROUND(wave_y)
+
+	(y = core_y) {
+		^(WAVE_CORE_CHAR_AT(x, wave_rows))
+	}
+
+	distance : CURVE_DISTANCE(x, y, wave_rows)
+
+	(distance <= 0.62) {
+		(y < wave_y) {
+			^(WAVE_GLOW_BELOW_CHAR)
+		}
+
+		(y > wave_y) {
+			^(WAVE_GLOW_ABOVE_CHAR)
+		}
+	}
+
+	(EMPTY_CHAR)
+}
+
+POINT_CHAR : { (x, y, wave_rows)
+	wave_char : WAVE_CHAR_AT(x, y, wave_rows)
+
+	(wave_char ! EMPTY_CHAR) {
+		^(wave_char)
+	}
+
+	(x = 0 & y = CENTER_Y) {
+		^(ORIGIN_CHAR)
+	}
+
+	(x = 0) {
+		^(Y_AXIS_CHAR)
+	}
+
+	(y = CENTER_Y) {
+		^(X_AXIS_CHAR)
+	}
+
+	(EMPTY_CHAR)
+}

@@ -45,6 +45,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Boolean manifest project](../examples/bool/)  
   Shows how multiple files run in the order specified in a manifest file.
 
+- [Animated sine wave project](../examples/animated_sine_wave/)  
+  Animates an ASCII sine wave using multiple Stult files, trigonometric functions, cached wave rows, timed frames and manifest-based execution.
+
 ## Standard library
 
 - [Standard library overview](../examples/standard_library_overview.stult)  

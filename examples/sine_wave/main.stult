@@ -1,0 +1,39 @@
+##
+
+EXAMPLE: animated_sine_wave/main.stult
+
+This code animates an ASCII sine wave by drawing frames according to
+real elapsed time and sleeping only for the remaining frame budget.
+
+It demonstrates the use of manifest-based project execution, infinite loops,
+trigonometry, nested loops, elapsed-time animation and frame pacing.
+
+##
+
+START_MS : NOW()
+
+next_frame_ms : START_MS
+frames_drawn : 0
+
+((\/)) {
+	now_ms : NOW()
+	wait_ms : next_frame_ms - now_ms
+
+	(wait_ms > 0) {
+		SLEEP(wait_ms)
+	}
+
+	frame_ms : NOW()
+	elapsed_ms : frame_ms - START_MS
+
+	(elapsed_ms >= DURATION_MS) {
+		^
+	}
+
+	DRAW_FRAME(frames_drawn, elapsed_ms)
+
+	@frames_drawn :+ 1
+	@next_frame_ms :+ FRAME_DELAY_MS
+},{
+	WRITE("\nANIMATION COMPLETED\n\n")
+}

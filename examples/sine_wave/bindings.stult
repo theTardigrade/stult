@@ -1,0 +1,35 @@
+##
+
+EXAMPLE: sine_wave/bindings.stult
+
+This code defines shared standard-library bindings for the sine wave
+manifest project.
+
+It demonstrates the use of immutable bindings and shared setup files
+in a multi-file Stult project.
+
+Files in a manifest-based project run deterministically in the order
+specified in the manifest file.
+
+##
+
+IO : STD["IO"]
+WRITE : IO["WRITE"]
+
+TYPE : STD["TYPE"]
+STRING : TYPE["STRING"]
+ARRAY : TYPE["ARRAY"]
+
+JOIN : STRING["JOIN"]
+APPEND : ARRAY["APPEND"]
+
+TIME : STD["TIME"]
+NOW : TIME["MILLI_TIMESTAMP"]
+SLEEP : TIME["MILLI_SLEEP"]
+
+MATH : STD["MATH"]
+ROUND : MATH["ROUND"]
+ABS : MATH["ABS"]
+
+TRIG : MATH["TRIG"]
+SIN : TRIG["SIN"]
