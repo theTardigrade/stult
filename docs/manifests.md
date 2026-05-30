@@ -8,6 +8,21 @@ files in a deterministic order using one shared interpreter state.
 This is useful for larger projects, reusable helper files, configuration files
 and bundled executables.
 
+## Contents
+
+- [Manifest filenames](#manifest-filenames)
+- [Basic STULTON manifest](#basic-stulton-manifest)
+- [Basic JSON manifest](#basic-json-manifest)
+- [Run order](#run-order)
+- [Shared interpreter state](#shared-interpreter-state)
+- [Paths](#paths)
+- [`RUN` and `run`](#run-and-run)
+- [Single-file manifests](#single-file-manifests)
+- [Running a manifest project](#running-a-manifest-project)
+- [Building a bundled executable](#building-a-bundled-executable)
+- [Manifests are not imports](#manifests-are-not-imports)
+- [Good manifest habits](#good-manifest-habits)
+
 ## Manifest filenames
 
 A project may use either of these manifest files:
