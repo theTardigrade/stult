@@ -41,7 +41,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Conditionals](#conditionals)
   - [Creating a local scope](#creating-a-local-scope)
   - [Loops](#loops)
-    - [Infinite loops](#infinite-loop)
+    - [Infinite loops](#infinite-loops)
     - [Break and early return](#break-and-early-return)
   - [Functions](#functions)
 - [Standard library](#standard-library)
