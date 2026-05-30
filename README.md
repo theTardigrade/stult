@@ -23,6 +23,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Status](#status)
 - [Why use Stult?](#why-use-stult)
 - [Quick start](#quick-start)
+- [Examples](#examples)
 - [Development commands](#development-commands)
 - [Running programs](#running-programs)
   - [Evaluating source strings](#evaluating-source-strings)
@@ -111,6 +112,10 @@ Or on Windows:
 ```bash
 stult.exe examples/area_of_circle.stult
 ```
+
+## Examples
+
+See [docs/examples.md](docs/examples.md) for a guided list of example Stult programs that demonstrate the use of collections, control flow, data formats, manifests and the standard library.
 
 ## Development commands
 
