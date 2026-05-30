@@ -49,7 +49,7 @@ func runEmbeddedBundle(files fs.FS) error {
 		return err
 	}
 
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreterWithArgs(os.Args[1:])
 
 	return runManifestFromFS(interpreter, files, manifest.RunFiles)
 }
