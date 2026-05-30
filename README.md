@@ -49,6 +49,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
+- [Architecture](#architecture)
 
 ## Status
 
@@ -741,3 +742,7 @@ docs/                         reference documentation
 util/
   build.go                    development/release helper
 ```
+
+## Architecture
+
+For a high-level overview of how the Stult interpreter is structured, please see [docs/architecture.md](docs/architecture.md).
