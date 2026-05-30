@@ -45,6 +45,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Infinite loops](#infinite-loops)
     - [Break and early return](#break-and-early-return)
   - [Functions](#functions)
+    - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
@@ -641,6 +642,24 @@ add(1, 2)
 ```
 
 Functions always return exactly one value, even if that value is merely `_`.
+
+### Immediately invoked function expressions
+
+Stult supports immediately invoked function expressions, or **IIFEs**, which are useful
+when a value needs a small temporary scope while it is being calculated.
+
+```stult
+STATUS : ({ ()
+	done : 7
+	total : 10
+
+	(done = total) {
+		^("complete")
+	}
+
+	("in progress")
+})()
+```
 
 ## Standard library
 
