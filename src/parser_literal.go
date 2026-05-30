@@ -42,7 +42,7 @@ func (p *Parser) parseBraceLiteral() Expression {
 }
 
 func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
-	parameters, ok := p.parseFunctionParameters()
+	parameters, variadicParameter, ok := p.parseFunctionParameters()
 	if !ok {
 		return nil
 	}
@@ -108,10 +108,11 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 			p.advance()
 
 			return &FunctionLiteral{
-				Token:      openBrace,
-				Parameters: parameters,
-				Body:       body,
-				Returns:    returns,
+				Token:             openBrace,
+				Parameters:        parameters,
+				VariadicParameter: variadicParameter,
+				Body:              body,
+				Returns:           returns,
 			}
 
 		default:

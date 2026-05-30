@@ -174,10 +174,11 @@ type IndexAssignmentStatement struct {
 func (*IndexAssignmentStatement) statementNode() {}
 
 type FunctionLiteral struct {
-	Token      Token
-	Parameters []Token
-	Body       []Statement
-	Returns    []Expression
+	Token             Token
+	Parameters        []Token
+	VariadicParameter *Token
+	Body              []Statement
+	Returns           []Expression
 }
 
 func (*FunctionLiteral) expressionNode() {}

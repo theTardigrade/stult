@@ -1,0 +1,49 @@
+##
+
+EXAMPLE: variadic_functions.stult
+
+This code defines custom functions that accept any number of extra arguments.
+
+It demonstrates the use of variadic function parameters, arrays of captured
+arguments, collection size checks, loops and mutable accumulators.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+JOIN_WORDS : { (separator, ...words)
+	text : ""
+
+	((words)) { (word, _, _, position)
+		(position > 0) {
+			@text :+ separator
+		}
+
+		@text :+ word
+	}
+
+	(text)
+}
+
+SUM : { (...numbers)
+	total : 0
+
+	((numbers)) { (number)
+		@total :+ number
+	}
+
+	(total)
+}
+
+DESCRIBE_VALUES : { (label, ...values)
+	PRINT(label, " received ", SIZE(values), " value(s): ", values, ".")
+
+	(_)
+}
+
+PRINT(JOIN_WORDS(", ", "red", "green", "blue"))
+PRINT("Sum: ", SUM(1, 2, 3, 4, 5))
+
+DESCRIBE_VALUES("Function with no variadic arguments")
+DESCRIBE_VALUES("Function with three variadic arguments", "hammer", "saw", "plane")

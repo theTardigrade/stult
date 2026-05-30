@@ -1,10 +1,11 @@
 package main
 
 type Function struct {
-	Parameters []Token
-	Body       []Statement
-	Returns    []Expression
-	Env        *Environment
+	Parameters        []Token
+	VariadicParameter *Token
+	Body              []Statement
+	Returns           []Expression
+	Env               *Environment
 }
 
 type BuiltinFunction func(interpreter *Interpreter, args []Value) (Value, error)

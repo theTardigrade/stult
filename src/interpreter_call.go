@@ -32,12 +32,22 @@ func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
 }
 
 func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
-	if len(args) != len(fn.Parameters) {
-		return Value{}, fmt.Errorf(
-			"function expected %d argument(s), got %d",
-			len(fn.Parameters),
-			len(args),
-		)
+	if fn.VariadicParameter == nil {
+		if len(args) != len(fn.Parameters) {
+			return Value{}, fmt.Errorf(
+				"function expected %d argument(s), got %d",
+				len(fn.Parameters),
+				len(args),
+			)
+		}
+	} else {
+		if len(args) < len(fn.Parameters) {
+			return Value{}, fmt.Errorf(
+				"function expected at least %d argument(s), got %d",
+				len(fn.Parameters),
+				len(args),
+			)
+		}
 	}
 
 	callEnv := NewChildEnvironment(fn.Env)
@@ -52,6 +62,23 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 				"line %d, column %d: %w",
 				parameter.StartOfLine,
 				parameter.StartOfColumn,
+				err,
+			)
+		}
+	}
+
+	if fn.VariadicParameter != nil && fn.VariadicParameter.Literal != "_" {
+		variadicValues := append([]Value{}, args[len(fn.Parameters):]...)
+
+		if err := callEnv.Set(
+			fn.VariadicParameter.Literal,
+			NewArrayValue(variadicValues, false),
+			fn.VariadicParameter.IsImmutable,
+		); err != nil {
+			return Value{}, fmt.Errorf(
+				"line %d, column %d: %w",
+				fn.VariadicParameter.StartOfLine,
+				fn.VariadicParameter.StartOfColumn,
 				err,
 			)
 		}

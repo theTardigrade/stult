@@ -24,6 +24,8 @@ PRINT("size: ", SIZE({"a", "b", "c"}))
 
 All standard library names are uppercase because standard library maps and functions are intended to be immutable.
 
+Some standard-library functions accept variadic arguments. In signatures, `...name` means that zero or more remaining arguments are collected into an array under that name.
+
 ## Contents
 
 - [Top-level maps](#top-level-maps)

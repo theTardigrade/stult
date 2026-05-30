@@ -30,6 +30,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Calculate circle area from a map](../examples/calculate_circle_area_from_map.stult)  
   Stores a circle radius in a map, calculates the circle area with a function stored in that map and recalculates it after changing the radius.
 
+- [Variadic function](../examples/variadic_function.stult)  
+  Defines functions that collect extra arguments into an array using variadic parameters.
+
 ## Control flow
 
 - [Countdown loop](../examples/countdown_loop.stult)  

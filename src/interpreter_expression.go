@@ -80,10 +80,11 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 	case *FunctionLiteral:
 		return NewFunctionValue(&Function{
-			Parameters: e.Parameters,
-			Body:       e.Body,
-			Returns:    e.Returns,
-			Env:        i.Env,
+			Parameters:        e.Parameters,
+			VariadicParameter: e.VariadicParameter,
+			Body:              e.Body,
+			Returns:           e.Returns,
+			Env:               i.Env,
 		}), nil
 
 	case *CallExpression:

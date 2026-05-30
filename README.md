@@ -45,6 +45,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Infinite loops](#infinite-loops)
     - [Break and early return](#break-and-early-return)
   - [Functions](#functions)
+    - [Variadic function parameters](#variadic-function-parameters)
     - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
@@ -648,6 +649,32 @@ add(1, 2)
 ```
 
 Functions always return exactly one value, even if that value is merely `_`.
+
+#### Variadic function parameters
+
+A custom function can collect extra arguments into an array by using `...name`
+as the final parameter.
+
+```stult
+join_words : { (separator, ...words)
+	text : ""
+
+	((words)) { (word, _, _, position)
+		(position > 0) {
+			@text :+ separator
+		}
+
+		@text :+ word
+	}
+
+	(text)
+}
+
+STD["IO"]["PRINT"](join_words(", ", "one", "two", "three"))
+```
+
+A function may have fixed parameters before the variadic parameter. The variadic
+parameter must be last.
 
 ### Immediately invoked function expressions
 
