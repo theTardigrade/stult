@@ -7,6 +7,23 @@ Stult is an interpreted scripting language written in Go.
 The implementation is split into stages: lexing, parsing, evaluation,
 standard-library setup, manifest loading and bundled-executable support.
 
+## Contents
+
+- [Overview](#overview)
+- [Source layout](#source-layout)
+- [Lexing](#lexing)
+- [Parsing](#parsing)
+- [Abstract syntax tree](#abstract-syntax-tree)
+- [Evaluation](#evaluation)
+- [Environments and scope](#environments-and-scope)
+- [Values](#values)
+- [Standard library](#standard-library)
+- [Manifests](#manifests)
+- [Bundled executables](#bundled-executables)
+- [Command-line entrypoint](#command-line-entrypoint)
+- [Errors](#errors)
+- [Tests](#tests)
+
 ## Overview
 
 A Stult program is processed in this order:
@@ -212,7 +229,7 @@ examples/animated_sine_wave/
 
 The manifest gives the project an explicit execution order.
 
-For more information about manifest files, please see [docs/manifests.md](docs/manifests.md).
+For more information about manifest files, please see [manifests.md](manifests.md).
 
 ## Bundled executables
 
