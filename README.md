@@ -249,7 +249,7 @@ A JSON manifest uses lowercase JSON-style fields:
 
 Manifest run files are executed in order in the same interpreter, so earlier files can define bindings used by later files.
 
-For more information about manifest files, please read [manifests.md](manifests.md).
+For more information about manifest files, please read [docs/manifests.md](docs/manifests.md).
 
 ## Bundled executables
 
