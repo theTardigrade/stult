@@ -1,0 +1,35 @@
+##
+
+EXAMPLE: word_count.stult
+
+This code counts the number of words in a string and prints the total.
+
+It demonstrates the use of iteration over a string, mutable counters,
+conditionals and outer-scope assignment.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+TEXT : "In the beginning was the word."
+
+current_word : ""
+word_count : 0
+
+((TEXT)) { (CHAR)
+	(CHAR = " " & SIZE(current_word) ! 0) {
+		PRINT(current_word)
+		@current_word : ""
+		@word_count :+ 1
+	},{
+		@current_word :+ CHAR
+	}
+}
+
+(SIZE(current_word) ! 0) {
+	PRINT(current_word)
+	@word_count :+ 1
+}
+
+PRINT("Word count: ", word_count)

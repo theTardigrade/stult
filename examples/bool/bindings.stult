@@ -1,3 +1,17 @@
+##
+
+EXAMPLE: bool/bindings.stult
+
+This code defines shared boolean bindings for any other files
+in this manifest-based example project.
+
+It demonstrates the use of Stult boolean literals, immutable bindings
+and multi-file execution through a project manifest.
+
+Files in a manifest-based project run deterministically in the order
+listed in the manifest.
+
+##
 
 T : \/
 F : /\

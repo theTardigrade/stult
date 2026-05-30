@@ -1,7 +1,19 @@
+##
+
+EXAMPLE: stulton.stult
+
+This code encodes a Stult map as STULTON text, checks whether the text is valid,
+parses it back into a Stult value and then encodes it as text once again.
+
+It demonstrates the use of STULTON data encoding, validation and parsing,
+as well as Stult syntax for nested maps, arrays, booleans, numbers and strings.
+
+##
+
 PRINT : STD["IO"]["PRINT"]
 STULTON : STD["DATA"]["STULTON"]
 
-TEXT : STULTON["NEW"]({
+TEXT_FROM_MAP : STULTON["NEW"]({
 	"NAME": "example"
 	"active": \/
     "hobbies": {
@@ -18,12 +30,16 @@ TEXT : STULTON["NEW"]({
     "num": 8428535988035835038824.5835734
 })
 
-IS_TEXT_VALID : STULTON["IS_VALID"](TEXT)
-PARSED_TEXT : STULTON["PARSE"](TEXT)
+IS_TEXT_VALID : STULTON["IS_VALID"](TEXT_FROM_MAP)
 
-PRINT("VALID: ", IS_TEXT_VALID)
+PRINT("VALIDITY CHECK: ", IS_TEXT_VALID)
+
+PARSED_TEXT : STULTON["PARSE"](TEXT_FROM_MAP)
+
+PRINT()
 PRINT(PARSED_TEXT)
 
 PARSED_TEXT_REENCODED : STULTON["NEW"](PARSED_TEXT)
 
+PRINT()
 PRINT(PARSED_TEXT_REENCODED)

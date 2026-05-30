@@ -1,3 +1,15 @@
+##
+
+EXAMPLE: bool/main.stult
+
+This code prints boolean values and compares them using equality,
+logical OR, logical AND and logical NOT.
+
+It demonstrates the use of boolean literals, shared bindings from another file,
+logical operators and manifest-based project execution.
+
+##
+
 P : STD["IO"]["PRINT"]
 
 P("TRUE: ", T)
@@ -11,5 +23,5 @@ P("Check if both TRUE and FALSE: ", T & F)
 P("Check if TRUE is the same as TRUE: ", T = \/)
 P("Check if FALSE is the same as FALSE: ", F = /\)
 
-P("NOT TRUE: ", \/)
+P("NOT TRUE: ", !\/)
 P("NOT FALSE: ", !/\)

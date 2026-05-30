@@ -1,0 +1,31 @@
+##
+
+EXAMPLE: shopping_list_array.stult
+
+This code creates arrays, appends new values to a list and prints the updated
+list size.
+
+It demonstrates the use of multi-line array literals, single-line array literals,
+standard-library array helpers and collection size checks.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+ARRAY : STD["TYPE"]["ARRAY"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+SHOPPING_LIST : {
+	"bread"
+	"milk"
+	"apples"
+}
+
+AISLES : { "bakery", "dairy", "grocery" }
+
+PRINT("Shopping list before append: ", SHOPPING_LIST)
+PRINT("Aisles: ", AISLES)
+
+ARRAY["APPEND"](SHOPPING_LIST, "coffee", "rice")
+
+PRINT("Shopping list after append: ", SHOPPING_LIST)
+PRINT("Number of shopping list items: ", SIZE(SHOPPING_LIST))

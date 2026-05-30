@@ -1,3 +1,16 @@
+##
+
+EXAMPLE: iterate_over_array.stult
+
+This code iterates over an array of dog names and prints each name
+with its position in the list.
+
+It demonstrates the use of array iteration, collection loop parameters,
+collection size checks, basic arithmetic, after-loop blocks and
+explicit outer-scope reads with @.
+
+##
+
 P : STD["IO"]["PRINT"]
 CS : STD["TYPE"]["COLLECTION"]["SIZE"]
 

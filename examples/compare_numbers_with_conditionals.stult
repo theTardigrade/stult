@@ -1,0 +1,26 @@
+##
+
+EXAMPLE: compare_numbers_with_conditionals.stult
+
+This code compares two numbers and prints a different message depending
+on whether one number is lower, equal or higher than the other.
+
+It demonstrates the use of numeric comparisons, conditional branches,
+else-if blocks, else blocks and explicit outer-scope reads with @.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+MY_AGE : 21
+YOUR_AGE : 99
+
+PRINT("I'm ", MY_AGE, " and you're ", YOUR_AGE, ".")
+
+( MY_AGE < YOUR_AGE ) {
+    @PRINT("I'm younger than you, you old toad!")
+},( MY_AGE = YOUR_AGE ) {
+    @PRINT("We're just as sprightly as each other.")
+},{
+    @PRINT("Let's not talk about age.")
+}

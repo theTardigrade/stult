@@ -1,3 +1,15 @@
+##
+
+EXAMPLE: standard_library_overview.stult
+
+This code recursively prints the maps and functions available in the Stult
+standard library.
+
+It demonstrates the use of map iteration, recursive functions, nested maps,
+type predicates, collection helpers and formatted console output.
+
+##
+
 IO : STD["IO"]
 W : IO["WRITE"]
 WL : IO["WRITE_LINE"]

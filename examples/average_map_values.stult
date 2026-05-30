@@ -1,0 +1,32 @@
+##
+
+EXAMPLE: average_map_values.stult
+
+This code calculates the average score from a map of named decimal values
+and prints the result as a percentage.
+
+It demonstrates the use of map iteration, mutable counters, arithmetic,
+percentage calculation and outer-scope assignment.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+SCORES : {
+	"TEAM_RED": 0.45
+	"TEAM_GREEN": 0.86
+    "TEAM_BLUE": 0.96
+    "TEAM_YELLOW": 0.71
+}
+
+sum_of_scores : 0, number_of_scores : 0
+
+((SCORES)) { (CURRENT_SCORE)
+    @sum_of_scores :+ CURRENT_SCORE
+    @number_of_scores :+ 1
+}
+
+AVERAGE_DECIMAL_SCORE : ( sum_of_scores / number_of_scores )
+AVERAGE_PERCENTAGE_SCORE : ( AVERAGE_DECIMAL_SCORE * 100 )
+
+PRINT("The average score at the world championship was ", AVERAGE_PERCENTAGE_SCORE, "%.")

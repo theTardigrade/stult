@@ -1,3 +1,16 @@
+##
+
+EXAMPLE: break_and_early_return.stult
+
+This code searches an array for the first number above a limit
+and sums numbers until a chosen stopping value is reached.
+
+It demonstrates the use of functions, array iteration, conditional checks,
+early returns, loop breaks, compound assignment
+and explicit outer-scope reads with @.
+
+##
+
 P : STD["IO"]["PRINT"]
 
 NUMBERS : { 1, 2, 3, 4, 5, 6, 7, 8 }

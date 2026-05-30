@@ -1,3 +1,15 @@
+##
+
+EXAMPLE: countdown_loop.stult
+
+This code counts down from a fixed number and then prints a message
+when the countdown is complete.
+
+It demonstrates the use of while-style loops, mutable counters, compound assignment,
+after-loop blocks, outer-scope writes with @ and explicit outer-scope reads with @.
+
+##
+
 PRINT : STD["IO"]["PRINT"]
 
 ITERATIONS : 10
@@ -7,6 +19,7 @@ i : ITERATIONS
 ((i > 0)) {
     # Using the at symbol tells the interpreter that we want to access a variable from outside the current scope.
     # The at symbol is optional for reads, but required for writes.
+
     @PRINT(@i) 
 
     @i :- 1

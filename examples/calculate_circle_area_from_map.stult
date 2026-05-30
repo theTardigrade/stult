@@ -1,0 +1,29 @@
+##
+
+EXAMPLE: calculate_circle_area_from_map.stult
+
+This code stores a circle radius in a map, calculates the circle area
+with a function stored in the same map and then recalculates it
+after changing the radius.
+
+It demonstrates the use of maps, map-entry assignment, function values,
+standard library math helpers and explicit outer-scope reads with @.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+MATH : STD["MATH"]
+PI : MATH["PI"]
+SQUARE : MATH["SQUARE"]
+
+CIRCLE : {
+	"radius": 10
+	"AREA": { () R : CIRCLE["radius"] (@PI * @SQUARE(R)) }
+}
+
+PRINT("The area of the small circle:  ", CIRCLE["AREA"]())
+
+CIRCLE["radius"] : 20
+
+PRINT("The area of the big circle:    ", CIRCLE["AREA"]())
