@@ -77,7 +77,7 @@ PRINT("Hello from a bundled Stult executable.")
 Build it with:
 
 ```bash
-stult build ./exmample_tool -o example-tool
+stult build ./example_tool -o example-tool
 ```
 
 Run the generated executable:
