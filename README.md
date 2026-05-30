@@ -650,7 +650,7 @@ add(1, 2)
 
 Functions always return exactly one value, even if that value is merely `_`.
 
-#### Variadic function parameters
+### Variadic function parameters
 
 A custom function can collect extra arguments into an array by using `...name`
 as the final parameter.
