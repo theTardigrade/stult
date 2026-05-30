@@ -2,6 +2,15 @@
 
 These examples show how to use Stult for small scripts, data processing, loops, functions, manifests and bundled executables.
 
+## Contents
+
+- [Collections](#collections)
+- [Functions](#functions)
+- [Control flow](#control-flow)
+- [Data formats](#data-formats)
+- [Projects](#projects)
+- [Standard library](#standard-library)
+
 ## Collections
 
 - [Shopping list array](../examples/shopping_list_array.stult)  
