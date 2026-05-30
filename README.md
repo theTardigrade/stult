@@ -57,7 +57,7 @@ That is to say, the programming language, interpreter and standard library are a
 
 The language has not yet reached version 1.0.0, so its syntax, standard-library names and runtime behavior may change before the first stable release.
 
-Even so, Stult can certainly be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
+Even so, Stult can most certainly be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
 
 ## Why use Stult?
 
