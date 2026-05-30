@@ -650,7 +650,7 @@ add(1, 2)
 
 Functions always return exactly one value, even if that value is merely `_`.
 
-### Variadic function parameters
+#### Variadic function parameters
 
 A custom function can collect extra arguments into an array by using `...name`
 as the final parameter.
@@ -676,7 +676,7 @@ STD["IO"]["PRINT"](join_words(", ", "one", "two", "three"))
 A function may have fixed parameters before the variadic parameter. The variadic
 parameter must be last.
 
-### Immediately invoked function expressions
+#### Immediately invoked function expressions
 
 Stult supports immediately invoked function expressions, or **IIFEs**, which are useful
 when a value needs a small temporary scope while it is being calculated.
