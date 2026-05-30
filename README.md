@@ -21,6 +21,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 ## Contents
 
 - [Status](#status)
+- [Why use Stult?](#why-use-stult)
 - [Quick start](#quick-start)
 - [Development commands](#development-commands)
 - [Running programs](#running-programs)
@@ -47,13 +48,25 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
 ## Status
 
-Stult is still experimental.
+Stult is still evolving.
 
 That is to say, the programming language, interpreter and standard library are all **works in progress**.
 
-The language has not yet reached version 1.0.0, so its syntax, standard-library names and runtime behavior may evolve, adapt and change before the first stable release.
+The language has not yet reached version 1.0.0, so its syntax, standard-library names and runtime behavior may change before the first stable release.
 
 Even so, Stult can certainly be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
+
+## Why use Stult?
+
+Stult is intended for small scripts, experiments and bundled command-line tools.
+
+It may be useful when you want:
+
+- a tiny interpreted language distributed as a single Go binary,
+- concise syntax for local scripts and data-heavy automation,
+- manifest-based multi-file projects,
+- standalone bundled executables that include their source files *and*
+- a language implementation small enough to read and quickly understand.
 
 ## Quick start
 
