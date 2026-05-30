@@ -52,6 +52,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [CSV score report](../examples/csv_score_report.stult)  
   Parses CSV text, converts score fields to numbers, builds row maps and prints summary statistics.
 
+- [CSV to JSON converter](../examples/csv_to_json_converter.stult)  
+  Converts CSV text into JSON by parsing rows, building maps from headers and encoding the result as JSON.
+
 ## Projects
 
 - [Boolean manifest project](../examples/bool/)  

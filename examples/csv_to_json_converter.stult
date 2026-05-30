@@ -1,0 +1,53 @@
+##
+
+EXAMPLE: csv_to_json.stult
+
+This code converts CSV text into JSON text.
+
+It demonstrates command-line data processing, CSV parsing, JSON encoding,
+arrays, maps, loops and mutable accumulation.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+CSV : STD["DATA"]["CSV"]
+JSON : STD["DATA"]["JSON"]
+
+ARRAY : STD["TYPE"]["ARRAY"]
+COLLECTION : STD["TYPE"]["COLLECTION"]
+
+APPEND : ARRAY["APPEND"]
+SIZE : COLLECTION["SIZE"]
+
+EXAMPLE_CSV_TEXT : "name,role,score\nAda Lovelace,programmer,98\nGrace Hopper,compiler engineer,99\nKatherine Johnson,mathematician,100\n"
+
+CSV_ROWS_TO_MAPS : { (rows)
+	records : {}
+
+	(SIZE(rows) = 0) {
+		^(records)
+	}
+
+	headers : rows[0]
+
+	((rows)) { (row, _, _, position)
+		(position > 0) {
+			record : {:}
+
+			((headers)) { (header, column)
+				record[header] : row[column]
+			}
+
+			APPEND(records, record)
+		}
+	}
+
+	(records)
+}
+
+rows : CSV["PARSE"](EXAMPLE_CSV_TEXT)
+records : CSV_ROWS_TO_MAPS(rows)
+json_text : JSON["NEW"](records)
+
+PRINT(json_text)
