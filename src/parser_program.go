@@ -11,11 +11,14 @@ func (p *Parser) ParseProgram() *Program {
 		}
 
 		stmt := p.parseStatement()
+		if stmt == nil {
+			p.synchronize()
+			continue
+		}
+
 		canFollowTightly := statementAllowsTightFollower(stmt) && p.previous.Type == TokenRBrace
 
-		if stmt != nil {
-			program.Statements = append(program.Statements, stmt)
-		}
+		program.Statements = append(program.Statements, stmt)
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
 			p.skipSeparators()

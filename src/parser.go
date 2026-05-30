@@ -68,17 +68,59 @@ func (p *Parser) errorAtCurrent(message string) {
 }
 
 func (p *Parser) errorAtToken(tok Token, message string) {
+	if tok.Type == TokenIllegal {
+		p.errors = append(
+			p.errors,
+			fmt.Sprintf(
+				"line %d, column %d: %s, but found invalid syntax: %s",
+				tok.StartOfLine,
+				tok.StartOfColumn,
+				message,
+				tok.Literal,
+			),
+		)
+		return
+	}
+
 	p.errors = append(
 		p.errors,
 		fmt.Sprintf(
-			"line %d, column %d: %s, got %s %q",
+			"line %d, column %d: %s, got %s",
 			tok.StartOfLine,
 			tok.StartOfColumn,
 			message,
-			tok.Type,
-			tok.Literal,
+			p.describeToken(tok),
 		),
 	)
+}
+
+func (p *Parser) describeToken(tok Token) string {
+	switch tok.Type {
+	case TokenEOF:
+		return "end of file"
+
+	case TokenNewline:
+		return "newline"
+
+	case TokenIdentifier:
+		return fmt.Sprintf("identifier %q", tok.Literal)
+
+	case TokenNumber:
+		return fmt.Sprintf("number %q", tok.Literal)
+
+	case TokenString:
+		return fmt.Sprintf("string %q", tok.Literal)
+
+	case TokenBool:
+		return fmt.Sprintf("boolean %q", tok.Literal)
+
+	default:
+		if tok.Literal != "" {
+			return fmt.Sprintf("%q", tok.Literal)
+		}
+
+		return fmt.Sprintf("%q", string(tok.Type))
+	}
 }
 
 func tokensTouch(left Token, right Token) bool {
