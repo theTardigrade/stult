@@ -16,6 +16,8 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Average map values](../examples/average_map_values.stult)  
   Calculates the average of decimal values stored in a map and prints the result as a percentage.
 
+## Functions
+
 - [Calculate circle area from a map](../examples/calculate_circle_area_from_map.stult)  
   Stores a circle radius in a map, calculates the circle area with a function stored in that map and recalculates it after changing the radius.
 
