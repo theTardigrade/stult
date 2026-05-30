@@ -9,8 +9,6 @@ STD["TIME"]
 STD["MATH"]
 STD["TYPE"]
 STD["DATA"]
-STD["CSV"]
-STD["JSON"]
 ```
 
 The standard library is map-shaped. Standard library functions are ordinary callable values stored inside maps.
