@@ -8,6 +8,10 @@ import (
 	"testing"
 )
 
+var standaloneExamplesRequiringArgs = map[string]bool{
+	"csv_to_json_converter.stult": true,
+}
+
 func TestStandaloneExamplesRun(t *testing.T) {
 	examplesDir := examplesDirForTest(t)
 	manifestDirs := manifestExampleDirsForTest(t, examplesDir)
@@ -153,6 +157,10 @@ func manifestExampleDirsForTest(t *testing.T, examplesDir string) map[string]boo
 
 func shouldSkipStandaloneExample(relativePath string, manifestDirs map[string]bool) bool {
 	if strings.HasPrefix(relativePath, "__ignore/") {
+		return true
+	}
+
+	if standaloneExamplesRequiringArgs[relativePath] {
 		return true
 	}
 

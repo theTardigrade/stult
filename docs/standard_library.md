@@ -36,6 +36,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`IO["WRITE_ERROR"](...values)`](#iowrite_errorvalues)
   - [`IO["READ_LINE"]()`](#ioread_line)
   - [`IO["PROMPT"](...values)`](#iopromptvalues)
+- [SYSTEM](#system)
+  - [`SYSTEM["ARGS"]`](#systemargs)
+  - [`SYSTEM["CWD"]()`](#systemcwd)
+  - [`SYSTEM["ENV"](name)`](#systemenvname)
+  - [`SYSTEM["EXIT"](code)`](#systemexitcode)
 - [FILE](#file)
   - [`FILE["READ"](path)`](#filereadpath)
   - [`FILE["WRITE"](path, content)`](#filewritepath-content)
@@ -125,6 +130,10 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 ### `STD["IO"]`
 
 Console input and output.
+
+### `STD["SYSTEM"]`
+
+Runtime and process-context helpers.
 
 ### `STD["FILE"]`
 
@@ -221,6 +230,82 @@ STD["IO"]["PRINT"]("Hello ", name)
 Returns a string without the trailing newline.
 
 Returns `_` if input ends before any text is read.
+
+## SYSTEM
+
+```stult
+SYSTEM : STD["SYSTEM"]
+```
+
+`SYSTEM` contains runtime and process-context values.
+
+### `SYSTEM["ARGS"]`
+
+Contains the arguments passed to the Stult program.
+
+```stult
+ARGS : SYSTEM["ARGS"]
+
+STD["IO"]["PRINT"](ARGS)
+```
+
+The array does not include the Stult executable path.
+
+The array also does not include the source file, manifest file or project directory used as the program target.
+
+For example:
+
+```bash
+stult examples/csv_to_json_converter.stult input.csv output.json
+```
+
+makes this available to Stult code:
+
+```stult
+STD["SYSTEM"]["ARGS"] # {"input.csv", "output.json"}
+```
+
+`ARGS` is an immutable array of strings.
+
+### `SYSTEM["CWD"]()`
+
+Returns the current working directory.
+
+```stult
+cwd : SYSTEM["CWD"]()
+
+STD["IO"]["PRINT"](cwd)
+```
+
+Returns a string.
+
+### `SYSTEM["ENV"](name)`
+
+Reads an environment variable.
+
+```stult
+home : SYSTEM["ENV"]("HOME")
+
+STD["IO"]["PRINT"](home)
+```
+
+The argument must be a string.
+
+Returns a string when the environment variable is set.
+
+Returns `_` when the environment variable is not set.
+
+### `SYSTEM["EXIT"](code)`
+
+Exits the current process with the given status code.
+
+```stult
+SYSTEM["EXIT"](0)
+```
+
+The exit code must be an integer number from `0` to `255`.
+
+This function does not return, because it terminates the process.
 
 ## FILE
 

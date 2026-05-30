@@ -5,9 +5,13 @@ type Interpreter struct {
 }
 
 func NewInterpreter() *Interpreter {
+	return NewInterpreterWithArgs(nil)
+}
+
+func NewInterpreterWithArgs(args []string) *Interpreter {
 	env := NewEnvironment()
 
-	if err := env.Set("STD", NewStdMap(), true); err != nil {
+	if err := env.Set("STD", NewStdMap(args), true); err != nil {
 		panic(err)
 	}
 

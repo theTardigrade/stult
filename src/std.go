@@ -1,13 +1,14 @@
 package main
 
-func NewStdMap() Value {
+func NewStdMap(args []string) Value {
 	entries := map[string]Binding{
-		"DATA": NewImmutableBinding(NewStdDataMap()),
-		"FILE": NewImmutableBinding(NewStdFileMap()),
-		"IO":   NewImmutableBinding(NewStdIOMap()),
-		"MATH": NewImmutableBinding(NewStdMathMap()),
-		"TIME": NewImmutableBinding(NewStdTimeMap()),
-		"TYPE": NewImmutableBinding(NewStdTypeMap()),
+		"DATA":   NewImmutableBinding(NewStdDataMap()),
+		"FILE":   NewImmutableBinding(NewStdFileMap()),
+		"IO":     NewImmutableBinding(NewStdIOMap()),
+		"MATH":   NewImmutableBinding(NewStdMathMap()),
+		"SYSTEM": NewImmutableBinding(NewStdSystemMap(args)),
+		"TIME":   NewImmutableBinding(NewStdTimeMap()),
+		"TYPE":   NewImmutableBinding(NewStdTypeMap()),
 	}
 
 	return NewMapValue(entries, true)

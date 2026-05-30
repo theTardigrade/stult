@@ -705,6 +705,7 @@ It is a map containing functions and other maps.
 
 ```stult
 STD["IO"]
+STD["SYSTEM"]
 STD["FILE"]
 STD["TIME"]
 STD["MATH"]
@@ -723,7 +724,7 @@ PRINT("size: ", SIZE({"a", "b", "c"}))
 PRINT("square: ", MATH["SQUARE"](9))
 ```
 
-For the full standard library reference, please see [docs/standard-library.md](docs/standard-library.md).
+For the full standard library reference, please see [docs/standard_library.md](docs/standard_library.md).
 
 ## STULTON
 

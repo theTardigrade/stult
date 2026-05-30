@@ -203,7 +203,7 @@ CSV_PARSE : STD["DATA"]["CSV"]["PARSE"]
 This map-shaped structure keeps the standard library explicit and inspectable
 from Stult code.
 
-For the public standard-library reference, see [`standard-library.md`](standard-library.md).
+For the public standard-library reference, see [`standard_library.md`](standard_library.md).
 
 ## Manifests
 

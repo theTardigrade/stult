@@ -29,15 +29,6 @@ func run() error {
 		return runBuildCommand(args[1:])
 	}
 
-	if len(args) > 0 && isEvalOption(args[0]) {
-		if len(args) != 2 {
-			return fmt.Errorf("%s", usage())
-		}
-
-		interpreter := NewInterpreter()
-		return runSourceString(interpreter, args[1], "<eval>")
-	}
-
 	switch len(args) {
 	case 0:
 		manifestPath, err := findManifestUpwards(".")
@@ -47,8 +38,9 @@ func run() error {
 
 		return runManifestFile(manifestPath)
 
-	case 1:
+	default:
 		target := args[0]
+		programArgs := args[1:]
 
 		manifestPath, isManifest, err := manifestPathFromArgument(target)
 		if err != nil {
@@ -56,40 +48,25 @@ func run() error {
 		}
 
 		if isManifest {
-			return runManifestFile(manifestPath)
+			return runManifestFileWithArgs(manifestPath, programArgs)
 		}
 
-		interpreter := NewInterpreter()
+		interpreter := NewInterpreterWithArgs(programArgs)
 		return runSourceFile(interpreter, target)
-
-	default:
-		return fmt.Errorf("%s", usage())
 	}
 }
 
-func isEvalOption(arg string) bool {
-	return arg == "-e" || arg == "--eval"
-}
-
-func usage() string {
-	return "Usage:\n" +
-		"  stult\n" +
-		"  stult -e <source>\n" +
-		"  stult --eval <source>\n" +
-		"  stult build [project-directory] -o <output-executable>\n" +
-		"  stult <file.stult>\n" +
-		"  stult <directory>\n" +
-		"  stult <manifest.stulton>\n" +
-		"  stult <manifest.json>"
-}
-
 func runManifestFile(filename string) error {
+	return runManifestFileWithArgs(filename, nil)
+}
+
+func runManifestFileWithArgs(filename string, args []string) error {
 	manifest, files, err := loadManifestFileFromFS(filename)
 	if err != nil {
 		return err
 	}
 
-	interpreter := NewInterpreter()
+	interpreter := NewInterpreterWithArgs(args)
 
 	return runManifestFromFS(interpreter, files, manifest.RunFiles)
 }
@@ -299,7 +276,9 @@ func runSourceFileFromFSNamed(interpreter *Interpreter, files fs.FS, filename st
 		return fmt.Errorf("Could not read %q: %w", displayName, err)
 	}
 
-	return runSourceString(interpreter, string(sourceBytes), displayName)
+	source := string(sourceBytes)
+
+	return runSourceString(interpreter, source, displayName)
 }
 
 func runSourceString(interpreter *Interpreter, source string, displayName string) error {
@@ -312,7 +291,7 @@ func runSourceString(interpreter *Interpreter, source string, displayName string
 	}
 
 	if err := interpreter.EvalProgram(program); err != nil {
-		return formatRuntimeError(displayName, source, err)
+		return fmt.Errorf("Runtime error in %q: %w", displayName, err)
 	}
 
 	return nil
