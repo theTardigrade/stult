@@ -37,12 +37,13 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Outer bindings](#outer-bindings)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
+  - [Collections](#collections)
   - [Conditionals](#conditionals)
   - [Creating a local scope](#creating-a-local-scope)
   - [Loops](#loops)
-  - [Break and early return](#break-and-early-return)
+    - [Infinite loops](#infinite-loop)
+    - [Break and early return](#break-and-early-return)
   - [Functions](#functions)
-  - [Collections](#collections)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
@@ -431,6 +432,43 @@ count *= 2;
 count /= 5;
 ```
 
+### Collections
+
+Arrays, maps and strings can be indexed. Assignment is done via indexing:
+
+```stult
+items : {"a", "b"}
+items[2] : "c"
+
+record : {"name": "example"}
+record["city"] : "London"
+
+text : "cat"
+text[0] : "b"
+```
+
+Assigning to an array or string at index equal to its current size appends.
+
+```stult
+items : {"a", "b"}
+items[2] : "c"
+```
+
+Ranges are available in array literals.
+
+```stult
+{1..5}       # 1, 2, 3, 4, 5
+{1...5}      # 1, 2, 3, 4
+{10..16[2]}  # 10, 12, 14, 16
+```
+
+Ranges can descend too:
+
+```stult
+{5..1}
+{10...1[3]}
+```
+
 ### Conditionals
 
 ```stult
@@ -529,7 +567,19 @@ You may provide from zero to four parameters:
 }
 ```
 
-### Break and early return
+#### Infinite loops
+
+An infinite loop can be written by giving a true literal as the condition:
+
+```stult
+((\/)) {
+	STD["IO"]["PRINT"]("this runs forever")
+}
+```
+
+That is the idiomatic way to write an eternally iterating loop in Stult.
+
+#### Break and early return
 
 Bare `^` breaks out of the nearest loop:
 
@@ -582,43 +632,6 @@ add(1, 2)
 ```
 
 Functions always return exactly one value, even if that value is merely `_`.
-
-### Collections
-
-Arrays, maps and strings can be indexed. Assignment is done via indexing:
-
-```stult
-items : {"a", "b"}
-items[2] : "c"
-
-record : {"name": "example"}
-record["city"] : "London"
-
-text : "cat"
-text[0] : "b"
-```
-
-Assigning to an array or string at index equal to its current size appends.
-
-```stult
-items : {"a", "b"}
-items[2] : "c"
-```
-
-Ranges are available in array literals.
-
-```stult
-{1..5}       # 1, 2, 3, 4, 5
-{1...5}      # 1, 2, 3, 4
-{10..16[2]}  # 10, 12, 14, 16
-```
-
-Ranges can descend too:
-
-```stult
-{5..1}
-{10...1[3]}
-```
 
 ## Standard library
 
