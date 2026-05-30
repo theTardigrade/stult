@@ -693,7 +693,7 @@ PRINT("size: ", SIZE({"a", "b", "c"}))
 PRINT("square: ", MATH["SQUARE"](9))
 ```
 
-For the full standard library reference, please see [docs/std.md](docs/std.md).
+For the full standard library reference, please see [docs/standard-library.md](docs/standard-library.md).
 
 ## STULTON
 
