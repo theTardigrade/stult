@@ -212,6 +212,8 @@ examples/animated_sine_wave/
 
 The manifest gives the project an explicit execution order.
 
+For more information about manifest files, please see [docs/manifests.md](docs/manifests.md).
+
 ## Bundled executables
 
 Stult can bundle a manifest-based project into a standalone executable.
