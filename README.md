@@ -40,7 +40,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
   - [Conditionals](#conditionals)
-  - [Creating a local scope](#creating-a-local-scope)
+    - [Creating a local scope](#creating-a-local-scope)
   - [Loops](#loops)
     - [Infinite loops](#infinite-loops)
     - [Break and early return](#break-and-early-return)
@@ -502,7 +502,7 @@ Else-if blocks use `},(`.
 }
 ```
 
-### Creating a local scope
+#### Creating a local scope
 
 A conditional with a true literal can be used as an idiomatic way to create a local scope:
 
@@ -587,8 +587,6 @@ An infinite loop can be written by giving a true literal as the condition:
 	STD["IO"]["PRINT"]("this runs forever")
 }
 ```
-
-That is the idiomatic way to write an eternally iterating loop in Stult.
 
 #### Break and early return
 
