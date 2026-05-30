@@ -24,6 +24,11 @@ jobs:
       - name: Build dist binaries
         run: go run ./util/build.go dist
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+
       - name: Create GitHub Release and upload binaries
         uses: softprops/action-gh-release@v2
         with:
