@@ -264,6 +264,14 @@ Bounded comments use `##`.
 ## This is a bounded comment follow by some code. ## x : 10
 ```
 
+Bounded comments can span across multiple lines.
+
+```stult
+##
+EXAMPLE
+##
+```
+
 Three or more consecutive `#` symbols are invalid.
 
 ### Values
