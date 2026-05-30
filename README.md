@@ -63,8 +63,7 @@ Even so, Stult can certainly be used, in its current state, to solve genuine pro
 
 Stult is designed for small scripts that can grow into distributable command-line tools.
 
-You can run a single file, execute a manifest-based project or bundle a project into
-one executable that contains the Stult runtime and the project source files.
+You can run a single file, execute a manifest-based project or bundle a project into one executable that contains the Stult runtime and the project source files.
 
 Stult may be useful when you want:
 
