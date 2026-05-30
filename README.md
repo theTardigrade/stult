@@ -695,8 +695,7 @@ src/
 
 examples/                     example Stult programs
 
-docs/
-  std.md                      reference documentation for the standard library
+docs/                         reference documentation
 
 util/
   build.go                    development/release helper
