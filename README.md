@@ -68,7 +68,7 @@ You can run a single file, execute a manifest-based project or bundle a project 
 Stult may be useful when you want:
 
 - a tiny interpreted language distributed as a single Go binary,
-- concise syntax for local scripts and data-heavy automation,
+- concise syntax for writing local scripts that process data and automate tasks,
 - manifest-based multi-file projects,
 - standalone bundled executables that include their source files *and*
 - a language implementation small enough to read and quickly understand.
