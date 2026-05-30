@@ -42,6 +42,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Conditionals](#conditionals)
     - [Creating a local scope](#creating-a-local-scope)
   - [Loops](#loops)
+    - [Iterating over collections](#iterating-over-collections)
     - [Infinite loops](#infinite-loops)
     - [Break and early return](#break-and-early-return)
   - [Functions](#functions)
@@ -550,6 +551,8 @@ i : 0
 	STD["IO"]["PRINT"]("done")
 }
 ```
+
+#### Iterating over collections
 
 Collection loops work with arrays, maps and strings:
 
