@@ -12,7 +12,7 @@ It is designed as a terse but readable scripting language with:
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
 - a map-shaped standard library available through `STD`.
 
-Idiomatic Stult code should be light on syntax without being deliberately cryptic.
+Idiomatic Stult code should be light on syntax, but never deliberately cryptic.
 
 Source files use the `.stult` extension.
 
