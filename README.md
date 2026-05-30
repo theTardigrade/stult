@@ -22,6 +22,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
 - [Status](#status)
 - [Why use Stult?](#why-use-stult)
+  - [No knowledge of Go required](#no-knowledge-of-go-required)
 - [Quick start](#quick-start)
 - [Examples](#examples)
 - [Development commands](#development-commands)
@@ -34,7 +35,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Values](#values)
   - [Numbers](#numbers)
   - [Bindings](#bindings)
-  - [Outer bindings](#outer-bindings)
+    - [Outer bindings](#outer-bindings)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -60,15 +61,24 @@ Even so, Stult can certainly be used, in its current state, to solve genuine pro
 
 ## Why use Stult?
 
-Stult is intended for small scripts, experiments and bundled command-line tools.
+Stult is designed for small scripts that can grow into distributable command-line tools.
 
-It may be useful when you want:
+You can run a single file, execute a manifest-based project or bundle a project into
+one executable that contains the Stult runtime and the project source files.
+
+Stult may be useful when you want:
 
 - a tiny interpreted language distributed as a single Go binary,
 - concise syntax for local scripts and data-heavy automation,
 - manifest-based multi-file projects,
 - standalone bundled executables that include their source files *and*
 - a language implementation small enough to read and quickly understand.
+
+### No knowledge of Go required
+
+Stult is implemented in Go, but Stult programs are written in Stult.
+
+You do not need to know Go to write, run or bundle Stult code.
 
 ## Quick start
 
@@ -357,7 +367,7 @@ _name     # mutable
 _         # void/discard-style name
 ```
 
-### Outer bindings
+#### Outer bindings
 
 `@name` reads or writes the nearest outer binding.
 
