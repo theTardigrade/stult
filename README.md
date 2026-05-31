@@ -727,6 +727,8 @@ PRINT("square: ", MATH["SQUARE"](9))
 
 For the full standard library reference, please see [docs/standard_library.md](docs/standard_library.md).
 
+You can also use Stult to run the example code at `examples/standard_library_overview.stult` in order to get a dynamically produced list of everything that the standar library contains.
+
 ## STULTON
 
 STULTON is Stult’s native data notation. It is used for manifests, config files and simply storing Stult values.
