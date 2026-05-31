@@ -944,4 +944,8 @@ util/
 
 ## Architecture
 
-For a high-level overview of how Stult is structured, please see [docs/architecture.md](docs/architecture.md).
+For a technical overview of the implementation, including the compiler pipeline, bytecode virtual machine, interpreter, manifests, bundling and test strategy, see [docs/architecture.md](docs/architecture.md).
+
+<!--
+For the formal language definition, see [docs/specification.md](docs/specification.md).
+-->

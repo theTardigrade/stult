@@ -23,7 +23,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [Control flow](#control-flow)
   - [Dynamic loops](#dynamic-loops)
   - [Source spans and disassembly](#source-spans-and-disassembly)
-- [Bytecode VM](#bytecode-vm)
+- [Bytecode virtual machine](#bytecode-virtual-machine)
   - [VM state](#vm-state)
   - [Globals and standard library setup](#globals-and-standard-library-setup)
   - [Stack entries](#stack-entries)
