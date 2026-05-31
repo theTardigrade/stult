@@ -17,7 +17,7 @@ func NewStdCSVMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdCSVNew(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdCSVNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("CSV.NEW expected 1 argument, got %d", len(args))
 	}
@@ -45,7 +45,7 @@ func builtinStdCSVNew(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(builder.String()), nil
 }
 
-func builtinStdCSVParse(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdCSVParse(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("CSV.PARSE expected 1 argument, got %d", len(args))
 	}
@@ -65,7 +65,7 @@ func builtinStdCSVParse(_ *Interpreter, args []Value) (Value, error) {
 	return stdCSVRecordsToValue(records), nil
 }
 
-func builtinStdCSVIsValid(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdCSVIsValid(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("CSV.IS_VALID expected 1 argument, got %d", len(args))
 	}

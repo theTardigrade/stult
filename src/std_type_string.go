@@ -25,7 +25,7 @@ func NewStdTypeStringMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeStringNew(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.NEW expected 1 argument, got %d", len(args))
 	}
@@ -54,7 +54,7 @@ func StdTypeStringNew(_ *Interpreter, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeStringCharacters(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringCharacters(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.CHARACTERS expected 1 argument, got %d", len(args))
 	}
@@ -73,7 +73,7 @@ func StdTypeStringCharacters(_ *Interpreter, args []Value) (Value, error) {
 	return NewArrayValue(elements, false), nil
 }
 
-func StdTypeStringTrim(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringTrim(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.TRIM expected 1 argument, got %d", len(args))
 	}
@@ -86,7 +86,7 @@ func StdTypeStringTrim(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(strings.TrimSpace(text)), nil
 }
 
-func StdTypeStringTrimStart(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringTrimStart(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.TRIM_START expected 1 argument, got %d", len(args))
 	}
@@ -101,7 +101,7 @@ func StdTypeStringTrimStart(_ *Interpreter, args []Value) (Value, error) {
 	})), nil
 }
 
-func StdTypeStringTrimEnd(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringTrimEnd(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.TRIM_END expected 1 argument, got %d", len(args))
 	}
@@ -116,7 +116,7 @@ func StdTypeStringTrimEnd(_ *Interpreter, args []Value) (Value, error) {
 	})), nil
 }
 
-func StdTypeStringToLower(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringToLower(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.TO_LOWER expected 1 argument, got %d", len(args))
 	}
@@ -129,7 +129,7 @@ func StdTypeStringToLower(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(strings.ToLower(text)), nil
 }
 
-func StdTypeStringToUpper(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringToUpper(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.STRING.TO_UPPER expected 1 argument, got %d", len(args))
 	}
@@ -142,7 +142,7 @@ func StdTypeStringToUpper(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(strings.ToUpper(text)), nil
 }
 
-func StdTypeStringIsFoundIn(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringIsFoundIn(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.IS_FOUND_IN expected 2 arguments, got %d", len(args))
 	}
@@ -155,7 +155,7 @@ func StdTypeStringIsFoundIn(_ *Interpreter, args []Value) (Value, error) {
 	return NewBoolValue(strings.Contains(text, search)), nil
 }
 
-func StdTypeStringIsFoundAtStart(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringIsFoundAtStart(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.IS_FOUND_AT_START expected 2 arguments, got %d", len(args))
 	}
@@ -168,7 +168,7 @@ func StdTypeStringIsFoundAtStart(_ *Interpreter, args []Value) (Value, error) {
 	return NewBoolValue(strings.HasPrefix(text, search)), nil
 }
 
-func StdTypeStringIsFoundAtEnd(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringIsFoundAtEnd(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.IS_FOUND_AT_END expected 2 arguments, got %d", len(args))
 	}
@@ -181,7 +181,7 @@ func StdTypeStringIsFoundAtEnd(_ *Interpreter, args []Value) (Value, error) {
 	return NewBoolValue(strings.HasSuffix(text, search)), nil
 }
 
-func StdTypeStringReplace(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringReplace(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 3 {
 		return Value{}, fmt.Errorf("TYPE.STRING.REPLACE expected 3 arguments, got %d", len(args))
 	}
@@ -204,7 +204,7 @@ func StdTypeStringReplace(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(strings.ReplaceAll(text, oldText, newText)), nil
 }
 
-func StdTypeStringSplit(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringSplit(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.SPLIT expected 2 arguments, got %d", len(args))
 	}
@@ -229,7 +229,7 @@ func StdTypeStringSplit(_ *Interpreter, args []Value) (Value, error) {
 	return NewArrayValue(elements, false), nil
 }
 
-func StdTypeStringJoin(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeStringJoin(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.JOIN expected 2 arguments, got %d", len(args))
 	}

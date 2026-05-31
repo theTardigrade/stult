@@ -25,25 +25,25 @@ func NewStdTypeMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeIsArray(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsArray(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_ARRAY", args, func(value Value) bool {
 		return value.Kind == ValueArray
 	})
 }
 
-func StdTypeIsBool(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsBool(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_BOOL", args, func(value Value) bool {
 		return value.Kind == ValueBool
 	})
 }
 
-func StdTypeIsBuiltinFunction(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsBuiltinFunction(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_BUILTIN_FUNCTION", args, func(value Value) bool {
 		return value.Kind == ValueBuiltinFunction
 	})
 }
 
-func StdTypeIsCollection(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsCollection(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_COLLECTION", args, func(value Value) bool {
 		switch value.Kind {
 		case ValueMap, ValueArray, ValueString:
@@ -54,31 +54,31 @@ func StdTypeIsCollection(_ *Interpreter, args []Value) (Value, error) {
 	})
 }
 
-func StdTypeIsFunction(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsFunction(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_FUNCTION", args, func(value Value) bool {
 		return value.Kind == ValueFunction
 	})
 }
 
-func StdTypeIsMap(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsMap(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_MAP", args, func(value Value) bool {
 		return value.Kind == ValueMap
 	})
 }
 
-func StdTypeIsNumber(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsNumber(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_NUMBER", args, func(value Value) bool {
 		return value.Kind == ValueNumber
 	})
 }
 
-func StdTypeIsString(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsString(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_STRING", args, func(value Value) bool {
 		return value.Kind == ValueString
 	})
 }
 
-func StdTypeIsVoid(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeIsVoid(_ *RuntimeContext, args []Value) (Value, error) {
 	return StdTypePredicate("TYPE.IS_VOID", args, func(value Value) bool {
 		return value.Kind == ValueVoid
 	})

@@ -1,6 +1,6 @@
 # Stult
 
-Stult is a small interpreted programming language and interpreter written in Go.
+Stult is a small programming language and runtime written in Go.
 
 It is designed as a terse but readable scripting language with:
 
@@ -27,7 +27,9 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Examples](#examples)
 - [Development commands](#development-commands)
 - [Running programs](#running-programs)
+  - [Runtime modes](#runtime-modes)
   - [Evaluating source strings](#evaluating-source-strings)
+  - [Dumping bytecode](#dumping-bytecode)
 - [Manifests](#manifests)
 - [Bundled executables](#bundled-executables)
 - [Language overview](#language-overview)
@@ -44,8 +46,9 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Loops](#loops)
     - [Iterating over collections](#iterating-over-collections)
     - [Infinite loops](#infinite-loops)
-    - [Break and early return](#break-and-early-return)
+    - [Break](#break)
   - [Functions](#functions)
+    - [Early return](#early-return)
     - [Variadic function parameters](#variadic-function-parameters)
     - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
 - [Standard library](#standard-library)
@@ -57,24 +60,24 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 
 Stult is still evolving.
 
-That is to say, the programming language, interpreter and standard library are all **works in progress**.
+That is to say, the programming language, runtime and standard library are all **works in progress**.
 
 The language has not yet reached version 1.0.0, so its syntax, standard-library names and runtime behavior may change before the first stable release.
 
-Even so, Stult can most certainly be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
+Even so, Stult can be used, in its current state, to solve genuine problems and perform real-world tasks. I encourage you to do this.
 
 ## Why use Stult?
 
 Stult is designed for small scripts that can grow into distributable command-line tools.
 
-You can run a single file, execute a manifest-based project or bundle a project into one executable that contains the Stult runtime and the project source files.
+You can run a single file, execute a manifest-based project or bundle a project into one executable that contains the Stult runtime and the program.
 
 Stult may be useful when you want:
 
-- a tiny interpreted language distributed as a single Go binary,
+- a tiny scripting language distributed as a single Go binary,
 - concise syntax for writing local scripts that process data and automate tasks,
 - manifest-based multi-file projects,
-- standalone bundled executables that include their source files *and*
+- standalone bundled executables *and*
 - a language implementation small enough to read and quickly understand.
 
 ### No knowledge of Go required
@@ -87,46 +90,48 @@ When you download a distributed Stult binary, you do not need Go installed on yo
 
 ## Quick start
 
+If you have not already downloaded a Stult binary, you can build a local one:
+
+```bash
+go run ./util/build_helper.go local
+```
+
+This creates a `stult` executable in the repository root.
+
 Run a single source file:
 
 ```bash
-go run ./src examples/area_of_circle.stult
+./stult run examples/calculate_circle_area_from_map.stult
+```
+
+On Windows, use `.\stult.exe` instead:
+
+```powershell
+.\stult.exe run examples/calculate_circle_area_from_map.stult
 ```
 
 Run a manifest-based project:
 
 ```bash
-go run ./src examples/bool
+./stult run examples/bool
 ```
 
 Evaluate a source string directly:
 
 ```bash
-go run ./src -e 'STD["IO"]["PRINT"]("hello")'
+./stult run -e 'STD["IO"]["PRINT"]("hello")'
 ```
 
 Run from the current directory by discovering a manifest upward from `.`:
 
 ```bash
-go run ./src
+./stult run
 ```
 
-Build a local Stult binary:
+Dump bytecode for a source file:
 
 ```bash
-go build -o stult ./src
-```
-
-Then run:
-
-```bash
-./stult examples/area_of_circle.stult
-```
-
-Or on Windows:
-
-```bash
-stult.exe examples/area_of_circle.stult
+./stult dump --bytecode examples/calculate_circle_area_from_map.stult
 ```
 
 ## Examples
@@ -135,24 +140,30 @@ See [docs/examples.md](docs/examples.md) for a guided list of example Stult prog
 
 ## Development commands
 
-The development helper lives at `util/build.go`.
+The development helper lives at `util/build_helper.go`.
 
-Build all release binaries into `dist/`:
+Show helper usage:
 
 ```bash
-go run ./util/build.go dist
+go run ./util/build_helper.go
 ```
 
-Build a local Stult binary:
+Build a local Stult executable:
 
 ```bash
-go run ./util/build.go build
+go run ./util/build_helper.go local
 ```
 
-Run Stult through Go:
+Build all release executables into `dist/`:
 
 ```bash
-go run ./util/build.go run examples/area_of_circle.stult
+go run ./util/build_helper.go dist
+```
+
+Clean generated build outputs:
+
+```bash
+go run ./util/build_helper.go clean
 ```
 
 Run tests:
@@ -161,42 +172,77 @@ Run tests:
 go test ./...
 ```
 
-Format source:
+Format Go source:
 
 ```bash
-go fmt ./...
+gofmt -w src util
 ```
 
-Clean generated build outputs:
+You can also build the local executable directly with Go:
 
 ```bash
-go run ./util/build.go clean
+go build -o stult ./src
 ```
 
 ## Running programs
 
-The `stult` command accepts:
+The `stult` command uses explicit subcommands:
 
 ```text
-stult
-stult <file.stult>
-stult <directory>
-stult <manifest.stulton>
-stult <manifest.json>
-stult -e <code-string>
-stult --eval <code-string>
-stult build [project-directory] -o <output-executable>
+stult run [--bytecode|--interpreter] [file.stult|directory|manifest] [args...]
+stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]
+stult dump [--bytecode] [file.stult|directory|manifest]
+stult dump [--bytecode] -e|--eval <source-string>
+stult build [--bytecode] [project-directory-or-file.stult] -o <output-executable>
 ```
 
-With no arguments, `stult` searches upward from the current directory for a manifest.
+`stult` with no subcommand prints usage.
 
-With a `.stult` file argument, it runs that file.
+`stult run` with no target searches upward from the current directory for a manifest.
 
-With a directory argument, it looks for a manifest in that directory.
+With a `.stult` file target, `stult run` runs that file.
 
-With a manifest argument, it runs the files listed by that manifest.
+With a directory target, `stult run` looks for a manifest in that directory.
 
-With `-e` or `--eval`, it runs the provided source string directly.
+With a manifest target, `stult run` runs the files listed by that manifest.
+
+Program arguments after the target are available to Stult code through `STD["SYSTEM"]["ARGS"]`.
+
+For example:
+
+```bash
+stult run examples/csv_to_json_converter.stult input.csv output.json
+```
+
+makes this available to Stult code:
+
+```stult
+STD["SYSTEM"]["ARGS"] # {"input.csv", "output.json"}
+```
+
+### Runtime modes
+
+Bytecode is the default runtime mode:
+
+```bash
+stult run examples/calculate_circle_area_from_map.stult
+```
+
+This is the same as:
+
+```bash
+stult run --bytecode examples/calculate_circle_area_from_map.stult
+```
+
+The original tree-walk interpreter remains available as an explicit mode:
+
+```bash
+stult run --interpreter examples/calculate_circle_area_from_map.stult
+```
+
+The interpreter is useful as a reference implementation, debugging fallback and test oracle.
+
+The bytecode runtime is intended to have best performance.
 
 ### Evaluating source strings
 
@@ -207,33 +253,66 @@ This is useful for quick experiments, shell scripts and short one-off commands.
 For example:
 
 ```bash
-stult -e 'X : 10,STD["IO"]["PRINT"](X*20)'
+stult run -e 'X : 10,STD["IO"]["PRINT"](X * 20)'
+```
+
+Or explicitly through the interpreter:
+
+```bash
+stult run --interpreter -e 'STD["IO"]["PRINT"]("hello")'
 ```
 
 On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
 
 ```powershell
-stult -e 'X : 10,STD[\"IO\"][\"PRINT\"](X*20)'
+.\stult.exe run -e 'X : 10,STD[\"IO\"][\"PRINT\"](X * 20)'
 ```
 
-The evaluated source runs in a fresh interpreter with the standard library available as `STD`.
+The evaluated source runs with the standard library available as `STD`.
+
+### Dumping bytecode
+
+`stult dump` compiles source to bytecode and prints a human-readable disassembly.
+
+```bash
+stult dump examples/calculate_circle_area_from_map.stult
+```
+
+This is the same as:
+
+```bash
+stult dump --bytecode examples/calculate_circle_area_from_map.stult
+```
+
+You can also dump bytecode for an evaluated source string:
+
+```bash
+stult dump -e 'STD["IO"]["PRINT"]("hello")'
+```
+
+`dump` is bytecode-only. There is no interpreter dump mode.
 
 ## Manifests
 
-A project may define either one of the two following files:
+A manifest-based project can list multiple Stult source files.
+
+Files run deterministically in the order specified in the manifest file. This allows one file to define bindings that later files can use.
+
+A project may use either one of the two following files:
 
 ```text
 manifest.stulton
 manifest.json
 ```
 
-A STULTON manifest uses Stult-style data:
+A STULTON manifest uses Stult-style syntax:
 
 ```stulton
 {
-    "RUN": {
-        "dir/helpers.stult"
-		"dir/main.stult"
+	"RUN": {
+		"bindings.stult"
+		"helpers.stult"
+		"main.stult"
 	}
 }
 ```
@@ -242,156 +321,176 @@ A JSON manifest uses lowercase JSON-style fields:
 
 ```json
 {
-    "run": [
-        "dir/helpers.stult",
-        "dir/main.stult"
-    ]
+	"run": [
+		"bindings.stult",
+		"helpers.stult",
+		"main.stult"
+	]
 }
 ```
 
-Manifest run files are executed in order in the same interpreter, so earlier files can define bindings used by later files.
+Run a project directory that contains a manifest:
 
-For more information about manifest files, please read [docs/manifests.md](docs/manifests.md).
+```bash
+stult run examples/bool
+```
+
+Run a manifest file directly:
+
+```bash
+stult run examples/bool/manifest.stulton
+```
+
+Run from inside a project directory:
+
+```bash
+stult run
+```
+
+For more information about manifest files, please see [docs/manifests.md](docs/manifests.md).
 
 ## Bundled executables
 
-Stult can build a project into a standalone executable with the project files embedded.
+Stult can bundle a single source file or manifest-based project into a standalone executable.
+
+By default, `stult build` creates a bytecode bundle.
+
+A bytecode bundle embeds:
+
+- the Stult runtime,
+- a manifest,
+- compiled bytecode *and*
+- bytecode metadata needed to map manifest entries to bundled bytecode.
+
+Build a bytecode bundle:
 
 ```bash
-go run ./src build examples/bool -o bool-app
+stult build examples/bool -o bool-app
 ```
 
-Or, after building the local binary:
+This is the same as:
 
 ```bash
-./stult build examples/bool -o bool-app
+stult build --bytecode examples/bool -o bool-app
 ```
 
-The project directory must contain either `manifest.stulton` or `manifest.json`.
+Bytecode bundles do not need the original `.stult` source at runtime.
 
-When the generated executable starts, it checks for an embedded bundle and runs the bundled manifest automatically.
+If you explicitly want a source/interpreter bundle, use `--interpreter`:
 
-For more detail on building, distributing and running bundled executables, please see
-[docs/bundling.md](docs/bundling.md).
+```bash
+stult build --interpreter examples/bool -o bool-app
+```
+
+A source/interpreter bundle embeds:
+
+- the Stult runtime,
+- a manifest *and*
+- the `.stult` source files needed by that manifest.
+
+In either case, run the generated executable directly:
+
+```bash
+./bool-app
+```
 
 ## Language overview
 
 ### Comments
 
-Line comments use `#`.
+Line comments start with `#`:
 
 ```stult
 # This is a line comment.
 ```
 
-Bounded comments use `##`.
+Bounded comments use `##` at both ends:
 
 ```stult
-## This is a bounded comment follow by some code. ## x : 10
+##
+This is a bounded comment.
+##
 ```
 
 Bounded comments can span across multiple lines.
 
-```stult
-##
-EXAMPLE
-##
-```
-
-Three or more consecutive `#` symbols are invalid.
+The use of three or more consecutive `#` characters is considered invalid.
 
 ### Values
 
-```stult
-_          # void
-\/         # true
-/\         # false
-123.45     # number
--678.90    # negative number
-"hello"    # string
+Stult has these main value types:
 
-{}         # empty array
-{:}        # empty map
-
-{1, 2, 3}  # array
-{"x": 1, "y": 2}   # map
+```text
+_
+booleans
+numbers
+strings
+arrays
+maps
+functions
+builtin functions
 ```
 
-Map keys preserve case. Uppercase map keys create immutable map entries.
+The void value is written as `_`.
+
+Booleans use symbolic literals:
+
+```stult
+\/  # true
+/\  # false
+```
+
+Strings use double quotes (*not* single quotes):
+
+```stult
+"hello"
+```
 
 ### Numbers
 
-Stult has one numeric type: **number**.
+Stult has one high-precision numeric type.
 
-There is no separate integer type.
-
-Whole numbers, decimal numbers and negative numbers are all represented as numbers.
+There are no separate integer and floating-point types.
 
 ```stult
 1
--10
-123.45
-0.000001
+3.14
+-20
 ```
 
-Internally, Stult numbers use high-precision floating-point values with 2048 bits of precision.
-
-This means that a Stult number can safely store very large and very small integer values without losing integer precision in the range that ordinary programming languages often struggle with.
-
-For example, values far beyond JavaScript’s usual safe integer range can still be represented exactly as integers in Stult.
-
-Decimals are also supported, but they are still floating-point values, not a separate type.
-
-```stult
-1 / 3
-```
-
-By default, numbers are printed with up to 20 digits after the decimal point.
-
-This is only the display format. Internally, numbers are stored with much higher precision, since Stult currently uses 2048-bit floating-point numbers. That means a number may store more precision than is shown when printed.
-
-```stult
-# 0.33333333333333333333
-STD["IO"]["PRINT"](1/3)
-```
+Numbers are stored internally with high precision and printed with up to 20 fractional digits by default.
 
 ### Bindings
 
-Assignments use `:`.
+Assignment uses `:`.
 
 ```stult
-name : "example"  # mutable
-NAME : "example"  # immutable
+NAME : "Stult"
+count : 0
 ```
 
-An identifier is immutable when it contains at least one uppercase letter and no lowercase letters.
+Identifier case controls mutability.
+
+Names containing uppercase letters and no lowercase letters are immutable:
 
 ```stult
-NAME      # immutable
-MAX_SIZE  # immutable
-X1        # immutable
-
-name      # mutable
-Name      # mutable
-_name     # mutable
-_         # void/discard-style name
+PI : 3.14159
 ```
+
+Names containing lowercase letters are mutable:
+
+```stult
+count : 0
+count : 1
+```
+
+Plain reads search outward through enclosing scopes.
+
+Plain assignment writes to the current scope.
 
 #### Outer bindings
 
-`@name` reads or writes the nearest outer binding.
-
-Reads can usually omit `@` because ordinary reads search outward anyway:
-
-```stult
-value : 10
-
-(\/) {
-	STD["IO"]["PRINT"](value)
-}
-```
-
-Writes to an outer binding must use `@`:
+Always use `@` when writing to a mutable binding in an outer scope:
 
 ```stult
 count : 0
@@ -400,17 +499,26 @@ count : 0
 	@count :+ 1
 }
 ```
+Reads can usually omit `@` because ordinary reads search outward anyway:
 
-Without `@`, an assignment writes in the current scope.
+Even so, `@name` reads the nearest outer binding, skipping the current scope.
+
+This is useful when an inner scope has a binding with the same name as an outer scope.
 
 ### Operators
+
+Arithmetic:
 
 ```stult
 a + b   # addition
 a - b   # subtraction
 a * b   # multiplication
 a / b   # division
+```
 
+Comparison:
+
+```stult
 a = b   # equal
 a ! b   # not equal
 
@@ -418,210 +526,270 @@ a < b   # less than
 a <= b  # less than or equal
 a > b   # greater than
 a >= b  # greater than or equal
-
-a & b   # boolean and
-a | b   # boolean or
-!a      # boolean not
 ```
 
-Stult uses `=` for equality, not `==`.
+Logical operators:
 
-Stult uses `!` for inequality, not `!=`.
+```stult
+a & b   # and
+a | b   # or
+!a      # not
+```
+
+`=` means equality.
+
+Binary `!` means inequality, but unary `!` used as a prefix means logical not.
 
 ### Compound assignment
 
-The following syntax is available for performing arithmetic updates:
+Stult supports compound assignment:
 
 ```stult
-count : 10
-
 count :+ 1
 count :- 1
 count :* 2
-count :/ 5
+count :/ 2
 ```
 
-The above Stult code is roughly equivalent to the following C code:
+The above Stult code is equivalent to the following C code:
 
 ```c
-double count = 10;
-
 count += 1;
 count -= 1;
 count *= 2;
 count /= 5;
 ```
 
+Compound assignment can also update mutable outer bindings:
+
+```stult
+@total :+ value
+```
+
 ### Collections
 
-Arrays, maps and strings can be indexed. Assignment is done via indexing:
+Arrays, maps and strings can be indexed. For this reason, we call them collections.
+
+Arrays use `{}`:
 
 ```stult
-items : {"a", "b"}
-items[2] : "c"
-
-record : {"name": "example"}
-record["city"] : "London"
-
-text : "cat"
-text[0] : "b"
+values : {"red", "green", "blue"}
 ```
 
-Assigning to an array or string at index equal to its current size appends.
+Maps use string keys:
 
 ```stult
-items : {"a", "b"}
-items[2] : "c"
+person : {
+	"NAME": "John"
+	"role": "programmer"
+}
 ```
 
-Ranges are available in array literals.
+An empty map is written as:
 
 ```stult
-{1..5}       # 1, 2, 3, 4, 5
-{1...5}      # 1, 2, 3, 4
-{10..16[2]}  # 10, 12, 14, 16
+{:}
 ```
 
-Ranges can descend too:
+But an empty array is written as:
 
 ```stult
-{5..1}
-{10...1[3]}
+{}
+```
+
+Indexing uses square brackets:
+
+```stult
+values[0]
+person["NAME"]
+```
+
+Arrays can include ranges:
+
+```stult
+numbers : {1..5}
+```
+
+Ranges may be inclusive or exclusive:
+
+```stult
+inclusive : {1..5}
+exclusive : {1...5}
+```
+
+Ranges may also include a step:
+
+```stult
+evens : {2..10[2]}
 ```
 
 ### Conditionals
 
+Conditionals use a parenthesised condition followed by a brace-enclosed block:
+
 ```stult
-(age >= 100) {
-	STD["IO"]["PRINT"]("centenarian")
-},{
-	STD["IO"]["PRINT"]("not a centenarian")
+(score >= 90) {
+	PRINT("excellent")
 }
 ```
 
-Else-if blocks use `},(`.
+An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
-(x < 0) {
-	STD["IO"]["PRINT"]("negative")
-},(x = 0) {
-	STD["IO"]["PRINT"]("zero")
+(score >= 90) {
+	PRINT("excellent")
 },{
-	STD["IO"]["PRINT"]("positive")
+	PRINT("keep going")
+}
+```
+
+Multiple branches can be chained:
+
+```stult
+(score >= 90) {
+	PRINT("excellent")
+},(score >= 70) {
+	PRINT("good")
+},{
+	PRINT("keep going")
 }
 ```
 
 #### Creating a local scope
 
-A conditional with a true literal can be used as an idiomatic way to create a local scope:
+A conditional with a true condition can also be used as an idiomatic way to create a temporary local scope:
 
 ```stult
-x : 10
-
 (\/) {
-	x : 20
-
-	STD["IO"]["PRINT"](x)
-	STD["IO"]["PRINT"](@x)
+	message : "inside local scope"
+	PRINT(message)
 }
 ```
+
+Bindings created inside that block do not leak into the surrounding scope.
 
 ### Loops
 
-While-style loops use touching double parentheses:
+Loops use double parentheses:
 
 ```stult
-i : 0
+count : 3
 
-((i < 3)) {
-	STD["IO"]["PRINT"](i)
-	@i :+ 1
+((count > 0)) {
+	PRINT(count)
+	@count :- 1
 }
 ```
 
-A loop may have an after-loop block that runs when the condition no longer holds true:
+Loops may have an after-loop block (which runs once, when the condition no longer holds true):
 
 ```stult
-i : 0
+count : 3
 
-((i < 3)) {
-	STD["IO"]["PRINT"](i)
-	@i :+ 1
+((count > 0)) {
+	PRINT(count)
+	@count :- 1
 },{
-	STD["IO"]["PRINT"]("done")
+	PRINT("done")
 }
 ```
 
 #### Iterating over collections
 
-Collection loops work with arrays, maps and strings:
+The same loop syntax can iterate over collections:
 
 ```stult
-items : {"a", "b", "c"}
+items : {"red", "green", "blue"}
 
-((items)) { (value, index)
-	STD["IO"]["PRINT"](index, ": ", value)
+((items)) { (item)
+	PRINT(item)
 }
 ```
 
-Collection loop parameters are:
-
-```text
-value
-key/index
-collection
-position
-```
-
-You may provide from zero to four parameters:
+Collection loops can receive up to four parameters:
 
 ```stult
-((items)) {
-	STD["IO"]["PRINT"]("one item")
-}
-
-((items)) { (value)
-	STD["IO"]["PRINT"](value)
-}
-
 ((items)) { (value, key, collection, position)
-	STD["IO"]["PRINT"](position, ": ", key, " -> ", value)
+	PRINT(position, ": ", key, " -> ", value)
 }
 ```
+
+For arrays and strings, `key` is the numeric index.
+
+For maps, `key` is the string key.
+
+For every type of collection, `position` is the zero-based iteration position.
 
 #### Infinite loops
 
-An infinite loop can be written by giving a true literal as the condition:
+An infinite loop uses the true literal:
 
 ```stult
 ((\/)) {
-	STD["IO"]["PRINT"]("this runs forever")
+	PRINT("forever")
 }
 ```
 
-#### Break and early return
+#### Break
 
-Bare `^` breaks out of the nearest loop:
+A bare `^` breaks the nearest loop:
 
 ```stult
-i : 0
+count : 0
 
 ((\/)) {
-	(i = 3) {
+	@count :+ 1
+
+	(count = 3) {
 		^
 	}
-
-	@i :+ 1
 }
 ```
 
-`^(value)` returns early from the nearest function:
+### Functions
+
+Functions are values.
+
+A function literal is a block with a parameter list:
 
 ```stult
-first_positive : { (values)
-	((values)) { (value)
-		(value > 0) {
-			^(@value)
+ADD : { (A, B)
+	(A + B)
+}
+```
+
+The final expression is the return value.
+
+Functions return exactly one value.
+
+Function calls require the callee to touch the opening parenthesis:
+
+```stult
+PRINT("hello")
+ADD(2, 3)
+```
+
+This means `PRINT ("hello")` is not a valid function call.
+
+Functions can be stored in maps and arrays:
+
+```stult
+TOOLS : {
+	"ADD": ADD
+}
+
+TOOLS["ADD"](2, 3)
+```
+
+#### Early return
+
+Inside a function, `^(value)` returns early:
+
+```stult
+FIND_FIRST : { (items)
+	((items)) { (item)
+		(item = "target") {
+			^(item)
 		}
 	}
 
@@ -629,60 +797,35 @@ first_positive : { (values)
 }
 ```
 
-### Functions
-
-Function literals use braces.
-
-Parameters come first. The final parenthesized expression is the return value.
-
-```stult
-add : { (a, b)
-	(a + b)
-}
-
-total : add(2, 3)
-
-STD["IO"]["PRINT"](total)
-```
-
-Function calls require touching parentheses:
-
-```stult
-add(1, 2)
-```
-
-Functions always return exactly one value, even if that value is merely `_`.
-
 #### Variadic function parameters
 
-A custom function can collect extra arguments into an array by using `...name`
-as the final parameter.
+A function can collect remaining arguments into an array using a variadic parameter:
 
 ```stult
-join_words : { (separator, ...words)
-	text : ""
+SUM : { (...numbers)
+	total : 0
 
-	((words)) { (word, _, _, position)
-		(position > 0) {
-			@text :+ separator
-		}
-
-		@text :+ word
+	((numbers)) { (number)
+		@total :+ number
 	}
 
-	(text)
+	(total)
 }
-
-STD["IO"]["PRINT"](join_words(", ", "one", "two", "three"))
 ```
 
-A function may have fixed parameters before the variadic parameter. The variadic
-parameter must be last.
+The variadic parameter must be last.
+
+```stult
+DESCRIBE : { (label, ...values)
+	PRINT(label, ": ", values)
+
+	(_)
+}
+```
 
 #### Immediately invoked function expressions
 
-Stult supports immediately invoked function expressions, or **IIFEs**, which are useful
-when a value needs a small temporary scope while it is being calculated.
+Stult supports immediately invoked function expressions, or **IIFEs**, which are useful when a value needs a small temporary scope while it is being calculated.
 
 ```stult
 STATUS : ({ ()
@@ -714,7 +857,7 @@ STD["TYPE"]
 STD["DATA"]
 ```
 
-Here is some example code using some functions from the standard library:
+Here is some example code using functions from the standard library:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
@@ -725,13 +868,26 @@ PRINT("size: ", SIZE({"a", "b", "c"}))
 PRINT("square: ", MATH["SQUARE"](9))
 ```
 
-For the full standard library reference, please see [docs/standard_library.md](docs/standard_library.md).
+Program arguments are available through `STD["SYSTEM"]["ARGS"]`:
 
-You can also use Stult to run the example code at [examples/standard_library_overview.stult](examples/standard_library_overview.stult) in order to get a dynamically produced list of everything that the standar library contains.
+```stult
+ARGS : STD["SYSTEM"]["ARGS"]
+PRINT : STD["IO"]["PRINT"]
+
+PRINT(ARGS)
+```
+
+For the full standard-library reference, please see [docs/standard_library.md](docs/standard_library.md).
+
+You can also run [examples/standard_library_overview.stult](examples/standard_library_overview.stult) to print a dynamically produced list of everything that the standard library contains:
+
+```bash
+stult run examples/standard_library_overview.stult
+```
 
 ## STULTON
 
-STULTON is Stult’s native data notation. It is used for manifests, config files and simply storing Stult values.
+STULTON is Stult’s native data notation. It is used for manifests, config files and storing Stult values.
 
 ```stulton
 {
@@ -761,27 +917,31 @@ src/
   parser*.go                  tokens to AST
   ast.go                      AST node definitions
 
-  interpreter*.go             AST evaluation
+  bytecode*.go                bytecode compiler, VM, disassembler and bundle support
+
+  interpreter*.go             tree-walk interpreter
   environment.go              lexical scopes and bindings
   control.go                  internal break/return control flow
 
   value*.go                   runtime value types and formatting
 
-  std*.go                     standard library maps and functions
+  std*.go                     standard-library maps and functions
 
   bundle*.go                  embedded bundle loading and building
 
   manifest.go                 manifest loading
+
   main.go                     CLI entrypoint
+  main_flags.go               CLI flag parsing and usage text
 
 examples/                     example Stult programs
 
 docs/                         reference documentation
 
 util/
-  build.go                    development/release helper
+  build_helper.go             development/release build script
 ```
 
 ## Architecture
 
-For a high-level overview of how the Stult interpreter is structured, please see [docs/architecture.md](docs/architecture.md).
+For a high-level overview of how Stult is structured, please see [docs/architecture.md](docs/architecture.md).

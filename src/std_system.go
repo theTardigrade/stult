@@ -5,9 +5,13 @@ import (
 	"os"
 )
 
-func NewStdSystemMap(args []string) Value {
+func NewStdSystemMap(runtime *RuntimeContext) Value {
+	if runtime == nil {
+		runtime = NewRuntimeContext(nil)
+	}
+
 	entries := map[string]Binding{
-		"ARGS": NewImmutableBinding(stdSystemArgsValue(args)),
+		"ARGS": NewImmutableBinding(stdSystemArgsValue(runtime.Args)),
 		"CWD":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdSystemCWD)),
 		"ENV":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdSystemEnv)),
 		"EXIT": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdSystemExit)),
@@ -26,7 +30,7 @@ func stdSystemArgsValue(args []string) Value {
 	return NewArrayValue(elements, true)
 }
 
-func builtinStdSystemCWD(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdSystemCWD(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("SYSTEM.CWD expected 0 arguments, got %d", len(args))
 	}
@@ -39,7 +43,7 @@ func builtinStdSystemCWD(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(path), nil
 }
 
-func builtinStdSystemEnv(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdSystemEnv(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("SYSTEM.ENV expected 1 argument, got %d", len(args))
 	}
@@ -57,7 +61,7 @@ func builtinStdSystemEnv(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(value), nil
 }
 
-func builtinStdSystemExit(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdSystemExit(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("SYSTEM.EXIT expected 1 argument, got %d", len(args))
 	}

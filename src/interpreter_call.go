@@ -21,7 +21,7 @@ func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
 
 	switch callee.Kind {
 	case ValueBuiltinFunction:
-		return callee.BuiltinFunction(i, args)
+		return callee.BuiltinFunction(i.Runtime, args)
 
 	case ValueFunction:
 		return i.callFunction(callee.Function, args)

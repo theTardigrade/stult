@@ -19,7 +19,7 @@ func NewStdMathTrigMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdMathSin(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathSin(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRIG.SIN", args)
 	if err != nil {
 		return Value{}, err
@@ -37,7 +37,7 @@ func builtinStdMathSin(_ *Interpreter, args []Value) (Value, error) {
 	return stdMathNumberValue(out), nil
 }
 
-func builtinStdMathCos(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathCos(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRIG.COS", args)
 	if err != nil {
 		return Value{}, err
@@ -59,7 +59,7 @@ func builtinStdMathCos(_ *Interpreter, args []Value) (Value, error) {
 	return stdMathNumberValue(out), nil
 }
 
-func builtinStdMathTan(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathTan(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRIG.TAN", args)
 	if err != nil {
 		return Value{}, err
@@ -89,7 +89,7 @@ func builtinStdMathTan(_ *Interpreter, args []Value) (Value, error) {
 	return stdMathNumberValue(out), nil
 }
 
-func builtinStdMathRadians(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathRadians(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRIG.RADIANS", args)
 	if err != nil {
 		return Value{}, err
@@ -109,7 +109,7 @@ func builtinStdMathRadians(_ *Interpreter, args []Value) (Value, error) {
 	return stdMathNumberValue(out), nil
 }
 
-func builtinStdMathDegrees(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathDegrees(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRIG.DEGREES", args)
 	if err != nil {
 		return Value{}, err

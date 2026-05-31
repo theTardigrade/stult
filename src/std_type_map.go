@@ -11,7 +11,7 @@ func NewStdTypeMapMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeMapKeys(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.MAP.KEYS expected 1 argument, got %d", len(args))
 	}
@@ -47,7 +47,7 @@ func StdTypeMapKeys(_ *Interpreter, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeMapValues(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeMapValues(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.MAP.VALUES expected 1 argument, got %d", len(args))
 	}

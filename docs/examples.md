@@ -41,8 +41,8 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Compare numbers with conditionals](../examples/compare_numbers_with_conditionals.stult)  
   Compares two numbers and prints a different message depending on whether one number is lower, equal or higher than the other.
 
-- [Break and early return](../examples/break_and_early_return.stult)  
-  Demonstrates early return from functions and breaking out of loops.
+- [Break and early return](../examples/break_and_early_return.stult)
+  Demonstrates breaking out of loops and returning early from functions.
 
 ## Data formats
 

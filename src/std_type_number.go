@@ -18,7 +18,7 @@ func NewStdTypeNumberMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeNumberNew(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeNumberNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.NUMBER.NEW expected 1 argument, got %d", len(args))
 	}

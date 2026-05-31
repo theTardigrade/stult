@@ -39,6 +39,10 @@ func runEmbeddedBundleIfPresent() (bool, error) {
 }
 
 func runEmbeddedBundle(files fs.FS) error {
+	if embeddedBundleWantsBytecode(files) {
+		return runEmbeddedBytecodeBundle(files)
+	}
+
 	manifestPath, err := findManifestInFS(files)
 	if err != nil {
 		return err
@@ -52,6 +56,22 @@ func runEmbeddedBundle(files fs.FS) error {
 	interpreter := NewInterpreterWithArgs(os.Args[1:])
 
 	return runManifestFromFS(interpreter, files, manifest.RunFiles)
+}
+
+func runEmbeddedBytecodeBundle(files fs.FS) error {
+	manifestPath, err := findManifestInFS(files)
+	if err != nil {
+		return err
+	}
+
+	manifest, err := LoadManifestFromFS(files, manifestPath)
+	if err != nil {
+		return err
+	}
+
+	vm := NewBytecodeVM(os.Args[1:])
+
+	return runBundledBytecodeManifestFromFS(vm, files, manifest.RunFiles)
 }
 
 func openEmbeddedBundle() (fs.FS, bool, error) {

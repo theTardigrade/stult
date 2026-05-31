@@ -10,7 +10,7 @@ func NewStdTypeArrayMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeArrayAppend(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeArrayAppend(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) < 2 {
 		return Value{}, fmt.Errorf("TYPE.ARRAY.APPEND expected at least 2 arguments, got %d", len(args))
 	}

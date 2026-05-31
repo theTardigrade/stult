@@ -8,18 +8,18 @@ type Function struct {
 	Env               *Environment
 }
 
-type BuiltinFunction func(interpreter *Interpreter, args []Value) (Value, error)
-
-func NewBuiltinFunctionValue(fn BuiltinFunction) Value {
-	return Value{
-		Kind:            ValueBuiltinFunction,
-		BuiltinFunction: fn,
-	}
-}
+type BuiltinFunction func(runtime *RuntimeContext, args []Value) (Value, error)
 
 func NewFunctionValue(fn *Function) Value {
 	return Value{
 		Kind:     ValueFunction,
 		Function: fn,
+	}
+}
+
+func NewBuiltinFunctionValue(fn BuiltinFunction) Value {
+	return Value{
+		Kind:            ValueBuiltinFunction,
+		BuiltinFunction: fn,
 	}
 }

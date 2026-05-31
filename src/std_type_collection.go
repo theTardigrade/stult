@@ -13,7 +13,7 @@ func NewStdTypeCollectionMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeCollectionSize(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE expected 1 argument, got %d", len(args))
 	}
@@ -54,7 +54,7 @@ func StdTypeCollectionSize(_ *Interpreter, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY expected 1 argument, got %d", len(args))
 	}
@@ -95,7 +95,7 @@ func StdTypeCollectionIsEmpty(_ *Interpreter, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeCollectionHas(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS expected 2 arguments, got %d", len(args))
 	}
@@ -152,7 +152,7 @@ func StdTypeCollectionHas(_ *Interpreter, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeCollectionClear(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR expected 1 argument, got %d", len(args))
 	}

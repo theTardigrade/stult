@@ -16,7 +16,7 @@ func NewStdTypeBoolMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func StdTypeBoolNew(_ *Interpreter, args []Value) (Value, error) {
+func StdTypeBoolNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TYPE.BOOL.NEW expected 1 argument, got %d", len(args))
 	}

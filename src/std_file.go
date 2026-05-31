@@ -21,7 +21,7 @@ func NewStdFileMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdFileRead(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileRead(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("FILE.READ expected 1 argument, got %d", len(args))
 	}
@@ -39,7 +39,7 @@ func builtinStdFileRead(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(string(data)), nil
 }
 
-func builtinStdFileWrite(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileWrite(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("FILE.WRITE expected 2 arguments, got %d", len(args))
 	}
@@ -61,7 +61,7 @@ func builtinStdFileWrite(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdFileAppend(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileAppend(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("FILE.APPEND expected 2 arguments, got %d", len(args))
 	}
@@ -89,7 +89,7 @@ func builtinStdFileAppend(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdFileExists(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileExists(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("FILE.EXISTS expected 1 argument, got %d", len(args))
 	}
@@ -111,7 +111,7 @@ func builtinStdFileExists(_ *Interpreter, args []Value) (Value, error) {
 	return Value{}, err
 }
 
-func builtinStdFileDelete(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileDelete(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("FILE.DELETE expected 1 argument, got %d", len(args))
 	}
@@ -128,7 +128,7 @@ func builtinStdFileDelete(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdFileRename(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileRename(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("FILE.RENAME expected 2 arguments, got %d", len(args))
 	}
@@ -150,7 +150,7 @@ func builtinStdFileRename(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdFileCopy(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileCopy(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("FILE.COPY expected 2 arguments, got %d", len(args))
 	}
@@ -189,7 +189,7 @@ func builtinStdFileCopy(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdFileSize(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdFileSize(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("FILE.SIZE expected 1 argument, got %d", len(args))
 	}

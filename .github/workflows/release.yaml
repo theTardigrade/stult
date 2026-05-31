@@ -21,8 +21,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Run tests
+        run: go test ./...
+
       - name: Build dist binaries
-        run: go run ./util/build.go dist
+        run: go run ./util/build_helper.go dist
 
       - name: Generate checksums
         run: |

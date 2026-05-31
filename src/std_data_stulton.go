@@ -16,7 +16,7 @@ func NewStdDataStultonMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdDataStultonNew(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdDataStultonNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("DATA.STULTON.NEW expected 1 argument, got %d", len(args))
 	}
@@ -29,7 +29,7 @@ func builtinStdDataStultonNew(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(text), nil
 }
 
-func builtinStdDataStultonParse(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdDataStultonParse(_ *RuntimeContext, args []Value) (Value, error) {
 	text, err := stdDataStultonStringArg("DATA.STULTON.PARSE", args)
 	if err != nil {
 		return Value{}, err
@@ -38,7 +38,7 @@ func builtinStdDataStultonParse(_ *Interpreter, args []Value) (Value, error) {
 	return stdDataStultonParseText(text)
 }
 
-func builtinStdDataStultonIsValid(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdDataStultonIsValid(_ *RuntimeContext, args []Value) (Value, error) {
 	text, err := stdDataStultonStringArg("DATA.STULTON.IS_VALID", args)
 	if err != nil {
 		return Value{}, err

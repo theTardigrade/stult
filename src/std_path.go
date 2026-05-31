@@ -18,7 +18,7 @@ func NewStdPathMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdPathJoin(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathJoin(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) == 0 {
 		return Value{}, fmt.Errorf("PATH.JOIN expected at least 1 argument, got 0")
 	}
@@ -37,7 +37,7 @@ func builtinStdPathJoin(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(filepath.Join(parts...)), nil
 }
 
-func builtinStdPathBase(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathBase(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("PATH.BASE expected 1 argument, got %d", len(args))
 	}
@@ -50,7 +50,7 @@ func builtinStdPathBase(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(filepath.Base(path)), nil
 }
 
-func builtinStdPathDir(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathDir(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("PATH.DIR expected 1 argument, got %d", len(args))
 	}
@@ -63,7 +63,7 @@ func builtinStdPathDir(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(filepath.Dir(path)), nil
 }
 
-func builtinStdPathExt(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathExt(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("PATH.EXT expected 1 argument, got %d", len(args))
 	}
@@ -76,7 +76,7 @@ func builtinStdPathExt(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(filepath.Ext(path)), nil
 }
 
-func builtinStdPathClean(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathClean(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("PATH.CLEAN expected 1 argument, got %d", len(args))
 	}
@@ -89,7 +89,7 @@ func builtinStdPathClean(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(filepath.Clean(path)), nil
 }
 
-func builtinStdPathAbs(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdPathAbs(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("PATH.ABS expected 1 argument, got %d", len(args))
 	}

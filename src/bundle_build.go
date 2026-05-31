@@ -9,13 +9,17 @@ import (
 	"strings"
 )
 
+type BuildBundleOptions struct {
+	RunBytecode bool
+}
+
 func runBuildCommand(args []string) error {
-	projectDir, outputPath, err := parseBuildCommandArgs(args)
+	targetPath, outputPath, options, err := parseBuildCommandArgs(args)
 	if err != nil {
 		return err
 	}
 
-	if err := BuildBundle(projectDir, outputPath); err != nil {
+	if err := BuildBundleWithOptions(targetPath, outputPath, options); err != nil {
 		return err
 	}
 
@@ -24,59 +28,83 @@ func runBuildCommand(args []string) error {
 	return nil
 }
 
-func parseBuildCommandArgs(args []string) (string, string, error) {
-	projectDir := "."
-	projectDirSet := false
+func parseBuildCommandArgs(args []string) (string, string, BuildBundleOptions, error) {
+	targetPath := "."
+	targetPathSet := false
 	outputPath := ""
+	options := BuildBundleOptions{
+		RunBytecode: true,
+	}
+	modeSet := false
 
 	for index := 0; index < len(args); index++ {
 		arg := args[index]
 
 		switch arg {
+		case "--bytecode":
+			if modeSet && !options.RunBytecode {
+				return "", "", options, fmt.Errorf("build cannot use both --bytecode and --interpreter")
+			}
+
+			options.RunBytecode = true
+			modeSet = true
+
+		case "--interpreter":
+			if modeSet && options.RunBytecode {
+				return "", "", options, fmt.Errorf("build cannot use both --bytecode and --interpreter")
+			}
+
+			options.RunBytecode = false
+			modeSet = true
+
 		case "-o", "--output":
 			if index+1 >= len(args) {
-				return "", "", fmt.Errorf("build option %s requires an output path", arg)
+				return "", "", options, fmt.Errorf("build option %s requires an output path", arg)
 			}
 
 			outputPath = args[index+1]
 			index++
 
 		case "-h", "--help":
-			return "", "", errors.New(buildUsage())
+			return "", "", options, errors.New(buildUsage())
 
 		default:
 			if strings.HasPrefix(arg, "-") {
-				return "", "", fmt.Errorf("unknown build option %q\n%s", arg, buildUsage())
+				return "", "", options, fmt.Errorf("unknown build option %q\n%s", arg, buildUsage())
 			}
 
-			if projectDirSet {
-				return "", "", fmt.Errorf("build expected at most one project directory\n%s", buildUsage())
+			if targetPathSet {
+				return "", "", options, fmt.Errorf("build expected at most one project directory or source file\n%s", buildUsage())
 			}
 
-			projectDir = arg
-			projectDirSet = true
+			targetPath = arg
+			targetPathSet = true
 		}
 	}
 
 	if outputPath == "" {
-		outputPath = defaultBundleOutputPath(projectDir)
+		outputPath = defaultBundleOutputPath(targetPath)
 	}
 
-	return projectDir, outputPath, nil
+	return targetPath, outputPath, options, nil
 }
 
 func buildUsage() string {
 	return "Usage:\n" +
-		"  stult build [project-directory] -o <output-executable>\n" +
-		"  stult build [project-directory]"
+		"  stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>\n" +
+		"  stult build [project-directory-or-file.stult]"
 }
 
-func defaultBundleOutputPath(projectDir string) string {
-	cleaned := filepath.Clean(projectDir)
+func defaultBundleOutputPath(targetPath string) string {
+	cleaned := filepath.Clean(targetPath)
 	name := filepath.Base(cleaned)
 
 	if name == "." || name == string(filepath.Separator) || name == "" {
 		name = "stult-app"
+	}
+
+	if filepath.Ext(name) == expectedFileExtension {
+		name = strings.TrimSuffix(name, filepath.Ext(name))
 	}
 
 	if runtime.GOOS == "windows" && filepath.Ext(name) != ".exe" {
@@ -87,29 +115,53 @@ func defaultBundleOutputPath(projectDir string) string {
 }
 
 func BuildBundle(projectDir string, outputPath string) error {
-	absoluteProjectDir, err := filepath.Abs(projectDir)
+	return BuildBundleWithOptions(projectDir, outputPath, BuildBundleOptions{
+		RunBytecode: true,
+	})
+}
+
+func BuildBundleWithOptions(targetPath string, outputPath string, options BuildBundleOptions) error {
+	absoluteTargetPath, err := filepath.Abs(targetPath)
 	if err != nil {
-		return fmt.Errorf("Could not resolve project directory %q: %w", projectDir, err)
+		return fmt.Errorf("Could not resolve build target %q: %w", targetPath, err)
 	}
 
-	info, err := os.Stat(absoluteProjectDir)
+	info, err := os.Stat(absoluteTargetPath)
 	if err != nil {
-		return fmt.Errorf("Could not inspect project directory %q: %w", projectDir, err)
+		return fmt.Errorf("Could not inspect build target %q: %w", targetPath, err)
 	}
 
-	if !info.IsDir() {
-		return fmt.Errorf("Expected project directory %q to be a directory", projectDir)
-	}
+	var archiveBytes []byte
 
-	if _, found, err := findManifestInDirectory(absoluteProjectDir); err != nil {
-		return err
-	} else if !found {
-		return fmt.Errorf(
-			"Project directory %q must contain %s or %s",
-			absoluteProjectDir,
-			ManifestStultonFilename,
-			ManifestJSONFilename,
-		)
+	if info.IsDir() {
+		if _, found, err := findManifestInDirectory(absoluteTargetPath); err != nil {
+			return err
+		} else if !found {
+			return fmt.Errorf(
+				"Project directory %q must contain %s or %s",
+				absoluteTargetPath,
+				ManifestStultonFilename,
+				ManifestJSONFilename,
+			)
+		}
+
+		archiveBytes, err = createProjectBundleArchiveWithOptions(absoluteTargetPath, options)
+		if err != nil {
+			return err
+		}
+	} else {
+		if filepath.Ext(absoluteTargetPath) != expectedFileExtension {
+			return fmt.Errorf(
+				"Expected build target %q to be a project directory or %s source file",
+				targetPath,
+				expectedFileExtension,
+			)
+		}
+
+		archiveBytes, err = createSingleSourceBundleArchive(absoluteTargetPath, options)
+		if err != nil {
+			return err
+		}
 	}
 
 	executablePath, err := os.Executable()
@@ -118,11 +170,6 @@ func BuildBundle(projectDir string, outputPath string) error {
 	}
 
 	runnerBytes, err := readExecutableWithoutBundle(executablePath)
-	if err != nil {
-		return err
-	}
-
-	archiveBytes, err := createProjectBundleArchive(absoluteProjectDir)
 	if err != nil {
 		return err
 	}

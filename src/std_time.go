@@ -21,7 +21,7 @@ func NewStdTimeMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdTimeLocalCalendar(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdTimeLocalCalendar(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("TIME.LOCAL_CALENDAR expected 0 arguments, got %d", len(args))
 	}
@@ -29,7 +29,7 @@ func builtinStdTimeLocalCalendar(_ *Interpreter, args []Value) (Value, error) {
 	return stdTimeCalendarSnapshot(time.Now()), nil
 }
 
-func builtinStdTimeUTCCalendar(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdTimeUTCCalendar(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("TIME.UTC_CALENDAR expected 0 arguments, got %d", len(args))
 	}
@@ -37,7 +37,7 @@ func builtinStdTimeUTCCalendar(_ *Interpreter, args []Value) (Value, error) {
 	return stdTimeCalendarSnapshot(time.Now().UTC()), nil
 }
 
-func builtinStdTimeMilliTimestamp(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdTimeMilliTimestamp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("TIME.MILLI_TIMESTAMP expected 0 arguments, got %d", len(args))
 	}
@@ -45,7 +45,7 @@ func builtinStdTimeMilliTimestamp(_ *Interpreter, args []Value) (Value, error) {
 	return stdTimeNumberFromInt64(time.Now().UnixMilli()), nil
 }
 
-func builtinStdTimeNanoTimestamp(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdTimeNanoTimestamp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("TIME.NANO_TIMESTAMP expected 0 arguments, got %d", len(args))
 	}
@@ -53,7 +53,7 @@ func builtinStdTimeNanoTimestamp(_ *Interpreter, args []Value) (Value, error) {
 	return stdTimeNumberFromInt64(time.Now().UnixNano()), nil
 }
 
-func builtinStdTimeMilliSleep(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdTimeMilliSleep(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("TIME.MILLI_SLEEP expected 1 argument, got %d", len(args))
 	}

@@ -265,7 +265,7 @@ The array also does not include the source file, manifest file or project direct
 For example:
 
 ```bash
-stult examples/csv_to_json_converter.stult input.csv output.json
+stult run examples/csv_to_json_converter.stult input.csv output.json
 ```
 
 makes this available to Stult code:

@@ -1,7 +1,8 @@
 package main
 
 type Interpreter struct {
-	Env *Environment
+	Env     *Environment
+	Runtime *RuntimeContext
 }
 
 func NewInterpreter() *Interpreter {
@@ -9,11 +10,22 @@ func NewInterpreter() *Interpreter {
 }
 
 func NewInterpreterWithArgs(args []string) *Interpreter {
+	return NewInterpreterWithRuntime(NewRuntimeContext(args))
+}
+
+func NewInterpreterWithRuntime(runtime *RuntimeContext) *Interpreter {
+	if runtime == nil {
+		runtime = NewRuntimeContext(nil)
+	}
+
 	env := NewEnvironment()
 
-	if err := env.Set("STD", NewStdMap(args), true); err != nil {
+	if err := env.Set("STD", NewStdMap(runtime), true); err != nil {
 		panic(err)
 	}
 
-	return &Interpreter{Env: env}
+	return &Interpreter{
+		Env:     env,
+		Runtime: runtime,
+	}
 }

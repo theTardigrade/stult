@@ -17,7 +17,7 @@ func NewStdJSONMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdJSONNew(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdJSONNew(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("JSON.NEW expected 1 argument, got %d", len(args))
 	}
@@ -35,7 +35,7 @@ func builtinStdJSONNew(_ *Interpreter, args []Value) (Value, error) {
 	return NewStringValue(string(data)), nil
 }
 
-func builtinStdJSONParse(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdJSONParse(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("JSON.PARSE expected 1 argument, got %d", len(args))
 	}
@@ -67,7 +67,7 @@ func builtinStdJSONParse(_ *Interpreter, args []Value) (Value, error) {
 	return stdJSONToValue(decoded)
 }
 
-func builtinStdJSONIsValid(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdJSONIsValid(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Value{}, fmt.Errorf("JSON.IS_VALID expected 1 argument, got %d", len(args))
 	}

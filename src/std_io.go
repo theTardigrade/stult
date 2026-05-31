@@ -24,7 +24,7 @@ func NewStdIOMap() Value {
 	return NewMapValue(entries, true)
 }
 
-func builtinStdIOWrite(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdIOWrite(_ *RuntimeContext, args []Value) (Value, error) {
 	for _, arg := range args {
 		fmt.Print(arg.PrintString())
 	}
@@ -32,7 +32,7 @@ func builtinStdIOWrite(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdIOWriteLine(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdIOWriteLine(_ *RuntimeContext, args []Value) (Value, error) {
 	for _, arg := range args {
 		fmt.Print(arg.PrintString())
 	}
@@ -42,7 +42,7 @@ func builtinStdIOWriteLine(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdIOWriteError(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdIOWriteError(_ *RuntimeContext, args []Value) (Value, error) {
 	for _, arg := range args {
 		fmt.Fprint(os.Stderr, arg.PrintString())
 	}
@@ -52,7 +52,7 @@ func builtinStdIOWriteError(_ *Interpreter, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func builtinStdIOReadLine(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdIOReadLine(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Value{}, fmt.Errorf("IO.READ_LINE expected 0 arguments, got %d", len(args))
 	}
@@ -60,7 +60,7 @@ func builtinStdIOReadLine(_ *Interpreter, args []Value) (Value, error) {
 	return stdIOReadLine()
 }
 
-func builtinStdIOPrompt(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdIOPrompt(_ *RuntimeContext, args []Value) (Value, error) {
 	for _, arg := range args {
 		fmt.Print(arg.PrintString())
 	}

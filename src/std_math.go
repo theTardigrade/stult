@@ -164,7 +164,7 @@ func multiplyNumberByInt(value Value, multiplier int64) Value {
 	return Value{Kind: ValueNumber, Number: out}
 }
 
-func builtinStdMathSquare(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathSquare(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.SQUARE", args)
 	if err != nil {
 		return Value{}, err
@@ -176,7 +176,7 @@ func builtinStdMathSquare(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: out}, nil
 }
 
-func builtinStdMathCube(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathCube(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.CUBE", args)
 	if err != nil {
 		return Value{}, err
@@ -189,7 +189,7 @@ func builtinStdMathCube(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: out}, nil
 }
 
-func builtinStdMathAbs(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathAbs(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.ABS", args)
 	if err != nil {
 		return Value{}, err
@@ -204,7 +204,7 @@ func builtinStdMathAbs(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: out}, nil
 }
 
-func builtinStdMathSign(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.SIGN", args)
 	if err != nil {
 		return Value{}, err
@@ -213,7 +213,7 @@ func builtinStdMathSign(_ *Interpreter, args []Value) (Value, error) {
 	return NewNumberValueFromInt(value.Number.Sign()), nil
 }
 
-func builtinStdMathLerp(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 3 {
 		return Value{}, fmt.Errorf("MATH.LERP expected 3 arguments, got %d", len(args))
 	}
@@ -259,7 +259,7 @@ func builtinStdMathLerp(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: rounded}, nil
 }
 
-func builtinStdMathMin(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathMin(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) == 0 {
 		return Value{}, fmt.Errorf("MATH.MIN expected at least 1 argument, got 0")
 	}
@@ -283,7 +283,7 @@ func builtinStdMathMin(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: CloneNumber(min.Number)}, nil
 }
 
-func builtinStdMathMax(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathMax(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) == 0 {
 		return Value{}, fmt.Errorf("MATH.MAX expected at least 1 argument, got 0")
 	}
@@ -307,7 +307,7 @@ func builtinStdMathMax(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: CloneNumber(max.Number)}, nil
 }
 
-func builtinStdMathClamp(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathClamp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 3 {
 		return Value{}, fmt.Errorf("MATH.CLAMP expected 3 arguments, got %d", len(args))
 	}
@@ -342,7 +342,7 @@ func builtinStdMathClamp(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: CloneNumber(value.Number)}, nil
 }
 
-func builtinStdMathFloor(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathFloor(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.FLOOR", args)
 	if err != nil {
 		return Value{}, err
@@ -351,7 +351,7 @@ func builtinStdMathFloor(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: floorFloat(value.Number)}, nil
 }
 
-func builtinStdMathCeil(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathCeil(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.CEIL", args)
 	if err != nil {
 		return Value{}, err
@@ -360,7 +360,7 @@ func builtinStdMathCeil(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: ceilFloat(value.Number)}, nil
 }
 
-func builtinStdMathRound(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathRound(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.ROUND", args)
 	if err != nil {
 		return Value{}, err
@@ -378,7 +378,7 @@ func builtinStdMathRound(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: ceilFloat(adjusted)}, nil
 }
 
-func builtinStdMathTrunc(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathTrunc(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.TRUNC", args)
 	if err != nil {
 		return Value{}, err
@@ -387,7 +387,7 @@ func builtinStdMathTrunc(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: truncFloat(value.Number)}, nil
 }
 
-func builtinStdMathSqrt(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathSqrt(_ *RuntimeContext, args []Value) (Value, error) {
 	value, err := stdMathOneNumber("MATH.SQRT", args)
 	if err != nil {
 		return Value{}, err
@@ -403,7 +403,7 @@ func builtinStdMathSqrt(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: out}, nil
 }
 
-func builtinStdMathPower(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("MATH.POWER expected 2 arguments, got %d", len(args))
 	}
@@ -468,7 +468,7 @@ func builtinStdMathPower(_ *Interpreter, args []Value) (Value, error) {
 	return Value{Kind: ValueNumber, Number: rounded}, nil
 }
 
-func builtinStdMathMod(_ *Interpreter, args []Value) (Value, error) {
+func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("MATH.MOD expected 2 arguments, got %d", len(args))
 	}

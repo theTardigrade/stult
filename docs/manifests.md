@@ -2,11 +2,9 @@
 
 A Stult manifest describes a multi-file Stult project.
 
-Manifests let you split a program across several `.stult` files, then run those
-files in a deterministic order using one shared interpreter state.
+Manifests let you split a program across several `.stult` files, then run those files in a deterministic order using one shared runtime state.
 
-This is useful for larger projects, reusable helper files, configuration files
-and bundled executables.
+This is useful for larger projects, reusable helper files, configuration files and bundled executables.
 
 ## Contents
 
@@ -14,7 +12,7 @@ and bundled executables.
 - [Basic STULTON manifest](#basic-stulton-manifest)
 - [Basic JSON manifest](#basic-json-manifest)
 - [Run order](#run-order)
-- [Shared interpreter state](#shared-interpreter-state)
+- [Shared runtime state](#shared-runtime-state)
 - [Paths](#paths)
 - [`RUN` and `run`](#run-and-run)
 - [Single-file manifests](#single-file-manifests)
@@ -35,6 +33,8 @@ manifest.json
 `manifest.stulton` is the default and is the most Stult-native option.
 
 `manifest.json` is also supported for tools or workflows that prefer to use JSON.
+
+Do not include both manifest files in the same project directory.
 
 ## Basic STULTON manifest
 
@@ -78,11 +78,9 @@ This has the same effect as the STULTON manifest above.
 
 ## Run order
 
-Files in a manifest-based project run deterministically, in the order specified
-in the manifest file.
+Files in a manifest-based project run deterministically, in the order specified in the manifest file.
 
-All listed files are evaluated by the same interpreter, so bindings created by
-earlier files can be used by later files. That is to say, they share global scope.
+All listed files share the same runtime state, so bindings created by earlier files can be used by later files. That is to say, they share global scope.
 
 For example, a project might contain:
 
@@ -133,23 +131,31 @@ PRINT_SIZE(ITEMS)
 PRINT("******")
 ```
 
-## Shared interpreter state
+## Shared runtime state
 
-A manifest does not create a separate interpreter for each file.
+A manifest does not create a separate runtime for each file.
 
-The files run in one shared interpreter state, which means:
+The files run in one shared runtime state, which means:
 
 - earlier files can define bindings for later files,
 - helper functions can be split into their own files,
 - configuration values can be kept separate from main program logic *and*
 - file order matters.
 
+By default, `stult run` uses the bytecode runtime. When you run with `--interpreter`, the same manifest order is executed through the tree-walk interpreter instead.
+
+```bash
+stult run examples/bool
+stult run --interpreter examples/bool
+```
+
+Both modes preserve the same manifest idea: the listed files run in order and share state.
+
 This makes manifests a simple project system rather than an import system.
 
 ## Paths
 
-Manifest run paths are normally written relative to the directory containing the
-manifest file.
+Manifest run paths are normally written relative to the directory containing the manifest file.
 
 For example:
 
@@ -183,6 +189,10 @@ rather than:
 src\main.stult
 ```
 
+Relative paths are recommended because they make projects easier to move, copy and bundle.
+
+Absolute paths can be useful for local scripts, but they make projects less portable.
+
 ## `RUN` and `run`
 
 In `manifest.stulton`, either `RUN` or `run` may be used:
@@ -205,8 +215,7 @@ or:
 }
 ```
 
-`RUN` is more idiomatic in STULTON because uppercase map keys fit Stult's style
-for immutable, project-level values.
+`RUN` is more idiomatic in STULTON because uppercase map keys fit Stult's style for immutable, project-level values.
 
 Do not include both `RUN` and `run` in the same STULTON manifest.
 
@@ -240,31 +249,47 @@ JSON:
 }
 ```
 
-This is useful when you want a project directory and bundled executable support,
-even though the project currently has only one source file.
+This is useful when you want a project directory and bundled executable support, even though the project currently has only one source file.
 
 ## Running a manifest project
 
 Run a project directory:
 
 ```bash
-stult examples/bool
+stult run examples/bool
 ```
 
 Run a manifest file directly:
 
 ```bash
-stult examples/bool/manifest.stulton
+stult run examples/bool/manifest.stulton
 ```
 
 Run from inside a project directory:
 
 ```bash
-stult
+stult run
 ```
 
-With no arguments, `stult` searches upward from the current directory for a
-manifest.
+With no target, `stult run` searches upward from the current directory for a manifest.
+
+Run the same project through the interpreter:
+
+```bash
+stult run --interpreter examples/bool
+```
+
+Bytecode is the default runtime mode, so this:
+
+```bash
+stult run examples/bool
+```
+
+is the same as:
+
+```bash
+stult run --bytecode examples/bool
+```
 
 ## Building a bundled executable
 
@@ -274,20 +299,35 @@ Manifest projects can be bundled into standalone executables:
 stult build examples/bool -o bool-app
 ```
 
-Then run the generated executable:
+By default, `stult build` creates a bytecode bundle.
+
+This is the same as:
+
+```bash
+stult build --bytecode examples/bool -o bool-app
+```
+
+If you explicitly want a source/interpreter bundle, use `--interpreter`:
+
+```bash
+stult build --interpreter examples/bool -o bool-app
+```
+
+Then run the generated executable directly:
 
 ```bash
 ./bool-app
 ```
 
-The bundled executable contains the Stult runtime and the project source files.
+The generated executable contains the Stult runtime and the bundled program.
 
-This means the project can be distributed as a single executable without shipping
-the source tree separately.
+A bytecode bundle embeds compiled bytecode and does not need the original `.stult` source files at runtime. A source/interpreter bundle embeds the source files and runs them through the interpreter.
+
+For more information about bundling, see [bundling.md](bundling.md).
 
 ## Manifests are not imports
 
-A manifest is an execution list, not an import graph.
+A manifest contains an execution list, not an import graph.
 
 Files are not imported on demand. They run in the order listed by the manifest.
 
