@@ -117,7 +117,7 @@ On Windows, use `.\stult.exe` instead:
 Run a manifest-based project:
 
 ```bash
-./stult run examples/bool
+./stult run examples/animated_sine_wave
 ```
 
 Evaluate a source string directly:

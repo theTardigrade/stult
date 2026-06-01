@@ -19,14 +19,40 @@ GENERATE_CLEAR_TEXT : { ()
 	(JOIN(lines, "\n") + "\n")
 }
 
+GENERATE_LINE_OF_CHARS : { (LENGTH, CHAR)
+	line : ""
+
+	(({ 0...LENGTH })) { (_, index)
+		line[index] : CHAR
+	}
+
+	(line)
+}
+
 CLEAR_TEXT : GENERATE_CLEAR_TEXT()
+
+GENERATE_FRAME_TITLE : { (title)
+	DEFAULT_TITLE : "Animated sine wave"
+	lines : {}
+
+	(!IS_STRING(title)) {
+		@title : DEFAULT_TITLE
+	}
+
+	TITLE_SIZE : SIZE(title)
+
+	APPEND(lines, "Animated sine wave")
+	APPEND(lines, GENERATE_LINE_OF_CHARS(TITLE_SIZE, "="))
+
+	(JOIN(lines, "\n") + "\n")
+}
+
+FRAME_TITLE_DEFAULT : GENERATE_FRAME_TITLE(_) 
 
 GENERATE_FRAME_TEXT : { (frame, elapsed_ms)
 	lines : {}
 	wave_rows : WAVE_ROWS(elapsed_ms)
 
-	APPEND(lines, "Animated sine wave")
-	APPEND(lines, "==================")
 	APPEND(lines, "Frame: " + STRING["NEW"](frame))
 	APPEND(lines, "Elapsed ms: " + STRING["NEW"](elapsed_ms))
 	APPEND(lines, "")
@@ -41,11 +67,33 @@ GENERATE_FRAME_TEXT : { (frame, elapsed_ms)
 		APPEND(lines, line)
 	}
 
-	(JOIN(lines, "\n") + "\n")
+	(FRAME_TITLE_DEFAULT + JOIN(lines, "\n") + "\n")
 }
 
 DRAW_FRAME : { (frame, elapsed_ms)
 	WRITE(CLEAR_TEXT + GENERATE_FRAME_TEXT(frame, elapsed_ms))
+
+	(_)
+}
+
+DRAW_FINAL_FRAME : { (frame_count, elapsed_ms)
+	WRITE(
+		CLEAR_TEXT
+		FRAME_TITLE_DEFAULT
+		"\nTotal frames drawn: "
+		frame_count
+		"\n"
+		"Elapsed ms: "
+		elapsed_ms
+		"\n\n"
+		"Animation completed\n"
+	)
+
+	((@Y_POINTS)) { (i)
+		(i > 1) {
+			WRITE_LINE("")
+		}
+	}
 
 	(_)
 }

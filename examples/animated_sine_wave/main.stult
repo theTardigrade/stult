@@ -35,5 +35,8 @@ frames_drawn : 0
 	@frames_drawn :+ 1
 	@next_frame_ms :+ FRAME_DELAY_MS
 },{
-	WRITE("\nANIMATION COMPLETED\n\n")
+	final_ms : NOW()
+	elapsed_ms : final_ms - START_MS
+
+	DRAW_FINAL_FRAME(frames_drawn, elapsed_ms)
 }
