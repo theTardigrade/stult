@@ -572,7 +572,7 @@ Stult supports compound assignment:
 count :+ 1
 count :- 1
 count :* 2
-count :/ 2
+count :/ 5
 ```
 
 The above Stult code is equivalent to the following C code:
