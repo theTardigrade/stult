@@ -517,7 +517,7 @@ TRUE : \/
 FALSE : /\
 ```
 
-Then use those bindings elsewhere:
+Then use those bindings, like so:
 
 ```stult
 TRUE : \/
