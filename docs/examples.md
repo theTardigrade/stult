@@ -76,6 +76,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 
 These examples are small public programs used to exercise specific language or parser behaviours.
 
+- [Grouped expressions in array](../examples/tests/grouped_expressions_in_array.stult)  
+  Checks that an array literal may begin with a grouped expression and that brace literals beginning with `{ (` are not automatically treated as function literals.
+
 - [Grouped conditional and grouped loop logic](../examples/tests/grouped_conditional_and_grouped_loop_logic.stult)  
   Checks that grouped boolean expressions at the start of conditionals and loops are parsed correctly, including a grouped conditional that begins with touching `((` and a grouped loop whose body begins with a conditional.
 

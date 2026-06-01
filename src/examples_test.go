@@ -7,18 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
-
-var standaloneExamplesRequiringArgs = map[string]bool{
-	"csv_to_json_converter.stult": true,
-}
-
-var examplesWithNondeterministicStdout = map[string]bool{
-	"projects/animated_sine_wave/manifest.stulton": true,
-	"projects/autonomous_snake/manifest.stulton":   true,
-}
 
 type exampleRunResult struct {
 	Stdout string
@@ -26,11 +16,10 @@ type exampleRunResult struct {
 	Err    error
 }
 
-func TestStandaloneExamplesRun(t *testing.T) {
-	examplesDir := examplesDirForTest(t)
-	manifestDirs := manifestExampleDirsForTest(t, examplesDir)
+func TestExampleTestFilesRun(t *testing.T) {
+	exampleTestsDir := exampleTestsDirForTest(t)
 
-	err := filepath.WalkDir(examplesDir, func(filename string, entry fs.DirEntry, walkErr error) error {
+	err := filepath.WalkDir(exampleTestsDir, func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -43,16 +32,12 @@ func TestStandaloneExamplesRun(t *testing.T) {
 			return nil
 		}
 
-		relativePath, err := filepath.Rel(examplesDir, filename)
+		relativePath, err := filepath.Rel(exampleTestsDir, filename)
 		if err != nil {
 			return err
 		}
 
 		relativePath = filepath.ToSlash(relativePath)
-
-		if shouldSkipStandaloneExample(relativePath, manifestDirs) {
-			return nil
-		}
 
 		t.Run(relativePath, func(t *testing.T) {
 			compareExampleRunsForTest(
@@ -70,38 +55,7 @@ func TestStandaloneExamplesRun(t *testing.T) {
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("could not walk examples directory: %v", err)
-	}
-}
-
-func TestManifestExamplesRun(t *testing.T) {
-	examplesDir := examplesDirForTest(t)
-	manifestFiles := manifestExampleFilesForTest(t, examplesDir)
-
-	if len(manifestFiles) == 0 {
-		t.Fatal("expected at least one manifest example")
-	}
-
-	for _, manifestFile := range manifestFiles {
-		relativePath, err := filepath.Rel(examplesDir, manifestFile)
-		if err != nil {
-			t.Fatalf("could not make manifest path relative: %v", err)
-		}
-
-		relativePath = filepath.ToSlash(relativePath)
-
-		t.Run(relativePath, func(t *testing.T) {
-			compareExampleRunsForTest(
-				t,
-				relativePath,
-				func() error {
-					return runExampleManifestWithInterpreterForTest(manifestFile)
-				},
-				func() error {
-					return runExampleManifestWithBytecodeForTest(manifestFile)
-				},
-			)
-		})
+		t.Fatalf("could not walk example tests directory: %v", err)
 	}
 }
 
@@ -118,7 +72,8 @@ func compareExampleRunsForTest(
 
 	if !exampleErrorsMatch(interpreterResult.Err, bytecodeResult.Err) {
 		t.Fatalf(
-			"interpreter and bytecode errors differed\n\ninterpreter error:\n%s\n\nbytecode error:\n%s\n\ninterpreter stdout:\n%s\n\nbytecode stdout:\n%s\n\ninterpreter stderr:\n%s\n\nbytecode stderr:\n%s",
+			"interpreter and bytecode errors differed for %q\n\ninterpreter error:\n%s\n\nbytecode error:\n%s\n\ninterpreter stdout:\n%s\n\nbytecode stdout:\n%s\n\ninterpreter stderr:\n%s\n\nbytecode stderr:\n%s",
+			relativePath,
 			exampleErrorString(interpreterResult.Err),
 			exampleErrorString(bytecodeResult.Err),
 			interpreterResult.Stdout,
@@ -128,23 +83,21 @@ func compareExampleRunsForTest(
 		)
 	}
 
-	if shouldCompareExampleStdout(relativePath) && interpreterResult.Stdout != bytecodeResult.Stdout {
+	if interpreterResult.Stdout != bytecodeResult.Stdout {
 		t.Fatalf(
-			"interpreter and bytecode stdout differed\n\n%s",
+			"interpreter and bytecode stdout differed for %q\n\n%s",
+			relativePath,
 			formatOutputDifferenceForTest(interpreterResult.Stdout, bytecodeResult.Stdout),
 		)
 	}
 
 	if interpreterResult.Stderr != bytecodeResult.Stderr {
 		t.Fatalf(
-			"interpreter and bytecode stderr differed\n\n%s",
+			"interpreter and bytecode stderr differed for %q\n\n%s",
+			relativePath,
 			formatOutputDifferenceForTest(interpreterResult.Stderr, bytecodeResult.Stderr),
 		)
 	}
-}
-
-func shouldCompareExampleStdout(relativePath string) bool {
-	return !examplesWithNondeterministicStdout[relativePath]
 }
 
 func captureExampleRunForTest(t *testing.T, run func() error) exampleRunResult {
@@ -292,10 +245,6 @@ func runExampleSourceFileWithInterpreterForTest(filename string) error {
 	return runSourceFile(interpreter, filename)
 }
 
-func runExampleManifestWithInterpreterForTest(filename string) error {
-	return runManifestFile(filename)
-}
-
 func runExampleSourceFileWithBytecodeForTest(filename string) error {
 	vm := NewBytecodeVM(nil)
 
@@ -312,38 +261,6 @@ func runExampleSourceFileWithBytecodeVMForTest(vm *BytecodeVM, filename string) 
 	fsPath := filepath.Base(absolutePath)
 
 	return runExampleSourceFileFromFSWithBytecodeVMForTest(vm, files, fsPath, absolutePath)
-}
-
-func runExampleManifestWithBytecodeForTest(filename string) error {
-	manifest, files, err := loadManifestFileFromFS(filename)
-	if err != nil {
-		return err
-	}
-
-	vm := NewBytecodeVM(nil)
-
-	for _, runFile := range manifest.RunFiles {
-		if filepath.IsAbs(runFile) {
-			if err := runExampleSourceFileWithBytecodeVMForTest(vm, runFile); err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		fsPath := cleanFSPath(runFile)
-
-		if err := runExampleSourceFileFromFSWithBytecodeVMForTest(
-			vm,
-			files,
-			fsPath,
-			runFile,
-		); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func runExampleSourceFileFromFSWithBytecodeVMForTest(
@@ -381,12 +298,12 @@ func runExampleSourceFileFromFSWithBytecodeVMForTest(
 	return nil
 }
 
-func examplesDirForTest(t *testing.T) string {
+func exampleTestsDirForTest(t *testing.T) string {
 	t.Helper()
 
 	candidates := []string{
-		filepath.Join("..", "examples"),
-		"examples",
+		filepath.Join("..", "examples", "tests"),
+		filepath.Join("examples", "tests"),
 	}
 
 	for _, candidate := range candidates {
@@ -396,95 +313,6 @@ func examplesDirForTest(t *testing.T) string {
 		}
 	}
 
-	t.Fatal("could not find examples directory")
+	t.Fatal("could not find examples/tests directory")
 	return ""
-}
-
-func manifestExampleFilesForTest(t *testing.T, examplesDir string) []string {
-	t.Helper()
-
-	manifestFiles := []string{}
-
-	err := filepath.WalkDir(examplesDir, func(filename string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil {
-			return walkErr
-		}
-
-		if entry.IsDir() {
-			if shouldSkipExampleDir(filename, examplesDir) {
-				return filepath.SkipDir
-			}
-
-			return nil
-		}
-
-		if isManifestFilename(filename) {
-			manifestFiles = append(manifestFiles, filename)
-		}
-
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("could not walk examples directory for manifests: %v", err)
-	}
-
-	return manifestFiles
-}
-
-func manifestExampleDirsForTest(t *testing.T, examplesDir string) map[string]bool {
-	t.Helper()
-
-	manifestDirs := map[string]bool{}
-
-	for _, manifestFile := range manifestExampleFilesForTest(t, examplesDir) {
-		dir := filepath.Dir(manifestFile)
-
-		relativeDir, err := filepath.Rel(examplesDir, dir)
-		if err != nil {
-			t.Fatalf("could not make manifest dir relative: %v", err)
-		}
-
-		relativeDir = filepath.ToSlash(relativeDir)
-
-		if relativeDir == "." {
-			relativeDir = ""
-		}
-
-		manifestDirs[relativeDir] = true
-	}
-
-	return manifestDirs
-}
-
-func shouldSkipStandaloneExample(relativePath string, manifestDirs map[string]bool) bool {
-	if strings.HasPrefix(relativePath, "__ignore/") {
-		return true
-	}
-
-	if standaloneExamplesRequiringArgs[relativePath] {
-		return true
-	}
-
-	for manifestDir := range manifestDirs {
-		if manifestDir == "" {
-			continue
-		}
-
-		if relativePath == manifestDir || strings.HasPrefix(relativePath, manifestDir+"/") {
-			return true
-		}
-	}
-
-	return false
-}
-
-func shouldSkipExampleDir(filename string, examplesDir string) bool {
-	relativePath, err := filepath.Rel(examplesDir, filename)
-	if err != nil {
-		return false
-	}
-
-	relativePath = filepath.ToSlash(relativePath)
-
-	return relativePath == "__ignore"
 }

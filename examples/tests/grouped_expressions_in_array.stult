@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: tests/grouped_expression_in_array.stult
+EXAMPLE: tests/grouped_expressions_in_array.stult
 
 This example checks that an array may begin with a grouped expression.
 
