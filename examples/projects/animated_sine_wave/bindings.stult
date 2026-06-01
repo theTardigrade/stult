@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: sine_wave/bindings.stult
+EXAMPLE: sine_wave/projects/bindings.stult
 
 This code defines shared standard-library bindings for the sine wave
 manifest project.

@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: autonomous_snake/screen.stult
+EXAMPLE: projects/autonomous_snake/screen.stult
 
 This file defines frame rendering helpers.
 

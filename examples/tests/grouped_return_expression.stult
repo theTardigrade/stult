@@ -1,0 +1,25 @@
+##
+
+EXAMPLE: tests/grouped_return_expression.stult
+
+This example checks that grouped return expressions are not mistaken for loops.
+
+A function return expression may start with a grouped expression:
+
+	((A + B) * C)
+
+That expression starts with touching "((", but it is not a loop statement
+because it appears where an expression is required.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
+
+SCALE_SUM : { (A, B, C)
+	((A + B) * C)
+}
+
+RESULT : SCALE_SUM(2, 3, 4)
+
+PRINT("result: " + STRING_NEW(RESULT))

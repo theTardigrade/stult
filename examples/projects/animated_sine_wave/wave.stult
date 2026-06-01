@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: animated_sine_wave/wave.stult
+EXAMPLE: projects/animated_sine_wave/wave.stult
 
 This code defines helper functions for converting grid coordinates
 into a smooth moving ASCII sine wave.

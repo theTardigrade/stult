@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: bool/bindings.stult
+EXAMPLE: projects/bool/bindings.stult
 
 This code defines shared boolean bindings for any other files
 in this manifest-based example project.

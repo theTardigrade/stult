@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: bool/main.stult
+EXAMPLE: projects/bool/main.stult
 
 This code prints boolean values and compares them using equality,
 logical OR, logical AND and logical NOT.

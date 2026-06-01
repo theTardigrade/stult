@@ -62,7 +62,7 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 			return nil
 
 		case TokenLParen:
-			if p.isLoopStart() {
+			if p.isLoopStatementStart() {
 				stmt := p.parseLoopStatement()
 				if stmt == nil {
 					return nil

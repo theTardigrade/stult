@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: autonomous_snake/snake.stult
+EXAMPLE: projects/autonomous_snake/snake.stult
 
 This file defines the snake state, food placement and autonomous movement.
 

@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: animated_sine_wave/screen.stult
+EXAMPLE: projects/animated_sine_wave/screen.stult
 
 This code defines screen-rendering helpers for the animated sine wave.
 

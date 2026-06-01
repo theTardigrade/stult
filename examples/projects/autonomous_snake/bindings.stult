@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: autonomous_snake/bindings.stult
+EXAMPLE: projects/autonomous_snake/bindings.stult
 
 This file defines shared immutable standard-library bindings.
 

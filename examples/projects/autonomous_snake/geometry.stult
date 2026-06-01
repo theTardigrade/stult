@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: autonomous_snake/geometry.stult
+EXAMPLE: projects/autonomous_snake/geometry.stult
 
 This file defines immutable point values, direction values and geometry helpers.
 

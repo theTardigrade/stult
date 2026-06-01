@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: grouped_conditional_and_grouped_loop_logic.stult
+EXAMPLE: tests/grouped_conditional_and_grouped_loop_logic.stult
 
 This example checks that a conditional may begin with a grouped expression
 without being mistaken for a loop.

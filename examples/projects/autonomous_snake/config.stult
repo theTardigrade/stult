@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: autonomous_snake/config.stult
+EXAMPLE: projects/autonomous_snake/config.stult
 
 This file defines board, timing and display constants.
 
