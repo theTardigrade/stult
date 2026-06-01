@@ -64,12 +64,7 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 
 	rangeParameters := []Token{}
 
-	if p.current.Type == TokenLParen && !p.isLoopStart() {
-		parameters, ok := p.parseBindingParameters("range parameter")
-		if !ok {
-			return nil, nil, Token{}, false
-		}
-
+	if parameters, ok := p.parseOptionalLoopRangeParameters(); ok {
 		rangeParameters = parameters
 	}
 
@@ -114,6 +109,22 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 		p.errorAtCurrent("expected comma, newline, or '}' after loop statement")
 		return nil, nil, Token{}, false
 	}
+}
+
+func (p *Parser) parseOptionalLoopRangeParameters() ([]Token, bool) {
+	if p.current.Type != TokenLParen || p.isLoopStart() {
+		return nil, false
+	}
+
+	checkpoint := p.checkpoint()
+
+	parameters, ok := p.parseBindingParameters("range parameter")
+	if !ok {
+		p.restore(checkpoint)
+		return nil, false
+	}
+
+	return parameters, true
 }
 
 func (p *Parser) finishFunctionBodyStatement(stmt Statement) bool {

@@ -10,6 +10,7 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Data formats](#data-formats)
 - [Projects](#projects)
 - [Standard library](#standard-library)
+- [Tests](#tests)
 
 ## Collections
 
@@ -57,16 +58,23 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 
 ## Projects
 
-- [Boolean manifest project](../examples/bool/)  
+- [Boolean manifest project](../examples/projects/bool/)  
   Shows how multiple files run in the order specified in a manifest file.
 
-- [Animated sine wave project](../examples/animated_sine_wave/)  
+- [Animated sine wave project](../examples/projects/animated_sine_wave/)  
   Animates an ASCII sine wave using multiple Stult files, trigonometric functions, cached wave rows, timed frames and manifest-based execution.
 
-- [Autonomous snake project](../examples/autonomous_snake/)  
+- [Autonomous snake project](../examples/projects/autonomous_snake/)  
   Animates an autonomous (i.e. zero-player) Snake-style game using multiple Stult files, timed frames, mutable strings, frozen point and snake collections, deterministic food placement and simple movement scoring.
 
 ## Standard library
 
 - [Standard library overview](../examples/standard_library_overview.stult)  
   Recursively prints the maps and functions available in the Stult standard library.
+
+## Tests
+
+These examples are small public programs used to exercise specific language or parser behaviours.
+
+- [Grouped conditional and grouped loop logic](../examples/tests/grouped_conditional_and_grouped_loop_logic.stult)  
+  Checks that grouped boolean expressions at the start of conditionals and loops are parsed correctly, including a grouped conditional that begins with touching `((` and a grouped loop whose body begins with a conditional.

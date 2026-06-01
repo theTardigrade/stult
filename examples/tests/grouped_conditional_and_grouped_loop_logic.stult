@@ -1,0 +1,43 @@
+##
+
+EXAMPLE: grouped_conditional_and_grouped_loop_logic.stult
+
+This example checks that a conditional may begin with a grouped expression
+without being mistaken for a loop.
+
+The first statement starts with touching "((", but it is not a loop header.
+It should parse as a conditional because the full expression is:
+
+	(A & B) | (C & D)
+
+A loop using the same grouped condition would need another pair of parentheses:
+
+	(((A & B) | (C & D))) {
+		...
+	}
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+A : \/
+B : /\
+C : \/
+D : \/
+
+((A & B) | (C & D)) {
+	PRINT("grouped conditional")
+}
+
+LOOP_ITERATIONS : 10
+loop_counter : 0
+
+(((A & B) | (C & D))) {
+	(loop_counter = LOOP_ITERATIONS) {
+		^
+	}
+
+	@loop_counter :+ 1
+},{
+	PRINT("grouped loop")
+}

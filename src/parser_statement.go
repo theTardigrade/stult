@@ -5,7 +5,7 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseCaretStatement()
 	}
 
-	if p.isLoopStart() {
+	if p.isLoopStatementStart() {
 		return p.parseLoopStatement()
 	}
 
