@@ -108,7 +108,7 @@ Run a single source file:
 On Windows, use `.\stult.exe` instead:
 
 ```powershell
-.\stult.exe run examples/calculate_circle_area_from_map.stult
+.\stult.exe run examples\calculate_circle_area_from_map.stult
 ```
 
 Run a manifest-based project:
