@@ -1,0 +1,74 @@
+##
+
+EXAMPLE: autonomous_snake/main.stult
+
+This file runs an autonomous animated snake.
+
+Without keyboard input, the snake chooses a safe direction that tends toward
+the food, but also keeps momentum and avoids obvious danger. When it eats, it
+grows. The animation stops if the snake collides, fills the board or reaches
+the time limit.
+
+##
+
+START_MS : NOW()
+INITIAL_FOOD_SEED : MOD(START_MS, WIDTH * HEIGHT)
+
+snake : INITIAL_SNAKE
+food : FOOD_AT(INITIAL_FOOD_SEED, snake)
+direction : INITIAL_DIRECTION
+next_food_seed : 1
+
+next_frame_ms : START_MS
+frames_drawn : 0
+status : "RUNNING"
+
+((\/)) {
+	now_ms : NOW()
+	wait_ms : next_frame_ms - now_ms
+
+	(wait_ms > 0) {
+		SLEEP(wait_ms)
+	}
+
+	frame_ms : NOW()
+	elapsed_ms : frame_ms - START_MS
+
+	(elapsed_ms >= DURATION_MS) {
+		@status : "TIME'S UP"
+		^
+	}
+
+	new_direction : CHOOSE_DIRECTION(snake, food, direction, frames_drawn)
+
+	DRAW_FRAME(frames_drawn, snake, food, new_direction, status)
+
+	new_snake : MOVE_SNAKE(snake, food, new_direction)
+
+	(SNAKE_COLLIDED(new_snake)) {
+		@status : "CRASHED"
+		DRAW_FRAME(frames_drawn, new_snake, food, new_direction, status)
+		^
+	}
+
+	ate_food : SAME_POINT(new_snake[0], food)
+
+	@snake : new_snake
+	@direction : new_direction
+
+	(ate_food) {
+		@food : FOOD_AT(next_food_seed, snake)
+		@next_food_seed :+ 1
+	}
+
+	(SIZE(snake) >= WIDTH * HEIGHT) {
+		@status : "BOARD FILLED"
+		DRAW_FRAME(frames_drawn, snake, food, direction, status)
+		^
+	}
+
+	@frames_drawn :+ 1
+	@next_frame_ms :+ FRAME_DELAY_MS
+},{
+	WRITE("\n" + status + "\n\n")
+}

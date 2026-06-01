@@ -1,0 +1,10 @@
+{
+	"RUN": {
+		"bindings.stult"
+		"config.stult"
+		"geometry.stult"
+		"snake.stult"
+		"screen.stult"
+		"main.stult"
+	}
+}

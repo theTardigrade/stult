@@ -63,6 +63,9 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Animated sine wave project](../examples/animated_sine_wave/)  
   Animates an ASCII sine wave using multiple Stult files, trigonometric functions, cached wave rows, timed frames and manifest-based execution.
 
+- [Autonomous snake project](../examples/autonomous_snake/)  
+  Animates an autonomous (i.e. zero-player) Snake-style game using multiple Stult files, timed frames, mutable strings, frozen point and snake collections, deterministic food placement and simple movement scoring.
+
 ## Standard library
 
 - [Standard library overview](../examples/standard_library_overview.stult)  

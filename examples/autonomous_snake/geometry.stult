@@ -1,0 +1,85 @@
+##
+
+EXAMPLE: autonomous_snake/geometry.stult
+
+This file defines immutable point values, direction values and geometry helpers.
+
+##
+
+POINT : { (X, Y)
+	(FREEZE({
+		"X": X
+		"Y": Y
+	}))
+}
+
+POINT_X : { (P)
+	(P["X"])
+}
+
+POINT_Y : { (P)
+	(P["Y"])
+}
+
+SAME_POINT : { (A, B)
+	(A["X"] = B["X"] & A["Y"] = B["Y"])
+}
+
+ADD_POINTS : { (A, B)
+	(POINT(A["X"] + B["X"], A["Y"] + B["Y"]))
+}
+
+IN_BOUNDS : { (P)
+	(P["X"] >= 0 & P["X"] <= LAST_X & P["Y"] >= 0 & P["Y"] <= LAST_Y)
+}
+
+DISTANCE : { (A, B)
+	(ABS(A["X"] - B["X"]) + ABS(A["Y"] - B["Y"]))
+}
+
+WALL_DISTANCE : { (P)
+	LEFT_DISTANCE : P["X"]
+	RIGHT_DISTANCE : LAST_X - P["X"]
+	TOP_DISTANCE : P["Y"]
+	BOTTOM_DISTANCE : LAST_Y - P["Y"]
+
+	(MIN(LEFT_DISTANCE, MIN(RIGHT_DISTANCE, MIN(TOP_DISTANCE, BOTTOM_DISTANCE))))
+}
+
+UP : POINT(0, -1)
+RIGHT : POINT(1, 0)
+DOWN : POINT(0, 1)
+LEFT : POINT(-1, 0)
+
+DIRECTIONS : FREEZE({
+	UP
+	RIGHT
+	DOWN
+	LEFT
+})
+
+DIRECTION_INDEX : { (DIRECTION)
+	(SAME_POINT(DIRECTION, UP)) {
+		^(0)
+	}
+
+	(SAME_POINT(DIRECTION, RIGHT)) {
+		^(1)
+	}
+
+	(SAME_POINT(DIRECTION, DOWN)) {
+		^(2)
+	}
+
+	(3)
+}
+
+DIRECTION_FROM_OFFSET : { (CURRENT_DIRECTION, OFFSET)
+	INDEX : DIRECTION_INDEX(CURRENT_DIRECTION)
+
+	(DIRECTIONS[MOD(INDEX + OFFSET + 4, 4)])
+}
+
+REVERSE_DIRECTION_OF : { (DIRECTION)
+	(DIRECTION_FROM_OFFSET(DIRECTION, 2))
+}

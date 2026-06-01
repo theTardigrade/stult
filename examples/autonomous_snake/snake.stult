@@ -1,0 +1,204 @@
+##
+
+EXAMPLE: autonomous_snake/snake.stult
+
+This file defines the snake state, food placement and autonomous movement.
+
+The snake body is represented as a frozen array of frozen point maps.
+Each tick creates a new snake array rather than mutating the previous one.
+
+The autonomous movement is not purely greedy. It prefers moving toward food,
+but it also favours continuing forward, avoids walls and body segments and adds
+a small deterministic wobble so the snake does not always take the straightest
+possible route.
+
+##
+
+INITIAL_SNAKE : FREEZE({
+	POINT(6, 8)
+	POINT(5, 8)
+	POINT(4, 8)
+	POINT(3, 8)
+})
+
+INITIAL_DIRECTION : RIGHT
+
+CONTAINS_POINT : { (POINTS, TARGET)
+	((POINTS)) { (P)
+		(SAME_POINT(P, TARGET)) {
+			^(\/)
+		}
+	}
+
+	(/\)
+}
+
+CANDIDATE_FOOD_AT : { (SEED)
+	CELL_COUNT : WIDTH * HEIGHT
+	INDEX : MOD(SEED * 251 + 73, CELL_COUNT)
+
+	X : MOD(INDEX, WIDTH)
+	Y : (INDEX - X) / WIDTH
+
+	(POINT(X, Y))
+}
+
+FOOD_AT : { (SEED, SNAKE)
+	attempt : 0
+
+	((attempt < WIDTH * HEIGHT)) {
+		CANDIDATE : CANDIDATE_FOOD_AT(SEED + attempt)
+
+		(!CONTAINS_POINT(SNAKE, CANDIDATE)) {
+			^(CANDIDATE)
+		}
+
+		@attempt :+ 1
+	}
+
+	(POINT(0, 0))
+}
+
+WOULD_HIT_BODY_AFTER_MOVE : { (SNAKE, NEXT, WILL_EAT)
+	LAST_POSITION : SIZE(SNAKE) - 1
+
+	((SNAKE)) { (SEGMENT, _, _, POSITION)
+		(POSITION > 0) {
+			IGNORE_TAIL : !WILL_EAT & POSITION = LAST_POSITION
+
+			(!IGNORE_TAIL & SAME_POINT(SEGMENT, NEXT)) {
+				^(\/)
+			}
+		}
+	}
+
+	(/\)
+}
+
+SAFE_NEXT_POINT : { (SNAKE, NEXT, WILL_EAT)
+	(IN_BOUNDS(NEXT) & !WOULD_HIT_BODY_AFTER_MOVE(SNAKE, NEXT, WILL_EAT))
+}
+
+BODY_DANGER_SCORE : { (SNAKE, NEXT)
+	score : 0
+
+	((SNAKE)) { (SEGMENT, _, _, POSITION)
+		(POSITION > 0) {
+			D : DISTANCE(NEXT, SEGMENT)
+
+			(D = 1) {
+				@score :+ BODY_NEAR_PENALTY
+			},(D = 2) {
+				@score :+ BODY_CLOSE_PENALTY
+			}
+		}
+	}
+
+	(score)
+}
+
+WALL_DANGER_SCORE : { (NEXT)
+	D : WALL_DISTANCE(NEXT)
+
+	(D >= WALL_DANGER_DISTANCE) {
+		^(0)
+	}
+
+	DANGER : WALL_DANGER_DISTANCE - D
+
+	(DANGER * WALL_DANGER_PENALTY)
+}
+
+DIRECTION_TURN_SCORE : { (CURRENT_DIRECTION, CANDIDATE_DIRECTION)
+	(SAME_POINT(CURRENT_DIRECTION, CANDIDATE_DIRECTION)) {
+		^(0)
+	}
+
+	(SAME_POINT(REVERSE_DIRECTION_OF(CURRENT_DIRECTION), CANDIDATE_DIRECTION)) {
+		^(REVERSE_PENALTY)
+	}
+
+	(TURN_PENALTY)
+}
+
+DIRECTION_WANDER_SCORE : { (FRAME, CANDIDATE_DIRECTION, FOOD_DISTANCE)
+	(FOOD_DISTANCE <= 4) {
+		^(0)
+	}
+
+	(MOD(FRAME + DIRECTION_INDEX(CANDIDATE_DIRECTION) * 3, WANDER_PENALTY_LIMIT))
+}
+
+DIRECTION_SCORE : { (SNAKE, FOOD, CURRENT_DIRECTION, CANDIDATE_DIRECTION, FRAME)
+	HEAD : SNAKE[0]
+	NEXT : ADD_POINTS(HEAD, CANDIDATE_DIRECTION)
+	WILL_EAT : SAME_POINT(NEXT, FOOD)
+
+	(!SAFE_NEXT_POINT(SNAKE, NEXT, WILL_EAT)) {
+		^(MAX_SAFE_DISTANCE)
+	}
+
+	FOOD_DISTANCE : DISTANCE(NEXT, FOOD)
+
+	score : FOOD_DISTANCE * FOOD_DISTANCE_WEIGHT
+	score :+ DIRECTION_TURN_SCORE(CURRENT_DIRECTION, CANDIDATE_DIRECTION)
+	score :+ WALL_DANGER_SCORE(NEXT)
+	score :+ BODY_DANGER_SCORE(SNAKE, NEXT)
+	score :+ DIRECTION_WANDER_SCORE(FRAME, CANDIDATE_DIRECTION, FOOD_DISTANCE)
+
+	(score)
+}
+
+CHOOSE_DIRECTION : { (SNAKE, FOOD, CURRENT_DIRECTION, FRAME)
+	best_direction : CURRENT_DIRECTION
+	best_score : MAX_SAFE_DISTANCE
+
+	((DIRECTION_CHOICES)) { (OFFSET)
+		CANDIDATE_DIRECTION : DIRECTION_FROM_OFFSET(CURRENT_DIRECTION, OFFSET)
+		SCORE : DIRECTION_SCORE(SNAKE, FOOD, CURRENT_DIRECTION, CANDIDATE_DIRECTION, FRAME)
+
+		(SCORE < best_score) {
+			@best_score : SCORE
+			@best_direction : CANDIDATE_DIRECTION
+		}
+	}
+
+	(best_direction)
+}
+
+MOVE_SNAKE : { (SNAKE, FOOD, DIRECTION)
+	NEW_HEAD : ADD_POINTS(SNAKE[0], DIRECTION)
+	WILL_EAT : SAME_POINT(NEW_HEAD, FOOD)
+
+	new_body : {NEW_HEAD}
+
+	copy_count : SIZE(SNAKE) - 1
+
+	(WILL_EAT) {
+		@copy_count : SIZE(SNAKE)
+	}
+
+	((SNAKE)) { (SEGMENT, _, _, POSITION)
+		(POSITION < copy_count) {
+			APPEND(new_body, SEGMENT)
+		}
+	}
+
+	(FREEZE(new_body))
+}
+
+SNAKE_COLLIDED : { (SNAKE)
+	HEAD : SNAKE[0]
+
+	(!IN_BOUNDS(HEAD)) {
+		^(\/)
+	}
+
+	((SNAKE)) { (SEGMENT, _, _, POSITION)
+		(POSITION > 0 & SAME_POINT(HEAD, SEGMENT)) {
+			^(\/)
+		}
+	}
+
+	(/\)
+}

@@ -1,0 +1,143 @@
+##
+
+EXAMPLE: autonomous_snake/screen.stult
+
+This file defines frame rendering helpers.
+
+The renderer builds each frame as an array of lines, joins the lines and writes
+the whole frame with one output call.
+
+##
+
+GENERATE_CLEAR_TEXT : { ()
+	lines : {}
+
+	((CLEAR_LINES)) {
+		APPEND(lines, "")
+	}
+
+	(FREEZE(JOIN(lines, "\n") + "\n"))
+}
+
+CLEAR_TEXT : GENERATE_CLEAR_TEXT()
+
+REPEAT_CHAR : { (CHAR, COUNT)
+	text : ""
+	index : 0
+
+	((index < COUNT)) {
+		text[index] : CHAR
+		@index :+ 1
+	}
+
+	(text)
+}
+
+BORDER_LINE : { (LEFT_CHAR, RIGHT_CHAR)
+	(LEFT_CHAR + REPEAT_CHAR(BORDER_HORIZONTAL, WIDTH) + RIGHT_CHAR)
+}
+
+HEAD_CHAR_FOR_DIRECTION : { (DIRECTION)
+	(SAME_POINT(DIRECTION, UP)) {
+		^(HEAD_UP_CHAR)
+	}
+
+	(SAME_POINT(DIRECTION, RIGHT)) {
+		^(HEAD_RIGHT_CHAR)
+	}
+
+	(SAME_POINT(DIRECTION, DOWN)) {
+		^(HEAD_DOWN_CHAR)
+	}
+
+	(HEAD_LEFT_CHAR)
+}
+
+BODY_CHAR_FOR_POSITION : { (SNAKE, POSITION)
+	LAST_POSITION : SIZE(SNAKE) - 1
+
+	(POSITION = LAST_POSITION) {
+		^(TAIL_CHAR)
+	}
+
+	PREVIOUS : SNAKE[POSITION - 1]
+	NEXT : SNAKE[POSITION + 1]
+
+	(PREVIOUS["X"] = NEXT["X"]) {
+		^(BODY_VERTICAL_CHAR)
+	}
+
+	(PREVIOUS["Y"] = NEXT["Y"]) {
+		^(BODY_HORIZONTAL_CHAR)
+	}
+
+	(BODY_CORNER_CHAR)
+}
+
+SNAKE_CHAR_AT : { (P, SNAKE, DIRECTION)
+	((SNAKE)) { (SEGMENT, _, _, POSITION)
+		(SAME_POINT(P, SEGMENT)) {
+			(POSITION = 0) {
+				^(HEAD_CHAR_FOR_DIRECTION(DIRECTION))
+			}
+
+			^(BODY_CHAR_FOR_POSITION(SNAKE, POSITION))
+		}
+	}
+
+	(EMPTY_CHAR)
+}
+
+POINT_CHAR : { (X, Y, SNAKE, FOOD, DIRECTION)
+	P : POINT(X, Y)
+
+	(SAME_POINT(P, FOOD)) {
+		^(FOOD_CHAR)
+	}
+
+	(SNAKE_CHAR_AT(P, SNAKE, DIRECTION))
+}
+
+GENERATE_FRAME_TEXT : { (FRAME, SNAKE, FOOD, DIRECTION, STATUS)
+	lines : {}
+
+	header : "Frame: "
+	header :+ STRING["NEW"](FRAME)
+	header :+ "\nLength: "
+	header :+ STRING["NEW"](SIZE(SNAKE))
+	header :+ "\nFood position: ("
+	header :+ STRING["NEW"](FOOD["X"])
+	header :+ ", "
+	header :+ STRING["NEW"](FOOD["Y"])
+	header :+ ")"
+
+	APPEND(lines, "Autonomous snake")
+	APPEND(lines, "================")
+	APPEND(lines, header)
+	APPEND(lines, "Status: " + STATUS)
+	APPEND(lines, "")
+
+	APPEND(lines, BORDER_LINE(BORDER_TOP_LEFT, BORDER_TOP_RIGHT))
+
+	((Y_POINTS)) { (Y)
+		line : BORDER_VERTICAL
+
+		((X_POINTS)) { (X)
+			@line :+ POINT_CHAR(X, Y, SNAKE, FOOD, DIRECTION)
+		}
+
+		line :+ BORDER_VERTICAL
+
+		APPEND(lines, line)
+	}
+
+	APPEND(lines, BORDER_LINE(BORDER_BOTTOM_LEFT, BORDER_BOTTOM_RIGHT))
+
+	(JOIN(lines, "\n") + "\n\n")
+}
+
+DRAW_FRAME : { (FRAME, SNAKE, FOOD, DIRECTION, STATUS)
+	WRITE(CLEAR_TEXT + GENERATE_FRAME_TEXT(FRAME, SNAKE, FOOD, DIRECTION, STATUS))
+
+	(_)
+}

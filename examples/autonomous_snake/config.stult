@@ -1,0 +1,68 @@
+##
+
+EXAMPLE: autonomous_snake/config.stult
+
+This file defines board, timing and display constants.
+
+Collections are frozen unless their contents need to be modified.
+
+##
+
+WIDTH : 40
+HEIGHT : 18
+
+LAST_X : WIDTH - 1
+LAST_Y : HEIGHT - 1
+
+X_POINTS : FREEZE({0...WIDTH})
+Y_POINTS : FREEZE({0...HEIGHT})
+
+TARGET_FPS : 12
+FRAME_DELAY_MS : ({ ()
+	N : 1000 / TARGET_FPS
+
+	(N <= 1) {
+		^(1)
+	}
+
+	(ROUND(N))
+})()
+
+DURATION_MS : 60000
+
+CLEAR_LINES : FREEZE({1..32})
+
+EMPTY_CHAR : " "
+HEAD_UP_CHAR : "^"
+HEAD_RIGHT_CHAR : ">"
+HEAD_DOWN_CHAR : "v"
+HEAD_LEFT_CHAR : "<"
+BODY_HORIZONTAL_CHAR : "="
+BODY_VERTICAL_CHAR : "|"
+BODY_CORNER_CHAR : "+"
+TAIL_CHAR : "+"
+FOOD_CHAR : "*"
+
+BORDER_TOP_LEFT : "+"
+BORDER_TOP_RIGHT : "+"
+BORDER_BOTTOM_LEFT : "+"
+BORDER_BOTTOM_RIGHT : "+"
+BORDER_HORIZONTAL : "-"
+BORDER_VERTICAL : "|"
+
+DIRECTION_CHOICES : FREEZE({
+	0
+	-1
+	1
+	2
+})
+
+MAX_SAFE_DISTANCE : WIDTH * HEIGHT * 10
+FOOD_DISTANCE_WEIGHT : 10
+TURN_PENALTY : 4
+REVERSE_PENALTY : 40
+BODY_NEAR_PENALTY : 12
+BODY_CLOSE_PENALTY : 4
+WALL_DANGER_DISTANCE : 4
+WALL_DANGER_PENALTY : 5
+WANDER_PENALTY_LIMIT : 6

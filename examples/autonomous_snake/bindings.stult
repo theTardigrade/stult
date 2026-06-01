@@ -1,0 +1,31 @@
+##
+
+EXAMPLE: autonomous_snake/bindings.stult
+
+This file defines shared immutable standard-library bindings.
+
+##
+
+IO : STD["IO"]
+WRITE : IO["WRITE"]
+
+TYPE : STD["TYPE"]
+STRING : TYPE["STRING"]
+ARRAY : TYPE["ARRAY"]
+COLLECTION : TYPE["COLLECTION"]
+
+JOIN : STRING["JOIN"]
+APPEND : ARRAY["APPEND"]
+SIZE : COLLECTION["SIZE"]
+FREEZE : COLLECTION["FREEZE"]
+IS_FROZEN : COLLECTION["IS_FROZEN"]
+
+TIME : STD["TIME"]
+NOW : TIME["MILLI_TIMESTAMP"]
+SLEEP : TIME["MILLI_SLEEP"]
+
+MATH : STD["MATH"]
+ABS : MATH["ABS"]
+MIN : MATH["MIN"]
+MOD : MATH["MOD"]
+ROUND : MATH["ROUND"]
