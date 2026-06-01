@@ -520,10 +520,15 @@ FALSE : /\
 Then use those bindings elsewhere:
 
 ```stult
+TRUE : \/
+FALSE : /\
+
+PRINT : STD["IO"]["PRINT"]
+
 SHOULD_RUN : TRUE
 
 (SHOULD_RUN) {
-	STD["IO"]["PRINT"]("running")
+	PRINT("running")
 }
 ```
 
@@ -652,34 +657,40 @@ evens : {2..10[2]}
 Conditionals use a parenthesised condition followed by a brace-enclosed block:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 (score >= 90) {
-	STD["IO"]["PRINT"]("excellent")
+	PRINT("excellent")
 }
 ```
 
 An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 (score >= 90) {
-	STD["IO"]["PRINT"]("excellent")
+	PRINT("excellent")
 },{
-	STD["IO"]["PRINT"]("keep going")
+	PRINT("keep going")
 }
 ```
 
 Multiple branches can be chained:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 (score >= 90) {
-	STD["IO"]["PRINT"]("excellent")
+	PRINT("excellent")
 },(score >= 70) {
-	STD["IO"]["PRINT"]("good")
+	PRINT("good")
 },(score >= 50) {
-	STD["IO"]["PRINT"]("keep going")
+	PRINT("keep going")
 },(score >= 20) {
-	STD["IO"]["PRINT"]("bad")
+	PRINT("bad")
 },{
-	STD["IO"]["PRINT"]("terrible")
+	PRINT("terrible")
 }
 ```
 
@@ -688,9 +699,11 @@ Multiple branches can be chained:
 A conditional with a true condition can also be used as an idiomatic way to create a temporary local scope:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 (\/) {
 	message : "inside local scope"
-	STD["IO"]["PRINT"](message)
+	PRINT(message)
 }
 ```
 
@@ -701,10 +714,12 @@ Bindings created inside that block do not leak into the surrounding scope.
 Loops use double parentheses:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 count : 3
 
 ((count > 0)) {
-	STD["IO"]["PRINT"](count)
+	PRINT(count)
 	@count :- 1
 }
 ```
@@ -712,13 +727,15 @@ count : 3
 Loops may have an after-loop block (which runs once, when the condition no longer holds true):
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 count : 3
 
 ((count > 0)) {
-	STD["IO"]["PRINT"](count)
+	PRINT(count)
 	@count :- 1
 },{
-	STD["IO"]["PRINT"]("done")
+	PRINT("done")
 }
 ```
 
@@ -727,18 +744,22 @@ count : 3
 The same loop syntax can iterate over collections:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 values : {"red", "green", "blue"}
 
 ((values)) { (value)
-	STD["IO"]["PRINT"](value)
+	PRINT(value)
 }
 ```
 
 Collection loops can receive up to four parameters:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 ((items)) { (value, key, collection, position)
-	STD["IO"]["PRINT"](position, ": ", key, " -> ", value)
+	PRINT(position, ": ", key, " -> ", value)
 }
 ```
 
@@ -753,8 +774,10 @@ For every type of collection, `position` is the zero-based iteration position.
 An infinite loop uses the true literal:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
+
 ((\/)) {
-	STD["IO"]["PRINT"]("forever")
+	PRINT("forever")
 }
 ```
 
@@ -793,11 +816,13 @@ Functions return exactly one value.
 Function calls require the callee to touch the opening parenthesis:
 
 ```stult
-STD["IO"]["PRINT"]("hello")
+PRINT : STD["IO"]["PRINT"]
+
+PRINT("hello")
 ADD(2, 3)
 ```
 
-This means `STD["IO"]["PRINT"] ("hello")` is not a valid function call.
+This means `PRINT ("hello")` is not a valid function call.
 
 Functions can be stored in maps and arrays:
 
@@ -875,15 +900,16 @@ Stult uses both newlines and commas as separators.
 Most examples use newlines:
 
 ```stult
+PRINT : STD["IO"]["PRINT"]
 NAME : "Stult"
 COUNT : 3
-STD["IO"]["PRINT"](NAME)
+PRINT(NAME)
 ```
 
 The same statements can be written with commas:
 
 ```stult
-NAME : "Stult", COUNT : 3, STD["IO"]["PRINT"](NAME)
+PRINT : STD["IO"]["PRINT"], NAME : "Stult", COUNT : 3, PRINT(NAME)
 ```
 
 Commas can also separate function arguments, function parameters, loop parameters, array elements and map entries:
