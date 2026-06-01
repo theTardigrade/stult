@@ -510,7 +510,7 @@ This is useful when an inner scope has a binding with the same name as an outer 
 
 #### Boolean bindings
 
-If you prefer word-based boolean names to symbolic boolean literals, you can create these immutable bindings:
+If you prefer word-based boolean names to symbolic boolean literals, you can create immutable bindings for them:
 
 ```stult
 TRUE : \/
