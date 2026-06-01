@@ -51,6 +51,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Early return](#early-return)
     - [Variadic function parameters](#variadic-function-parameters)
     - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
+  - [Commas and newlines](#commas-and-newlines)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
@@ -839,6 +840,65 @@ STATUS : ({ ()
 	("in progress")
 })()
 ```
+
+### Commas and newlines
+
+Stult uses both newlines and commas as separators.
+
+Most examples use newlines:
+
+```stult
+NAME : "Stult"
+COUNT : 3
+PRINT(NAME)
+```
+
+The same statements can be written with commas:
+
+```stult
+NAME : "Stult", COUNT : 3, PRINT(NAME)
+```
+
+Commas can also separate function arguments, function parameters, loop parameters, array elements and map entries:
+
+```stult
+VALUES : {1, 2, 3}
+
+ADD : { (left, right)
+	(left + right)
+}
+
+PRINT("sum: ", ADD(2, 3))
+
+CONFIG : {"name": "demo", "enabled": \/}
+```
+
+Newlines may be used in the same places, which is usually clearer for longer code:
+
+```stult
+VALUES : {
+	1
+	2
+	3
+}
+
+CONFIG : {
+	"name": "demo"
+	"enabled": \/
+}
+```
+
+Trailing commas are allowed in list-like syntax:
+
+```stult
+VALUES : {
+	1,
+	2,
+	3,
+}
+```
+
+Some control-flow syntax also uses commas as part of a tightly written separator. Else branches and after-loop blocks use `},{`, while else-if branches use `},(`.
 
 ## Standard library
 
