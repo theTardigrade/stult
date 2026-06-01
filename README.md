@@ -38,6 +38,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Numbers](#numbers)
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
+    - [Boolean bindings](#boolean-bindings)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -500,11 +501,33 @@ count : 0
 	@count :+ 1
 }
 ```
-Reads can usually omit `@` because ordinary reads search outward anyway:
+
+Reads can usually omit `@` because ordinary reads search outward anyway.
 
 Even so, `@name` reads the nearest outer binding, skipping the current scope.
 
 This is useful when an inner scope has a binding with the same name as an outer scope.
+
+#### Boolean bindings
+
+If you prefer word-based boolean names to symbolic boolean literals, you can create these immutable bindings:
+
+```stult
+TRUE : \/
+FALSE : /\
+```
+
+Then use those bindings elsewhere:
+
+```stult
+SHOULD_RUN : TRUE
+
+(SHOULD_RUN) {
+	STD["IO"]["PRINT"]("running")
+}
+```
+
+This approach is especially useful in manifest-based projects, where shared bindings can be placed in an earlier file and reused by later files.
 
 ### Operators
 
