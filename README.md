@@ -554,13 +554,13 @@ Comparison:
 c : 99
 d : 100
 
-c = d   # c equals d: false
-c ! d   # c does not equal d: true
+c = d   # c equals d is false
+c ! d   # c does not equal d is true
 
-c < d   # c is less than d: true
-c <= d  # c is less than or equal to d: true
-c > d   # c is greater than d: false
-c >= d  # c is greater than or equal to d: false
+c < d   # c is less than d is true
+c <= d  # c is less than or equal to d is true
+c > d   # c is greater than d is false
+c >= d  # c is greater than or equal to d is false
 ```
 
 Logical operators:
@@ -569,10 +569,10 @@ Logical operators:
 e : \/  # true
 f : /\  # false
 
-e & f   # e and f: false
-e | f   # e or f: true
-!e      # not e: false
-!f      # not f: true
+e & f   # e and f is false
+e | f   # e or f is true
+!e      # not e is false
+!f      # not f is true
 ```
 
 `=` means equality.
