@@ -539,30 +539,40 @@ This approach is especially useful in manifest-based projects, where shared bind
 Arithmetic:
 
 ```stult
-a + b   # addition
-a - b   # subtraction
-a * b   # multiplication
-a / b   # division
+a : 10
+b : 2
+
+a + b   # 12
+a - b   # 8
+a * b   # 20
+a / b   # 5
 ```
 
 Comparison:
 
 ```stult
-a = b   # equal
-a ! b   # not equal
+c : 99
+d : 100
 
-a < b   # less than
-a <= b  # less than or equal
-a > b   # greater than
-a >= b  # greater than or equal
+c = d   # c equals d: false
+c ! d   # c does not equal d: true
+
+c < d   # c is less than d: true
+c <= d  # c is less than or equal to d: true
+c > d   # c is greater than d: false
+c >= d  # c is greater than or equal to d: false
 ```
 
 Logical operators:
 
 ```stult
-a & b   # and
-a | b   # or
-!a      # not
+e : \/  # true
+f : /\  # false
+
+e & f   # e and f: false
+e | f   # e or f: true
+!e      # not e: false
+!f      # not f: true
 ```
 
 `=` means equality.
@@ -574,15 +584,19 @@ Binary `!` means inequality, but unary `!` used as a prefix means logical not.
 Stult supports compound assignment:
 
 ```stult
-count :+ 1
-count :- 1
-count :* 2
-count :/ 5
+count : 10
+
+count :+ 1  # 11
+count :- 1  # 10
+count :* 2  # 20
+count :/ 5  # 4
 ```
 
-The above Stult code is equivalent to the following C code:
+The above Stult code is roughly equivalent to the following C code:
 
 ```c
+double count = 10;
+
 count += 1;
 count -= 1;
 count *= 2;
@@ -592,7 +606,12 @@ count /= 5;
 Compound assignment can also update mutable outer bindings:
 
 ```stult
-@total :+ value
+total : 0
+VALUE : 5
+
+(total = 0) {
+	@total :+ VALUE
+}
 ```
 
 ### Collections
@@ -629,6 +648,9 @@ But an empty array is written as:
 Indexing uses square brackets:
 
 ```stult
+values : {"red", "green", "blue"}
+person : {"NAME": "John", "role": "programmer"}
+
 values[0]
 person["NAME"]
 ```
@@ -659,6 +681,8 @@ Conditionals use a parenthesised condition followed by a brace-enclosed block:
 ```stult
 PRINT : STD["IO"]["PRINT"]
 
+score : 95
+
 (score >= 90) {
 	PRINT("excellent")
 }
@@ -668,6 +692,8 @@ An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
+
+score : 80
 
 (score >= 90) {
 	PRINT("excellent")
@@ -680,6 +706,8 @@ Multiple branches can be chained:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
+
+score : 10
 
 (score >= 90) {
 	PRINT("excellent")
@@ -746,7 +774,7 @@ The same loop syntax can iterate over collections:
 ```stult
 PRINT : STD["IO"]["PRINT"]
 
-values : {"red", "green", "blue"}
+values : {5, 30, 45}
 
 ((values)) { (value)
 	PRINT(value)
@@ -757,6 +785,8 @@ Collection loops can receive up to four parameters:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
+
+items : {"hat", "coat", "jacket"}
 
 ((items)) { (value, key, collection, position)
 	PRINT(position, ": ", key, " -> ", value)
@@ -818,20 +848,28 @@ Function calls require the callee to touch the opening parenthesis:
 ```stult
 PRINT : STD["IO"]["PRINT"]
 
+SUBTRACT : { (A, B)
+	(A - B)
+}
+
 PRINT("hello")
-ADD(2, 3)
+PRINT(SUBTRACT(10, 2))
 ```
 
-This means `PRINT ("hello")` is not a valid function call.
+This means `PRINT ("hello")` or `PRINT( SUBTRACT (10, 2))` are not a valid function calls.
 
 Functions can be stored in maps and arrays:
 
 ```stult
-TOOLS : {
-	"ADD": ADD
+MULTIPLY : { (A, B)
+	(A * B)
 }
 
-TOOLS["ADD"](2, 3)
+TOOLS : {
+	"MULT": MULTIPLY
+}
+
+TOOLS["MULT"](2, 3)
 ```
 
 #### Early return
