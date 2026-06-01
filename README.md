@@ -497,7 +497,7 @@ Always use `@` when writing to a mutable binding in an outer scope:
 ```stult
 count : 0
 
-((count < 3)) {
+(count < 1) {
 	@count :+ 1
 }
 ```
@@ -653,7 +653,7 @@ Conditionals use a parenthesised condition followed by a brace-enclosed block:
 
 ```stult
 (score >= 90) {
-	PRINT("excellent")
+	STD["IO"]["PRINT"]("excellent")
 }
 ```
 
@@ -661,9 +661,9 @@ An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
 (score >= 90) {
-	PRINT("excellent")
+	STD["IO"]["PRINT"]("excellent")
 },{
-	PRINT("keep going")
+	STD["IO"]["PRINT"]("keep going")
 }
 ```
 
@@ -671,11 +671,15 @@ Multiple branches can be chained:
 
 ```stult
 (score >= 90) {
-	PRINT("excellent")
+	STD["IO"]["PRINT"]("excellent")
 },(score >= 70) {
-	PRINT("good")
+	STD["IO"]["PRINT"]("good")
+},(score >= 50) {
+	STD["IO"]["PRINT"]("keep going")
+},(score >= 20) {
+	STD["IO"]["PRINT"]("bad")
 },{
-	PRINT("keep going")
+	STD["IO"]["PRINT"]("terrible")
 }
 ```
 
@@ -686,7 +690,7 @@ A conditional with a true condition can also be used as an idiomatic way to crea
 ```stult
 (\/) {
 	message : "inside local scope"
-	PRINT(message)
+	STD["IO"]["PRINT"](message)
 }
 ```
 
@@ -700,7 +704,7 @@ Loops use double parentheses:
 count : 3
 
 ((count > 0)) {
-	PRINT(count)
+	STD["IO"]["PRINT"](count)
 	@count :- 1
 }
 ```
@@ -711,10 +715,10 @@ Loops may have an after-loop block (which runs once, when the condition no longe
 count : 3
 
 ((count > 0)) {
-	PRINT(count)
+	STD["IO"]["PRINT"](count)
 	@count :- 1
 },{
-	PRINT("done")
+	STD["IO"]["PRINT"]("done")
 }
 ```
 
@@ -723,10 +727,10 @@ count : 3
 The same loop syntax can iterate over collections:
 
 ```stult
-items : {"red", "green", "blue"}
+values : {"red", "green", "blue"}
 
-((items)) { (item)
-	PRINT(item)
+((values)) { (value)
+	STD["IO"]["PRINT"](value)
 }
 ```
 
@@ -734,7 +738,7 @@ Collection loops can receive up to four parameters:
 
 ```stult
 ((items)) { (value, key, collection, position)
-	PRINT(position, ": ", key, " -> ", value)
+	STD["IO"]["PRINT"](position, ": ", key, " -> ", value)
 }
 ```
 
@@ -750,7 +754,7 @@ An infinite loop uses the true literal:
 
 ```stult
 ((\/)) {
-	PRINT("forever")
+	STD["IO"]["PRINT"]("forever")
 }
 ```
 
@@ -789,11 +793,11 @@ Functions return exactly one value.
 Function calls require the callee to touch the opening parenthesis:
 
 ```stult
-PRINT("hello")
+STD["IO"]["PRINT"]("hello")
 ADD(2, 3)
 ```
 
-This means `PRINT ("hello")` is not a valid function call.
+This means `STD["IO"]["PRINT"] ("hello")` is not a valid function call.
 
 Functions can be stored in maps and arrays:
 
@@ -841,7 +845,7 @@ The variadic parameter must be last.
 
 ```stult
 DESCRIBE : { (label, ...values)
-	PRINT(label, ": ", values)
+	STD["IO"]["PRINT"](label, ": ", values)
 
 	(_)
 }
@@ -873,13 +877,13 @@ Most examples use newlines:
 ```stult
 NAME : "Stult"
 COUNT : 3
-PRINT(NAME)
+STD["IO"]["PRINT"](NAME)
 ```
 
 The same statements can be written with commas:
 
 ```stult
-NAME : "Stult", COUNT : 3, PRINT(NAME)
+NAME : "Stult", COUNT : 3, STD["IO"]["PRINT"](NAME)
 ```
 
 Commas can also separate function arguments, function parameters, loop parameters, array elements and map entries:
@@ -891,7 +895,7 @@ ADD : { (left, right)
 	(left + right)
 }
 
-PRINT("sum: ", ADD(2, 3))
+STD["IO"]["PRINT"]("sum: ", ADD(2, 3))
 
 CONFIG : {"name": "demo", "enabled": \/}
 ```
