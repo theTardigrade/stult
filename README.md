@@ -42,6 +42,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
+    - [Freezing collections](#freezing-collections)
+    - [Ranges](#ranges)
   - [Conditionals](#conditionals)
     - [Creating a local scope](#creating-a-local-scope)
   - [Loops](#loops)
@@ -654,6 +656,37 @@ person : {"NAME": "John", "role": "programmer"}
 values[0]
 person["NAME"]
 ```
+
+#### Freezing collections
+
+Collection values can be frozen with `STD["TYPE"]["COLLECTION"]["FREEZE"]`.
+
+Freezing is deep, so nested arrays, maps and strings are frozen too.
+
+```stult
+PRINT : STD["IO"]["PRINT"]
+
+FREEZE : STD["TYPE"]["COLLECTION"]["FREEZE"]
+IS_FROZEN : STD["TYPE"]["COLLECTION"]["IS_FROZEN"]
+
+CONFIG : FREEZE({
+	"name": "demo"
+	"values": {1, 2, 3}
+})
+
+PRINT(IS_FROZEN(CONFIG))
+PRINT(IS_FROZEN(CONFIG["values"]))
+```
+
+A frozen collection cannot be internally modified, even when it is held by a mutable binding.
+
+In practical terms, this means:
+
+- frozen arrays cannot have elements replaced or appended,
+- frozen maps cannot have entries added or changed *and*
+- frozen strings cannot have characters replaced or appended.
+
+#### Ranges
 
 Arrays can include ranges:
 

@@ -2,7 +2,7 @@
 
 This document describes how Stult is implemented.
 
-It is intended for maintainers and contributors who need to understand the Go codebase, runtime pipeline, bytecode VM, interpreter fallback, manifest handling, bundled executables and test strategy.
+It is intended for maintainers and contributors who need to understand the Go codebase, runtime pipeline, bytecode virtual machine (VM), interpreter fallback, manifest handling, bundled executables and test strategy.
 
 For language-level usage and syntax, start with [`../README.md`](../README.md).
 
@@ -302,8 +302,6 @@ Nested function chunks are stored in the parent chunk's function table and refer
 
 ### Constants
 
-Constants are stored in a per-chunk constant table.
-
 The compiler stores constants in a per-chunk constant table and reuses existing entries when the same constant appears more than once.
 
 Typical constants include:
@@ -377,7 +375,7 @@ The compiler allocates locals for those parameters and resets loop-scope locals 
 
 A source span is the source file, line and column range that produced a bytecode instruction.
 
-Compiler instructions can carry source-span metadata as `BytecodeSourceSpan`, which records the source file, line and column range that produced a bytecode instruction.
+Compiler instructions can carry source-span metadata as `BytecodeSourceSpan`.
 
 Source spans are used for runtime error messages and by the disassembler.
 
@@ -571,7 +569,7 @@ Specialized or mutable values may be resolved before formatting, comparison or o
 
 Bindings wrap values with mutability metadata.
 
-The language-level mutability rule is:
+The language-level binding mutability rule is:
 
 ```text
 uppercase-only identifiers are immutable
@@ -587,6 +585,14 @@ function parameters
 collection entries where applicable
 outer writes
 ```
+
+Binding immutability and collection freezing are separate concepts.
+
+Binding immutability controls whether a name or map entry can be rebound. Collection freezing controls whether the contents of an existing array, map or string can be internally modified.
+
+Arrays, maps and strings carry collection-level immutability flags. The standard-library function `STD["TYPE"]["COLLECTION"]["FREEZE"]` sets those flags deeply and in place for arrays, maps and strings, then returns the same collection value. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level immutability flag set.
+
+Mutation helpers for arrays, maps and strings must check collection-level immutability before changing collection contents. User-facing errors for frozen collection mutation should describe the collection as frozen, rather than describing the binding as immutable.
 
 ## Standard library
 
@@ -610,6 +616,18 @@ Builtins are Go functions wrapped as Stult callable values.
 Standard-library functions should return Stult values and errors, not print internal Go details.
 
 Because both runtime modes use the same standard library, changes to builtins usually affect both bytecode and interpreter behavior.
+
+Collection helpers live under:
+
+```text
+STD["TYPE"]["COLLECTION"]
+```
+
+These helpers operate on arrays, maps and strings where appropriate.
+
+`STD["TYPE"]["COLLECTION"]["FREEZE"]` deeply freezes arrays, maps and strings in place and returns the frozen collection. This means aliases to nested collections observe the frozen state too.
+
+`STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` returns a boolean for arrays, maps and strings. It returns false for non-collection values.
 
 ## Manifests
 
@@ -776,6 +794,8 @@ tests
 When changing runtime semantics, check both runtime implementations.
 
 When changing standard-library behavior, remember that builtins are shared by both the interpreter and bytecode VM through `RuntimeContext`.
+
+When changing collection mutability, keep binding immutability, map-entry immutability and frozen collection state separate. The public language distinction is that immutable bindings cannot be rebound, while frozen collections cannot be internally modified.
 
 When changing manifest behavior, check:
 

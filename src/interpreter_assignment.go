@@ -119,7 +119,7 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 
 func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 	if m.IsImmutable {
-		return Value{}, fmt.Errorf("cannot modify immutable map")
+		return Value{}, fmt.Errorf("cannot modify frozen map")
 	}
 
 	if index.Kind != ValueString {
@@ -149,7 +149,7 @@ func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 
 func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
 	if a.IsImmutable {
-		return Value{}, fmt.Errorf("cannot modify immutable array")
+		return Value{}, fmt.Errorf("cannot modify frozen array")
 	}
 
 	arrayIndex, err := numberToArrayIndex(index)
@@ -184,7 +184,7 @@ func assignStringIndex(s *String, index Value, value Value) (Value, error) {
 	}
 
 	if s.IsImmutable {
-		return Value{}, fmt.Errorf("cannot modify immutable string")
+		return Value{}, fmt.Errorf("cannot modify frozen string")
 	}
 
 	stringIndex, err := numberToArrayIndex(index)
