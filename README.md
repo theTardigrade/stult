@@ -1091,7 +1091,7 @@ Use JSON for external systems.
 
 Use STULTON for native data in Stult or for data shared between Stult programs.
 
-STULTON files can contain comments in the same style as Stult source files.
+While JSON cannot contain JavaScript-style comments, STULTON files can contain comments in the same style as Stult source files.
 
 ## Repository layout
 
