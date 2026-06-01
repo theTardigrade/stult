@@ -16,7 +16,8 @@ var standaloneExamplesRequiringArgs = map[string]bool{
 }
 
 var examplesWithNondeterministicStdout = map[string]bool{
-	"animated_sine_wave/manifest.stulton": true,
+	"projects/animated_sine_wave/manifest.stulton": true,
+	"projects/autonomous_snake/manifest.stulton":   true,
 }
 
 type exampleRunResult struct {
