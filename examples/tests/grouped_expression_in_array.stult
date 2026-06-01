@@ -1,0 +1,30 @@
+##
+
+EXAMPLE: tests/grouped_expression_in_array.stult
+
+This example checks that an array may begin with a grouped expression.
+
+A brace literal beginning with "{ (" should not automatically be treated as a
+function literal. If the contents do not form a valid function literal, the
+parser should parse the brace literal as an array.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+A : 2
+B : 3
+C : 4
+
+VALUES : {
+	(A + B)
+	((A + B) * C)
+	(C - A)
+}
+
+PRINT("array size: " + STRING_NEW(SIZE(VALUES)))
+PRINT("first: " + STRING_NEW(VALUES[0]))
+PRINT("second: " + STRING_NEW(VALUES[1]))
+PRINT("third: " + STRING_NEW(VALUES[2]))

@@ -31,7 +31,9 @@ func (p *Parser) parseBraceLiteral() Expression {
 	}
 
 	if p.current.Type == TokenLParen {
-		return p.parseFunctionLiteral(openBrace)
+		if function := p.tryParseFunctionLiteral(openBrace); function != nil {
+			return function
+		}
 	}
 
 	if p.current.Type == TokenString && p.peek.Type == TokenColon {
@@ -39,6 +41,18 @@ func (p *Parser) parseBraceLiteral() Expression {
 	}
 
 	return p.parseArrayLiteral(openBrace)
+}
+
+func (p *Parser) tryParseFunctionLiteral(openBrace Token) Expression {
+	checkpoint := p.checkpoint()
+
+	function := p.parseFunctionLiteral(openBrace)
+	if function != nil {
+		return function
+	}
+
+	p.restore(checkpoint)
+	return nil
 }
 
 func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
