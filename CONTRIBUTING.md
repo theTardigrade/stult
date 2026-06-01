@@ -1,5 +1,7 @@
 # Contributing
 
+This file is a very short guide to keeping Stult changes consistent across the project.
+
 ## Maintenance
 
 When changing syntax, standard-library behaviour, runtime semantics, manifest files, bundling or repository layouts, please take some time to update the relevant documentation, example code and test coverage.
