@@ -1,0 +1,41 @@
+##
+
+EXAMPLE: tests/array_starting_with_function_literal.stult
+
+This example checks that arrays may contain function literals as their first
+elements.
+
+It protects the parser behaviour where brace literals beginning with "{ (" may
+be parsed speculatively as function literals, while still allowing arrays to
+contain function values.
+
+The first array is multiline. The second array is single-line.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+FUNCTIONS : {
+	{ (A, B)
+		(A + B)
+	}
+	{ (A, B)
+		(A * B)
+	}
+}
+
+INLINE_FUNCTIONS : {{ (A, B) (A - B) }, { (A, B) (A / B) }}
+
+ADD : FUNCTIONS[0]
+MULTIPLY : FUNCTIONS[1]
+SUBTRACT : INLINE_FUNCTIONS[0]
+DIVIDE : INLINE_FUNCTIONS[1]
+
+PRINT("function count: " + STRING_NEW(SIZE(FUNCTIONS)))
+PRINT("inline function count: " + STRING_NEW(SIZE(INLINE_FUNCTIONS)))
+PRINT("add: " + STRING_NEW(ADD(8, 2)))
+PRINT("multiply: " + STRING_NEW(MULTIPLY(8, 2)))
+PRINT("subtract: " + STRING_NEW(SUBTRACT(8, 2)))
+PRINT("divide: " + STRING_NEW(DIVIDE(8, 2)))

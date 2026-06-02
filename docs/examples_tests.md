@@ -16,3 +16,8 @@ They are still valid Stult examples, but they are written primarily as regressio
 
 - [Grouped return expression](../examples/tests/grouped_return_expression.stult)  
   Checks that a function return expression may begin with a grouped expression using touching `((` without being mistaken for a loop.
+
+## Literal parsing
+
+- [Array starts with function literal](../examples/tests/array_starts_with_function_literal.stult)  
+  Checks that arrays may contain function literals as their first elements, including multiline and single-line arrays.

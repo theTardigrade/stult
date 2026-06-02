@@ -83,6 +83,18 @@ func compareExampleRunsForTest(
 		)
 	}
 
+	if interpreterResult.Err != nil {
+		t.Fatalf(
+			"example test %q failed\n\nerror:\n%s\n\ninterpreter stdout:\n%s\n\nbytecode stdout:\n%s\n\ninterpreter stderr:\n%s\n\nbytecode stderr:\n%s",
+			relativePath,
+			exampleErrorString(interpreterResult.Err),
+			interpreterResult.Stdout,
+			bytecodeResult.Stdout,
+			interpreterResult.Stderr,
+			bytecodeResult.Stderr,
+		)
+	}
+
 	if interpreterResult.Stdout != bytecodeResult.Stdout {
 		t.Fatalf(
 			"interpreter and bytecode stdout differed for %q\n\n%s",
