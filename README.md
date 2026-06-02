@@ -529,6 +529,8 @@ PRINT : STD["IO"]["PRINT"]
 
 SHOULD_RUN : TRUE
 
+# the code below contains a conditional statement,
+# so the PRINT statement only runs if SHOULD_RUN is true
 (SHOULD_RUN) {
 	PRINT("running")
 }
