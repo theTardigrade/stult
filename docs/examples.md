@@ -8,6 +8,7 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 - [Functions](#functions)
 - [Control flow](#control-flow)
 - [Data formats](#data-formats)
+- [Pattern printing](#pattern-printing)
 - [Projects](#projects)
 - [Standard library](#standard-library)
 - [Tests](#tests)
@@ -55,6 +56,11 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 
 - [CSV to JSON converter](../examples/csv_to_json_converter.stult)  
   Converts a CSV file into JSON by reading an input path from program arguments, building maps from CSV headers and printing or writing the JSON result to an output path.
+
+## Pattern printing
+
+- [Sierpiński triangle](../examples/sierpinski_triangle.stult)  
+  Prints a Sierpiński-style triangle using a simple cellular-automaton rule, string building and spaced terminal output.
 
 ## Projects
 

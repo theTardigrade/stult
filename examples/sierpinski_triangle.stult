@@ -1,0 +1,76 @@
+##
+
+EXAMPLE: sierpinski_triangle.stult
+
+This example prints a Sierpiński-style triangle using a simple cellular-
+automaton rule.
+
+Each row is created from the previous row. A cell is filled when the two
+neighbouring cells above it are different.
+
+The output is spaced horizontally so the pattern appears as a centred triangle
+rather than a narrow right-angled wedge.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+REPEAT_CHAR : { (CHAR, COUNT)
+	text : ""
+	index : 0
+
+	((index < COUNT)) {
+		@text :+ @CHAR
+		@index :+ 1
+	}
+
+	(text)
+}
+
+GET_CELL : { (LEFT, RIGHT)
+	(LEFT ! RIGHT) {
+		^("*")
+	}
+
+	(" ")
+}
+
+GET_NEXT_ROW : { (ROW)
+	PADDED_ROW : " " + ROW + " "
+	next_row : ""
+	index : 0
+
+	((index < SIZE(PADDED_ROW) - 1)) {
+		@next_row :+ @GET_CELL(@PADDED_ROW[@index], @PADDED_ROW[@index + 1])
+		@index :+ 1
+	}
+
+	(next_row)
+}
+
+GET_SPACED_ROW : { (ROW)
+	text : ""
+	index : 0
+
+	((index < SIZE(ROW))) {
+		@text :+ @ROW[@index]
+		@text :+ " "
+		@index :+ 1
+	}
+
+	(text)
+}
+
+current_row : "*"
+HEIGHT : 32
+index : 0
+
+((index < HEIGHT)) {
+	(@index ! 0) {
+		@current_row : @GET_NEXT_ROW(@current_row)
+	}
+
+	@PRINT(@REPEAT_CHAR(" ", @HEIGHT - @index) + @GET_SPACED_ROW(@current_row))
+	@index :+ 1
+}
