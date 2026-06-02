@@ -536,7 +536,7 @@ SHOULD_RUN : TRUE
 
 This approach is especially useful in manifest-based projects, where shared bindings can be placed in an earlier file and reused by later files.
 
-The standard library also provides equivalent boolean bindings, so you can also write:
+The standard library also provides equivalent boolean bindings, which can be used like this:
 
 ```stult
 TRUE : STD["TYPE"]["BOOL"]["TRUE"]
