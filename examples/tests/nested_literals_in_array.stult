@@ -1,0 +1,59 @@
+##
+
+EXAMPLE: tests/nested_literals_in_array.stult
+
+This example checks that arrays may contain different brace-literal values as
+elements.
+
+It protects literal parsing for arrays that contain empty maps, empty arrays,
+non-empty maps, multiline nested arrays, single-line nested arrays, function
+literals and one-line arrays containing nested literals.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+VALUES : {
+	{:}
+	{}
+	{"NAME": "Stult"}
+	{1, 2, 3}
+	{"red", "green", "blue"}
+	{ (VALUE)
+		(VALUE + 1)
+	}
+}
+
+INLINE_VALUES : {{:}, {}, {"NAME": "Inline"}, {4, 5, 6}, {"cyan", "magenta", "yellow"}}
+
+EMPTY_MAP : VALUES[0]
+EMPTY_ARRAY : VALUES[1]
+INFO : VALUES[2]
+NUMBERS : VALUES[3]
+COLOURS : VALUES[4]
+INCREMENT : VALUES[5]
+
+INLINE_EMPTY_MAP : INLINE_VALUES[0]
+INLINE_EMPTY_ARRAY : INLINE_VALUES[1]
+INLINE_INFO : INLINE_VALUES[2]
+INLINE_NUMBERS : INLINE_VALUES[3]
+INLINE_COLOURS : INLINE_VALUES[4]
+
+PRINT("values size: " + STRING_NEW(SIZE(VALUES)))
+PRINT("empty map size: " + STRING_NEW(SIZE(EMPTY_MAP)))
+PRINT("empty array size: " + STRING_NEW(SIZE(EMPTY_ARRAY)))
+PRINT("name: " + INFO["NAME"])
+PRINT("numbers size: " + STRING_NEW(SIZE(NUMBERS)))
+PRINT("colours size: " + STRING_NEW(SIZE(COLOURS)))
+PRINT("first colour: " + COLOURS[0])
+PRINT("increment: " + STRING_NEW(INCREMENT(9)))
+
+PRINT("inline values size: " + STRING_NEW(SIZE(INLINE_VALUES)))
+PRINT("inline empty map size: " + STRING_NEW(SIZE(INLINE_EMPTY_MAP)))
+PRINT("inline empty array size: " + STRING_NEW(SIZE(INLINE_EMPTY_ARRAY)))
+PRINT("inline name: " + INLINE_INFO["NAME"])
+PRINT("inline numbers size: " + STRING_NEW(SIZE(INLINE_NUMBERS)))
+PRINT("inline colours size: " + STRING_NEW(SIZE(INLINE_COLOURS)))
+PRINT("inline first colour: " + INLINE_COLOURS[0])

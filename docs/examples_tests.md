@@ -21,3 +21,6 @@ They are still valid Stult examples, but they are written primarily as regressio
 
 - [Array starts with function literal](../examples/tests/array_starts_with_function_literal.stult)  
   Checks that arrays may contain function literals as their first elements, including multiline and single-line arrays.
+
+- [Nested literals in array](../examples/tests/nested_literals_in_array.stult)  
+  Checks that arrays may contain empty maps, empty arrays, non-empty maps, nested arrays and function literals as elements.
