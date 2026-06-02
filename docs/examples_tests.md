@@ -6,6 +6,8 @@ These examples live in [`../examples/tests/`](../examples/tests/) and are run by
 
 They are still valid Stult examples, but they are written primarily as regression fixtures rather than tutorials.
 
+For documentation describing the ordinary examples, see [examples.md](examples.md).
+
 ## Grouped expressions
 
 - [Grouped expressions in array](../examples/tests/grouped_expressions_in_array.stult)  
