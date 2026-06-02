@@ -1030,7 +1030,9 @@ The standard library is available as the immutable binding `STD`.
 
 It is a map containing other maps that, in turn, contain functions.
 
+
 ```stult
+STD["ASSERT"]
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]
@@ -1045,10 +1047,13 @@ Here is some example code using functions from the standard library:
 
 ```stult
 PRINT : STD["IO"]["PRINT"]
+ASSERT : STD["ASSERT"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 MATH : STD["MATH"]
 
-PRINT("size: ", SIZE({"a", "b", "c"}))
+ITEMS : {"a", "b", "c"}
+
+ASSERT["EQUAL"](SIZE(ITEMS), 3, "items should contain three values")
 PRINT("square: ", MATH["SQUARE"](9))
 ```
 

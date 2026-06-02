@@ -601,6 +601,7 @@ The standard library is exposed through the immutable global binding `STD`.
 `STD` is a map of maps:
 
 ```text
+STD["ASSERT"]
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]

@@ -1,0 +1,88 @@
+##
+
+EXAMPLE: tests/collection_loop_parameters.stult
+
+This example checks collection-loop parameters.
+
+Collection loops may receive the current value, key, collection and position.
+This example checks those parameters for arrays, maps and strings.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+ASSERT : STD["ASSERT"]
+ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_EQUAL : ASSERT["EQUAL"]
+
+COLLECTION : STD["TYPE"]["COLLECTION"]
+FREEZE : COLLECTION["FREEZE"]
+SIZE : COLLECTION["SIZE"]
+
+ITEMS : FREEZE({"a", "b", "c"})
+
+array_count : 0
+
+((ITEMS)) { (VALUE, KEY, COLLECTION_VALUE, POSITION)
+	ASSERT_EQUAL(COLLECTION_VALUE, ITEMS, "array loop should provide the iterated array")
+	ASSERT_EQUAL(KEY, POSITION, "array loop key should match position")
+	ASSERT_EQUAL(SIZE(COLLECTION_VALUE), 3, "array loop collection size should be 3")
+
+	(POSITION = 0) {
+		ASSERT_EQUAL(VALUE, "a", "array position 0 should be a")
+	},(POSITION = 1) {
+		ASSERT_EQUAL(VALUE, "b", "array position 1 should be b")
+	},(POSITION = 2) {
+		ASSERT_EQUAL(VALUE, "c", "array position 2 should be c")
+	}
+
+	@array_count :+ 1
+}
+
+ASSERT_EQUAL(array_count, 3, "array loop should run 3 times")
+
+LOOKUP : FREEZE({
+	"A": "alpha"
+	"B": "beta"
+})
+
+map_count : 0
+
+((LOOKUP)) { (VALUE, KEY, COLLECTION_VALUE, POSITION)
+	ASSERT_EQUAL(COLLECTION_VALUE, LOOKUP, "map loop should provide the iterated map")
+	ASSERT_EQUAL(SIZE(COLLECTION_VALUE), 2, "map loop collection size should be 2")
+
+	(POSITION = 0) {
+		ASSERT_EQUAL(KEY, "A", "map position 0 key should be A")
+		ASSERT_EQUAL(VALUE, "alpha", "map position 0 value should be alpha")
+	},(POSITION = 1) {
+		ASSERT_EQUAL(KEY, "B", "map position 1 key should be B")
+		ASSERT_EQUAL(VALUE, "beta", "map position 1 value should be beta")
+	}
+
+	@map_count :+ 1
+}
+
+ASSERT_EQUAL(map_count, 2, "map loop should run 2 times")
+
+TEXT : FREEZE("hi")
+
+string_count : 0
+
+((TEXT)) { (VALUE, KEY, COLLECTION_VALUE, POSITION)
+	ASSERT_EQUAL(COLLECTION_VALUE, TEXT, "string loop should provide the iterated string")
+	ASSERT_EQUAL(KEY, POSITION, "string loop key should match position")
+	ASSERT_EQUAL(SIZE(COLLECTION_VALUE), 2, "string loop collection size should be 2")
+
+	(POSITION = 0) {
+		ASSERT_EQUAL(VALUE, "h", "string position 0 should be h")
+	},(POSITION = 1) {
+		ASSERT_EQUAL(VALUE, "i", "string position 1 should be i")
+	}
+
+	@string_count :+ 1
+}
+
+ASSERT_EQUAL(string_count, 2, "string loop should run 2 times")
+
+PRINT("collection loop parameter checks passed")

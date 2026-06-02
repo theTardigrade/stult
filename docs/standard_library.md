@@ -3,6 +3,7 @@
 The Stult standard library is available through the immutable binding `STD`.
 
 ```stult
+STD["ASSERT"]
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]
@@ -33,6 +34,9 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 
 ## Contents
 
+- [STD["ASSERT"]](#stdassert)
+  - [`STD["ASSERT"]["TRUE"](condition, message)`](#stdasserttruecondition-message)
+  - [`STD["ASSERT"]["EQUAL"](actual, expected, message)`](#stdassertequalactual-expected-message)
 - [`STD["IO"]`](#stdio)
   - [`STD["IO"]["WRITE"](...values)`](#stdiowritevalues)
   - [`STD["IO"]["WRITE_LINE"](...values)`](#stdiowrite_linevalues)
@@ -137,6 +141,47 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["DATA"]["STULTON"]["NEW"](value)`](#stddatastultonnewvalue)
     - [`STD["DATA"]["STULTON"]["PARSE"](text)`](#stddatastultonparsetext)
     - [`STD["DATA"]["STULTON"]["IS_VALID"](text)`](#stddatastultonis_validtext)
+
+### `STD["ASSERT"]`
+
+Runtime assertion helpers.
+
+These helpers are useful for self-checking scripts, examples and test programs.
+
+Failed assertions raise runtime errors.
+
+### `STD["ASSERT"]["TRUE"](condition, message)`
+
+Checks that `condition` is true.
+
+`condition` must be a boolean.
+
+`message` must be a string.
+
+Returns `_` if `condition` is true.
+
+Raises a runtime error if `condition` is false.
+
+```stult
+STD["ASSERT"]["TRUE"](1 + 1 = 2, "arithmetic should work")
+```
+
+### `STD["ASSERT"]["EQUAL"](actual, expected, message)`
+
+Checks that `actual` and `expected` are equal.
+
+`message` must be a string.
+
+Comparison uses normal Stult equality semantics.
+
+Returns `_` if `actual` and `expected` are equal.
+
+Raises a runtime error if they are not equal.
+
+```stult
+STD["ASSERT"]["EQUAL"]("Stult", "Stult", "strings should match")
+STD["ASSERT"]["EQUAL"](1 + 2, 3, "numbers should match")
+```
 
 ## `STD["IO"]`
 

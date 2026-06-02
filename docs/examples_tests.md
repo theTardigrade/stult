@@ -8,6 +8,17 @@ They are still valid Stult examples, but they are written primarily as regressio
 
 For documentation describing the ordinary examples, see [examples.md](examples.md).
 
+## Collection behaviour
+
+- [Frozen collections](../examples/tests/frozen_collections.stult)  
+  Checks that frozen arrays, maps and strings cannot be internally modified and that `IS_FROZEN` reports their frozen state.
+
+- [Deep frozen aliases](../examples/tests/deep_frozen_aliases.stult)  
+  Checks that `FREEZE` deeply freezes nested collections and that aliases to nested collections observe the frozen state.
+
+- [Collection loop parameters](../examples/tests/collection_loop_parameters.stult)  
+  Checks that collection loops provide value, key, collection and position parameters correctly.
+
 ## Grouped expressions
 
 - [Grouped expressions in array](../examples/tests/grouped_expressions_in_array.stult)  
@@ -26,3 +37,8 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Nested literals in array](../examples/tests/nested_literals_in_array.stult)  
   Checks that arrays may contain empty maps, empty arrays, non-empty maps, nested arrays and function literals as elements.
+
+## Standard library
+
+- [Assertions](../examples/tests/assertions.stult)  
+  Checks that `STD["ASSERT"]["TRUE"]` and `STD["ASSERT"]["EQUAL"]` succeed for valid assertions and return void where appropriate.

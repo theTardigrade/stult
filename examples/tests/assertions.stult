@@ -1,0 +1,40 @@
+##
+
+EXAMPLE: tests/assertions.stult
+
+This example checks the standard assertion helpers.
+
+ASSERT.TRUE succeeds when its condition is true.
+
+ASSERT.EQUAL succeeds when its first two values compare equal using normal
+Stult equality semantics.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+ASSERT : STD["ASSERT"]
+ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_EQUAL : ASSERT["EQUAL"]
+
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+
+ITEMS : {"a", "b", "c"}
+ITEMS_ALIAS : ITEMS
+
+ASSERT_TRUE(\/, "true literal should be true")
+ASSERT_TRUE(SIZE(ITEMS) = 3, "array size should be 3")
+
+ASSERT_EQUAL(1 + 2, 3, "number equality should work")
+ASSERT_EQUAL("Stult", "Stult", "string equality should work")
+ASSERT_EQUAL(\/, \/, "boolean equality should work")
+ASSERT_EQUAL(_, _, "void equality should work")
+ASSERT_EQUAL(ITEMS, ITEMS_ALIAS, "array identity equality should work")
+
+ASSERT_EQUAL(
+	ASSERT_TRUE(SIZE(ITEMS_ALIAS) = 3, "nested assertion should succeed"),
+	_,
+	"ASSERT.TRUE should return void"
+)
+
+PRINT("assertion checks passed")

@@ -1,0 +1,57 @@
+##
+
+EXAMPLE: tests/frozen_collections.stult
+
+This example checks ordinary frozen collection behaviour.
+
+It verifies that arrays, maps and strings can be frozen and that IS_FROZEN
+reports their frozen state.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+ASSERT : STD["ASSERT"]
+ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_EQUAL : ASSERT["EQUAL"]
+
+COLLECTION : STD["TYPE"]["COLLECTION"]
+FREEZE : COLLECTION["FREEZE"]
+HAS : COLLECTION["HAS"]
+IS_FROZEN : COLLECTION["IS_FROZEN"]
+SIZE : COLLECTION["SIZE"]
+
+ARRAY_VALUE : FREEZE({"a", "b", "c"})
+
+MAP_VALUE : FREEZE({
+	"NAME": "Stult"
+	"TYPE": "language"
+})
+
+STRING_VALUE : FREEZE("abc")
+
+ASSERT_TRUE(IS_FROZEN(ARRAY_VALUE), "array should be frozen")
+ASSERT_TRUE(IS_FROZEN(MAP_VALUE), "map should be frozen")
+ASSERT_TRUE(IS_FROZEN(STRING_VALUE), "string should be frozen")
+
+ASSERT_EQUAL(SIZE(ARRAY_VALUE), 3, "array size should be 3")
+ASSERT_TRUE(HAS(MAP_VALUE, "NAME"), "map should have NAME entry")
+ASSERT_TRUE(HAS(MAP_VALUE, "TYPE"), "map should have TYPE entry")
+ASSERT_EQUAL(SIZE(STRING_VALUE), 3, "string size should be 3")
+
+ASSERT_EQUAL(ARRAY_VALUE[0], "a", "array index 0 should be a")
+ASSERT_EQUAL(ARRAY_VALUE[1], "b", "array index 1 should be b")
+ASSERT_EQUAL(ARRAY_VALUE[2], "c", "array index 2 should be c")
+
+ASSERT_EQUAL(MAP_VALUE["NAME"], "Stult", "map NAME should be Stult")
+ASSERT_EQUAL(MAP_VALUE["TYPE"], "language", "map TYPE should be language")
+
+ASSERT_EQUAL(STRING_VALUE[0], "a", "string index 0 should be a")
+ASSERT_EQUAL(STRING_VALUE[1], "b", "string index 1 should be b")
+ASSERT_EQUAL(STRING_VALUE[2], "c", "string index 2 should be c")
+
+ASSERT_EQUAL(FREEZE(ARRAY_VALUE), ARRAY_VALUE, "freezing a frozen array should return the same array")
+ASSERT_EQUAL(FREEZE(MAP_VALUE), MAP_VALUE, "freezing a frozen map should return the same map")
+ASSERT_EQUAL(FREEZE(STRING_VALUE), STRING_VALUE, "freezing a frozen string should return the same string")
+
+PRINT("frozen collection checks passed")

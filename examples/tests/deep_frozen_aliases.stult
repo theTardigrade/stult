@@ -1,0 +1,52 @@
+##
+
+EXAMPLE: tests/deep_frozen_aliases.stult
+
+This example checks that FREEZE deeply freezes nested collections and preserves
+aliases.
+
+The nested collections are created unfrozen first. Freezing ROOT should also
+freeze the nested array, map and string values that are still held by separate
+bindings.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+ASSERT : STD["ASSERT"]
+ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_EQUAL : ASSERT["EQUAL"]
+
+COLLECTION : STD["TYPE"]["COLLECTION"]
+FREEZE : COLLECTION["FREEZE"]
+IS_FROZEN : COLLECTION["IS_FROZEN"]
+SIZE : COLLECTION["SIZE"]
+
+INNER_TEXT : "snake"
+INNER_ARRAY : {"head", INNER_TEXT}
+INNER_MAP : {
+	"TEXT": INNER_TEXT
+	"ARRAY": INNER_ARRAY
+}
+
+ROOT : {
+	INNER_ARRAY
+	INNER_MAP
+	INNER_TEXT
+}
+
+FROZEN_ROOT : FREEZE(ROOT)
+
+ASSERT_TRUE(IS_FROZEN(FROZEN_ROOT), "root should be frozen")
+ASSERT_TRUE(IS_FROZEN(INNER_ARRAY), "inner array alias should be frozen")
+ASSERT_TRUE(IS_FROZEN(INNER_MAP), "inner map alias should be frozen")
+ASSERT_TRUE(IS_FROZEN(INNER_TEXT), "inner text alias should be frozen")
+ASSERT_TRUE(IS_FROZEN(INNER_MAP["ARRAY"]), "map array alias should be frozen")
+ASSERT_TRUE(IS_FROZEN(INNER_MAP["TEXT"]), "map text alias should be frozen")
+
+ASSERT_EQUAL(SIZE(FROZEN_ROOT), 3, "root size should be 3")
+ASSERT_EQUAL(SIZE(INNER_ARRAY), 2, "inner array size should be 2")
+ASSERT_EQUAL(INNER_TEXT, "snake", "inner text should keep its contents")
+ASSERT_EQUAL(INNER_MAP["TEXT"], "snake", "map text should keep its contents")
+
+PRINT("deep frozen alias checks passed")
