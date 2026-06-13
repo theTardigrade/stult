@@ -32,7 +32,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 ## Literal parsing
 
-- [Array starts with function literal](../examples/tests/array_starts_with_function_literal.stult)  
+- [Array starts with function literal](../examples/tests/array_starting_with_function_literal.stult)  
   Checks that arrays may contain function literals as their first elements, including multiline and single-line arrays.
 
 - [Nested literals in array](../examples/tests/nested_literals_in_array.stult)  
