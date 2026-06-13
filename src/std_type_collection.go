@@ -174,7 +174,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 		}
 
 		if value.Map.IsImmutable {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable map")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
 		}
 
 		value.Map.Entries = make(map[string]Binding)
@@ -186,7 +186,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 		}
 
 		if value.Array.IsImmutable {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable array")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen array")
 		}
 
 		value.Array.Elements = nil
@@ -198,7 +198,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 		}
 
 		if value.Text.IsImmutable {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify immutable string")
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen string")
 		}
 
 		value.Text.Runes = nil
