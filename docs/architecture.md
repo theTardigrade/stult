@@ -784,6 +784,8 @@ Local single-platform builds use:
 go run ./util/build_helper.go local
 ```
 
+Released-version notes and changelog entries are maintained in [`versions.md`](versions.md).
+
 ## Maintainer notes
 
 When changing syntax, update all affected stages:

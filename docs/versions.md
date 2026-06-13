@@ -1,0 +1,181 @@
+# Versions
+
+This document summarises notable Stult changes by released version.
+
+For downloadable binaries and checksums, see the GitHub Releases page once releases are available.
+
+Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shape, bytecode details and command-line behaviour may still change between minor versions.
+
+## Changelog
+
+### Unreleased
+
+Changes made after the latest tagged release will be listed here.
+
+### v0.5.0
+
+Initial public release.
+
+This release introduces Stult as a small scripting language with a bytecode-first runtime, an interpreter fallback, manifest-based projects, a map-shaped standard library and support for bundled standalone executables.
+
+#### Language
+
+* Added `.stult` source files.
+* Added one high-precision numeric value type.
+* Added strings, arrays, maps, booleans, void, functions and builtin functions.
+* Added immutable and mutable bindings based on identifier spelling.
+* Added assignment with `:`.
+* Added equality with `=` and inequality with binary `!`.
+* Added compound assignment with `:+`, `:-`, `:*` and `:/`.
+* Added logical operators `&`, `|` and prefix `!`.
+* Added boolean literals `\/` and `/\`.
+* Added void `_`.
+* Added line comments with `#`.
+* Added bounded comments with `## ... ##`.
+* Added conditionals.
+* Added dynamic loops over booleans and collections.
+* Added loop after-blocks with `},{`.
+* Added break with `^`.
+* Added early return with `^(value)`.
+* Added functions with a required final return expression.
+* Added variadic function parameters.
+* Added array ranges with inclusive, exclusive and stepped forms.
+* Added indexing for arrays, maps and strings.
+* Added indexed assignment for arrays, maps and strings.
+* Added outer-scope reads and writes with `@name`.
+
+#### Collections
+
+* Added mutable arrays.
+* Added mutable maps with per-entry binding mutability.
+* Added mutable strings with character replacement and append-at-end indexed assignment.
+* Added frozen collection support for arrays, maps and strings.
+* Added deep freezing for nested arrays, maps and strings.
+* Added collection identity semantics for arrays and maps.
+* Added string equality by contents.
+
+#### Standard library
+
+* Added the immutable global `STD` binding.
+* Added top-level standard-library maps:
+
+```stult
+STD["ASSERT"]
+STD["IO"]
+STD["SYSTEM"]
+STD["FILE"]
+STD["PATH"]
+STD["TIME"]
+STD["MATH"]
+STD["TYPE"]
+STD["DATA"]
+```
+
+* Added assertion helpers.
+* Added IO helpers for writing output, writing errors, reading lines and prompting.
+* Added system helpers for program arguments, current working directory, environment variables and process exit.
+* Added file helpers for reading, writing, appending, checking, deleting, renaming, copying and sizing files.
+* Added path helpers for joining, cleaning and inspecting filesystem paths.
+* Added time helpers for timestamps, sleeping and calendar values.
+* Added maths helpers for constants, numeric utilities and trigonometry.
+* Added type-checking and type-conversion helpers.
+* Added string helpers for conversion, trimming, case conversion, searching, replacement, splitting and joining.
+* Added array append support.
+* Added map key and value helpers.
+* Added collection helpers for size, emptiness, membership, clearing, freezing and frozen-state checks.
+* Added CSV, JSON and STULTON data helpers.
+
+#### STULTON
+
+* Added STULTON as Stult's native data notation.
+* Added STULTON support for void, booleans, numbers, strings, arrays and maps.
+* Added STULTON parsing and serialisation through the standard library.
+* Added STULTON manifest support.
+* Added support for Stult-style comments in STULTON text.
+
+#### Manifests
+
+* Added manifest-based project execution.
+* Added `manifest.stulton`.
+* Added `manifest.json`.
+* Added ordered manifest run lists.
+* Added shared runtime state across files in a manifest.
+* Added upward manifest discovery for project execution.
+
+#### Command line
+
+* Added `stult run`.
+* Added bytecode execution as the default runtime.
+* Added `stult run --bytecode`.
+* Added `stult run --interpreter`.
+* Added `stult dump` for bytecode disassembly.
+* Added `stult build` for standalone executable creation.
+* Added `stult build --bytecode`.
+* Added `stult build --interpreter`.
+* Added source-string execution with `-e` / `--eval`.
+
+#### Runtime implementation
+
+* Added lexer, parser and AST pipeline.
+* Added bytecode compiler.
+* Added bytecode virtual machine.
+* Added tree-walk interpreter.
+* Added shared runtime context for standard-library builtins.
+* Added source locations to parser and runtime errors.
+* Added bytecode disassembly output for debugging.
+
+#### Parser behaviour
+
+* Added support for grouped conditional expressions that begin with touching `((`.
+* Added support for grouped loop expressions such as `(((A & B) | (C & D)))`.
+* Added support for loop bodies whose first statement is a conditional.
+* Added support for function return expressions that begin with grouped expressions using touching `((`.
+* Added support for array literals that begin with grouped expressions.
+
+#### Bundling
+
+* Added bytecode bundles.
+* Added source/interpreter bundles.
+* Added standalone executable startup from embedded bundles.
+* Added support for bundling single source files and manifest-based projects.
+* Added safeguards to avoid overwriting the currently running executable during bundling.
+
+#### Examples
+
+* Added basic language examples.
+* Added standard-library overview example.
+* Added manifest examples.
+* Added CSV-to-JSON converter example.
+* Added animated sine wave project.
+* Added autonomous snake project.
+* Added public example-test programs under `examples/tests/`.
+
+#### Testing
+
+* Added example-based runtime parity tests.
+* Added interpreter and bytecode comparison for files under `examples/tests/`.
+* Added parser regression examples for grouped conditionals, grouped loops, grouped return expressions and grouped array expressions.
+
+#### Documentation
+
+* Added `README.md`.
+* Added standard-library reference documentation.
+* Added manifest documentation.
+* Added bundling documentation.
+* Added architecture documentation.
+* Added examples documentation.
+* Added example-test documentation.
+* Added contributing notes.
+
+#### Release infrastructure
+
+* Added GitHub Actions release workflow.
+* Added automated test execution during release.
+* Added distribution binary build helper.
+* Added checksum generation for release artefacts.
+
+#### Notes
+
+This is the first public release of Stult.
+
+The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
