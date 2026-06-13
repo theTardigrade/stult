@@ -728,8 +728,6 @@ Do not replace user-facing Stult error messages with raw Go panics.
 
 ## Tests
 
-## Tests
-
 The Go test suite includes public example-test programs.
 
 These tests live under:
