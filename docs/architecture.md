@@ -728,20 +728,30 @@ Do not replace user-facing Stult error messages with raw Go panics.
 
 ## Tests
 
-The Go test suite includes example-based integration tests.
+## Tests
 
-The important parity tests run examples through both runtime modes:
+The Go test suite includes public example-test programs.
+
+These tests live under:
+
+```text
+examples/tests/
+```
+
+Each `.stult` file in that directory is run through both runtime modes:
 
 ```text
 interpreter
 bytecode VM
 ```
 
-For deterministic examples, stdout and stderr should match exactly.
+A test passes only when both runtime modes complete successfully and produce the same stdout and stderr.
 
-For nondeterministic examples, such as time-driven animation, the test can still run both modes but skip exact stdout comparison.
+If both runtime modes fail with matching errors, the test still fails. Matching failure is not success for these example-test programs.
 
-The purpose of these tests is not just coverage. The examples are public documentation, so they are also compatibility fixtures.
+The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity.
+
+The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
 
 When changing compiler, VM, interpreter, standard library, manifests or bundling, run:
 
