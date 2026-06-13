@@ -177,7 +177,7 @@ stult build [--bytecode|--interpreter] <project-directory> -o <output-executable
 For example:
 
 ```bash
-stult build examples/bool -o bool-app
+stult build examples/projects/bool -o bool-app
 ```
 
 The project directory must contain one root manifest file:
@@ -217,17 +217,17 @@ stult build --interpreter examples/calculate_circle_area_from_map.stult -o circl
 Use `-o` or `--output` to choose the generated executable path:
 
 ```bash
-stult build examples/bool -o bool-app
+stult build examples/projects/bool -o bool-app
 ```
 
 ```bash
-stult build examples/bool --output bool-app
+stult build examples/projects/bool --output bool-app
 ```
 
 If no output path is given, Stult uses the project directory name or source file name:
 
 ```bash
-stult build examples/bool
+stult build examples/projects/bool
 ```
 
 ```bash

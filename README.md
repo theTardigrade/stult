@@ -336,13 +336,13 @@ A JSON manifest uses lowercase JSON-style fields:
 Run a project directory that contains a manifest:
 
 ```bash
-stult run examples/bool
+stult run examples/projects/bool
 ```
 
 Run a manifest file directly:
 
 ```bash
-stult run examples/bool/manifest.stulton
+stult run examples/projects/bool/manifest.stulton
 ```
 
 Run from inside a project directory:
@@ -369,13 +369,13 @@ A bytecode bundle embeds:
 Build a bytecode bundle:
 
 ```bash
-stult build examples/bool -o bool-app
+stult build examples/projects/bool -o bool-app
 ```
 
 This is the same as:
 
 ```bash
-stult build --bytecode examples/bool -o bool-app
+stult build --bytecode examples/projects/bool -o bool-app
 ```
 
 Bytecode bundles do not need the original `.stult` source at runtime.
@@ -383,7 +383,7 @@ Bytecode bundles do not need the original `.stult` source at runtime.
 If you explicitly want a source/interpreter bundle, use `--interpreter`:
 
 ```bash
-stult build --interpreter examples/bool -o bool-app
+stult build --interpreter examples/projects/bool -o bool-app
 ```
 
 A source/interpreter bundle embeds:

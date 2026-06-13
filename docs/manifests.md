@@ -145,8 +145,8 @@ The files run in one shared runtime state, which means:
 By default, `stult run` uses the bytecode runtime. When you run with `--interpreter`, the same manifest order is executed through the tree-walk interpreter instead.
 
 ```bash
-stult run examples/bool
-stult run --interpreter examples/bool
+stult run examples/projects/bool
+stult run --interpreter examples/projects/bool
 ```
 
 Both modes preserve the same manifest idea: the listed files run in order and share state.
@@ -256,13 +256,13 @@ This is useful when you want a project directory and bundled executable support,
 Run a project directory:
 
 ```bash
-stult run examples/bool
+stult run examples/projects/bool
 ```
 
 Run a manifest file directly:
 
 ```bash
-stult run examples/bool/manifest.stulton
+stult run examples/projects/bool/manifest.stulton
 ```
 
 Run from inside a project directory:
@@ -276,19 +276,19 @@ With no target, `stult run` searches upward from the current directory for a man
 Run the same project through the interpreter:
 
 ```bash
-stult run --interpreter examples/bool
+stult run --interpreter examples/projects/bool
 ```
 
 Bytecode is the default runtime mode, so this:
 
 ```bash
-stult run examples/bool
+stult run examples/projects/bool
 ```
 
 is the same as:
 
 ```bash
-stult run --bytecode examples/bool
+stult run --bytecode examples/projects/bool
 ```
 
 ## Building a bundled executable
@@ -296,7 +296,7 @@ stult run --bytecode examples/bool
 Manifest projects can be bundled into standalone executables:
 
 ```bash
-stult build examples/bool -o bool-app
+stult build examples/projects/bool -o bool-app
 ```
 
 By default, `stult build` creates a bytecode bundle.
@@ -304,13 +304,13 @@ By default, `stult build` creates a bytecode bundle.
 This is the same as:
 
 ```bash
-stult build --bytecode examples/bool -o bool-app
+stult build --bytecode examples/projects/bool -o bool-app
 ```
 
 If you explicitly want a source/interpreter bundle, use `--interpreter`:
 
 ```bash
-stult build --interpreter examples/bool -o bool-app
+stult build --interpreter examples/projects/bool -o bool-app
 ```
 
 Then run the generated executable directly:
