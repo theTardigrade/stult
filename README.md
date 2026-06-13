@@ -197,7 +197,7 @@ stult run [--bytecode|--interpreter] [file.stult|directory|manifest] [args...]
 stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]
 stult dump [--bytecode] [file.stult|directory|manifest]
 stult dump [--bytecode] -e|--eval <source-string>
-stult build [--bytecode] [project-directory-or-file.stult] -o <output-executable>
+stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>
 ```
 
 `stult` with no subcommand prints usage.
