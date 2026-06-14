@@ -139,9 +139,10 @@ token.go                   token definitions and source locations
 parser*.go                 tokens to AST
 ast.go                     AST node definitions
 
-bytecode.go                bytecode opcodes, chunks, compiler and disassembler
-bytecode_vm.go             bytecode VM execution loop and runtime behavior
-bytecode_bundle.go         bytecode encoding/decoding for bundled executables
+bytecode.go                bytecode opcodes, chunks and core bytecode types
+bytecode_compile*.go       bytecode compiler
+bytecode_disassemble.go    bytecode formatting and disassembly
+bytecode_vm*.go            bytecode VM execution and runtime behaviour
 
 interpreter*.go            tree-walk interpreter
 environment.go             lexical environments and bindings
@@ -157,6 +158,7 @@ manifest.go                manifest loading and normalization
 bundle.go                  embedded bundle detection/loading
 bundle_archive.go          bundle archive creation
 bundle_build.go            build command
+bundle_bytecode.go         bytecode encoding/decoding for bundled executables
 bundle_footer.go           bundle footer format
 
 examples_test.go           example parity tests
