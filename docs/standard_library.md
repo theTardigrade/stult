@@ -72,7 +72,9 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["TIME"]["LOCAL_CALENDAR"]()`](#stdtimelocal_calendar)
   - [`STD["TIME"]["UTC_CALENDAR"]()`](#stdtimeutc_calendar)
 - [`STD["MATH"]`](#stdmath)
-  - [`STD["MATH"]` constants](#stdmath-constants)
+  - [`STD["MATH"]["PI"]`](#stdmathpi)
+  - [`STD["MATH"]["TAU"]`](#stdmathtau)
+  - [`STD["MATH"]["E"]`](#stdmathe)
   - [`STD["MATH"]["SQUARE"](number)`](#stdmathsquarenumber)
   - [`STD["MATH"]["CUBE"](number)`](#stdmathcubenumber)
   - [`STD["MATH"]["ABS"](number)`](#stdmathabsnumber)
@@ -97,10 +99,14 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 - [`STD["TYPE"]`](#stdtype)
   - [`STD["TYPE"]` predicates](#stdtype-predicates)
   - [`STD["TYPE"]["BOOL"]`](#stdtypebool)
-    - [`STD["TYPE"]["BOOL"]` constants](#stdtypebool-constants)
+    - [`STD["TYPE"]["BOOL"]["TRUE"]`](#stdtypebooltrue)
+    - [`STD["TYPE"]["BOOL"]["FALSE"]`](#stdtypeboolfalse)
     - [`STD["TYPE"]["BOOL"]["NEW"](value)`](#stdtypeboolnewvalue)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
-    - [`STD["TYPE"]["NUMBER"]` constants](#stdtypenumber-constants)
+    - [`STD["TYPE"]["NUMBER"]["PRECISION"]`](#stdtypenumberprecision)
+    - [`STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]`](#stdtypenumberfraction_digits)
+    - [`STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`](#stdtypenumbermax_safe_integer)
+    - [`STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]`](#stdtypenumbermin_safe_integer)
     - [`STD["TYPE"]["NUMBER"]["NEW"](value)`](#stdtypenumbernewvalue)
   - [`STD["TYPE"]["STRING"]`](#stdtypestring)
     - [`STD["TYPE"]["STRING"]["NEW"](value)`](#stdtypestringnewvalue)
@@ -585,15 +591,31 @@ The returned map has the same keys as `LOCAL_CALENDAR`.
 
 Numeric helpers, constants and trigonometry.
 
-### `STD["MATH"]` constants
+### `STD["MATH"]["PI"]`
+
+The mathematical constant pi.
 
 ```stult
 STD["MATH"]["PI"]
+```
+
+### `STD["MATH"]["TAU"]`
+
+The mathematical constant tau.
+
+```stult
 STD["MATH"]["TAU"]
-STD["MATH"]["E"]
 ```
 
 `TAU` is `PI * 2`.
+
+### `STD["MATH"]["E"]`
+
+The mathematical constant e.
+
+```stult
+STD["MATH"]["E"]
+```
 
 ### `STD["MATH"]["SQUARE"](number)`
 
@@ -816,12 +838,25 @@ STD["TYPE"]["IS_COLLECTION"]({"a", "b"})
 
 Boolean constants and conversion helpers.
 
-### `STD["TYPE"]["BOOL"]` constants
+### `STD["TYPE"]["BOOL"]["TRUE"]`
+
+The standard-library boolean true constant.
 
 ```stult
 STD["TYPE"]["BOOL"]["TRUE"]
+```
+
+This value is equivalent to the boolean literal `\/`.
+
+### `STD["TYPE"]["BOOL"]["FALSE"]`
+
+The standard-library boolean false constant.
+
+```stult
 STD["TYPE"]["BOOL"]["FALSE"]
 ```
+
+This value is equivalent to the boolean literal `/\`.
 
 ### `STD["TYPE"]["BOOL"]["NEW"](value)`
 
@@ -850,14 +885,41 @@ String conversion ignores surrounding whitespace and case.
 
 Number constants and conversion helpers.
 
-### `STD["TYPE"]["NUMBER"]` constants
+### `STD["TYPE"]["NUMBER"]["PRECISION"]`
+
+The default high-precision number precision, measured in bits.
 
 ```stult
 STD["TYPE"]["NUMBER"]["PRECISION"]
+```
+
+### `STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]`
+
+The default number of fractional digits used by ordinary number formatting.
+
+```stult
 STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]
+```
+
+### `STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`
+
+The largest positive integer for which all integer values from `0` through that value are exactly representable at Stult's default high-precision number precision.
+
+```stult
 STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]
+```
+
+This is a safe-integer bound, not the maximum numeric magnitude Stult can represent.
+
+### `STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]`
+
+The negative counterpart of `STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`.
+
+```stult
 STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]
 ```
+
+This is a safe-integer bound, not the minimum numeric magnitude Stult can represent.
 
 ### `STD["TYPE"]["NUMBER"]["NEW"](value)`
 
