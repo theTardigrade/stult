@@ -588,13 +588,21 @@ collection entries where applicable
 outer writes
 ```
 
+### Number values
+
+Numbers have one user-visible type, but the implementation may store them internally as either small integer values, where doing so would be appropriate, or high-precision floating-point values. This is an implementation detail: Stult programs still see a single number type.
+
+The runtime may promote an internal small-integer number to the full high-precision representation when it interacts with a high-precision number or when an operation cannot be represented as a small integer.
+
+### Immutability versus freezing
+
 Binding immutability and collection freezing are separate concepts.
 
 Binding immutability controls whether a name or map entry can be rebound. Collection freezing controls whether the contents of an existing array, map or string can be internally modified.
 
-Arrays, maps and strings carry collection-level immutability flags. The standard-library function `STD["TYPE"]["COLLECTION"]["FREEZE"]` sets those flags deeply and in place for arrays, maps and strings, then returns the same collection value. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level immutability flag set.
+Arrays, maps and strings carry collection-level frozen flags. The standard-library function `STD["TYPE"]["COLLECTION"]["FREEZE"]` sets those flags deeply and in place for arrays, maps and strings, then returns the same collection value. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level frozen flag set.
 
-Mutation helpers for arrays, maps and strings must check collection-level immutability before changing collection contents. User-facing errors for frozen collection mutation should describe the collection as frozen, rather than describing the binding as immutable.
+Mutation helpers for arrays, maps and strings must check collection-level freezing before changing collection contents. User-facing errors for frozen collection mutation should describe the collection as frozen, rather than describing the binding as immutable.
 
 ## Standard library
 

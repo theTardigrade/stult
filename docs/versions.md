@@ -12,6 +12,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 Changes made after the latest tagged release will be listed here.
 
+#### Language
+
+* Added an internal small-integer representation for number values, promoting to high-precision floating-point numbers when needed.
+
 ### v0.5.0
 
 Initial public release.
