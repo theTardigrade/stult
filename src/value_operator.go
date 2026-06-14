@@ -11,10 +11,7 @@ func evalPrefix(operator string, right Value) (Value, error) {
 			return Value{}, fmt.Errorf("unary '-' requires a number")
 		}
 
-		out := CloneNumber(right.Number)
-		out.Neg(out)
-
-		return Value{Kind: ValueNumber, Number: out}, nil
+		return NewNumberValueFromNumber(numberNegate(right.Number)), nil
 
 	case "!":
 		if right.Kind != ValueBool {
@@ -55,40 +52,33 @@ func evalBinary(operator string, left Value, right Value) (Value, error) {
 
 	switch operator {
 	case "+":
-		out := newFloat()
-		out.Add(left.Number, right.Number)
-		return Value{Kind: ValueNumber, Number: out}, nil
+		return NewNumberValueFromNumber(numberAdd(left.Number, right.Number)), nil
 
 	case "-":
-		out := newFloat()
-		out.Sub(left.Number, right.Number)
-		return Value{Kind: ValueNumber, Number: out}, nil
+		return NewNumberValueFromNumber(numberSubtract(left.Number, right.Number)), nil
 
 	case "*":
-		out := newFloat()
-		out.Mul(left.Number, right.Number)
-		return Value{Kind: ValueNumber, Number: out}, nil
+		return NewNumberValueFromNumber(numberMultiply(left.Number, right.Number)), nil
 
 	case "/":
-		if right.Number.Sign() == 0 {
-			return Value{}, fmt.Errorf("division by zero")
+		out, err := numberDivide(left.Number, right.Number)
+		if err != nil {
+			return Value{}, err
 		}
 
-		out := newFloat()
-		out.Quo(left.Number, right.Number)
-		return Value{Kind: ValueNumber, Number: out}, nil
+		return NewNumberValueFromNumber(out), nil
 
 	case "<":
-		return NewBoolValue(left.Number.Cmp(right.Number) < 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) < 0), nil
 
 	case "<=":
-		return NewBoolValue(left.Number.Cmp(right.Number) <= 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) <= 0), nil
 
 	case ">":
-		return NewBoolValue(left.Number.Cmp(right.Number) > 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) > 0), nil
 
 	case ">=":
-		return NewBoolValue(left.Number.Cmp(right.Number) >= 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) >= 0), nil
 
 	default:
 		return Value{}, fmt.Errorf("unknown binary operator %q", operator)

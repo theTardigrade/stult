@@ -9,8 +9,8 @@ import (
 func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
 		"FRACTION_DIGITS":  NewImmutableBinding(NewNumberValueFromInt(DefaultFractionDigits)),
-		"MAX_SAFE_INTEGER": NewImmutableBinding(newNumberValueFromBigInt(maxSafeIntegerBigInt())),
-		"MIN_SAFE_INTEGER": NewImmutableBinding(newNumberValueFromBigInt(minSafeIntegerBigInt())),
+		"MAX_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(maxSafeIntegerBigInt())),
+		"MIN_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(minSafeIntegerBigInt())),
 		"NEW":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
 		"PRECISION":        NewImmutableBinding(NewNumberValueFromInt(int(FloatPrecision))),
 	}
@@ -27,10 +27,7 @@ func StdTypeNumberNew(_ *RuntimeContext, args []Value) (Value, error) {
 
 	switch value.Kind {
 	case ValueNumber:
-		return Value{
-			Kind:   ValueNumber,
-			Number: CloneNumber(value.Number),
-		}, nil
+		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
 
 	case ValueBool:
 		if value.Bool {
@@ -82,14 +79,4 @@ func minSafeIntegerBigInt() *big.Int {
 	min.Neg(min)
 
 	return min
-}
-
-func newNumberValueFromBigInt(value *big.Int) Value {
-	number := newFloat()
-	number.SetInt(value)
-
-	return Value{
-		Kind:   ValueNumber,
-		Number: number,
-	}
 }

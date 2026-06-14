@@ -42,7 +42,7 @@ func builtinStdTimeMilliTimestamp(_ *RuntimeContext, args []Value) (Value, error
 		return Value{}, fmt.Errorf("TIME.MILLI_TIMESTAMP expected 0 arguments, got %d", len(args))
 	}
 
-	return stdTimeNumberFromInt64(time.Now().UnixMilli()), nil
+	return NewNumberValueFromInt64(time.Now().UnixMilli()), nil
 }
 
 func builtinStdTimeNanoTimestamp(_ *RuntimeContext, args []Value) (Value, error) {
@@ -50,7 +50,7 @@ func builtinStdTimeNanoTimestamp(_ *RuntimeContext, args []Value) (Value, error)
 		return Value{}, fmt.Errorf("TIME.NANO_TIMESTAMP expected 0 arguments, got %d", len(args))
 	}
 
-	return stdTimeNumberFromInt64(time.Now().UnixNano()), nil
+	return NewNumberValueFromInt64(time.Now().UnixNano()), nil
 }
 
 func builtinStdTimeMilliSleep(_ *RuntimeContext, args []Value) (Value, error) {
@@ -109,14 +109,4 @@ func stdTimeMillisecondsArg(name string, arg Value, position int) (int64, error)
 	}
 
 	return milliseconds, nil
-}
-
-func stdTimeNumberFromInt64(value int64) Value {
-	number := newFloat()
-	number.SetInt64(value)
-
-	return Value{
-		Kind:   ValueNumber,
-		Number: number,
-	}
 }

@@ -33,10 +33,7 @@ func (vm *BytecodeVM) applyNegate(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "unary '-' requires a number")
 	}
 
-	out := CloneNumber(right.Number)
-	out.Neg(out)
-
-	vm.pushValue(Value{Kind: ValueNumber, Number: out})
+	vm.pushValue(NewNumberValueFromNumber(numberNegate(right.Number)))
 
 	return nil
 }
@@ -71,10 +68,7 @@ func (vm *BytecodeVM) applyAdd(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "+")
 	}
 
-	out := newFloat()
-	out.Add(left.Number, right.Number)
-
-	vm.pushValue(Value{Kind: ValueNumber, Number: out})
+	vm.pushValue(NewNumberValueFromNumber(numberAdd(left.Number, right.Number)))
 
 	return nil
 }
@@ -89,10 +83,7 @@ func (vm *BytecodeVM) applySubtract(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "-")
 	}
 
-	out := newFloat()
-	out.Sub(left.Number, right.Number)
-
-	vm.pushValue(Value{Kind: ValueNumber, Number: out})
+	vm.pushValue(NewNumberValueFromNumber(numberSubtract(left.Number, right.Number)))
 
 	return nil
 }
@@ -107,10 +98,7 @@ func (vm *BytecodeVM) applyMultiply(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "*")
 	}
 
-	out := newFloat()
-	out.Mul(left.Number, right.Number)
-
-	vm.pushValue(Value{Kind: ValueNumber, Number: out})
+	vm.pushValue(NewNumberValueFromNumber(numberMultiply(left.Number, right.Number)))
 
 	return nil
 }
@@ -125,14 +113,12 @@ func (vm *BytecodeVM) applyDivide(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "/")
 	}
 
-	if right.Number.Sign() == 0 {
-		return vm.runtimeError(instructionIndex, "division by zero")
+	out, err := numberDivide(left.Number, right.Number)
+	if err != nil {
+		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	out := newFloat()
-	out.Quo(left.Number, right.Number)
-
-	vm.pushValue(Value{Kind: ValueNumber, Number: out})
+	vm.pushValue(NewNumberValueFromNumber(out))
 
 	return nil
 }
@@ -179,7 +165,7 @@ func (vm *BytecodeVM) applyLess(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "<")
 	}
 
-	vm.pushValue(NewBoolValue(left.Number.Cmp(right.Number) < 0))
+	vm.pushValue(NewBoolValue(numberCompare(left.Number, right.Number) < 0))
 
 	return nil
 }
@@ -194,7 +180,7 @@ func (vm *BytecodeVM) applyLessEqual(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", "<=")
 	}
 
-	vm.pushValue(NewBoolValue(left.Number.Cmp(right.Number) <= 0))
+	vm.pushValue(NewBoolValue(numberCompare(left.Number, right.Number) <= 0))
 
 	return nil
 }
@@ -209,7 +195,7 @@ func (vm *BytecodeVM) applyGreater(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", ">")
 	}
 
-	vm.pushValue(NewBoolValue(left.Number.Cmp(right.Number) > 0))
+	vm.pushValue(NewBoolValue(numberCompare(left.Number, right.Number) > 0))
 
 	return nil
 }
@@ -224,7 +210,7 @@ func (vm *BytecodeVM) applyGreaterEqual(instructionIndex int) error {
 		return vm.runtimeError(instructionIndex, "operator %q requires numbers", ">=")
 	}
 
-	vm.pushValue(NewBoolValue(left.Number.Cmp(right.Number) >= 0))
+	vm.pushValue(NewBoolValue(numberCompare(left.Number, right.Number) >= 0))
 
 	return nil
 }

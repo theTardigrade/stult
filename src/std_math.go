@@ -4,19 +4,46 @@ import (
 	"fmt"
 	gomath "math"
 	"math/big"
+	"sync"
 )
 
 const StdMathGuardPrecisionBits uint = 64
 
+var (
+	stdMathPiOnce   sync.Once
+	stdMathPiNumber *Number
+
+	stdMathEOnce   sync.Once
+	stdMathENumber *Number
+)
+
+func stdMathPiValue() Value {
+	stdMathPiOnce.Do(func() {
+		value := calculatePiValue(FloatPrecision)
+		stdMathPiNumber = CloneNumber(value.Number)
+	})
+
+	return NewNumberValueFromNumber(CloneNumber(stdMathPiNumber))
+}
+
+func stdMathEValue() Value {
+	stdMathEOnce.Do(func() {
+		value := calculateEValue(FloatPrecision)
+		stdMathENumber = CloneNumber(value.Number)
+	})
+
+	return NewNumberValueFromNumber(CloneNumber(stdMathENumber))
+}
+
 func NewStdMathMap() Value {
-	pi := calculatePiValue(FloatPrecision)
+	pi := stdMathPiValue()
 
 	entries := map[string]Binding{
 		"ABS":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathAbs)),
 		"CEIL":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathCeil)),
 		"CLAMP":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathClamp)),
 		"CUBE":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathCube)),
-		"E":      NewImmutableBinding(calculateEValue(FloatPrecision)),
+		"E":      NewImmutableBinding(stdMathEValue()),
 		"FLOOR":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathFloor)),
 		"LERP":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathLerp)),
 		"MAX":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMax)),
@@ -64,10 +91,7 @@ func calculatePiValue(precision uint) Value {
 	rounded := newFloatWithPrecision(precision)
 	rounded.Set(pi)
 
-	return Value{
-		Kind:   ValueNumber,
-		Number: rounded,
-	}
+	return NewBigNumberValue(rounded)
 }
 
 func chudnovskyTermsForPrecision(precision uint) int {
@@ -136,10 +160,7 @@ func calculateEValue(precision uint) Value {
 	rounded := newFloatWithPrecision(precision)
 	rounded.Set(sum)
 
-	return Value{
-		Kind:   ValueNumber,
-		Number: rounded,
-	}
+	return NewBigNumberValue(rounded)
 }
 
 func eTermsForPrecision(precision uint) int {
@@ -158,10 +179,7 @@ func eTermsForPrecision(precision uint) int {
 func multiplyNumberByInt(value Value, multiplier int64) Value {
 	value = resolveSpecializedValue(value)
 
-	out := newFloat()
-	out.Mul(value.Number, newFloat().SetInt64(multiplier))
-
-	return Value{Kind: ValueNumber, Number: out}
+	return NewNumberValueFromNumber(numberMultiply(value.Number, NewSmallNumber(multiplier)))
 }
 
 func builtinStdMathSquare(_ *RuntimeContext, args []Value) (Value, error) {
@@ -170,10 +188,7 @@ func builtinStdMathSquare(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	out := newFloat()
-	out.Mul(value.Number, value.Number)
-
-	return Value{Kind: ValueNumber, Number: out}, nil
+	return NewNumberValueFromNumber(numberMultiply(value.Number, value.Number)), nil
 }
 
 func builtinStdMathCube(_ *RuntimeContext, args []Value) (Value, error) {
@@ -182,11 +197,9 @@ func builtinStdMathCube(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	out := newFloat()
-	out.Mul(value.Number, value.Number)
-	out.Mul(out, value.Number)
+	square := numberMultiply(value.Number, value.Number)
 
-	return Value{Kind: ValueNumber, Number: out}, nil
+	return NewNumberValueFromNumber(numberMultiply(square, value.Number)), nil
 }
 
 func builtinStdMathAbs(_ *RuntimeContext, args []Value) (Value, error) {
@@ -197,11 +210,11 @@ func builtinStdMathAbs(_ *RuntimeContext, args []Value) (Value, error) {
 
 	out := CloneNumber(value.Number)
 
-	if out.Sign() < 0 {
-		out.Neg(out)
+	if numberSign(out) < 0 {
+		out = numberNegate(out)
 	}
 
-	return Value{Kind: ValueNumber, Number: out}, nil
+	return NewNumberValueFromNumber(out), nil
 }
 
 func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
@@ -210,7 +223,7 @@ func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewNumberValueFromInt(value.Number.Sign()), nil
+	return NewNumberValueFromInt(numberSign(value.Number)), nil
 }
 
 func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
@@ -236,13 +249,13 @@ func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathWorkingPrecision(FloatPrecision)
 
 	startNumber := newFloatWithPrecision(workPrecision)
-	startNumber.Set(start.Number)
+	startNumber.Set(numberToBigFloat(start.Number))
 
 	endNumber := newFloatWithPrecision(workPrecision)
-	endNumber.Set(end.Number)
+	endNumber.Set(numberToBigFloat(end.Number))
 
 	amountNumber := newFloatWithPrecision(workPrecision)
-	amountNumber.Set(amount.Number)
+	amountNumber.Set(numberToBigFloat(amount.Number))
 
 	difference := newFloatWithPrecision(workPrecision)
 	difference.Sub(endNumber, startNumber)
@@ -256,7 +269,7 @@ func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
 	rounded := newFloat()
 	rounded.Set(out)
 
-	return Value{Kind: ValueNumber, Number: rounded}, nil
+	return NewBigNumberValue(rounded), nil
 }
 
 func builtinStdMathMin(_ *RuntimeContext, args []Value) (Value, error) {
@@ -275,12 +288,12 @@ func builtinStdMathMin(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if value.Number.Cmp(min.Number) < 0 {
+		if numberCompare(value.Number, min.Number) < 0 {
 			min = value
 		}
 	}
 
-	return Value{Kind: ValueNumber, Number: CloneNumber(min.Number)}, nil
+	return NewNumberValueFromNumber(CloneNumber(min.Number)), nil
 }
 
 func builtinStdMathMax(_ *RuntimeContext, args []Value) (Value, error) {
@@ -299,12 +312,12 @@ func builtinStdMathMax(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if value.Number.Cmp(max.Number) > 0 {
+		if numberCompare(value.Number, max.Number) > 0 {
 			max = value
 		}
 	}
 
-	return Value{Kind: ValueNumber, Number: CloneNumber(max.Number)}, nil
+	return NewNumberValueFromNumber(CloneNumber(max.Number)), nil
 }
 
 func builtinStdMathClamp(_ *RuntimeContext, args []Value) (Value, error) {
@@ -327,19 +340,19 @@ func builtinStdMathClamp(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if minimum.Number.Cmp(maximum.Number) > 0 {
+	if numberCompare(minimum.Number, maximum.Number) > 0 {
 		return Value{}, fmt.Errorf("MATH.CLAMP minimum cannot be greater than maximum")
 	}
 
-	if value.Number.Cmp(minimum.Number) < 0 {
-		return Value{Kind: ValueNumber, Number: CloneNumber(minimum.Number)}, nil
+	if numberCompare(value.Number, minimum.Number) < 0 {
+		return NewNumberValueFromNumber(CloneNumber(minimum.Number)), nil
 	}
 
-	if value.Number.Cmp(maximum.Number) > 0 {
-		return Value{Kind: ValueNumber, Number: CloneNumber(maximum.Number)}, nil
+	if numberCompare(value.Number, maximum.Number) > 0 {
+		return NewNumberValueFromNumber(CloneNumber(maximum.Number)), nil
 	}
 
-	return Value{Kind: ValueNumber, Number: CloneNumber(value.Number)}, nil
+	return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
 }
 
 func builtinStdMathFloor(_ *RuntimeContext, args []Value) (Value, error) {
@@ -348,7 +361,7 @@ func builtinStdMathFloor(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return Value{Kind: ValueNumber, Number: floorFloat(value.Number)}, nil
+	return NewBigNumberValue(floorFloat(numberToBigFloat(value.Number))), nil
 }
 
 func builtinStdMathCeil(_ *RuntimeContext, args []Value) (Value, error) {
@@ -357,7 +370,7 @@ func builtinStdMathCeil(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return Value{Kind: ValueNumber, Number: ceilFloat(value.Number)}, nil
+	return NewBigNumberValue(ceilFloat(numberToBigFloat(value.Number))), nil
 }
 
 func builtinStdMathRound(_ *RuntimeContext, args []Value) (Value, error) {
@@ -366,16 +379,16 @@ func builtinStdMathRound(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	adjusted := CloneNumber(value.Number)
+	adjusted := numberToBigFloat(value.Number)
 	half := newFloat().SetFloat64(0.5)
 
 	if adjusted.Sign() >= 0 {
 		adjusted.Add(adjusted, half)
-		return Value{Kind: ValueNumber, Number: floorFloat(adjusted)}, nil
+		return NewBigNumberValue(floorFloat(adjusted)), nil
 	}
 
 	adjusted.Sub(adjusted, half)
-	return Value{Kind: ValueNumber, Number: ceilFloat(adjusted)}, nil
+	return NewBigNumberValue(ceilFloat(adjusted)), nil
 }
 
 func builtinStdMathTrunc(_ *RuntimeContext, args []Value) (Value, error) {
@@ -384,7 +397,7 @@ func builtinStdMathTrunc(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return Value{Kind: ValueNumber, Number: truncFloat(value.Number)}, nil
+	return NewBigNumberValue(truncFloat(numberToBigFloat(value.Number))), nil
 }
 
 func builtinStdMathSqrt(_ *RuntimeContext, args []Value) (Value, error) {
@@ -393,14 +406,14 @@ func builtinStdMathSqrt(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if value.Number.Sign() < 0 {
+	if numberSign(value.Number) < 0 {
 		return Value{}, fmt.Errorf("MATH.SQRT expected a non-negative number")
 	}
 
 	out := newFloat()
-	out.Sqrt(value.Number)
+	out.Sqrt(numberToBigFloat(value.Number))
 
-	return Value{Kind: ValueNumber, Number: out}, nil
+	return NewBigNumberValue(out), nil
 }
 
 func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
@@ -424,20 +437,20 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 	}
 
 	if isIntegerExponent {
-		if base.Number.Sign() == 0 && integerExponent < 0 {
+		if numberSign(base.Number) == 0 && integerExponent < 0 {
 			return Value{}, fmt.Errorf("MATH.POWER cannot raise zero to a negative exponent")
 		}
 
-		out := powerFloatByInteger(base.Number, integerExponent)
-		return Value{Kind: ValueNumber, Number: out}, nil
+		out := powerFloatByInteger(numberToBigFloat(base.Number), integerExponent)
+		return NewBigNumberValue(out), nil
 	}
 
-	if base.Number.Sign() < 0 {
+	if numberSign(base.Number) < 0 {
 		return Value{}, fmt.Errorf("MATH.POWER cannot raise a negative base to a non-integer exponent")
 	}
 
-	if base.Number.Sign() == 0 {
-		if exponent.Number.Sign() < 0 {
+	if numberSign(base.Number) == 0 {
+		if numberSign(exponent.Number) < 0 {
 			return Value{}, fmt.Errorf("MATH.POWER cannot raise zero to a negative exponent")
 		}
 
@@ -446,13 +459,13 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 
 	workPrecision := stdMathWorkingPrecision(FloatPrecision)
 
-	lnBase, err := lnFloat(base.Number, workPrecision)
+	lnBase, err := lnFloat(numberToBigFloat(base.Number), workPrecision)
 	if err != nil {
 		return Value{}, err
 	}
 
 	exponentAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	exponentAtWorkPrecision.Set(exponent.Number)
+	exponentAtWorkPrecision.Set(numberToBigFloat(exponent.Number))
 
 	powerExponent := newFloatWithPrecision(workPrecision)
 	powerExponent.Mul(exponentAtWorkPrecision, lnBase)
@@ -465,7 +478,7 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 	rounded := newFloat()
 	rounded.Set(out)
 
-	return Value{Kind: ValueNumber, Number: rounded}, nil
+	return NewBigNumberValue(rounded), nil
 }
 
 func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
@@ -483,17 +496,17 @@ func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if right.Number.Sign() == 0 {
+	if numberSign(right.Number) == 0 {
 		return Value{}, fmt.Errorf("MATH.MOD divisor cannot be zero")
 	}
 
 	workPrecision := stdMathWorkingPrecision(FloatPrecision)
 
 	leftAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	leftAtWorkPrecision.Set(left.Number)
+	leftAtWorkPrecision.Set(numberToBigFloat(left.Number))
 
 	rightAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	rightAtWorkPrecision.Set(right.Number)
+	rightAtWorkPrecision.Set(numberToBigFloat(right.Number))
 
 	quotient := newFloatWithPrecision(workPrecision)
 	quotient.Quo(leftAtWorkPrecision, rightAtWorkPrecision)
@@ -509,7 +522,7 @@ func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
 	rounded := newFloat()
 	rounded.Set(out)
 
-	return Value{Kind: ValueNumber, Number: rounded}, nil
+	return NewBigNumberValue(rounded), nil
 }
 
 func stdMathOneNumber(name string, args []Value) (Value, error) {
@@ -590,8 +603,9 @@ func powerFloatByInteger(base *big.Float, exponent int64) *big.Float {
 	negativeExponent := exponent < 0
 	magnitude := exponentMagnitude(exponent)
 
-	result := newFloat().SetInt64(1)
-	factor := CloneNumber(base)
+	result := newFloatWithPrecision(base.Prec()).SetInt64(1)
+	factor := newFloatWithPrecision(base.Prec())
+	factor.Set(base)
 
 	for magnitude > 0 {
 		if magnitude%2 == 1 {

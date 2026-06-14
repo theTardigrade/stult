@@ -211,5 +211,5 @@ func stdJSONNumberString(value Value) string {
 		return "0"
 	}
 
-	return number.Text('g', -1)
+	return numberToBigFloat(number).Text('g', -1)
 }

@@ -98,9 +98,9 @@ func builtinStdMathRadians(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathTrigWorkingPrecision(value.Number)
 
 	degrees := newFloatWithPrecision(workPrecision)
-	degrees.Set(value.Number)
+	degrees.Set(numberToBigFloatWithPrecision(value.Number, workPrecision))
 
-	pi := calculatePiValue(workPrecision).Number
+	pi := numberToBigFloatWithPrecision(calculatePiValue(workPrecision).Number, workPrecision)
 
 	out := newFloatWithPrecision(workPrecision)
 	out.Mul(degrees, pi)
@@ -118,9 +118,9 @@ func builtinStdMathDegrees(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathTrigWorkingPrecision(value.Number)
 
 	radians := newFloatWithPrecision(workPrecision)
-	radians.Set(value.Number)
+	radians.Set(numberToBigFloatWithPrecision(value.Number, workPrecision))
 
-	pi := calculatePiValue(workPrecision).Number
+	pi := numberToBigFloatWithPrecision(calculatePiValue(workPrecision).Number, workPrecision)
 
 	out := newFloatWithPrecision(workPrecision)
 	out.Mul(radians, newFloatWithPrecision(workPrecision).SetInt64(180))
@@ -129,16 +129,17 @@ func builtinStdMathDegrees(_ *RuntimeContext, args []Value) (Value, error) {
 	return stdMathNumberValue(out), nil
 }
 
-func stdMathTrigWorkingPrecision(values ...*big.Float) uint {
+func stdMathTrigWorkingPrecision(values ...*Number) uint {
 	precision := FloatPrecision + StdMathTrigGuardPrecisionBits
 
 	for _, value := range values {
-		if value == nil || value.Sign() == 0 {
+		if value == nil || numberSign(value) == 0 {
 			continue
 		}
 
+		floatValue := numberToBigFloat(value)
 		mantissa := new(big.Float)
-		exponent := value.MantExp(mantissa)
+		exponent := floatValue.MantExp(mantissa)
 
 		if exponent > 0 {
 			precision += uint(exponent)
@@ -148,15 +149,15 @@ func stdMathTrigWorkingPrecision(values ...*big.Float) uint {
 	return precision
 }
 
-func reduceTrigAngle(value *big.Float, precision uint) (*big.Float, int, error) {
+func reduceTrigAngle(value *Number, precision uint) (*big.Float, int, error) {
 	if value == nil {
 		return nil, 1, fmt.Errorf("cannot reduce invalid angle")
 	}
 
 	x := newFloatWithPrecision(precision)
-	x.Set(value)
+	x.Set(numberToBigFloatWithPrecision(value, precision))
 
-	pi := calculatePiValue(precision).Number
+	pi := numberToBigFloatWithPrecision(calculatePiValue(precision).Number, precision)
 
 	tau := newFloatWithPrecision(precision)
 	tau.Mul(pi, newFloatWithPrecision(precision).SetInt64(2))
@@ -277,8 +278,5 @@ func stdMathNumberValue(value *big.Float) Value {
 	rounded := newFloat()
 	rounded.Set(value)
 
-	return Value{
-		Kind:   ValueNumber,
-		Number: rounded,
-	}
+	return NewBigNumberValue(rounded)
 }

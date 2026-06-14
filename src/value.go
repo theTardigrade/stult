@@ -1,7 +1,5 @@
 package main
 
-import "math/big"
-
 type ValueKind int
 
 const (
@@ -17,7 +15,7 @@ const (
 
 type Value struct {
 	Kind            ValueKind
-	Number          *big.Float
+	Number          *Number
 	Bool            bool
 	Text            *String
 	Map             *Map
