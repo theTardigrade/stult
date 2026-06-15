@@ -227,7 +227,7 @@ func bundledBytecodeValueFromValue(value Value) (bundledBytecodeValue, error) {
 
 		return bundledBytecodeValue{
 			Kind:   ValueNumber,
-			Number: numberToBigFloat(value.Number).Text('g', -1),
+			Number: value.Number.Format(MaxDecimalPlaces),
 		}, nil
 
 	case ValueBool:
