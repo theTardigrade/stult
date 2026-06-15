@@ -6,7 +6,7 @@ It is designed as a terse but readable scripting language with:
 
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
-- one high-precision number type with arbitrary-size whole-number parts and bounded decimal places,
+- one high-precision number type with an unbounded whole-number component and bounded decimal places,
 - arrays, maps, strings, functions, conditionals, loops and ranges,
 - concise literals for booleans, arrays, maps and void,
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
