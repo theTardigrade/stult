@@ -8,6 +8,14 @@ They are still valid Stult examples, but they are written primarily as regressio
 
 For documentation describing the ordinary examples, see [examples.md](examples.md).
 
+## Contents
+
+* [Collection behaviour](#collection-behaviour)
+* [Grouped expressions](#grouped-expressions)
+* [Literal parsing](#literal-parsing)
+* [Numbers](#numbers)
+* [Standard library](#standard-library)
+
 ## Collection behaviour
 
 - [Frozen collections](../examples/tests/frozen_collections.stult)  
@@ -37,6 +45,14 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Nested literals in array](../examples/tests/nested_literals_in_array.stult)  
   Checks that arrays may contain empty maps, empty arrays, non-empty maps, nested arrays and function literals as elements.
+
+## Numbers
+
+- [Huge numbers](../examples/tests/huge_numbers.stult)  
+  Checks that very large whole-number values can be compared and changed without losing their whole-number precision, while decimal values remain bounded.
+
+- [Number formatting](../examples/tests/number_formatting.stult)  
+  Checks fixed decimal formatting with requested decimal places and scientific-notation formatting with requested significant digits.
 
 ## Standard library
 
