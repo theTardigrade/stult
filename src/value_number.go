@@ -358,6 +358,50 @@ func formatNumber(number *Number, fractionDigits int) string {
 	return number.Format(fractionDigits)
 }
 
+func (number *Number) FormatScientific(significantDigits int) string {
+	if significantDigits < 1 {
+		significantDigits = 1
+	}
+
+	if significantDigits > MaxDecimalScale {
+		significantDigits = MaxDecimalScale
+	}
+
+	coefficient, scale := numberCoefficientAndScale(number)
+	if coefficient.Sign() == 0 {
+		return "0"
+	}
+
+	negative := coefficient.Sign() < 0
+	coefficient.Abs(coefficient)
+
+	digits := coefficient.String()
+	exponent := len(digits) - scale - 1
+
+	if len(digits) > significantDigits {
+		dropDigits := len(digits) - significantDigits
+
+		rounded := roundedQuotient(coefficient, powerOfTen(dropDigits))
+		digits = rounded.String()
+
+		if len(digits) > significantDigits {
+			exponent += len(digits) - significantDigits
+			digits = digits[:significantDigits]
+		}
+	}
+
+	mantissa := digits
+	if len(digits) > 1 {
+		mantissa = trimDecimalZeros(digits[:1] + "." + digits[1:])
+	}
+
+	if negative {
+		mantissa = "-" + mantissa
+	}
+
+	return fmt.Sprintf("%se%+d", mantissa, exponent)
+}
+
 func trimDecimalZeros(text string) string {
 	if !strings.Contains(text, ".") {
 		return text

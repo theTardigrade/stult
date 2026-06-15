@@ -8,14 +8,60 @@ import (
 
 func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
-		"FRACTION_DIGITS":  NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalDigitsToDisplay)),
-		"MAX_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(maxSafeIntegerBigInt())),
-		"MIN_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(minSafeIntegerBigInt())),
-		"NEW":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
-		"PRECISION":        NewImmutableBinding(NewNumberValueFromInt(int(FloatPrecision))),
+		"FORMAT":            NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormat)),
+		"FORMAT_SCIENTIFIC": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormatScientific)),
+		"FRACTION_DIGITS":   NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalDigitsToDisplay)),
+		"MAX_SAFE_INTEGER":  NewImmutableBinding(NewNumberValueFromBigInt(maxSafeIntegerBigInt())),
+		"MIN_SAFE_INTEGER":  NewImmutableBinding(NewNumberValueFromBigInt(minSafeIntegerBigInt())),
+		"NEW":               NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
+		"PRECISION":         NewImmutableBinding(NewNumberValueFromInt(int(FloatPrecision))),
 	}
 
 	return NewMapValue(entries, true)
+}
+
+func StdTypeNumberFormat(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT expected 2 arguments, got %d", len(args))
+	}
+
+	value := resolveSpecializedValue(args[0])
+	if value.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT argument 1 expected a number")
+	}
+
+	decimalPlaces, err := numberToInt64(args[1], "TYPE.NUMBER.FORMAT argument 2")
+	if err != nil {
+		return Value{}, err
+	}
+
+	if decimalPlaces < 0 || decimalPlaces > MaxDecimalScale {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT decimal places must be between 0 and %d", MaxDecimalScale)
+	}
+
+	return NewStringValue(value.Number.Format(int(decimalPlaces))), nil
+}
+
+func StdTypeNumberFormatScientific(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT_SCIENTIFIC expected 2 arguments, got %d", len(args))
+	}
+
+	value := resolveSpecializedValue(args[0])
+	if value.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT_SCIENTIFIC argument 1 expected a number")
+	}
+
+	significantDigits, err := numberToInt64(args[1], "TYPE.NUMBER.FORMAT_SCIENTIFIC argument 2")
+	if err != nil {
+		return Value{}, err
+	}
+
+	if significantDigits < 1 || significantDigits > MaxDecimalScale {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT_SCIENTIFIC significant digits must be between 1 and %d", MaxDecimalScale)
+	}
+
+	return NewStringValue(value.Number.FormatScientific(int(significantDigits))), nil
 }
 
 func StdTypeNumberNew(_ *RuntimeContext, args []Value) (Value, error) {

@@ -1,0 +1,32 @@
+##
+
+EXAMPLE: tests/number_formatting.stult
+
+This example checks Stult's number-formatting helpers.
+
+Fixed decimal formatting should respect the requested display precision,
+while scientific formatting should produce compact rounded output without
+changing numeric values.
+
+##
+
+ASSERT : STD["ASSERT"]
+NUMBER : STD["TYPE"]["NUMBER"]
+
+ASSERT["EQUAL"](
+	NUMBER["FORMAT"](1 / 3, 32),
+	"0.33333333333333333333333333333333",
+	"FORMAT should display one third to 32 decimal places"
+)
+
+ASSERT["EQUAL"](
+	NUMBER["FORMAT"](10, 256),
+	"10",
+	"FORMAT should trim trailing zeroes when formatting an integer"
+)
+
+ASSERT["EQUAL"](
+	NUMBER["FORMAT_SCIENTIFIC"](12345, 3),
+	"1.23e+4",
+	"FORMAT_SCIENTIFIC should round to the requested significant digits"
+)
