@@ -46,7 +46,7 @@ func TestHugeIntegerWithDecimalAddition(t *testing.T) {
 	}
 }
 
-func TestDivisionRoundsToMaxDecimalScale(t *testing.T) {
+func TestDivisionRoundsToMaxDecimalPlaces(t *testing.T) {
 	one := NewSmallNumber(1)
 	three := NewSmallNumber(3)
 
@@ -73,7 +73,7 @@ func TestDivisionRoundsToMaxDecimalScale(t *testing.T) {
 	}
 }
 
-func TestMultiplicationRoundsToMaxDecimalScale(t *testing.T) {
+func TestMultiplicationRoundsToMaxDecimalPlaces(t *testing.T) {
 	leftLiteral := "0." + strings.Repeat("1", 200)
 	rightLiteral := "0." + strings.Repeat("2", 200)
 
