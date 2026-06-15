@@ -208,13 +208,11 @@ func builtinStdMathAbs(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	out := CloneNumber(value.Number)
-
-	if numberSign(out) < 0 {
-		out = numberNegate(out)
+	if numberSign(value.Number) < 0 {
+		return NewNumberValueFromNumber(numberNegate(value.Number)), nil
 	}
 
-	return NewNumberValueFromNumber(out), nil
+	return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
 }
 
 func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
@@ -361,7 +359,7 @@ func builtinStdMathFloor(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewBigNumberValue(floorFloat(numberToBigFloat(value.Number))), nil
+	return NewNumberValueFromNumber(stdMathFloorNumber(value.Number)), nil
 }
 
 func builtinStdMathCeil(_ *RuntimeContext, args []Value) (Value, error) {
@@ -370,7 +368,7 @@ func builtinStdMathCeil(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewBigNumberValue(ceilFloat(numberToBigFloat(value.Number))), nil
+	return NewNumberValueFromNumber(stdMathCeilNumber(value.Number)), nil
 }
 
 func builtinStdMathRound(_ *RuntimeContext, args []Value) (Value, error) {
@@ -379,16 +377,7 @@ func builtinStdMathRound(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	adjusted := numberToBigFloat(value.Number)
-	half := newFloat().SetFloat64(0.5)
-
-	if adjusted.Sign() >= 0 {
-		adjusted.Add(adjusted, half)
-		return NewBigNumberValue(floorFloat(adjusted)), nil
-	}
-
-	adjusted.Sub(adjusted, half)
-	return NewBigNumberValue(ceilFloat(adjusted)), nil
+	return NewNumberValueFromNumber(stdMathRoundNumber(value.Number)), nil
 }
 
 func builtinStdMathTrunc(_ *RuntimeContext, args []Value) (Value, error) {
@@ -397,7 +386,7 @@ func builtinStdMathTrunc(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewBigNumberValue(truncFloat(numberToBigFloat(value.Number))), nil
+	return NewNumberValueFromNumber(stdMathTruncNumber(value.Number)), nil
 }
 
 func builtinStdMathSqrt(_ *RuntimeContext, args []Value) (Value, error) {
@@ -441,8 +430,12 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.POWER cannot raise zero to a negative exponent")
 		}
 
-		out := powerFloatByInteger(numberToBigFloat(base.Number), integerExponent)
-		return NewBigNumberValue(out), nil
+		out, err := stdMathPowerByInteger(base.Number, integerExponent)
+		if err != nil {
+			return Value{}, err
+		}
+
+		return NewNumberValueFromNumber(out), nil
 	}
 
 	if numberSign(base.Number) < 0 {
@@ -496,33 +489,12 @@ func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if numberSign(right.Number) == 0 {
-		return Value{}, fmt.Errorf("MATH.MOD divisor cannot be zero")
+	out, err := stdMathModNumbers(left.Number, right.Number)
+	if err != nil {
+		return Value{}, err
 	}
 
-	workPrecision := stdMathWorkingPrecision(FloatPrecision)
-
-	leftAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	leftAtWorkPrecision.Set(numberToBigFloat(left.Number))
-
-	rightAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	rightAtWorkPrecision.Set(numberToBigFloat(right.Number))
-
-	quotient := newFloatWithPrecision(workPrecision)
-	quotient.Quo(leftAtWorkPrecision, rightAtWorkPrecision)
-
-	flooredQuotient := floorFloatWithPrecision(quotient, workPrecision)
-
-	multiple := newFloatWithPrecision(workPrecision)
-	multiple.Mul(flooredQuotient, rightAtWorkPrecision)
-
-	out := newFloatWithPrecision(workPrecision)
-	out.Sub(leftAtWorkPrecision, multiple)
-
-	rounded := newFloat()
-	rounded.Set(out)
-
-	return NewBigNumberValue(rounded), nil
+	return NewNumberValueFromNumber(out), nil
 }
 
 func stdMathOneNumber(name string, args []Value) (Value, error) {
@@ -554,6 +526,129 @@ func stdMathExactInt64(name string, value Value, position int) (int64, bool, err
 	}
 
 	return integer.Int64(), true, nil
+}
+
+func stdMathFloorNumber(number *Number) *Number {
+	coefficient, scale := numberCoefficientAndScale(number)
+	if scale == 0 {
+		return normaliseCoefficientAndScale(coefficient, 0)
+	}
+
+	quotient := new(big.Int)
+	remainder := new(big.Int)
+
+	quotient.QuoRem(coefficient, powerOfTen(scale), remainder)
+
+	if coefficient.Sign() < 0 && remainder.Sign() != 0 {
+		quotient.Sub(quotient, big.NewInt(1))
+	}
+
+	return normaliseCoefficientAndScale(quotient, 0)
+}
+
+func stdMathCeilNumber(number *Number) *Number {
+	coefficient, scale := numberCoefficientAndScale(number)
+	if scale == 0 {
+		return normaliseCoefficientAndScale(coefficient, 0)
+	}
+
+	quotient := new(big.Int)
+	remainder := new(big.Int)
+
+	quotient.QuoRem(coefficient, powerOfTen(scale), remainder)
+
+	if coefficient.Sign() > 0 && remainder.Sign() != 0 {
+		quotient.Add(quotient, big.NewInt(1))
+	}
+
+	return normaliseCoefficientAndScale(quotient, 0)
+}
+
+func stdMathTruncNumber(number *Number) *Number {
+	coefficient, scale := numberCoefficientAndScale(number)
+	if scale == 0 {
+		return normaliseCoefficientAndScale(coefficient, 0)
+	}
+
+	quotient := new(big.Int)
+	quotient.Quo(coefficient, powerOfTen(scale))
+
+	return normaliseCoefficientAndScale(quotient, 0)
+}
+
+func stdMathRoundNumber(number *Number) *Number {
+	coefficient, scale := numberCoefficientAndScale(number)
+	if scale == 0 {
+		return normaliseCoefficientAndScale(coefficient, 0)
+	}
+
+	rounded := roundedQuotient(coefficient, powerOfTen(scale))
+
+	return normaliseCoefficientAndScale(rounded, 0)
+}
+
+func stdMathModNumbers(left *Number, right *Number) (*Number, error) {
+	if numberSign(right) == 0 {
+		return nil, fmt.Errorf("MATH.MOD divisor cannot be zero")
+	}
+
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
+
+	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
+
+	quotient := stdMathFloorQuotient(leftCoefficient, rightCoefficient)
+
+	multiple := new(big.Int)
+	multiple.Mul(quotient, rightCoefficient)
+
+	remainder := new(big.Int)
+	remainder.Sub(leftCoefficient, multiple)
+
+	return normaliseCoefficientAndScale(remainder, scale), nil
+}
+
+func stdMathFloorQuotient(numerator *big.Int, denominator *big.Int) *big.Int {
+	quotient := new(big.Int)
+	remainder := new(big.Int)
+
+	quotient.QuoRem(numerator, denominator, remainder)
+
+	if remainder.Sign() != 0 && remainder.Sign() != denominator.Sign() {
+		quotient.Sub(quotient, big.NewInt(1))
+	}
+
+	return quotient
+}
+
+func stdMathPowerByInteger(base *Number, exponent int64) (*Number, error) {
+	if exponent == 0 {
+		return NewSmallNumber(1), nil
+	}
+
+	negativeExponent := exponent < 0
+	magnitude := exponentMagnitude(exponent)
+
+	result := NewSmallNumber(1)
+	factor := CloneNumber(base)
+
+	for magnitude > 0 {
+		if magnitude%2 == 1 {
+			result = numberMultiply(result, factor)
+		}
+
+		magnitude /= 2
+
+		if magnitude > 0 {
+			factor = numberMultiply(factor, factor)
+		}
+	}
+
+	if !negativeExponent {
+		return result, nil
+	}
+
+	return numberDivide(NewSmallNumber(1), result)
 }
 
 func truncFloat(value *big.Float) *big.Float {
@@ -593,38 +688,6 @@ func ceilFloatWithPrecision(value *big.Float, precision uint) *big.Float {
 	}
 
 	return newFloatWithPrecision(precision).SetInt(integer)
-}
-
-func powerFloatByInteger(base *big.Float, exponent int64) *big.Float {
-	if exponent == 0 {
-		return newFloat().SetInt64(1)
-	}
-
-	negativeExponent := exponent < 0
-	magnitude := exponentMagnitude(exponent)
-
-	result := newFloatWithPrecision(base.Prec()).SetInt64(1)
-	factor := newFloatWithPrecision(base.Prec())
-	factor.Set(base)
-
-	for magnitude > 0 {
-		if magnitude%2 == 1 {
-			result.Mul(result, factor)
-		}
-
-		magnitude /= 2
-
-		if magnitude > 0 {
-			factor.Mul(factor, factor)
-		}
-	}
-
-	if negativeExponent {
-		one := newFloat().SetInt64(1)
-		result.Quo(one, result)
-	}
-
-	return result
 }
 
 func exponentMagnitude(exponent int64) uint64 {

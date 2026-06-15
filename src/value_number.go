@@ -8,29 +8,151 @@ import (
 	"strings"
 )
 
-const FloatPrecision uint = 2048
+const FloatPrecision uint = 1024
+const MaxDecimalScale = 256
 const DefaultFractionDigits = 32
 
+type NumberKind int
+
+const (
+	NumberSmallInt NumberKind = iota
+	NumberBigInt
+	NumberDecimal
+)
+
+// Number stores one user-visible Stult number.
+//
+// For NumberSmallInt, smallInt stores the whole signed integer value.
+//
+// For NumberBigInt, bigInt stores the whole signed integer value.
+//
+// For NumberDecimal, bigInt stores the signed scaled decimal coefficient and
+// scale stores the number of decimal places:
+//
+//	value = bigInt / 10^scale
+//
+// Decimal values are normalised so that:
+//
+//	0 < scale <= MaxDecimalScale
+//
+// Integer decimal values are collapsed to NumberSmallInt or NumberBigInt.
+// Decimal operations that would produce more than MaxDecimalScale decimal
+// places are rounded to MaxDecimalScale.
 type Number struct {
-	useBig bool
-	small  int64
-	big    *big.Float
+	kind     NumberKind
+	smallInt int64
+	bigInt   *big.Int
+	scale    int
 }
 
+var (
+	bigTen             = big.NewInt(10)
+	bigTwo             = big.NewInt(2)
+	decimalPowersOfTen = buildDecimalPowersOfTen(MaxDecimalScale * 2)
+)
+
 func NewNumberValueFromString(literal string) (Value, error) {
+	number, err := NewNumberFromString(literal)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return NewNumberValueFromNumber(number), nil
+}
+
+func NewNumberFromString(literal string) (*Number, error) {
+	literal = strings.TrimSpace(literal)
+	if literal == "" {
+		return nil, fmt.Errorf("invalid number %q", literal)
+	}
+
 	if isIntegerNumberLiteral(literal) {
-		small, err := strconv.ParseInt(literal, 10, 64)
-		if err == nil {
-			return NewNumberValueFromInt64(small), nil
+		if small, err := strconv.ParseInt(literal, 10, 64); err == nil {
+			return NewSmallNumber(small), nil
+		}
+
+		integer, ok := new(big.Int).SetString(literal, 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid number %q", literal)
+		}
+
+		return NewBigIntNumber(integer), nil
+	}
+
+	return NewDecimalNumberFromLiteral(literal)
+}
+
+func NewDecimalNumberFromLiteral(literal string) (*Number, error) {
+	mantissa := literal
+	exponent := 0
+
+	if index := strings.IndexAny(literal, "eE"); index >= 0 {
+		mantissa = literal[:index]
+
+		parsedExponent, err := strconv.Atoi(literal[index+1:])
+		if err != nil {
+			return nil, fmt.Errorf("invalid number %q", literal)
+		}
+
+		exponent = parsedExponent
+	}
+
+	negative := false
+
+	if strings.HasPrefix(mantissa, "-") {
+		negative = true
+		mantissa = mantissa[1:]
+	} else if strings.HasPrefix(mantissa, "+") {
+		mantissa = mantissa[1:]
+	}
+
+	if mantissa == "" {
+		return nil, fmt.Errorf("invalid number %q", literal)
+	}
+
+	scale := 0
+	digits := mantissa
+
+	if index := strings.Index(mantissa, "."); index >= 0 {
+		whole := mantissa[:index]
+		fraction := mantissa[index+1:]
+
+		scale = len(fraction)
+		digits = whole + fraction
+	}
+
+	if digits == "" {
+		return nil, fmt.Errorf("invalid number %q", literal)
+	}
+
+	for _, digit := range digits {
+		if digit < '0' || digit > '9' {
+			return nil, fmt.Errorf("invalid number %q", literal)
 		}
 	}
 
-	number, _, err := big.ParseFloat(literal, 10, FloatPrecision, big.ToNearestEven)
-	if err != nil {
-		return Value{}, fmt.Errorf("invalid number %q", literal)
+	digits = strings.TrimLeft(digits, "0")
+	if digits == "" {
+		return NewSmallNumber(0), nil
 	}
 
-	return NewBigNumberValue(number), nil
+	coefficient, ok := new(big.Int).SetString(digits, 10)
+	if !ok {
+		return nil, fmt.Errorf("invalid number %q", literal)
+	}
+
+	if negative {
+		coefficient.Neg(coefficient)
+	}
+
+	scale -= exponent
+
+	if scale < 0 {
+		coefficient.Mul(coefficient, powerOfTen(-scale))
+		scale = 0
+	}
+
+	return normaliseCoefficientAndScale(coefficient, scale), nil
 }
 
 func NewNumberValueFromInt(value int) Value {
@@ -42,23 +164,7 @@ func NewNumberValueFromInt64(value int64) Value {
 }
 
 func NewNumberValueFromBigInt(value *big.Int) Value {
-	if value == nil {
-		return NewNumberValueFromInt64(0)
-	}
-
-	if value.IsInt64() {
-		return NewNumberValueFromInt64(value.Int64())
-	}
-
-	precision := FloatPrecision
-	if bitLen := uint(value.BitLen()); bitLen > precision {
-		precision = bitLen
-	}
-
-	number := newFloatWithPrecision(precision)
-	number.SetInt(value)
-
-	return newBigNumberValueFromOwnedFloat(number)
+	return NewNumberValueFromNumber(NewBigIntNumber(value))
 }
 
 func NewNumberValueFromNumber(number *Number) Value {
@@ -78,26 +184,28 @@ func NewBigNumberValue(value *big.Float) Value {
 
 func NewSmallNumber(value int64) *Number {
 	return &Number{
-		useBig: false,
-		small:  value,
-		big:    nil,
+		kind:     NumberSmallInt,
+		smallInt: value,
+	}
+}
+
+func NewBigIntNumber(value *big.Int) *Number {
+	if value == nil || value.Sign() == 0 {
+		return NewSmallNumber(0)
+	}
+
+	if value.IsInt64() {
+		return NewSmallNumber(value.Int64())
+	}
+
+	return &Number{
+		kind:   NumberBigInt,
+		bigInt: new(big.Int).Set(value),
 	}
 }
 
 func NewBigNumber(value *big.Float) *Number {
-	precision := FloatPrecision
-	if value != nil {
-		if p := value.Prec(); p > precision {
-			precision = p
-		}
-	}
-
-	out := newFloatWithPrecision(precision)
-	if value != nil {
-		out.Set(value)
-	}
-
-	return newBigNumberFromOwnedFloat(out)
+	return newDecimalNumberFromBigFloat(value, MaxDecimalScale)
 }
 
 func CloneNumber(number *Number) *Number {
@@ -105,32 +213,22 @@ func CloneNumber(number *Number) *Number {
 		return NewSmallNumber(0)
 	}
 
-	if !number.useBig {
-		return NewSmallNumber(number.small)
-	}
+	switch number.kind {
+	case NumberSmallInt:
+		return NewSmallNumber(number.smallInt)
 
-	return NewBigNumber(number.big)
-}
+	case NumberBigInt:
+		return NewBigIntNumber(number.bigInt)
 
-func newBigNumberValueFromOwnedFloat(value *big.Float) Value {
-	return NewNumberValueFromNumber(newBigNumberFromOwnedFloat(value))
-}
+	case NumberDecimal:
+		return &Number{
+			kind:   NumberDecimal,
+			bigInt: new(big.Int).Set(numberBigInt(number)),
+			scale:  number.scale,
+		}
 
-func newBigNumberFromOwnedFloat(value *big.Float) *Number {
-	if value == nil {
-		value = newFloat()
-	} else if value.Prec() < FloatPrecision {
-		out := newFloat()
-		out.Set(value)
-		value = out
-	} else {
-		value.SetMode(big.ToNearestEven)
-	}
-
-	return &Number{
-		useBig: true,
-		small:  0,
-		big:    value,
+	default:
+		return NewSmallNumber(0)
 	}
 }
 
@@ -147,11 +245,11 @@ func isIntegerNumberLiteral(literal string) bool {
 }
 
 func (number *Number) IsBig() bool {
-	return numberIsBig(number)
+	return number != nil && number.kind != NumberSmallInt
 }
 
 func (number *Number) IsSmall() bool {
-	return numberIsSmall(number)
+	return number == nil || number.kind == NumberSmallInt
 }
 
 func (number *Number) BigFloat() *big.Float {
@@ -167,19 +265,16 @@ func (number *Number) Cmp(other *Number) int {
 }
 
 func (number *Number) Int64() (int64, big.Accuracy) {
-	if number == nil {
-		return 0, big.Exact
+	integer, accuracy := number.Int(nil)
+	if !integer.IsInt64() {
+		if integer.Sign() < 0 {
+			return math.MinInt64, big.Below
+		}
+
+		return math.MaxInt64, big.Above
 	}
 
-	if !number.useBig {
-		return number.small, big.Exact
-	}
-
-	if number.big == nil {
-		return 0, big.Exact
-	}
-
-	return number.big.Int64()
+	return integer.Int64(), accuracy
 }
 
 func (number *Number) Int(out *big.Int) (*big.Int, big.Accuracy) {
@@ -187,19 +282,34 @@ func (number *Number) Int(out *big.Int) (*big.Int, big.Accuracy) {
 		out = new(big.Int)
 	}
 
-	if number == nil {
+	switch {
+	case number == nil:
+		return out.SetInt64(0), big.Exact
+
+	case number.kind == NumberSmallInt:
+		return out.SetInt64(number.smallInt), big.Exact
+
+	case number.kind == NumberBigInt:
+		return out.Set(numberBigInt(number)), big.Exact
+
+	case number.kind == NumberDecimal:
+		remainder := new(big.Int)
+
+		out.QuoRem(numberBigInt(number), powerOfTen(number.scale), remainder)
+
+		if remainder.Sign() == 0 {
+			return out, big.Exact
+		}
+
+		if numberSign(number) < 0 {
+			return out, big.Above
+		}
+
+		return out, big.Below
+
+	default:
 		return out.SetInt64(0), big.Exact
 	}
-
-	if !number.useBig {
-		return out.SetInt64(number.small), big.Exact
-	}
-
-	if number.big == nil {
-		return out.SetInt64(0), big.Exact
-	}
-
-	return number.big.Int(out)
 }
 
 func (number *Number) String() string {
@@ -207,23 +317,37 @@ func (number *Number) String() string {
 }
 
 func (number *Number) Format(fractionDigits int) string {
-	if number == nil {
-		return "0"
-	}
-
-	if !number.useBig {
-		return strconv.FormatInt(number.small, 10)
-	}
-
-	if number.big == nil {
-		return "0"
-	}
-
 	if fractionDigits < 0 {
 		fractionDigits = DefaultFractionDigits
 	}
 
-	return trimDecimalZeros(number.big.Text('f', fractionDigits))
+	if fractionDigits > MaxDecimalScale {
+		fractionDigits = MaxDecimalScale
+	}
+
+	switch {
+	case number == nil:
+		return "0"
+
+	case number.kind == NumberSmallInt:
+		return strconv.FormatInt(number.smallInt, 10)
+
+	case number.kind == NumberBigInt:
+		return numberBigInt(number).String()
+
+	case number.kind == NumberDecimal:
+		coefficient := numberBigInt(number)
+		scale := number.scale
+
+		if scale > fractionDigits {
+			coefficient, scale = roundCoefficientToScale(coefficient, scale, fractionDigits)
+		}
+
+		return trimDecimalZeros(formatCoefficientAndScale(coefficient, scale))
+
+	default:
+		return "0"
+	}
 }
 
 func formatNumber(number *Number, fractionDigits int) string {
@@ -250,75 +374,90 @@ func trimDecimalZeros(text string) string {
 }
 
 func numberNegate(number *Number) *Number {
-	if number == nil {
+	switch {
+	case number == nil:
 		return NewSmallNumber(0)
-	}
 
-	if !number.useBig {
-		if number.small != math.MinInt64 {
-			return NewSmallNumber(-number.small)
+	case number.kind == NumberSmallInt:
+		if number.smallInt != math.MinInt64 {
+			return NewSmallNumber(-number.smallInt)
 		}
 
-		out := newFloatFromInt64(number.small, FloatPrecision)
+		out := big.NewInt(number.smallInt)
 		out.Neg(out)
 
-		return newBigNumberFromOwnedFloat(out)
-	}
+		return NewBigIntNumber(out)
 
-	out := newFloatWithPrecision(numberPrecision(number))
-	if number.big != nil {
-		out.Neg(number.big)
-	}
+	case number.kind == NumberBigInt:
+		out := new(big.Int)
+		out.Neg(numberBigInt(number))
 
-	return newBigNumberFromOwnedFloat(out)
+		return NewBigIntNumber(out)
+
+	case number.kind == NumberDecimal:
+		out := new(big.Int)
+		out.Neg(numberBigInt(number))
+
+		return normaliseCoefficientAndScale(out, number.scale)
+
+	default:
+		return NewSmallNumber(0)
+	}
 }
 
 func numberAdd(left *Number, right *Number) *Number {
-	if numberIsSmall(left) && numberIsSmall(right) {
+	if isSmallPair(left, right) {
 		out, ok := addSmallNumbers(numberSmallValue(left), numberSmallValue(right))
 		if ok {
 			return NewSmallNumber(out)
 		}
 	}
 
-	leftFloat, rightFloat, precision := promoteNumbersToBig(left, right)
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
-	out := newFloatWithPrecision(precision)
-	out.Add(leftFloat, rightFloat)
+	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
 
-	return newBigNumberFromOwnedFloat(out)
+	out := new(big.Int)
+	out.Add(leftCoefficient, rightCoefficient)
+
+	return normaliseCoefficientAndScale(out, scale)
 }
 
 func numberSubtract(left *Number, right *Number) *Number {
-	if numberIsSmall(left) && numberIsSmall(right) {
+	if isSmallPair(left, right) {
 		out, ok := subtractSmallNumbers(numberSmallValue(left), numberSmallValue(right))
 		if ok {
 			return NewSmallNumber(out)
 		}
 	}
 
-	leftFloat, rightFloat, precision := promoteNumbersToBig(left, right)
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
-	out := newFloatWithPrecision(precision)
-	out.Sub(leftFloat, rightFloat)
+	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
 
-	return newBigNumberFromOwnedFloat(out)
+	out := new(big.Int)
+	out.Sub(leftCoefficient, rightCoefficient)
+
+	return normaliseCoefficientAndScale(out, scale)
 }
 
 func numberMultiply(left *Number, right *Number) *Number {
-	if numberIsSmall(left) && numberIsSmall(right) {
+	if isSmallPair(left, right) {
 		out, ok := multiplySmallNumbers(numberSmallValue(left), numberSmallValue(right))
 		if ok {
 			return NewSmallNumber(out)
 		}
 	}
 
-	leftFloat, rightFloat, precision := promoteNumbersToBig(left, right)
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
-	out := newFloatWithPrecision(precision)
-	out.Mul(leftFloat, rightFloat)
+	out := new(big.Int)
+	out.Mul(leftCoefficient, rightCoefficient)
 
-	return newBigNumberFromOwnedFloat(out)
+	return normaliseCoefficientAndScale(out, leftScale+rightScale)
 }
 
 func numberDivide(left *Number, right *Number) (*Number, error) {
@@ -326,56 +465,52 @@ func numberDivide(left *Number, right *Number) (*Number, error) {
 		return nil, fmt.Errorf("division by zero")
 	}
 
-	if numberIsSmall(left) && numberIsSmall(right) {
-		leftFloat := newFloatFromInt64(numberSmallValue(left), FloatPrecision)
-		rightFloat := newFloatFromInt64(numberSmallValue(right), FloatPrecision)
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
-		out := newFloat()
-		out.Quo(leftFloat, rightFloat)
+	numerator := leftCoefficient
+	numerator.Mul(numerator, powerOfTen(rightScale+MaxDecimalScale))
 
-		return newBigNumberFromOwnedFloat(out), nil
-	}
+	denominator := rightCoefficient
+	denominator.Mul(denominator, powerOfTen(leftScale))
 
-	leftFloat, rightFloat, precision := promoteNumbersToBig(left, right)
+	coefficient := roundedQuotient(numerator, denominator)
 
-	out := newFloatWithPrecision(precision)
-	out.Quo(leftFloat, rightFloat)
-
-	return newBigNumberFromOwnedFloat(out), nil
+	return normaliseCoefficientAndScale(coefficient, MaxDecimalScale), nil
 }
 
 func numberCompare(left *Number, right *Number) int {
-	if numberIsSmall(left) && numberIsSmall(right) {
+	if isSmallPair(left, right) {
 		return compareInt64(numberSmallValue(left), numberSmallValue(right))
 	}
 
-	if numberIsBig(left) && numberIsBig(right) {
-		return numberBigFloatReference(left).Cmp(numberBigFloatReference(right))
-	}
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
-	leftFloat, rightFloat, _ := promoteNumbersToBig(left, right)
+	leftCoefficient, rightCoefficient, _ = alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
 
-	return leftFloat.Cmp(rightFloat)
+	return leftCoefficient.Cmp(rightCoefficient)
 }
 
 func numberSign(number *Number) int {
-	if number == nil {
+	switch {
+	case number == nil:
+		return 0
+
+	case number.kind == NumberSmallInt:
+		return compareInt64(number.smallInt, 0)
+
+	case number.kind == NumberBigInt,
+		number.kind == NumberDecimal:
+		return numberBigInt(number).Sign()
+
+	default:
 		return 0
 	}
-
-	if !number.useBig {
-		return compareInt64(number.small, 0)
-	}
-
-	if number.big == nil {
-		return 0
-	}
-
-	return number.big.Sign()
 }
 
 func numberToBigFloat(number *Number) *big.Float {
-	return numberToBigFloatWithPrecision(number, numberPrecision(number))
+	return numberToBigFloatWithPrecision(number, FloatPrecision)
 }
 
 func numberToBigFloatWithPrecision(number *Number, precision uint) *big.Float {
@@ -385,102 +520,275 @@ func numberToBigFloatWithPrecision(number *Number, precision uint) *big.Float {
 
 	out := newFloatWithPrecision(precision)
 
-	if number == nil {
+	switch {
+	case number == nil:
+		return out
+
+	case number.kind == NumberSmallInt:
+		out.SetInt64(number.smallInt)
+		return out
+
+	case number.kind == NumberBigInt:
+		out.SetInt(numberBigInt(number))
+		return out
+
+	case number.kind == NumberDecimal:
+		out.SetInt(numberBigInt(number))
+
+		divisor := newFloatWithPrecision(precision)
+		divisor.SetInt(powerOfTen(number.scale))
+
+		out.Quo(out, divisor)
+
+		return out
+
+	default:
 		return out
 	}
+}
 
-	if !number.useBig {
-		out.SetInt64(number.small)
-		return out
+func newDecimalNumberFromBigFloat(value *big.Float, scale int) *Number {
+	if value == nil || value.Sign() == 0 {
+		return NewSmallNumber(0)
 	}
 
-	if number.big != nil {
-		out.Set(number.big)
+	if scale < 0 {
+		scale = 0
+	}
+
+	if scale > MaxDecimalScale {
+		scale = MaxDecimalScale
+	}
+
+	precision := FloatPrecision
+	if valuePrecision := value.Prec(); valuePrecision > precision {
+		precision = valuePrecision
+	}
+
+	precision += uint(scale*4 + 16)
+
+	scaled := newFloatWithPrecision(precision)
+	scaled.Set(value)
+
+	multiplier := newFloatWithPrecision(precision)
+	multiplier.SetInt(powerOfTen(scale))
+
+	scaled.Mul(scaled, multiplier)
+
+	half := newFloatWithPrecision(precision)
+	half.SetFloat64(0.5)
+
+	if scaled.Sign() >= 0 {
+		scaled.Add(scaled, half)
+	} else {
+		scaled.Sub(scaled, half)
+	}
+
+	coefficient, _ := scaled.Int(nil)
+
+	return normaliseCoefficientAndScale(coefficient, scale)
+}
+
+func normaliseCoefficientAndScale(coefficient *big.Int, scale int) *Number {
+	if coefficient == nil || coefficient.Sign() == 0 {
+		return NewSmallNumber(0)
+	}
+
+	if scale < 0 {
+		coefficient.Mul(coefficient, powerOfTen(-scale))
+		scale = 0
+	}
+
+	if scale > MaxDecimalScale {
+		coefficient, scale = roundCoefficientToScale(coefficient, scale, MaxDecimalScale)
+	}
+
+	coefficient, scale = trimDecimalTrailingZeros(coefficient, scale)
+
+	if coefficient.Sign() == 0 {
+		return NewSmallNumber(0)
+	}
+
+	if scale == 0 {
+		return NewBigIntNumber(coefficient)
+	}
+
+	return &Number{
+		kind:   NumberDecimal,
+		bigInt: coefficient,
+		scale:  scale,
+	}
+}
+
+func numberCoefficientAndScale(number *Number) (*big.Int, int) {
+	switch {
+	case number == nil:
+		return new(big.Int), 0
+
+	case number.kind == NumberSmallInt:
+		return big.NewInt(number.smallInt), 0
+
+	case number.kind == NumberBigInt:
+		return new(big.Int).Set(numberBigInt(number)), 0
+
+	case number.kind == NumberDecimal:
+		return new(big.Int).Set(numberBigInt(number)), number.scale
+
+	default:
+		return new(big.Int), 0
+	}
+}
+
+func alignCoefficients(left *big.Int, leftScale int, right *big.Int, rightScale int) (*big.Int, *big.Int, int) {
+	if leftScale == rightScale {
+		return left, right, leftScale
+	}
+
+	if leftScale < rightScale {
+		left.Mul(left, powerOfTen(rightScale-leftScale))
+		return left, right, rightScale
+	}
+
+	right.Mul(right, powerOfTen(leftScale-rightScale))
+
+	return left, right, leftScale
+}
+
+func roundCoefficientToScale(coefficient *big.Int, scale int, targetScale int) (*big.Int, int) {
+	if targetScale < 0 {
+		targetScale = 0
+	}
+
+	if scale <= targetScale {
+		return coefficient, scale
+	}
+
+	divisor := powerOfTen(scale - targetScale)
+
+	return roundedQuotient(coefficient, divisor), targetScale
+}
+
+func roundedQuotient(numerator *big.Int, denominator *big.Int) *big.Int {
+	if denominator.Sign() == 0 {
+		return new(big.Int)
+	}
+
+	sign := numerator.Sign() * denominator.Sign()
+
+	absoluteNumerator := new(big.Int)
+	absoluteNumerator.Abs(numerator)
+
+	absoluteDenominator := new(big.Int)
+	absoluteDenominator.Abs(denominator)
+
+	quotient := new(big.Int)
+	remainder := new(big.Int)
+
+	quotient.QuoRem(absoluteNumerator, absoluteDenominator, remainder)
+
+	remainder.Mul(remainder, bigTwo)
+
+	if remainder.Cmp(absoluteDenominator) >= 0 {
+		quotient.Add(quotient, big.NewInt(1))
+	}
+
+	if sign < 0 {
+		quotient.Neg(quotient)
+	}
+
+	return quotient
+}
+
+func trimDecimalTrailingZeros(coefficient *big.Int, scale int) (*big.Int, int) {
+	if coefficient == nil || coefficient.Sign() == 0 {
+		return new(big.Int), 0
+	}
+
+	quotient := new(big.Int)
+	remainder := new(big.Int)
+
+	for scale > 0 {
+		quotient.QuoRem(coefficient, bigTen, remainder)
+		if remainder.Sign() != 0 {
+			break
+		}
+
+		coefficient.Set(quotient)
+		scale--
+	}
+
+	return coefficient, scale
+}
+
+func formatCoefficientAndScale(coefficient *big.Int, scale int) string {
+	if coefficient == nil || coefficient.Sign() == 0 {
+		return "0"
+	}
+
+	if scale <= 0 {
+		return coefficient.String()
+	}
+
+	negative := coefficient.Sign() < 0
+
+	digits := new(big.Int)
+	digits.Abs(coefficient)
+
+	text := digits.String()
+
+	if len(text) <= scale {
+		text = strings.Repeat("0", scale-len(text)+1) + text
+	}
+
+	pointIndex := len(text) - scale
+
+	out := text[:pointIndex] + "." + text[pointIndex:]
+	if negative {
+		out = "-" + out
 	}
 
 	return out
 }
 
-func promoteNumbersToBig(left *Number, right *Number) (*big.Float, *big.Float, uint) {
-	precision := numberPairPrecision(left, right)
+func numberBigInt(number *Number) *big.Int {
+	if number == nil || number.bigInt == nil {
+		return new(big.Int)
+	}
 
-	leftFloat := promoteNumberToBigWithPrecision(left, precision)
-	rightFloat := promoteNumberToBigWithPrecision(right, precision)
-
-	return leftFloat, rightFloat, precision
+	return number.bigInt
 }
 
-func promoteNumberToBigWithPrecision(number *Number, precision uint) *big.Float {
-	if precision < FloatPrecision {
-		precision = FloatPrecision
+func powerOfTen(exponent int) *big.Int {
+	if exponent <= 0 {
+		return decimalPowersOfTen[0]
 	}
 
-	if number == nil {
-		return newFloatWithPrecision(precision)
+	if exponent < len(decimalPowersOfTen) {
+		return decimalPowersOfTen[exponent]
 	}
 
-	if number.useBig {
-		if number.big == nil {
-			number.big = newFloatWithPrecision(precision)
-		}
-
-		return number.big
-	}
-
-	number.useBig = true
-	number.big = newFloatFromInt64(number.small, precision)
-	number.small = 0
-
-	return number.big
+	return new(big.Int).Exp(bigTen, big.NewInt(int64(exponent)), nil)
 }
 
-func numberBigFloatReference(number *Number) *big.Float {
-	if number == nil {
-		return newFloat()
+func buildDecimalPowersOfTen(maxExponent int) []*big.Int {
+	powers := make([]*big.Int, maxExponent+1)
+
+	powers[0] = big.NewInt(1)
+
+	for exponent := 1; exponent <= maxExponent; exponent++ {
+		powers[exponent] = new(big.Int)
+		powers[exponent].Mul(powers[exponent-1], bigTen)
 	}
 
-	if !number.useBig {
-		return promoteNumberToBigWithPrecision(number, FloatPrecision)
-	}
-
-	if number.big == nil {
-		number.big = newFloatWithPrecision(numberPrecision(number))
-	}
-
-	return number.big
+	return powers
 }
 
-func numberPairPrecision(left *Number, right *Number) uint {
-	leftPrecision := numberPrecision(left)
-	rightPrecision := numberPrecision(right)
-
-	if leftPrecision > rightPrecision {
-		return leftPrecision
-	}
-
-	return rightPrecision
-}
-
-func numberPrecision(number *Number) uint {
-	if number == nil {
-		return FloatPrecision
-	}
-
-	if number.useBig && number.big != nil {
-		if precision := number.big.Prec(); precision > FloatPrecision {
-			return precision
-		}
-	}
-
-	return FloatPrecision
-}
-
-func numberIsBig(number *Number) bool {
-	return number != nil && number.useBig
+func isSmallPair(left *Number, right *Number) bool {
+	return numberIsSmall(left) && numberIsSmall(right)
 }
 
 func numberIsSmall(number *Number) bool {
-	return number == nil || !number.useBig
+	return number == nil || number.kind == NumberSmallInt
 }
 
 func numberSmallValue(number *Number) int64 {
@@ -488,18 +796,7 @@ func numberSmallValue(number *Number) int64 {
 		return 0
 	}
 
-	return number.small
-}
-
-func newFloatFromInt64(value int64, precision uint) *big.Float {
-	if precision < FloatPrecision {
-		precision = FloatPrecision
-	}
-
-	out := newFloatWithPrecision(precision)
-	out.SetInt64(value)
-
-	return out
+	return number.smallInt
 }
 
 func compareInt64(left int64, right int64) int {
