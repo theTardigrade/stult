@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: tests/huge_number.stult
+EXAMPLE: tests/huge_numbers.stult
 
 This test exercises Stult's large-number behaviour.
 
