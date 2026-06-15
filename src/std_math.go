@@ -651,33 +651,6 @@ func stdMathPowerByInteger(base *Number, exponent int64) (*Number, error) {
 	return numberDivide(NewSmallNumber(1), result)
 }
 
-func truncFloatWithPrecision(value *big.Float, precision uint) *big.Float {
-	integer, _ := value.Int(nil)
-	return newFloatWithPrecision(precision).SetInt(integer)
-}
-
-func floorFloatWithPrecision(value *big.Float, precision uint) *big.Float {
-	integer, _ := value.Int(nil)
-	truncated := newFloatWithPrecision(precision).SetInt(integer)
-
-	if truncated.Cmp(value) > 0 {
-		integer.Sub(integer, big.NewInt(1))
-	}
-
-	return newFloatWithPrecision(precision).SetInt(integer)
-}
-
-func ceilFloatWithPrecision(value *big.Float, precision uint) *big.Float {
-	integer, _ := value.Int(nil)
-	truncated := newFloatWithPrecision(precision).SetInt(integer)
-
-	if truncated.Cmp(value) < 0 {
-		integer.Add(integer, big.NewInt(1))
-	}
-
-	return newFloatWithPrecision(precision).SetInt(integer)
-}
-
 func exponentMagnitude(exponent int64) uint64 {
 	if exponent >= 0 {
 		return uint64(exponent)
