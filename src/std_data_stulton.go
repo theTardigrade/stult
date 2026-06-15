@@ -214,7 +214,7 @@ func stdDataStultonFormatValue(value Value, indent int) (string, error) {
 			return "", fmt.Errorf("DATA.STULTON.NEW cannot encode invalid number")
 		}
 
-		return formatNumber(value.Number, DefaultDecimalDigitsToDisplay), nil
+		return value.Number.Format(MaxDecimalPlaces), nil
 
 	case ValueString:
 		if value.Text == nil {
