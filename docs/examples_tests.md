@@ -14,6 +14,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Grouped expressions](#grouped-expressions)
 * [Literal parsing](#literal-parsing)
 * [Numbers](#numbers)
+* [Mathematics](#mathematics)
 * [Standard library](#standard-library)
 
 ## Collection behaviour
@@ -53,6 +54,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Number formatting](../examples/tests/number_formatting.stult)  
   Checks fixed decimal formatting with requested decimal places and scientific-notation formatting with requested significant digits.
+
+## Mathematics
+
+- [Modulo versus remainder](../examples/tests/modulo_and_remainder.stult)
+  Checks the difference between mathematical modulo and truncating remainder, including negative operands.
 
 ## Standard library
 

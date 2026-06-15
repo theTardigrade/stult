@@ -51,6 +51,7 @@ func NewStdMathMap() Value {
 		"MOD":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMod)),
 		"PI":     NewImmutableBinding(pi),
 		"POWER":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathPower)),
+		"REM":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathRem)),
 		"ROUND":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathRound)),
 		"SIGN":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSign)),
 		"SQRT":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSqrt)),
@@ -495,6 +496,51 @@ func builtinStdMathMod(_ *RuntimeContext, args []Value) (Value, error) {
 	}
 
 	return NewNumberValueFromNumber(out), nil
+}
+
+func builtinStdMathRem(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Value{}, fmt.Errorf("MATH.REM expected 2 arguments, got %d", len(args))
+	}
+
+	left, err := stdMathNumberArg("MATH.REM", args[0], 1)
+	if err != nil {
+		return Value{}, err
+	}
+
+	right, err := stdMathNumberArg("MATH.REM", args[1], 2)
+	if err != nil {
+		return Value{}, err
+	}
+
+	out, err := stdMathRemNumbers(left.Number, right.Number)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return NewNumberValueFromNumber(out), nil
+}
+
+func stdMathRemNumbers(left *Number, right *Number) (*Number, error) {
+	if numberSign(right) == 0 {
+		return nil, fmt.Errorf("MATH.REM divisor cannot be zero")
+	}
+
+	leftCoefficient, leftScale := numberCoefficientAndScale(left)
+	rightCoefficient, rightScale := numberCoefficientAndScale(right)
+
+	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
+
+	quotient := new(big.Int)
+	quotient.Quo(leftCoefficient, rightCoefficient)
+
+	multiple := new(big.Int)
+	multiple.Mul(quotient, rightCoefficient)
+
+	remainder := new(big.Int)
+	remainder.Sub(leftCoefficient, multiple)
+
+	return normaliseCoefficientAndScale(remainder, scale), nil
 }
 
 func stdMathOneNumber(name string, args []Value) (Value, error) {

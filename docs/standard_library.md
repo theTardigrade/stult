@@ -758,13 +758,29 @@ Negative bases with non-integer exponents are not allowed.
 
 ### `STD["MATH"]["MOD"](left, right)`
 
-Returns the modulo remainder.
+Returns the mathematical modulo.
 
 ```stult
 STD["MATH"]["MOD"](10, 3)
+STD["MATH"]["MOD"](-10, 3)
 ```
 
 The divisor cannot be zero.
+
+For a positive divisor, the result is greater than or equal to zero and less than the divisor.
+
+### `STD["MATH"]["REM"](left, right)`
+
+Returns the truncating remainder.
+
+```stult
+STD["MATH"]["REM"](10, 3)
+STD["MATH"]["REM"](-10, 3)
+```
+
+The divisor cannot be zero.
+
+The result follows the sign of the dividend, or is zero. This matches the remainder behaviour of the `%` operator in C-family programming languages.
 
 ## `STD["MATH"]["TRIG"]`
 

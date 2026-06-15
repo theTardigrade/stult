@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: animated_sine_wave/main.stult
+EXAMPLE: projects/animated_sine_wave/main.stult
 
 This code animates an ASCII sine wave by drawing frames according to
 real elapsed time and sleeping only for the remaining frame budget.

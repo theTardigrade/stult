@@ -8,6 +8,11 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Added `STD["MATH"]["REM"]` for truncating remainder arithmetic.
+* Clarified the difference between mathematical modulo and truncating remainder in the standard-library documentation.
+
 ### v0.6.0
 
 * Reworked number handling so whole-number values are theoretically unbounded, subject to available memory and processing time.

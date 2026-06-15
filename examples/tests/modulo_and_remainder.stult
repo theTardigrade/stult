@@ -1,0 +1,61 @@
+##
+
+EXAMPLE: tests/modulo_and_remainder.stult
+
+This example checks the difference between mathematical modulo and truncating
+remainder.
+
+MOD follows the divisor's sign, while REM follows the dividend's sign.
+
+##
+
+ASSERT : STD["ASSERT"]
+MATH : STD["MATH"]
+
+ASSERT["EQUAL"](
+	MATH["MOD"](10, 3)
+	MATH["REM"](10, 3)
+	"MOD and REM should match for positive operands"
+)
+
+ASSERT["EQUAL"](
+	MATH["MOD"](-10, 3)
+	2
+	"MOD should wrap a negative dividend into the positive divisor range"
+)
+
+ASSERT["EQUAL"](
+	MATH["REM"](-10, 3)
+	-1
+	"REM should follow the sign of a negative dividend"
+)
+
+ASSERT["EQUAL"](
+	MATH["MOD"](10, -3)
+	-2
+	"MOD should follow the sign of a negative divisor"
+)
+
+ASSERT["EQUAL"](
+	MATH["REM"](10, -3)
+	1
+	"REM should follow the sign of a positive dividend"
+)
+
+ASSERT["EQUAL"](
+	MATH["MOD"](-10, -3)
+	MATH["REM"](-10, -3)
+	"MOD and REM should match when both operands are negative"
+)
+
+ASSERT["EQUAL"](
+	MATH["REM"](10.5, 3)
+	1.5
+	"REM should support decimal dividends"
+)
+
+ASSERT["EQUAL"](
+	MATH["REM"](-10.5, 3)
+	-1.5
+	"REM should truncate decimal division toward zero"
+)
