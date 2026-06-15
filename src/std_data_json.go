@@ -210,5 +210,5 @@ func stdJSONNumberString(value Value) string {
 		return "0"
 	}
 
-	return number.Format(MaxDecimalScale)
+	return number.Format(MaxDecimalPlaces)
 }

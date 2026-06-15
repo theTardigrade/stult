@@ -9,7 +9,7 @@ import (
 )
 
 const FloatPrecision uint = 1024
-const MaxDecimalScale = 256
+const MaxDecimalPlaces = 256
 const DefaultDecimalDigitsToDisplay = 32
 
 type NumberKind int
@@ -48,7 +48,7 @@ type Number struct {
 var (
 	bigTen             = big.NewInt(10)
 	bigTwo             = big.NewInt(2)
-	decimalPowersOfTen = buildDecimalPowersOfTen(MaxDecimalScale * 2)
+	decimalPowersOfTen = buildDecimalPowersOfTen(MaxDecimalPlaces * 2)
 )
 
 func NewNumberValueFromString(literal string) (Value, error) {
@@ -205,7 +205,7 @@ func NewBigIntNumber(value *big.Int) *Number {
 }
 
 func NewBigNumber(value *big.Float) *Number {
-	return newDecimalNumberFromBigFloat(value, MaxDecimalScale)
+	return newDecimalNumberFromBigFloat(value, MaxDecimalPlaces)
 }
 
 func CloneNumber(number *Number) *Number {
@@ -321,8 +321,8 @@ func (number *Number) Format(fractionDigits int) string {
 		fractionDigits = DefaultDecimalDigitsToDisplay
 	}
 
-	if fractionDigits > MaxDecimalScale {
-		fractionDigits = MaxDecimalScale
+	if fractionDigits > MaxDecimalPlaces {
+		fractionDigits = MaxDecimalPlaces
 	}
 
 	switch {
@@ -363,8 +363,8 @@ func (number *Number) FormatScientific(significantDigits int) string {
 		significantDigits = 1
 	}
 
-	if significantDigits > MaxDecimalScale {
-		significantDigits = MaxDecimalScale
+	if significantDigits > MaxDecimalPlaces {
+		significantDigits = MaxDecimalPlaces
 	}
 
 	coefficient, scale := numberCoefficientAndScale(number)
@@ -513,14 +513,14 @@ func numberDivide(left *Number, right *Number) (*Number, error) {
 	rightCoefficient, rightScale := numberCoefficientAndScale(right)
 
 	numerator := leftCoefficient
-	numerator.Mul(numerator, powerOfTen(rightScale+MaxDecimalScale))
+	numerator.Mul(numerator, powerOfTen(rightScale+MaxDecimalPlaces))
 
 	denominator := rightCoefficient
 	denominator.Mul(denominator, powerOfTen(leftScale))
 
 	coefficient := roundedQuotient(numerator, denominator)
 
-	return normaliseCoefficientAndScale(coefficient, MaxDecimalScale), nil
+	return normaliseCoefficientAndScale(coefficient, MaxDecimalPlaces), nil
 }
 
 func numberCompare(left *Number, right *Number) int {
@@ -600,8 +600,8 @@ func newDecimalNumberFromBigFloat(value *big.Float, scale int) *Number {
 		scale = 0
 	}
 
-	if scale > MaxDecimalScale {
-		scale = MaxDecimalScale
+	if scale > MaxDecimalPlaces {
+		scale = MaxDecimalPlaces
 	}
 
 	precision := FloatPrecision
@@ -643,8 +643,8 @@ func normaliseCoefficientAndScale(coefficient *big.Int, scale int) *Number {
 		scale = 0
 	}
 
-	if scale > MaxDecimalScale {
-		coefficient, scale = roundCoefficientToScale(coefficient, scale, MaxDecimalScale)
+	if scale > MaxDecimalPlaces {
+		coefficient, scale = roundCoefficientToScale(coefficient, scale, MaxDecimalPlaces)
 	}
 
 	coefficient, scale = trimDecimalTrailingZeros(coefficient, scale)

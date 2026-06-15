@@ -15,7 +15,7 @@ func TestHugeIntegerAddition(t *testing.T) {
 
 	out := numberAdd(left, NewSmallNumber(1))
 
-	got := out.Format(MaxDecimalScale)
+	got := out.Format(MaxDecimalPlaces)
 	want := huge[:len(huge)-1] + "1"
 
 	if got != want {
@@ -38,7 +38,7 @@ func TestHugeIntegerWithDecimalAddition(t *testing.T) {
 
 	out := numberAdd(left, right)
 
-	got := out.Format(MaxDecimalScale)
+	got := out.Format(MaxDecimalPlaces)
 	want := "1" + strings.Repeat("0", 800)
 
 	if got != want {
@@ -55,15 +55,15 @@ func TestDivisionRoundsToMaxDecimalScale(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := out.Format(MaxDecimalScale)
+	got := out.Format(MaxDecimalPlaces)
 
 	if !strings.HasPrefix(got, "0.") {
 		t.Fatalf("got %q, want decimal beginning with 0.", got)
 	}
 
 	fraction := strings.TrimPrefix(got, "0.")
-	if len(fraction) != MaxDecimalScale {
-		t.Fatalf("got %d decimal places, want %d", len(fraction), MaxDecimalScale)
+	if len(fraction) != MaxDecimalPlaces {
+		t.Fatalf("got %d decimal places, want %d", len(fraction), MaxDecimalPlaces)
 	}
 
 	for _, digit := range fraction {
@@ -89,12 +89,12 @@ func TestMultiplicationRoundsToMaxDecimalScale(t *testing.T) {
 
 	out := numberMultiply(left, right)
 
-	got := out.Format(MaxDecimalScale)
+	got := out.Format(MaxDecimalPlaces)
 
 	if strings.Contains(got, ".") {
 		fraction := strings.SplitN(got, ".", 2)[1]
-		if len(fraction) > MaxDecimalScale {
-			t.Fatalf("got %d decimal places, want at most %d", len(fraction), MaxDecimalScale)
+		if len(fraction) > MaxDecimalPlaces {
+			t.Fatalf("got %d decimal places, want at most %d", len(fraction), MaxDecimalPlaces)
 		}
 	}
 }
@@ -113,6 +113,6 @@ func TestHugeDecimalComparisonPreservesWholePart(t *testing.T) {
 	}
 
 	if numberCompare(left, right) <= 0 {
-		t.Fatalf("expected %s to be greater than %s", left.Format(MaxDecimalScale), right.Format(MaxDecimalScale))
+		t.Fatalf("expected %s to be greater than %s", left.Format(MaxDecimalPlaces), right.Format(MaxDecimalPlaces))
 	}
 }

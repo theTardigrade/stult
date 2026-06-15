@@ -2,19 +2,16 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 	"strings"
 )
 
 func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
-		"FORMAT":            NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormat)),
-		"FORMAT_SCIENTIFIC": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormatScientific)),
-		"FRACTION_DIGITS":   NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalDigitsToDisplay)),
-		"MAX_SAFE_INTEGER":  NewImmutableBinding(NewNumberValueFromBigInt(maxSafeIntegerBigInt())),
-		"MIN_SAFE_INTEGER":  NewImmutableBinding(NewNumberValueFromBigInt(minSafeIntegerBigInt())),
-		"NEW":               NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
-		"PRECISION":         NewImmutableBinding(NewNumberValueFromInt(int(FloatPrecision))),
+		"DEFAULT_DECIMAL_PLACES": NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalDigitsToDisplay)),
+		"FORMAT":                 NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormat)),
+		"FORMAT_SCIENTIFIC":      NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormatScientific)),
+		"MAX_DECIMAL_PLACES":     NewImmutableBinding(NewNumberValueFromInt(MaxDecimalPlaces)),
+		"NEW":                    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
 	}
 
 	return NewMapValue(entries, true)
@@ -35,8 +32,8 @@ func StdTypeNumberFormat(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if decimalPlaces < 0 || decimalPlaces > MaxDecimalScale {
-		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT decimal places must be between 0 and %d", MaxDecimalScale)
+	if decimalPlaces < 0 || decimalPlaces > MaxDecimalPlaces {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT decimal places must be between 0 and %d", MaxDecimalPlaces)
 	}
 
 	return NewStringValue(value.Number.Format(int(decimalPlaces))), nil
@@ -57,8 +54,8 @@ func StdTypeNumberFormatScientific(_ *RuntimeContext, args []Value) (Value, erro
 		return Value{}, err
 	}
 
-	if significantDigits < 1 || significantDigits > MaxDecimalScale {
-		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT_SCIENTIFIC significant digits must be between 1 and %d", MaxDecimalScale)
+	if significantDigits < 1 || significantDigits > MaxDecimalPlaces {
+		return Value{}, fmt.Errorf("TYPE.NUMBER.FORMAT_SCIENTIFIC significant digits must be between 1 and %d", MaxDecimalPlaces)
 	}
 
 	return NewStringValue(value.Number.FormatScientific(int(significantDigits))), nil
@@ -109,20 +106,4 @@ func StdTypeNumberNew(_ *RuntimeContext, args []Value) (Value, error) {
 	default:
 		return Value{}, fmt.Errorf("TYPE.NUMBER.NEW cannot convert unknown value kind")
 	}
-}
-
-func maxSafeIntegerBigInt() *big.Int {
-	one := big.NewInt(1)
-
-	max := new(big.Int).Lsh(one, FloatPrecision)
-	max.Sub(max, one)
-
-	return max
-}
-
-func minSafeIntegerBigInt() *big.Int {
-	min := maxSafeIntegerBigInt()
-	min.Neg(min)
-
-	return min
 }
