@@ -3,7 +3,7 @@ package main
 import "strconv"
 
 func (v Value) String() string {
-	return v.Format(DefaultFractionDigits)
+	return v.Format(DefaultDecimalDigitsToDisplay)
 }
 
 func (v Value) PrintString() string {
@@ -61,7 +61,7 @@ func (v Value) DebugString() string {
 		return "_"
 
 	case ValueNumber:
-		return formatNumber(v.Number, DefaultFractionDigits)
+		return formatNumber(v.Number, DefaultDecimalDigitsToDisplay)
 
 	case ValueBool:
 		return v.String()
@@ -70,10 +70,10 @@ func (v Value) DebugString() string {
 		return strconv.Quote(v.Text.String())
 
 	case ValueMap:
-		return formatMap(v.Map, DefaultFractionDigits)
+		return formatMap(v.Map, DefaultDecimalDigitsToDisplay)
 
 	case ValueArray:
-		return formatArray(v.Array, DefaultFractionDigits)
+		return formatArray(v.Array, DefaultDecimalDigitsToDisplay)
 
 	case ValueFunction:
 		return "<function>"

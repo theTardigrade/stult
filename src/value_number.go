@@ -10,7 +10,7 @@ import (
 
 const FloatPrecision uint = 1024
 const MaxDecimalScale = 256
-const DefaultFractionDigits = 32
+const DefaultDecimalDigitsToDisplay = 32
 
 type NumberKind int
 
@@ -313,12 +313,12 @@ func (number *Number) Int(out *big.Int) (*big.Int, big.Accuracy) {
 }
 
 func (number *Number) String() string {
-	return number.Format(DefaultFractionDigits)
+	return number.Format(DefaultDecimalDigitsToDisplay)
 }
 
 func (number *Number) Format(fractionDigits int) string {
 	if fractionDigits < 0 {
-		fractionDigits = DefaultFractionDigits
+		fractionDigits = DefaultDecimalDigitsToDisplay
 	}
 
 	if fractionDigits > MaxDecimalScale {

@@ -8,7 +8,7 @@ import (
 
 func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
-		"FRACTION_DIGITS":  NewImmutableBinding(NewNumberValueFromInt(DefaultFractionDigits)),
+		"FRACTION_DIGITS":  NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalDigitsToDisplay)),
 		"MAX_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(maxSafeIntegerBigInt())),
 		"MIN_SAFE_INTEGER": NewImmutableBinding(NewNumberValueFromBigInt(minSafeIntegerBigInt())),
 		"NEW":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
