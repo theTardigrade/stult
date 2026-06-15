@@ -590,9 +590,19 @@ outer writes
 
 ### Number values
 
-Numbers have one user-visible type, but the implementation may store them internally as either small integer values, where doing so would be appropriate, or high-precision floating-point values. This is an implementation detail: Stult programs still see a single number type.
+Stult has one user-visible number type.
 
-The runtime may promote an internal small-integer number to the full high-precision representation when it interacts with a high-precision number or when an operation cannot be represented as a small integer.
+Internally, number values may be represented as small integers, arbitrary-size integers or scaled decimals. This is an implementation detail: Stult programs still see a single number type.
+
+For scaled decimals, Stult stores a signed whole-number coefficient plus a decimal scale. The value is the coefficient divided by ten to the power of that scale.
+
+Whole-number values are theoretically unbounded, subject to available memory and processing time. Digits after the decimal point are bounded and rounded to a maximum number of decimal places.
+
+The maximum decimal-place limit controls the number of digits after the decimal point, not the total number of digits in the number. Ordinary display uses fewer decimal places by default, but standard-library formatting helpers can request more, up to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+
+Exact arithmetic and comparison should use the integer or scaled-decimal representation directly where possible. This includes ordinary arithmetic, exact integer operations, fixed decimal formatting and exact serialisation.
+
+Approximate mathematical operations, such as square roots, non-integer powers, interpolation constants and trigonometric functions, may use high-precision floating-point working values internally.
 
 ### Immutability versus freezing
 

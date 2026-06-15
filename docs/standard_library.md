@@ -103,10 +103,10 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["BOOL"]["FALSE"]`](#stdtypeboolfalse)
     - [`STD["TYPE"]["BOOL"]["NEW"](value)`](#stdtypeboolnewvalue)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
-    - [`STD["TYPE"]["NUMBER"]["PRECISION"]`](#stdtypenumberprecision)
-    - [`STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]`](#stdtypenumberfraction_digits)
-    - [`STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`](#stdtypenumbermax_safe_integer)
-    - [`STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]`](#stdtypenumbermin_safe_integer)
+    - [`STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`](#stdtypenumberdefault_decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`](#stdtypenumberformatnumber-decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"](number, significant_digits)`](#stdtypenumberformat_scientificnumber-significant_digits)
     - [`STD["TYPE"]["NUMBER"]["NEW"](value)`](#stdtypenumbernewvalue)
   - [`STD["TYPE"]["STRING"]`](#stdtypestring)
     - [`STD["TYPE"]["STRING"]["NEW"](value)`](#stdtypestringnewvalue)
@@ -883,43 +883,60 @@ String conversion ignores surrounding whitespace and case.
 
 ## `STD["TYPE"]["NUMBER"]`
 
-Number constants and conversion helpers.
+Number constants, formatting helpers and conversion helpers.
 
-### `STD["TYPE"]["NUMBER"]["PRECISION"]`
+### `STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`
 
-The default high-precision number precision, measured in bits.
-
-```stult
-STD["TYPE"]["NUMBER"]["PRECISION"]
-```
-
-### `STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]`
-
-The default number of fractional digits used by ordinary number formatting.
+The number of decimal places used by ordinary number display.
 
 ```stult
-STD["TYPE"]["NUMBER"]["FRACTION_DIGITS"]
+STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]
 ```
 
-### `STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`
+This controls display only. It does not limit how many decimal places Stult can store internally.
 
-The largest positive integer for which all integer values from `0` through that value are exactly representable at Stult's default high-precision number precision.
+### `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`
+
+The maximum number of digits Stult stores after the decimal point.
 
 ```stult
-STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]
+STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]
 ```
 
-This is a safe-integer bound, not the maximum numeric magnitude Stult can represent.
+This limit applies to the decimal part of a number, not to the whole-number part. Whole-number values are theoretically unbounded, subject to available memory and processing time.
 
-### `STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]`
+### `STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`
 
-The negative counterpart of `STD["TYPE"]["NUMBER"]["MAX_SAFE_INTEGER"]`.
+Formats `number` as a fixed decimal string.
 
 ```stult
-STD["TYPE"]["NUMBER"]["MIN_SAFE_INTEGER"]
+NUMBER : STD["TYPE"]["NUMBER"]
+
+NUMBER["FORMAT"](1 / 3, 32)
+# "0.33333333333333333333333333333333"
+
+NUMBER["FORMAT"](10, 256)
+# "10"
 ```
 
-This is a safe-integer bound, not the minimum numeric magnitude Stult can represent.
+`decimal_places` must be an integer from `0` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+
+The result uses up to the requested number of decimal places and trims trailing zeroes.
+
+### `STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"](number, significant_digits)`
+
+Formats `number` as a scientific-notation string.
+
+```stult
+NUMBER : STD["TYPE"]["NUMBER"]
+
+NUMBER["FORMAT_SCIENTIFIC"](12345, 3)
+# "1.23e+4"
+```
+
+`significant_digits` must be an integer from `1` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+
+The result is rounded to the requested number of significant digits.
 
 ### `STD["TYPE"]["NUMBER"]["NEW"](value)`
 

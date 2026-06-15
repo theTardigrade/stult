@@ -6,7 +6,7 @@ It is designed as a terse but readable scripting language with:
 
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
-- one high-precision 2048-bit number type,
+- one high-precision number type with arbitrary-size whole-number parts and bounded decimal places,
 - arrays, maps, strings, functions, conditionals, loops and ranges,
 - concise literals for booleans, arrays, maps and void,
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
@@ -452,7 +452,7 @@ Strings use double quotes (*not* single quotes):
 
 ### Numbers
 
-Stult has one high-precision numeric type.
+Stult has one numeric type.
 
 There are no separate integer and floating-point types.
 
@@ -462,7 +462,15 @@ There are no separate integer and floating-point types.
 -20
 ```
 
-Numbers are stored internally with high precision and printed with up to 20 fractional digits by default.
+Stult stores numbers internally as a whole-number component plus a decimal component.
+
+Stult numbers can contain extremely large whole-number values, while any digits after the decimal point are bounded.
+
+More precisely, whole-number values are theoretically unbounded, subject to available memory and processing time, but digits after the decimal point are rounded to a maximum number of decimal places (currently 256).
+
+Although Stult keeps more decimal places internally, numbers are ordinarily displayed with fewer decimal places (currently 32).
+
+The number-formatting helpers in `STD["TYPE"]["NUMBER"]` can request more decimal places when needed.
 
 ### Bindings
 

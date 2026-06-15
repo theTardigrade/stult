@@ -8,6 +8,17 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.6.0
+
+* Reworked number handling so whole-number values are theoretically unbounded, subject to available memory and processing time.
+* Added bounded decimal arithmetic, with digits after the decimal point rounded to a maximum number of decimal places.
+* Separated ordinary number display from the maximum decimal-place limit.
+* Added `STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]` and `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+* Added `STD["TYPE"]["NUMBER"]["FORMAT"]` for fixed decimal formatting.
+* Added `STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"]` for scientific notation.
+* Removed safe-integer and precision constants from `STD["TYPE"]["NUMBER"]` that have become misleading.
+* Updated exact math helpers such as rounding and truncation to use the new decimal representation directly.
+
 ### v0.5.1
 
 * Added an internal small-integer representation for number values, promoting to high-precision floating-point numbers when needed.
