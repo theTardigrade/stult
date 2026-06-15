@@ -206,10 +206,9 @@ func stdJSONFromValue(value Value) (any, error) {
 
 func stdJSONNumberString(value Value) string {
 	number := resolveSpecializedValue(value).Number
-
 	if number == nil {
 		return "0"
 	}
 
-	return numberToBigFloat(number).Text('g', -1)
+	return number.Format(MaxDecimalScale)
 }
