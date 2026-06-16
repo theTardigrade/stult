@@ -51,6 +51,7 @@ func NewStdMathMap() Value {
 		"MOD":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathMod)),
 		"PI":     NewImmutableBinding(pi),
 		"POWER":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathPower)),
+		"RAND":   NewImmutableBinding(NewStdMathRandMap()),
 		"REM":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathRem)),
 		"ROUND":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathRound)),
 		"SIGN":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdMathSign)),

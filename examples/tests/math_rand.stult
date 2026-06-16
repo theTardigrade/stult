@@ -1,0 +1,175 @@
+##
+
+EXAMPLE: tests/math_rand.stult
+
+This example checks random helpers under STD["MATH"]["RAND"].
+
+The exact random values are not tested. Instead, this checks type, bounds,
+collection sizes and map-key preservation.
+
+##
+
+ASSERT : STD["ASSERT"]
+RAND : STD["MATH"]["RAND"]
+TYPE : STD["TYPE"]
+COLLECTION : STD["TYPE"]["COLLECTION"]
+MAP : STD["TYPE"]["MAP"]
+
+number : RAND["NUMBER"](0, 1)
+
+ASSERT["TRUE"](
+	TYPE["IS_NUMBER"](number),
+	"RAND.NUMBER should return a number"
+)
+
+ASSERT["TRUE"](
+	number >= 0,
+	"RAND.NUMBER should include the lower bound"
+)
+
+ASSERT["TRUE"](
+	number < 1,
+	"RAND.NUMBER should exclude the upper bound"
+)
+
+wide_number : RAND["NUMBER"](-10, 10)
+
+ASSERT["TRUE"](
+	wide_number >= -10,
+	"RAND.NUMBER should support negative lower bounds"
+)
+
+ASSERT["TRUE"](
+	wide_number < 10,
+	"RAND.NUMBER should support positive exclusive upper bounds"
+)
+
+integer : RAND["INTEGER"](1, 6)
+
+ASSERT["TRUE"](
+	TYPE["IS_NUMBER"](integer),
+	"RAND.INTEGER should return a number"
+)
+
+ASSERT["TRUE"](
+	integer >= 1,
+	"RAND.INTEGER should include the minimum"
+)
+
+ASSERT["TRUE"](
+	integer <= 6,
+	"RAND.INTEGER should include the maximum"
+)
+
+huge_integer : RAND["INTEGER"](
+	999999999999999999999999999999999999990,
+	999999999999999999999999999999999999999
+)
+
+ASSERT["TRUE"](
+	huge_integer >= 999999999999999999999999999999999999990,
+	"RAND.INTEGER should support huge integer lower bounds"
+)
+
+ASSERT["TRUE"](
+	huge_integer <= 999999999999999999999999999999999999999,
+	"RAND.INTEGER should support huge integer upper bounds"
+)
+
+items : {"red", "green", "blue"}
+choice : RAND["CHOICE"](items)
+
+ASSERT["TRUE"](
+	choice = "red" | choice = "green" | choice = "blue",
+	"RAND.CHOICE should choose an array element"
+)
+
+letter : RAND["CHOICE"]("abc")
+
+ASSERT["TRUE"](
+	letter = "a" | letter = "b" | letter = "c",
+	"RAND.CHOICE should choose one string character"
+)
+
+scores : {
+	"dog": 50
+	"cat": 80
+	"chicken": 90
+}
+
+score_choice : RAND["CHOICE"](scores)
+
+ASSERT["TRUE"](
+	score_choice = 50 | score_choice = 80 | score_choice = 90,
+	"RAND.CHOICE should choose a map value"
+)
+
+shuffled_items : RAND["SHUFFLE"](items)
+
+ASSERT["EQUAL"](
+	COLLECTION["SIZE"](shuffled_items),
+	COLLECTION["SIZE"](items),
+	"RAND.SHUFFLE should preserve array size"
+)
+
+ASSERT["TRUE"](
+	shuffled_items[0] = "red" | shuffled_items[0] = "green" | shuffled_items[0] = "blue",
+	"RAND.SHUFFLE should keep an existing value at array position 0"
+)
+
+ASSERT["TRUE"](
+	shuffled_items[1] = "red" | shuffled_items[1] = "green" | shuffled_items[1] = "blue",
+	"RAND.SHUFFLE should keep an existing value at array position 1"
+)
+
+ASSERT["TRUE"](
+	shuffled_items[2] = "red" | shuffled_items[2] = "green" | shuffled_items[2] = "blue",
+	"RAND.SHUFFLE should keep an existing value at array position 2"
+)
+
+shuffled_text : RAND["SHUFFLE"]("abc")
+
+ASSERT["EQUAL"](
+	COLLECTION["SIZE"](shuffled_text),
+	3,
+	"RAND.SHUFFLE should preserve string length"
+)
+
+shuffled_scores : RAND["SHUFFLE"](scores)
+shuffled_keys : MAP["KEYS"](shuffled_scores)
+
+ASSERT["EQUAL"](
+	COLLECTION["SIZE"](shuffled_scores),
+	3,
+	"RAND.SHUFFLE should preserve map size"
+)
+
+ASSERT["TRUE"](
+	COLLECTION["HAS"](shuffled_scores, "dog"),
+	"RAND.SHUFFLE should preserve map key dog"
+)
+
+ASSERT["TRUE"](
+	COLLECTION["HAS"](shuffled_scores, "cat"),
+	"RAND.SHUFFLE should preserve map key cat"
+)
+
+ASSERT["TRUE"](
+	COLLECTION["HAS"](shuffled_scores, "chicken"),
+	"RAND.SHUFFLE should preserve map key chicken"
+)
+
+ASSERT["TRUE"](
+	shuffled_scores["dog"] = 50 | shuffled_scores["dog"] = 80 | shuffled_scores["dog"] = 90,
+	"RAND.SHUFFLE should keep an existing map value under dog"
+)
+
+ASSERT["TRUE"](
+	shuffled_scores["cat"] = 50 | shuffled_scores["cat"] = 80 | shuffled_scores["cat"] = 90,
+	"RAND.SHUFFLE should keep an existing map value under cat"
+)
+
+ASSERT["TRUE"](
+	shuffled_scores["chicken"] = 50 | shuffled_scores["chicken"] = 80 | shuffled_scores["chicken"] = 90,
+	"RAND.SHUFFLE should keep an existing map value under chicken"
+)
