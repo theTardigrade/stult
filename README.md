@@ -54,6 +54,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Functions](#functions)
     - [Early return](#early-return)
     - [Variadic function parameters](#variadic-function-parameters)
+    - [Optional parameters](#optional-parameters)
     - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
   - [Commas and newlines](#commas-and-newlines)
 - [Standard library](#standard-library)
@@ -997,6 +998,50 @@ DESCRIBE : { (label, ...values)
 	(_)
 }
 ```
+
+#### Optional parameters
+
+A user-defined function can mark an ordinary parameter as optional by writing `?` after the parameter name.
+
+```stult
+GREET : { (text, suffix?)
+	(suffix = _) {
+		^("Hello, " + text + "!")
+	}
+
+	("Hello, " + text + suffix)
+}
+
+GREET("world")       # "Hello, world!"
+GREET("world", ".")  # "Hello, world."
+```
+
+An omitted optional parameter receives `_`.
+
+Required parameters must come before optional parameters.
+
+```stult
+{ (left, right?) (_) }  # valid
+{ (left?, right) (_) }  # invalid
+```
+
+A variadic parameter, if present, still comes last.
+
+```stult
+COLLECT : { (first, second?, ...rest)
+	({
+		first
+		second
+		rest
+	})
+}
+
+COLLECT(1)          # {1, _, {}}
+COLLECT(1, 2)       # {1, 2, {}}
+COLLECT(1, 2, 3, 4) # {1, 2, {3, 4}}
+```
+
+Optional parameters and variadic parameters are different. An omitted optional parameter receives `_`, while a variadic parameter receives an empty array when no remaining arguments are supplied.
 
 #### Immediately invoked function expressions
 
