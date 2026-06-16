@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Added dot-access syntax for string-key map access.
+* Added optional user-function parameters using `?`.
+* Optional parameters receive `_` when omitted.
+
 ### v0.6.1
 
 * Added `STD["MATH"]["REM"]` for truncating remainder arithmetic.
