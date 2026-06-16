@@ -24,7 +24,18 @@ func (p *Parser) parseStatement() Statement {
 			return stmt
 		}
 
-		target := p.parseExpressionTail(expr, precLowest)
+		target := expr
+
+		if p.current.Type == TokenQuestion {
+			conditional, ok := p.parseConditionalExpression(expr, closeParen)
+			if !ok {
+				return nil
+			}
+
+			target = conditional
+		}
+
+		target = p.parseExpressionTail(target, precLowest)
 		if target == nil {
 			return nil
 		}

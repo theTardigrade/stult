@@ -98,6 +98,9 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 		compiler.chunk.EmitAt(opcode, compiler.sourceSpanFromToken(expression.Token))
 		return nil
 
+	case *ConditionalExpression:
+		return compiler.compileConditionalExpression(expression)
+
 	case *BinaryExpression:
 		if expression.Operator == "&" || expression.Operator == "|" {
 			return compiler.compileLogicalBinaryExpression(expression)
@@ -452,6 +455,35 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 	)
 
 	return nil
+}
+
+func (compiler *BytecodeCompiler) compileConditionalExpression(expression *ConditionalExpression) error {
+	if err := compiler.compileExpression(expression.Condition); err != nil {
+		return err
+	}
+
+	sourceSpan := compiler.sourceSpanFromToken(expression.Token)
+	falseJump := compiler.chunk.EmitOperandAt(BytecodeOpJumpIfFalse, -1, sourceSpan)
+
+	compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+
+	if err := compiler.compileExpression(expression.WhenTrue); err != nil {
+		return err
+	}
+
+	endJump := compiler.chunk.EmitOperandAt(BytecodeOpJump, -1, sourceSpan)
+
+	if err := compiler.patchJumpToCurrent(falseJump); err != nil {
+		return err
+	}
+
+	compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+
+	if err := compiler.compileExpression(expression.WhenFalse); err != nil {
+		return err
+	}
+
+	return compiler.patchJumpToCurrent(endJump)
 }
 
 func (compiler *BytecodeCompiler) compileLogicalBinaryExpression(expression *BinaryExpression) error {

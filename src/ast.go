@@ -114,6 +114,15 @@ type BinaryExpression struct {
 
 func (e *BinaryExpression) expressionNode() {}
 
+type ConditionalExpression struct {
+	Token     Token
+	Condition Expression
+	WhenTrue  Expression
+	WhenFalse Expression
+}
+
+func (e *ConditionalExpression) expressionNode() {}
+
 type StringLiteral struct {
 	Token Token
 	Value string

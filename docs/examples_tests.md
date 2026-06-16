@@ -41,6 +41,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Grouped return expression](../examples/tests/grouped_return_expression.stult)  
   Checks that a function return expression may begin with a grouped expression using touching `((` without being mistaken for a loop.
 
+- [Conditional expression](../examples/tests/conditional_expression.stult)  
+  Checks that `(CONDITION)?(WHEN_TRUE, WHEN_FALSE)` evaluates exactly one selected branch and returns its value.
+
 ## Literal parsing
 
 - [Array starts with function literal](../examples/tests/array_starting_with_function_literal.stult)  
@@ -69,7 +72,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 ## Mathematics
 
-- [Modulo versus remainder](../examples/tests/modulo_and_remainder.stult)
+- [Modulo versus remainder](../examples/tests/modulo_and_remainder.stult)  
   Checks the difference between mathematical modulo and truncating remainder, including negative operands.
 
 - [Random-number generation](../examples/tests/math_rand.stult)  

@@ -103,12 +103,21 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		}
 
 	case TokenLParen:
-		inner, _, ok := p.parseParenthesizedExpression("grouped expression cannot be empty")
+		inner, closeParen, ok := p.parseParenthesizedExpression("grouped expression cannot be empty")
 		if !ok {
 			return nil
 		}
 
-		left = inner
+		if p.current.Type == TokenQuestion {
+			conditional, ok := p.parseConditionalExpression(inner, closeParen)
+			if !ok {
+				return nil
+			}
+
+			left = conditional
+		} else {
+			left = inner
+		}
 
 	case TokenLBrace:
 		left = p.parseBraceLiteral()
@@ -251,6 +260,78 @@ func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) 
 			Token: identifier,
 			Value: identifier.Literal,
 		},
+	}, true
+}
+
+func (p *Parser) parseConditionalExpression(condition Expression, closeParen Token) (Expression, bool) {
+	question := p.current
+
+	if !tokensTouch(closeParen, question) {
+		p.errorAtToken(question, "expected '?' to touch parenthesized condition")
+		return nil, false
+	}
+
+	p.advance() // consume "?"
+
+	if !p.expectCurrent(TokenLParen, "expected '(' after '?' in conditional expression") {
+		return nil, false
+	}
+
+	if !tokensTouch(question, p.current) {
+		p.errorAtCurrent("expected '(' to touch '?' in conditional expression")
+		return nil, false
+	}
+
+	p.advance() // consume "("
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.errorAtToken(question, "conditional expression expected true and false branch expressions")
+		return nil, false
+	}
+
+	whenTrue := p.parseExpression(precLowest)
+	if whenTrue == nil {
+		p.errorAtToken(question, "expected true branch expression in conditional expression")
+		return nil, false
+	}
+
+	if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+		p.errorAtCurrent("expected comma or newline after true branch expression")
+		return nil, false
+	}
+
+	p.skipSeparators()
+
+	if p.current.Type == TokenRParen {
+		p.errorAtToken(question, "conditional expression expected false branch expression")
+		return nil, false
+	}
+
+	whenFalse := p.parseExpression(precLowest)
+	if whenFalse == nil {
+		p.errorAtToken(question, "expected false branch expression in conditional expression")
+		return nil, false
+	}
+
+	p.skipNewlines()
+
+	if p.current.Type == TokenComma {
+		p.advance()
+		p.skipNewlines()
+	}
+
+	if !p.expectCurrent(TokenRParen, "expected ')' after conditional expression branches") {
+		return nil, false
+	}
+
+	p.advance() // consume ")"
+
+	return &ConditionalExpression{
+		Token:     question,
+		Condition: condition,
+		WhenTrue:  whenTrue,
+		WhenFalse: whenFalse,
 	}, true
 }
 

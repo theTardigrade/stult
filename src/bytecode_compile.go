@@ -377,6 +377,9 @@ func (compiler *BytecodeCompiler) sourceSpanForExpression(expression Expression)
 	case *BinaryExpression:
 		return compiler.sourceSpanForExpression(expression.Left)
 
+	case *ConditionalExpression:
+		return compiler.sourceSpanFromToken(expression.Token)
+
 	case *MapLiteral:
 		return compiler.sourceSpanFromToken(expression.Token)
 

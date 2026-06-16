@@ -69,6 +69,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 		return evalBinary(e.Operator, left, right)
 
+	case *ConditionalExpression:
+		return i.evalConditionalExpression(e)
+
 	case *MapLiteral:
 		return i.evalMapLiteral(e)
 
@@ -93,6 +96,25 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	default:
 		return Value{}, fmt.Errorf("unknown expression type %T", expr)
 	}
+}
+
+func (i *Interpreter) evalConditionalExpression(expr *ConditionalExpression) (Value, error) {
+	condition, err := i.evalExpression(expr.Condition)
+	if err != nil {
+		return Value{}, err
+	}
+
+	condition = resolveSpecializedValue(condition)
+
+	if condition.Kind != ValueBool {
+		return Value{}, fmt.Errorf("conditional expression condition must be bool")
+	}
+
+	if condition.Bool {
+		return i.evalExpression(expr.WhenTrue)
+	}
+
+	return i.evalExpression(expr.WhenFalse)
 }
 
 func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value, error) {
