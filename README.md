@@ -42,6 +42,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
+    - [Dot access](#dot-access)
     - [Freezing collections](#freezing-collections)
     - [Ranges](#ranges)
   - [Conditionals](#conditionals)
@@ -674,6 +675,39 @@ values[0]
 person["NAME"]
 ```
 
+#### Dot access for maps
+
+Map entries with identifier-shaped string keys can also be accessed with dot access.
+
+Dot access is syntax sugar for bracket indexing with a string key.
+
+```stult
+record : {
+	"title": "Example"
+	"number": 90
+}
+
+record.title
+record.number
+```
+
+The last two lines are equivalent to:
+
+```stult
+record["title"]
+record["test_key"]
+```
+
+The dot, the value on the left and the identifier on the right must touch.
+
+Keys that are not valid identifiers must still use bracket indexing:
+
+```stult
+record["content-type"]
+record["first name"]
+record["123"]
+```
+
 #### Freezing collections
 
 Collection values can be frozen with `STD["TYPE"]["COLLECTION"]["FREEZE"]`.
@@ -1063,16 +1097,25 @@ STD["DATA"]
 Here is some example code using functions from the standard library:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
-ASSERT : STD["ASSERT"]
-SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
-MATH : STD["MATH"]
+PRINT : STD.IO.PRINT
+ASSERT : STD.ASSERT
+SIZE : STD.TYPE.COLLECTION.SIZE
+MATH : STD.MATH
 
 ITEMS : {"a", "b", "c"}
 
-ASSERT["EQUAL"](SIZE(ITEMS), 3, "items should contain three values")
-PRINT("square: ", MATH["SQUARE"](9))
+ASSERT.EQUAL(SIZE(ITEMS), 3, "items should contain three values")
+PRINT("square: ", MATH.SQUARE(9))
 ```
+
+Since the standard library is exposed as nested maps, dot-access paths can also be written with bracket indexing:
+
+```stult
+STD.IO.PRINT
+STD["IO"]["PRINT"]
+```
+
+Both forms refer to the same value.
 
 Program arguments are available through `STD["SYSTEM"]["ARGS"]`:
 
