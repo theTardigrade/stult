@@ -109,6 +109,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["MATH"]["POWER"](base, exponent)`](#stdmathpowerbase-exponent)
   - [`STD["MATH"]["MOD"](left, right)`](#stdmathmodleft-right)
   - [`STD["MATH"]["REM"](left, right)`](#stdmathremleft-right)
+  - [`STD["MATH"]["RAND"]`](#stdmathrand)
+    - [`STD["MATH"]["RAND"]["NUMBER"](inclusive_lower_bound, exclusive_upper_bound)`](#stdmathrandnumberinclusive_lower_bound-exclusive_upper_bound)
+    - [`STD["MATH"]["RAND"]["INTEGER"](minimum, maximum)`](#stdmathrandintegerminimum-maximum)
+    - [`STD["MATH"]["RAND"]["CHOICE"](collection)`](#stdmathrandchoicecollection)
+    - [`STD["MATH"]["RAND"]["SHUFFLE"](collection)`](#stdmathrandshufflecollection)
   - [`STD["MATH"]["TRIG"]`](#stdmathtrig)
     - [`STD["MATH"]["TRIG"]["SIN"](radians)`](#stdmathtrigsinradians)
     - [`STD["MATH"]["TRIG"]["COS"](radians)`](#stdmathtrigcosradians)
@@ -800,6 +805,106 @@ STD.MATH.REM(-10, 3)
 The divisor cannot be zero.
 
 The result follows the sign of the dividend, or is zero. This matches the remainder behaviour of the `%` operator in C-family programming languages.
+
+## `STD["MATH"]["RAND"]`
+
+Random helpers.
+
+These functions use the host cryptographic random source.
+
+### `STD["MATH"]["RAND"]["NUMBER"](inclusive_lower_bound, exclusive_upper_bound)`
+
+Returns a random number.
+
+```stult
+STD.MATH.RAND.NUMBER(0, 1)
+STD.MATH.RAND.NUMBER(-10, 10)
+```
+
+The result is greater than or equal to `inclusive_lower_bound` and less than `exclusive_upper_bound`.
+
+```text
+inclusive_lower_bound <= result < exclusive_upper_bound
+```
+
+Both arguments must be numbers.
+
+The inclusive lower bound must be less than the exclusive upper bound.
+
+The returned number may include a decimal part. Stult may generate decimal places up to the implementation's maximum decimal-place limit.
+
+### `STD["MATH"]["RAND"]["INTEGER"](minimum, maximum)`
+
+Returns a random integer.
+
+```stult
+STD.MATH.RAND.INTEGER(1, 6)
+STD.MATH.RAND.INTEGER(-10, 10)
+```
+
+The result is greater than or equal to `minimum` and less than or equal to `maximum`.
+
+```text
+minimum <= result <= maximum
+```
+
+Both arguments must be integer numbers.
+
+The minimum must be less than or equal to the maximum.
+
+Large integer bounds are supported, subject to available memory and processing time.
+
+### `STD["MATH"]["RAND"]["CHOICE"](collection)`
+
+Returns one randomly chosen value from a collection.
+
+```stult
+STD.MATH.RAND.CHOICE({"red", "green", "blue"})
+STD.MATH.RAND.CHOICE("abc")
+STD.MATH.RAND.CHOICE({"dog": 50, "cat": 80})
+```
+
+For arrays, the result is one array element.
+
+For strings, the result is a one-character string.
+
+For maps, the result is one map value.
+
+The collection must not be empty.
+
+### `STD["MATH"]["RAND"]["SHUFFLE"](collection)`
+
+Returns a shuffled copy of a collection.
+
+```stult
+STD.MATH.RAND.SHUFFLE({1, 2, 3})
+STD.MATH.RAND.SHUFFLE("abc")
+STD.MATH.RAND.SHUFFLE({"dog": 50, "cat": 80, "chicken": 90})
+```
+
+For arrays, the result is a new array containing the same values in random order.
+
+For strings, the result is a new string containing the same characters in random order.
+
+For maps, the result is a new map with the same keys and entry mutability, but with the existing values randomly reassigned among those keys.
+
+```stult
+scores : {
+	"dog": 50
+	"cat": 80
+	"chicken": 90
+}
+
+STD.MATH.RAND.SHUFFLE(scores)
+# might return:
+# {
+#     "dog": 90
+#     "cat": 50
+#     "chicken": 80
+# }
+```
+
+The original collection is not modified.
 
 ## `STD["MATH"]["TRIG"]`
 
