@@ -268,6 +268,7 @@ compound assignments
 conditionals
 dynamic loops
 function literals
+optional function parameters
 function calls
 array literals
 map literals
@@ -279,6 +280,10 @@ outer-name expressions
 
 Dot access is parsed as syntax sugar for string-key indexing. The parser lowers `object.key` to the same AST shape as `object["key"]`, preserving the identifier spelling as the string key. This keeps interpreter and bytecode behaviour aligned with ordinary map indexing.
 
+Function literal parameters are represented with parameter metadata rather than plain identifier tokens. Ordinary parameters can be required or optional. Optional parameters are written with `?` in source and receive void when omitted at call time.
+
+Variadic parameters are still represented separately because they have different semantics: they receive an array of remaining arguments, or an empty array when no remaining arguments exist.
+
 Because the bytecode compiler and interpreter share the AST, language syntax changes must usually be handled in both runtime paths.
 
 ## Bytecode compiler
@@ -288,6 +293,8 @@ The bytecode compiler lowers the AST into a `BytecodeChunk`.
 A chunk is the executable bytecode unit used by the VM. Top-level source files compile to top-level chunks. Function literals compile to nested function chunks.
 
 The compiler is responsible for preserving Stult semantics while lowering higher-level AST constructs into explicit VM instructions.
+
+When compiling function literals, ordinary parameters are lowered into bytecode parameter metadata. This metadata includes the parameter name, binding immutability and whether the parameter is optional. The variadic parameter is stored separately because it binds an array rather than void when omitted.
 
 ### Chunks
 
@@ -472,6 +479,8 @@ captured upvalues
 
 The VM saves and restores execution state when running bytecode functions. This avoids constructing a separate VM for every function call while still isolating chunk, stack, locals, upvalues and iterator state for the call.
 
+Function-call argument binding uses each function's arity metadata. Required ordinary parameters must receive arguments. Optional ordinary parameters receive the supplied argument when present, or void when omitted. Variadic parameters receive an array containing the remaining arguments, or an empty array when no remaining arguments exist.
+
 The interpreter has its own function representation that stores the AST body and defining environment.
 
 ### Collection iteration
@@ -538,6 +547,8 @@ stult run --interpreter ...
 ```
 
 It is also used by source/interpreter bundles.
+
+Interpreter function calls use the same arity model as the bytecode VM. Required parameters must be supplied, optional parameters are filled with void when omitted, and variadic parameters collect remaining arguments into an array.
 
 ## Runtime context
 
@@ -828,6 +839,8 @@ tests
 ```
 
 Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth.
+
+When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned.
 
 When changing runtime semantics, check both runtime implementations.
 
