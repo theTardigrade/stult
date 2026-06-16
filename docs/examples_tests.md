@@ -13,6 +13,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Collection behaviour](#collection-behaviour)
 * [Grouped expressions](#grouped-expressions)
 * [Literal parsing](#literal-parsing)
+* [Map access](#map-access)
 * [Numbers](#numbers)
 * [Mathematics](#mathematics)
 * [Standard library](#standard-library)
@@ -46,6 +47,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Nested literals in array](../examples/tests/nested_literals_in_array.stult)  
   Checks that arrays may contain empty maps, empty arrays, non-empty maps, nested arrays and function literals as elements.
+
+## Maps
+
+- [Dot access](../examples/tests/dot_access_for_maps.stult)  
+  Checks that `object.key` behaves like `object["key"]` for map string keys, including chained access, assignment, compound assignment and standard-library paths.
 
 ## Numbers
 
