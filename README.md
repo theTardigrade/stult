@@ -7,7 +7,7 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- arrays, maps, strings, functions, conditionals, loops and ranges,
+- arrays, maps, strings, functions, conditionals, conditional expressions, loops and ranges,
 - concise literals for booleans, arrays, maps and void,
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
 - a map-shaped standard library available through `STD`.
@@ -47,6 +47,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Ranges](#ranges)
   - [Conditionals](#conditionals)
     - [Creating a local scope](#creating-a-local-scope)
+    - [Conditional expressions](#conditional-expressions)
   - [Loops](#loops)
     - [Iterating over collections](#iterating-over-collections)
     - [Infinite loops](#infinite-loops)
@@ -821,6 +822,42 @@ PRINT : STD["IO"]["PRINT"]
 ```
 
 Bindings created inside that block do not leak into the surrounding scope.
+
+#### Conditional expressions
+
+A conditional expression chooses between two branch expressions and returns the selected branch value.
+
+```stult
+marker : (LEFT | RIGHT)?("*", " ")
+```
+
+The condition must be parenthesised.
+
+```stult
+count : 1
+
+label : (count = 1)?("item", "items")
+```
+
+The `?` must touch the closing parenthesis of the condition, and the branch list must touch the `?`.
+
+```stult
+(count = 1)?("item", "items")   # valid
+(count = 1) ?("item", "items")  # invalid
+(count = 1)? ("item", "items")  # invalid
+```
+
+Only the selected branch is evaluated.
+
+```stult
+denominator : 0
+
+safe : (denominator = 0)?(0, 10 / denominator)
+```
+
+In this example, the division branch is not evaluated because the condition is true.
+
+Conditional expressions are useful when a value depends on a condition and both outcomes are simple expressions. Use a conditional statement when either branch needs multiple statements.
 
 ### Loops
 
