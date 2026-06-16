@@ -1,10 +1,11 @@
 package main
 
-func (p *Parser) parseFunctionParameters() ([]Token, *Token, bool) {
+func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
 	openParen := p.current
 	p.advance() // consume "("
 
-	parameters := []Token{}
+	parameters := []FunctionParameter{}
+	optionalStarted := false
 
 	p.skipNewlines()
 
@@ -31,6 +32,11 @@ func (p *Parser) parseFunctionParameters() ([]Token, *Token, bool) {
 			variadicParameter := p.current
 			p.advance()
 
+			if p.current.Type == TokenQuestion {
+				p.errorAtCurrent("variadic function parameter cannot be optional")
+				return nil, nil, false
+			}
+
 			p.skipNewlines()
 
 			if p.current.Type != TokenRParen {
@@ -40,7 +46,7 @@ func (p *Parser) parseFunctionParameters() ([]Token, *Token, bool) {
 
 			p.advance()
 
-			allParameters := append([]Token{}, parameters...)
+			allParameters := functionParameterTokens(parameters)
 			allParameters = append(allParameters, variadicParameter)
 
 			if !p.validateBindingNames(allParameters, "function parameter") {
@@ -55,13 +61,34 @@ func (p *Parser) parseFunctionParameters() ([]Token, *Token, bool) {
 			return nil, nil, false
 		}
 
-		parameters = append(parameters, p.current)
+		parameterToken := p.current
 		p.advance()
+
+		isOptional := false
+
+		if p.current.Type == TokenQuestion {
+			if !tokensTouch(parameterToken, p.current) {
+				p.errorAtCurrent("expected '?' to touch optional parameter name")
+				return nil, nil, false
+			}
+
+			isOptional = true
+			optionalStarted = true
+			p.advance()
+		} else if optionalStarted {
+			p.errorAtToken(parameterToken, "required function parameter cannot follow optional parameter")
+			return nil, nil, false
+		}
+
+		parameters = append(parameters, FunctionParameter{
+			Token:      parameterToken,
+			IsOptional: isOptional,
+		})
 
 		if p.current.Type == TokenRParen {
 			p.advance()
 
-			if !p.validateBindingNames(parameters, "function parameter") {
+			if !p.validateBindingNames(functionParameterTokens(parameters), "function parameter") {
 				return nil, nil, false
 			}
 
@@ -78,13 +105,23 @@ func (p *Parser) parseFunctionParameters() ([]Token, *Token, bool) {
 		if p.current.Type == TokenRParen {
 			p.advance()
 
-			if !p.validateBindingNames(parameters, "function parameter") {
+			if !p.validateBindingNames(functionParameterTokens(parameters), "function parameter") {
 				return nil, nil, false
 			}
 
 			return parameters, nil, true
 		}
 	}
+}
+
+func functionParameterTokens(parameters []FunctionParameter) []Token {
+	tokens := make([]Token, 0, len(parameters))
+
+	for _, parameter := range parameters {
+		tokens = append(tokens, parameter.Token)
+	}
+
+	return tokens
 }
 
 func (p *Parser) parseBindingParameters(name string) ([]Token, bool) {

@@ -32,43 +32,72 @@ func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
 }
 
 func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
-	if fn.VariadicParameter == nil {
-		if len(args) != len(fn.Parameters) {
+	requiredCount := requiredFunctionParameterCount(fn.Parameters)
+	maxCount := len(fn.Parameters)
+
+	if len(args) < requiredCount {
+		if fn.VariadicParameter == nil && requiredCount == maxCount {
 			return Value{}, fmt.Errorf(
 				"function expected %d argument(s), got %d",
-				len(fn.Parameters),
+				requiredCount,
 				len(args),
 			)
 		}
-	} else {
-		if len(args) < len(fn.Parameters) {
+
+		return Value{}, fmt.Errorf(
+			"function expected at least %d argument(s), got %d",
+			requiredCount,
+			len(args),
+		)
+	}
+
+	if fn.VariadicParameter == nil && len(args) > maxCount {
+		if requiredCount == maxCount {
 			return Value{}, fmt.Errorf(
-				"function expected at least %d argument(s), got %d",
-				len(fn.Parameters),
+				"function expected %d argument(s), got %d",
+				maxCount,
 				len(args),
 			)
 		}
+
+		return Value{}, fmt.Errorf(
+			"function expected at most %d argument(s), got %d",
+			maxCount,
+			len(args),
+		)
 	}
 
 	callEnv := NewChildEnvironment(fn.Env)
 
 	for index, parameter := range fn.Parameters {
-		if parameter.Literal == "_" {
+		parameterToken := parameter.Token
+
+		if parameterToken.Literal == "_" {
 			continue
 		}
 
-		if err := callEnv.Set(parameter.Literal, args[index], parameter.IsImmutable); err != nil {
+		value := NewVoidValue()
+		if index < len(args) {
+			value = args[index]
+		}
+
+		if err := callEnv.Set(parameterToken.Literal, value, parameterToken.IsImmutable); err != nil {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: %w",
-				parameter.StartOfLine,
-				parameter.StartOfColumn,
+				parameterToken.StartOfLine,
+				parameterToken.StartOfColumn,
 				err,
 			)
 		}
 	}
 
 	if fn.VariadicParameter != nil && fn.VariadicParameter.Literal != "_" {
-		variadicValues := append([]Value{}, args[len(fn.Parameters):]...)
+		variadicStart := len(fn.Parameters)
+		if len(args) < variadicStart {
+			variadicStart = len(args)
+		}
+
+		variadicValues := append([]Value{}, args[variadicStart:]...)
 
 		if err := callEnv.Set(
 			fn.VariadicParameter.Literal,
@@ -110,4 +139,18 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 	}
 
 	return i.evalExpression(fn.Returns[0])
+}
+
+func requiredFunctionParameterCount(parameters []FunctionParameter) int {
+	count := 0
+
+	for _, parameter := range parameters {
+		if parameter.IsOptional {
+			continue
+		}
+
+		count++
+	}
+
+	return count
 }

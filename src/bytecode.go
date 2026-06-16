@@ -80,6 +80,7 @@ type BytecodeSourceSpan struct {
 type BytecodeParameter struct {
 	Name        string
 	IsImmutable bool
+	IsOptional  bool
 }
 
 type BytecodeLocal struct {

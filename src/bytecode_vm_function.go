@@ -103,20 +103,37 @@ func (vm *BytecodeVM) restoreExecutionState(state bytecodeVMExecutionState) {
 }
 
 func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Value) error {
-	fixedCount := len(function.Parameters)
+	requiredCount := requiredBytecodeParameterCount(function.Parameters)
+	maxCount := len(function.Parameters)
 
-	if function.VariadicParameter == nil {
-		if len(args) != fixedCount {
+	if len(args) < requiredCount {
+		if function.VariadicParameter == nil && requiredCount == maxCount {
 			return fmt.Errorf(
 				"function expected %d argument(s), got %d",
-				fixedCount,
+				requiredCount,
 				len(args),
 			)
 		}
-	} else if len(args) < fixedCount {
+
 		return fmt.Errorf(
 			"function expected at least %d argument(s), got %d",
-			fixedCount,
+			requiredCount,
+			len(args),
+		)
+	}
+
+	if function.VariadicParameter == nil && len(args) > maxCount {
+		if requiredCount == maxCount {
+			return fmt.Errorf(
+				"function expected %d argument(s), got %d",
+				maxCount,
+				len(args),
+			)
+		}
+
+		return fmt.Errorf(
+			"function expected at most %d argument(s), got %d",
+			maxCount,
 			len(args),
 		)
 	}
@@ -131,7 +148,12 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			return fmt.Errorf("function local for parameter %q was not found", parameter.Name)
 		}
 
-		if err := vm.storeLocal(localIndex, args[index], parameter.IsImmutable, true); err != nil {
+		value := NewVoidValue()
+		if index < len(args) {
+			value = args[index]
+		}
+
+		if err := vm.storeLocal(localIndex, value, parameter.IsImmutable, true); err != nil {
 			return err
 		}
 	}
@@ -145,7 +167,12 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			)
 		}
 
-		extra := append([]Value{}, args[fixedCount:]...)
+		variadicStart := len(function.Parameters)
+		if len(args) < variadicStart {
+			variadicStart = len(args)
+		}
+
+		extra := append([]Value{}, args[variadicStart:]...)
 
 		if err := vm.storeLocal(
 			localIndex,
@@ -158,6 +185,20 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 	}
 
 	return nil
+}
+
+func requiredBytecodeParameterCount(parameters []BytecodeParameter) int {
+	count := 0
+
+	for _, parameter := range parameters {
+		if parameter.IsOptional {
+			continue
+		}
+
+		count++
+	}
+
+	return count
 }
 
 func (vm *BytecodeVM) localIndexByName(name string) (int, bool) {

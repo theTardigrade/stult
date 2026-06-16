@@ -1,7 +1,7 @@
 package main
 
 type Function struct {
-	Parameters        []Token
+	Parameters        []FunctionParameter
 	VariadicParameter *Token
 	Body              []Statement
 	Returns           []Expression

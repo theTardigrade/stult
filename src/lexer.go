@@ -157,6 +157,10 @@ func (l *Lexer) NextToken() Token {
 		l.readChar()
 		return l.makeToken(TokenDot, ".", line, col)
 
+	case '?':
+		l.readChar()
+		return l.makeToken(TokenQuestion, "?", line, col)
+
 	case '+':
 		if l.peekChar() == '=' {
 			l.readChar()

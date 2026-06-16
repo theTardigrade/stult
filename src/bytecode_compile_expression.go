@@ -401,7 +401,7 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 	functionCompiler := NewBytecodeCompiler(functionName, compiler.filename, true, compiler)
 
 	for _, parameter := range expression.Parameters {
-		functionCompiler.defineParameterLocal(parameter)
+		functionCompiler.defineParameterLocal(parameter.Token)
 	}
 
 	if expression.VariadicParameter != nil {
@@ -437,7 +437,7 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 
 	function := BytecodeFunction{
 		Name:              functionName,
-		Parameters:        bytecodeParametersFromTokens(expression.Parameters),
+		Parameters:        bytecodeParametersFromFunctionParameters(expression.Parameters),
 		VariadicParameter: bytecodeVariadicParameterFromToken(expression.VariadicParameter),
 		Upvalues:          append([]BytecodeUpvalue{}, functionCompiler.chunk.Upvalues...),
 		Chunk:             functionCompiler.chunk,

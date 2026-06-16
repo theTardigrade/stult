@@ -17,11 +17,12 @@ const (
 	TokenStarAssign  TokenType = ":*"
 	TokenSlashAssign TokenType = ":/"
 
-	TokenComma TokenType = ","
-	TokenColon TokenType = ":"
-	TokenDot   TokenType = "."
-	TokenAt    TokenType = "@"
-	TokenCaret TokenType = "^"
+	TokenComma    TokenType = ","
+	TokenColon    TokenType = ":"
+	TokenDot      TokenType = "."
+	TokenQuestion TokenType = "?"
+	TokenAt       TokenType = "@"
+	TokenCaret    TokenType = "^"
 
 	TokenRangeInclusive TokenType = ".."
 	TokenRangeExclusive TokenType = "..."

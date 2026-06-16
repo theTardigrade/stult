@@ -155,13 +155,19 @@ func formatBytecodeFunction(
 		fmt.Fprintf(builder, "%sparameters:\n", indent)
 
 		for parameterIndex, parameter := range function.Parameters {
+			optionalMarker := ""
+			if parameter.IsOptional {
+				optionalMarker = " optional"
+			}
+
 			fmt.Fprintf(
 				builder,
-				"%s  [%d] %s %s\n",
+				"%s  [%d] %s %s%s\n",
 				indent,
 				parameterIndex,
 				parameter.Name,
 				bytecodeMutabilityName(parameter.IsImmutable),
+				optionalMarker,
 			)
 		}
 	}

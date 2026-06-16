@@ -173,9 +173,14 @@ type IndexAssignmentStatement struct {
 
 func (*IndexAssignmentStatement) statementNode() {}
 
+type FunctionParameter struct {
+	Token      Token
+	IsOptional bool
+}
+
 type FunctionLiteral struct {
 	Token             Token
-	Parameters        []Token
+	Parameters        []FunctionParameter
 	VariadicParameter *Token
 	Body              []Statement
 	Returns           []Expression

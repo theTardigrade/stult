@@ -306,14 +306,26 @@ func bytecodeOpcodeForCompoundAssignmentOperator(tokenType TokenType) (BytecodeO
 	}
 }
 
-func bytecodeParametersFromTokens(tokens []Token) []BytecodeParameter {
-	parameters := make([]BytecodeParameter, 0, len(tokens))
+func bytecodeParametersFromFunctionParameters(
+	functionParameters []FunctionParameter,
+) []BytecodeParameter {
+	parameters := make([]BytecodeParameter, 0, len(functionParameters))
 
-	for _, token := range tokens {
-		parameters = append(parameters, bytecodeParameterFromToken(token))
+	for _, functionParameter := range functionParameters {
+		parameters = append(parameters, bytecodeParameterFromFunctionParameter(functionParameter))
 	}
 
 	return parameters
+}
+
+func bytecodeParameterFromFunctionParameter(
+	functionParameter FunctionParameter,
+) BytecodeParameter {
+	return BytecodeParameter{
+		Name:        functionParameter.Token.Literal,
+		IsImmutable: functionParameter.Token.IsImmutable,
+		IsOptional:  functionParameter.IsOptional,
+	}
 }
 
 func bytecodeVariadicParameterFromToken(token *Token) *BytecodeParameter {
@@ -330,6 +342,7 @@ func bytecodeParameterFromToken(token Token) BytecodeParameter {
 	return BytecodeParameter{
 		Name:        token.Literal,
 		IsImmutable: token.IsImmutable,
+		IsOptional:  false,
 	}
 }
 
