@@ -72,6 +72,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *ConditionalExpression:
 		return i.evalConditionalExpression(e)
 
+	case *MatchExpression:
+		return i.evalMatchExpression(e)
+
 	case *MapLiteral:
 		return i.evalMapLiteral(e)
 
@@ -115,6 +118,56 @@ func (i *Interpreter) evalConditionalExpression(expr *ConditionalExpression) (Va
 	}
 
 	return i.evalExpression(expr.WhenFalse)
+}
+
+func (i *Interpreter) evalMatchExpression(expr *MatchExpression) (Value, error) {
+	target, err := i.evalExpression(expr.Target)
+	if err != nil {
+		return Value{}, err
+	}
+
+	for _, arm := range expr.Arms {
+		pattern, err := matchPatternValue(arm.Pattern)
+		if err != nil {
+			return Value{}, err
+		}
+
+		equal, err := evalBinary("=", target, pattern)
+		if err != nil {
+			return Value{}, err
+		}
+
+		equal = resolveSpecializedValue(equal)
+		if equal.Kind != ValueBool {
+			return Value{}, fmt.Errorf("match expression equality did not return bool")
+		}
+
+		if equal.Bool {
+			return i.evalExpression(arm.Value)
+		}
+	}
+
+	if expr.Default != nil {
+		return i.evalExpression(expr.Default)
+	}
+
+	return NewVoidValue(), nil
+}
+
+func matchPatternValue(pattern MatchPattern) (Value, error) {
+	switch pattern.Kind {
+	case MatchPatternString:
+		return NewStringValue(pattern.Token.Literal), nil
+
+	case MatchPatternNumber:
+		return NewNumberValueFromString(pattern.Token.Literal)
+
+	case MatchPatternBool:
+		return NewBoolValue(pattern.Token.Literal == "\\/"), nil
+
+	default:
+		return Value{}, fmt.Errorf("unknown match pattern kind %d", pattern.Kind)
+	}
 }
 
 func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value, error) {

@@ -1,0 +1,97 @@
+##
+
+EXAMPLE: tests/match_expression.stult
+
+This example checks match expressions.
+
+A match expression evaluates its subject once, checks explicit scalar-literal arms,
+then falls back to the default arm when no explicit arm matches.
+
+##
+
+ASSERT : STD["ASSERT"]
+
+text : "yes"
+
+ASSERT["EQUAL"](
+	(text)?{
+		"yes": 50
+		"no": 0
+		_: -1
+	},
+	50,
+	"match expression should match a string literal"
+)
+
+ASSERT["EQUAL"](
+	(text)?{
+		_: -1
+		"yes": 50
+	},
+	50,
+	"match expression should prefer explicit arms over default even when default appears first"
+)
+
+number : 2
+
+ASSERT["EQUAL"](
+	(number)?{
+		1: "one"
+		2: "two"
+		_: "other"
+	},
+	"two",
+	"match expression should match a number literal"
+)
+
+flag : \/
+
+ASSERT["EQUAL"](
+	(flag)?{
+		\/: "true"
+		/\: "false"
+		_: "other"
+	},
+	"true",
+	"match expression should match a boolean literal"
+)
+
+missing : "unknown"
+
+ASSERT["EQUAL"](
+	(missing)?{
+		"yes": 1
+		_: -1
+	},
+	-1,
+	"match expression should use the default branch when no explicit arm matches"
+)
+
+ASSERT["EQUAL"](
+	(missing)?{
+		"yes": 1
+	},
+	_,
+	"match expression without a matching arm or default should return void"
+)
+
+denominator : 0
+
+ASSERT["EQUAL"](
+	("safe")?{
+		"safe": "ok"
+		"divide": 10 / denominator
+		_: "fallback"
+	},
+	"ok",
+	"match expression should not evaluate unused arms"
+)
+
+ASSERT["EQUAL"](
+	("fallback")?{
+		"safe": 10
+		_: "ok"
+	},
+	"ok",
+	"match expression should evaluate the default branch only after explicit arms fail"
+)

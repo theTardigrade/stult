@@ -380,6 +380,9 @@ func (compiler *BytecodeCompiler) sourceSpanForExpression(expression Expression)
 	case *ConditionalExpression:
 		return compiler.sourceSpanFromToken(expression.Token)
 
+	case *MatchExpression:
+		return compiler.sourceSpanFromToken(expression.Token)
+
 	case *MapLiteral:
 		return compiler.sourceSpanFromToken(expression.Token)
 

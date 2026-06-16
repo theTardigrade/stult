@@ -1,5 +1,7 @@
 package main
 
+import "strconv"
+
 const (
 	precLowest = iota
 	precLogicalOr
@@ -92,7 +94,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
 		if right == nil {
-			p.errorAtToken(operator, "expected expression after unary "+strconvQuote(operator.Literal))
+			p.errorAtToken(operator, "expected expression after unary "+strconv.Quote(operator.Literal))
 			return nil
 		}
 
@@ -109,12 +111,12 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		}
 
 		if p.current.Type == TokenQuestion {
-			conditional, ok := p.parseConditionalExpression(inner, closeParen)
+			questionExpression, ok := p.parseQuestionExpression(inner, closeParen)
 			if !ok {
 				return nil
 			}
 
-			left = conditional
+			left = questionExpression
 		} else {
 			left = inner
 		}
@@ -263,20 +265,30 @@ func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) 
 	}, true
 }
 
-func (p *Parser) parseConditionalExpression(condition Expression, closeParen Token) (Expression, bool) {
+func (p *Parser) parseQuestionExpression(target Expression, closeParen Token) (Expression, bool) {
 	question := p.current
 
 	if !tokensTouch(closeParen, question) {
-		p.errorAtToken(question, "expected '?' to touch parenthesized condition")
+		p.errorAtToken(question, "expected '?' to touch parenthesized expression")
 		return nil, false
 	}
 
 	p.advance() // consume "?"
 
-	if !p.expectCurrent(TokenLParen, "expected '(' after '?' in conditional expression") {
+	switch p.current.Type {
+	case TokenLParen:
+		return p.parseConditionalExpressionAfterQuestion(target, question)
+
+	case TokenLBrace:
+		return p.parseMatchExpressionAfterQuestion(target, question)
+
+	default:
+		p.errorAtCurrent("expected '(' or '{' after '?'")
 		return nil, false
 	}
+}
 
+func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, question Token) (Expression, bool) {
 	if !tokensTouch(question, p.current) {
 		p.errorAtCurrent("expected '(' to touch '?' in conditional expression")
 		return nil, false
@@ -333,6 +345,161 @@ func (p *Parser) parseConditionalExpression(condition Expression, closeParen Tok
 		WhenTrue:  whenTrue,
 		WhenFalse: whenFalse,
 	}, true
+}
+
+func (p *Parser) parseMatchExpressionAfterQuestion(target Expression, question Token) (Expression, bool) {
+	if !tokensTouch(question, p.current) {
+		p.errorAtCurrent("expected '{' to touch '?' in match expression")
+		return nil, false
+	}
+
+	p.advance() // consume "{"
+	p.skipNewlines()
+
+	arms := []MatchArm{}
+	var defaultExpression Expression
+	seenDefault := false
+
+	seenStringPatterns := map[string]Token{}
+	seenNumberPatterns := map[string]Token{}
+	seenBoolPatterns := map[string]Token{}
+
+	for p.current.Type != TokenRBrace && p.current.Type != TokenEOF {
+		if p.current.Type == TokenIdentifier && p.current.Literal == "_" {
+			defaultToken := p.current
+
+			if seenDefault {
+				p.errorAtToken(defaultToken, "duplicate default match arm")
+				return nil, false
+			}
+
+			seenDefault = true
+			p.advance()
+
+			if !p.expectCurrent(TokenColon, "expected ':' after match default") {
+				return nil, false
+			}
+
+			p.advance()
+
+			defaultExpression = p.parseExpression(precLowest)
+			if defaultExpression == nil {
+				p.errorAtToken(defaultToken, "expected expression after match default")
+				return nil, false
+			}
+		} else {
+			pattern, ok := p.parseMatchPattern(
+				seenStringPatterns,
+				seenNumberPatterns,
+				seenBoolPatterns,
+			)
+			if !ok {
+				return nil, false
+			}
+
+			if !p.expectCurrent(TokenColon, "expected ':' after match pattern") {
+				return nil, false
+			}
+
+			p.advance()
+
+			value := p.parseExpression(precLowest)
+			if value == nil {
+				p.errorAtToken(pattern.Token, "expected expression after match pattern")
+				return nil, false
+			}
+
+			arms = append(arms, MatchArm{
+				Pattern: pattern,
+				Value:   value,
+			})
+		}
+
+		if p.current.Type == TokenRBrace {
+			break
+		}
+
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(question, "unterminated match expression")
+			return nil, false
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or '}' after match arm")
+			return nil, false
+		}
+
+		p.skipSeparators()
+	}
+
+	if !p.expectCurrent(TokenRBrace, "expected '}' after match expression") {
+		return nil, false
+	}
+
+	p.advance() // consume "}"
+
+	return &MatchExpression{
+		Token:   question,
+		Target:  target,
+		Arms:    arms,
+		Default: defaultExpression,
+	}, true
+}
+
+func (p *Parser) parseMatchPattern(
+	seenStringPatterns map[string]Token,
+	seenNumberPatterns map[string]Token,
+	seenBoolPatterns map[string]Token,
+) (MatchPattern, bool) {
+	token := p.current
+
+	switch token.Type {
+	case TokenString:
+		if _, ok := seenStringPatterns[token.Literal]; ok {
+			p.errorAtToken(token, "duplicate string match pattern "+strconv.Quote(token.Literal))
+			return MatchPattern{}, false
+		}
+
+		seenStringPatterns[token.Literal] = token
+		p.advance()
+
+		return MatchPattern{
+			Token: token,
+			Kind:  MatchPatternString,
+		}, true
+
+	case TokenNumber:
+		if _, ok := seenNumberPatterns[token.Literal]; ok {
+			p.errorAtToken(token, "duplicate number match pattern "+strconv.Quote(token.Literal))
+			return MatchPattern{}, false
+		}
+
+		seenNumberPatterns[token.Literal] = token
+		p.advance()
+
+		return MatchPattern{
+			Token: token,
+			Kind:  MatchPatternNumber,
+		}, true
+
+	case TokenBool:
+		if _, ok := seenBoolPatterns[token.Literal]; ok {
+			p.errorAtToken(token, "duplicate boolean match pattern "+strconv.Quote(token.Literal))
+			return MatchPattern{}, false
+		}
+
+		seenBoolPatterns[token.Literal] = token
+		p.advance()
+
+		return MatchPattern{
+			Token: token,
+			Kind:  MatchPatternBool,
+		}, true
+
+	default:
+		p.errorAtCurrent("expected string, number, boolean, or '_' match pattern")
+		return MatchPattern{}, false
+	}
 }
 
 func (p *Parser) parseParenthesizedExpression(emptyMessage string) (Expression, Token, bool) {

@@ -101,6 +101,9 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 	case *ConditionalExpression:
 		return compiler.compileConditionalExpression(expression)
 
+	case *MatchExpression:
+		return compiler.compileMatchExpression(expression)
+
 	case *BinaryExpression:
 		if expression.Operator == "&" || expression.Operator == "|" {
 			return compiler.compileLogicalBinaryExpression(expression)
@@ -484,6 +487,100 @@ func (compiler *BytecodeCompiler) compileConditionalExpression(expression *Condi
 	}
 
 	return compiler.patchJumpToCurrent(endJump)
+}
+
+func (compiler *BytecodeCompiler) compileMatchExpression(expression *MatchExpression) error {
+	sourceSpan := compiler.sourceSpanFromToken(expression.Token)
+
+	if err := compiler.compileExpression(expression.Target); err != nil {
+		return err
+	}
+
+	targetLocalName := fmt.Sprintf("<match:%d>", len(compiler.chunk.Locals))
+	targetLocal := compiler.ensureLocal(targetLocalName, false)
+	compiler.chunk.EmitOperandAt(BytecodeOpStoreLocalMutable, targetLocal, sourceSpan)
+
+	endJumps := []int{}
+
+	for _, arm := range expression.Arms {
+		compiler.chunk.EmitOperandAt(BytecodeOpLoadLocal, targetLocal, sourceSpan)
+
+		if err := compiler.compileMatchPattern(arm.Pattern); err != nil {
+			return err
+		}
+
+		compiler.chunk.EmitAt(BytecodeOpEqual, compiler.sourceSpanFromToken(arm.Pattern.Token))
+
+		nextArmJump := compiler.chunk.EmitOperandAt(BytecodeOpJumpIfFalse, -1, sourceSpan)
+		compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+
+		if err := compiler.compileExpression(arm.Value); err != nil {
+			return err
+		}
+
+		endJumps = append(endJumps, compiler.chunk.EmitOperandAt(BytecodeOpJump, -1, sourceSpan))
+
+		if err := compiler.patchJumpToCurrent(nextArmJump); err != nil {
+			return err
+		}
+
+		compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+	}
+
+	if expression.Default != nil {
+		if err := compiler.compileExpression(expression.Default); err != nil {
+			return err
+		}
+	} else {
+		compiler.chunk.EmitAt(BytecodeOpLoadVoid, sourceSpan)
+	}
+
+	for _, jump := range endJumps {
+		if err := compiler.patchJumpToCurrent(jump); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (compiler *BytecodeCompiler) compileMatchPattern(pattern MatchPattern) error {
+	switch pattern.Kind {
+	case MatchPatternString:
+		constant := compiler.chunk.AddConstant(NewStringValue(pattern.Token.Literal))
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpLoadConst,
+			constant,
+			compiler.sourceSpanFromToken(pattern.Token),
+		)
+		return nil
+
+	case MatchPatternNumber:
+		value, err := NewNumberValueFromString(pattern.Token.Literal)
+		if err != nil {
+			return compiler.compileError(pattern.Token, err.Error())
+		}
+
+		constant := compiler.chunk.AddConstant(value)
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpLoadConst,
+			constant,
+			compiler.sourceSpanFromToken(pattern.Token),
+		)
+		return nil
+
+	case MatchPatternBool:
+		if pattern.Token.Literal == "\\/" {
+			compiler.chunk.EmitAt(BytecodeOpLoadTrue, compiler.sourceSpanFromToken(pattern.Token))
+		} else {
+			compiler.chunk.EmitAt(BytecodeOpLoadFalse, compiler.sourceSpanFromToken(pattern.Token))
+		}
+
+		return nil
+
+	default:
+		return compiler.compileError(pattern.Token, fmt.Sprintf("unknown match pattern kind %d", pattern.Kind))
+	}
 }
 
 func (compiler *BytecodeCompiler) compileLogicalBinaryExpression(expression *BinaryExpression) error {

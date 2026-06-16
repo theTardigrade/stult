@@ -123,6 +123,33 @@ type ConditionalExpression struct {
 
 func (e *ConditionalExpression) expressionNode() {}
 
+type MatchExpression struct {
+	Token   Token
+	Target  Expression
+	Arms    []MatchArm
+	Default Expression
+}
+
+func (e *MatchExpression) expressionNode() {}
+
+type MatchArm struct {
+	Pattern MatchPattern
+	Value   Expression
+}
+
+type MatchPatternKind int
+
+const (
+	MatchPatternString MatchPatternKind = iota
+	MatchPatternNumber
+	MatchPatternBool
+)
+
+type MatchPattern struct {
+	Token Token
+	Kind  MatchPatternKind
+}
+
 type StringLiteral struct {
 	Token Token
 	Value string
