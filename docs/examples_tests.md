@@ -13,7 +13,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Collection behaviour](#collection-behaviour)
 * [Grouped expressions](#grouped-expressions)
 * [Literal parsing](#literal-parsing)
-* [Map access](#map-access)
+* [Maps](#maps)
 * [Numbers](#numbers)
 * [Mathematics](#mathematics)
 * [Standard library](#standard-library)
