@@ -1,0 +1,136 @@
+##
+
+EXAMPLE: tests/optional_parameters.stult
+
+This example checks optional user-function parameters.
+
+Optional parameters should receive void when omitted. Variadic parameters should
+still receive an empty array when no remaining arguments are supplied.
+
+##
+
+ASSERT : STD["ASSERT"]
+COLLECTION : STD["TYPE"]["COLLECTION"]
+
+JOIN : { (left, right?)
+	(right = _) {
+		^(left)
+	}
+
+	(left + right)
+}
+
+ASSERT["EQUAL"](
+	JOIN("a"),
+	"a",
+	"omitted optional parameter should receive void"
+)
+
+ASSERT["EQUAL"](
+	JOIN("a", "b"),
+	"ab",
+	"provided optional parameter should be bound"
+)
+
+COLLECT : { (first, second?, third?, ...rest)
+	({
+		first
+		second
+		third
+		rest
+	})
+}
+
+one : COLLECT(1)
+
+ASSERT["EQUAL"](
+	one[0],
+	1,
+	"required parameter should be bound"
+)
+
+ASSERT["EQUAL"](
+	one[1],
+	_,
+	"first omitted optional parameter should receive void"
+)
+
+ASSERT["EQUAL"](
+	one[2],
+	_,
+	"second omitted optional parameter should receive void"
+)
+
+ASSERT["EQUAL"](
+	COLLECTION["SIZE"](one[3]),
+	0,
+	"variadic parameter should receive an empty array when no rest arguments are supplied"
+)
+
+two : COLLECT(1, 2)
+
+ASSERT["EQUAL"](
+	two[1],
+	2,
+	"first provided optional parameter should be bound"
+)
+
+ASSERT["EQUAL"](
+	two[2],
+	_,
+	"later omitted optional parameter should still receive void"
+)
+
+many : COLLECT(1, 2, 3, 4, 5)
+
+ASSERT["EQUAL"](
+	many[0],
+	1,
+	"required parameter should still be bound when all optional and variadic arguments are supplied"
+)
+
+ASSERT["EQUAL"](
+	many[1],
+	2,
+	"first optional parameter should be filled before variadic arguments"
+)
+
+ASSERT["EQUAL"](
+	many[2],
+	3,
+	"second optional parameter should be filled before variadic arguments"
+)
+
+ASSERT["EQUAL"](
+	COLLECTION["SIZE"](many[3]),
+	2,
+	"variadic parameter should collect arguments left after optional parameters are filled"
+)
+
+ASSERT["EQUAL"](
+	many[3][0],
+	4,
+	"first variadic value should be preserved"
+)
+
+ASSERT["EQUAL"](
+	many[3][1],
+	5,
+	"second variadic value should be preserved"
+)
+
+DISCARD_OPTIONAL : { (value, _?)
+	(value)
+}
+
+ASSERT["EQUAL"](
+	DISCARD_OPTIONAL("kept"),
+	"kept",
+	"discard optional parameter may be omitted"
+)
+
+ASSERT["EQUAL"](
+	DISCARD_OPTIONAL("kept", "ignored"),
+	"kept",
+	"discard optional parameter may be supplied"
+)

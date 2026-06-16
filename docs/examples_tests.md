@@ -14,6 +14,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Grouped expressions](#grouped-expressions)
 * [Literal parsing](#literal-parsing)
 * [Maps](#maps)
+* [Functions](#functions)
 * [Numbers](#numbers)
 * [Mathematics](#mathematics)
 * [Standard library](#standard-library)
@@ -52,6 +53,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Dot access](../examples/tests/dot_access_for_maps.stult)  
   Checks that `object.key` behaves like `object["key"]` for map string keys, including chained access, assignment, compound assignment and standard-library paths.
+
+## Functions
+
+- [Optional parameters](../examples/tests/optional_parameters.stult)  
+  Checks that optional user-function parameters receive void when omitted and that variadic parameters still receive an empty array when no remaining arguments are supplied.
 
 ## Numbers
 
