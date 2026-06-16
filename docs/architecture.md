@@ -239,6 +239,8 @@ line comments
 bounded comments
 ```
 
+A single `.` token is used for dot access. Number and range lexing still handle dot-prefixed numbers and range operators specially, so `.5`, `1.5`, `..` and `...` remain distinct from dot access.
+
 Identifier mutability is detected lexically:
 
 ```text
@@ -271,8 +273,11 @@ array literals
 map literals
 range segments
 index expressions
+dot access
 outer-name expressions
 ```
+
+Dot access is parsed as syntax sugar for string-key indexing. The parser lowers `object.key` to the same AST shape as `object["key"]`, preserving the identifier spelling as the string key. This keeps interpreter and bytecode behaviour aligned with ordinary map indexing.
 
 Because the bytecode compiler and interpreter share the AST, language syntax changes must usually be handled in both runtime paths.
 
@@ -821,6 +826,8 @@ examples
 docs
 tests
 ```
+
+Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth.
 
 When changing runtime semantics, check both runtime implementations.
 
