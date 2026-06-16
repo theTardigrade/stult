@@ -1,0 +1,59 @@
+##
+
+EXAMPLE: tests/dot_access_for_maps.stult
+
+This example checks dot-access syntax for map keys.
+
+Dot access should behave like bracket indexing with a string key.
+
+##
+
+ASSERT : STD["ASSERT"]
+
+record : {
+	"title": "Example"
+	"test_key": 10
+	"nested": {
+		"VALUE": "ready"
+	}
+}
+
+ASSERT.EQUAL(
+	record.title,
+	record["title"],
+	"dot access should read a map string key"
+)
+
+ASSERT.EQUAL(
+	record.test_key,
+	10,
+	"dot access should preserve underscores in key names"
+)
+
+ASSERT.EQUAL(
+	record.nested.VALUE,
+	"ready",
+	"dot access should chain through nested maps"
+)
+
+record.test_key :+ 5
+
+ASSERT.EQUAL(
+	record["test_key"],
+	15,
+	"dot access should support compound assignment"
+)
+
+record.new_key : "created"
+
+ASSERT.EQUAL(
+	record["new_key"],
+	"created",
+	"dot access should support new map entries"
+)
+
+ASSERT.EQUAL(
+	STD.TYPE.STRING.NEW(123),
+	"123",
+	"dot access should work with standard-library paths"
+)

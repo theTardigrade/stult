@@ -155,7 +155,7 @@ func (l *Lexer) NextToken() Token {
 		}
 
 		l.readChar()
-		return l.makeToken(TokenIllegal, ".", line, col)
+		return l.makeToken(TokenDot, ".", line, col)
 
 	case '+':
 		if l.peekChar() == '=' {

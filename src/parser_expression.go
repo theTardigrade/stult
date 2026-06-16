@@ -179,6 +179,21 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 			continue
 		}
 
+		if p.current.Type == TokenDot {
+			if !tokensTouch(p.previous, p.current) {
+				p.errorAtCurrent("expected '.' to touch dot-accessed expression")
+				return nil
+			}
+
+			index, ok := p.parseDotAccessExpression(left)
+			if !ok {
+				return nil
+			}
+
+			left = index
+			continue
+		}
+
 		if p.current.Type == TokenLParen && tokensTouch(p.previous, p.current) {
 			call, ok := p.parseCallExpression(left)
 			if !ok {
@@ -211,6 +226,32 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 	}
 
 	return left
+}
+
+func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) {
+	dot := p.current
+	p.advance() // consume "."
+
+	if p.current.Type != TokenIdentifier {
+		p.errorAtCurrent("expected identifier after '.'")
+		return nil, false
+	}
+
+	if !tokensTouch(dot, p.current) {
+		p.errorAtCurrent("expected dot-access identifier to touch '.'")
+		return nil, false
+	}
+
+	identifier := p.current
+	p.advance()
+
+	return &IndexExpression{
+		Object: object,
+		Index: &StringLiteral{
+			Token: identifier,
+			Value: identifier.Literal,
+		},
+	}, true
 }
 
 func (p *Parser) parseParenthesizedExpression(emptyMessage string) (Expression, Token, bool) {

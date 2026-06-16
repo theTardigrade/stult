@@ -19,6 +19,7 @@ const (
 
 	TokenComma TokenType = ","
 	TokenColon TokenType = ":"
+	TokenDot   TokenType = "."
 	TokenAt    TokenType = "@"
 	TokenCaret TokenType = "^"
 
