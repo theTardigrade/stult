@@ -2,6 +2,22 @@
 
 The Stult standard library is available through the immutable binding `STD`.
 
+`STD` is a nested map. Its top-level entries can be accessed with dot access:
+
+```stult
+STD.ASSERT
+STD.IO
+STD.SYSTEM
+STD.FILE
+STD.PATH
+STD.TIME
+STD.MATH
+STD.TYPE
+STD.DATA
+```
+
+Because `STD` is a nested map, the same paths can also be written with bracket indexing:
+
 ```stult
 STD["ASSERT"]
 STD["IO"]
@@ -14,13 +30,15 @@ STD["TYPE"]
 STD["DATA"]
 ```
 
-The standard library is map-shaped. Standard library functions are ordinary callable values stored inside maps.
+Dot access is syntax sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
+
+Standard-library functions are ordinary callable values stored inside maps.
 
 Here's an example:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
-SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+PRINT : STD.IO.PRINT
+SIZE : STD.TYPE.COLLECTION.SIZE
 
 PRINT(
 	"size: "
@@ -28,7 +46,7 @@ PRINT(
 )
 ```
 
-All standard library names are uppercase because standard library maps and functions are intended to be immutable.
+All standard-library entry names are uppercase because those entries are intended to be immutable.
 
 Some standard-library functions accept variadic arguments. In signatures, `...name` means that zero or more remaining arguments are collected into an array under that name.
 
@@ -90,6 +108,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["MATH"]["SQRT"](number)`](#stdmathsqrtnumber)
   - [`STD["MATH"]["POWER"](base, exponent)`](#stdmathpowerbase-exponent)
   - [`STD["MATH"]["MOD"](left, right)`](#stdmathmodleft-right)
+  - [`STD["MATH"]["REM"](left, right)`](#stdmathremleft-right)
   - [`STD["MATH"]["TRIG"]`](#stdmathtrig)
     - [`STD["MATH"]["TRIG"]["SIN"](radians)`](#stdmathtrigsinradians)
     - [`STD["MATH"]["TRIG"]["COS"](radians)`](#stdmathtrigcosradians)
@@ -169,7 +188,7 @@ Returns `_` if `condition` is true.
 Raises a runtime error if `condition` is false.
 
 ```stult
-STD["ASSERT"]["TRUE"](1 + 1 = 2, "arithmetic should work")
+STD.ASSERT.TRUE(1 + 1 = 2, "arithmetic should work")
 ```
 
 ### `STD["ASSERT"]["EQUAL"](actual, expected, message)`
@@ -185,8 +204,8 @@ Returns `_` if `actual` and `expected` are equal.
 Raises a runtime error if they are not equal.
 
 ```stult
-STD["ASSERT"]["EQUAL"]("Stult", "Stult", "strings should match")
-STD["ASSERT"]["EQUAL"](1 + 2, 3, "numbers should match")
+STD.ASSERT.EQUAL("Stult", "Stult", "strings should match")
+STD.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
 ```
 
 ## `STD["IO"]`
@@ -198,9 +217,9 @@ Console input and output.
 Writes values to standard output without adding a newline.
 
 ```stult
-STD["IO"]["WRITE"]("Hello")
-STD["IO"]["WRITE"](" ")
-STD["IO"]["WRITE"]("world")
+STD.IO.WRITE("Hello")
+STD.IO.WRITE(" ")
+STD.IO.WRITE("world")
 ```
 
 Returns `_`.
@@ -210,18 +229,18 @@ Returns `_`.
 Writes values to standard output and then writes a newline.
 
 ```stult
-STD["IO"]["WRITE_LINE"]("Hello world")
-STD["IO"]["WRITE_LINE"]("Count: ", 3)
+STD.IO.WRITE_LINE("Hello world")
+STD.IO.WRITE_LINE("Count: ", 3)
 ```
 
 Returns `_`.
 
 ### `STD["IO"]["PRINT"](...values)`
 
-Alias for `STD["IO"]["WRITE_LINE"]`.
+Alias for `STD.IO.WRITE_LINE`.
 
 ```stult
-STD["IO"]["PRINT"]("Hello")
+STD.IO.PRINT("Hello")
 ```
 
 Returns `_`.
@@ -231,7 +250,7 @@ Returns `_`.
 Writes values to standard error and then writes a newline.
 
 ```stult
-STD["IO"]["WRITE_ERROR"]("Something went wrong")
+STD.IO.WRITE_ERROR("Something went wrong")
 ```
 
 Returns `_`.
@@ -241,7 +260,7 @@ Returns `_`.
 Reads one line from standard input.
 
 ```stult
-line : STD["IO"]["READ_LINE"]()
+line : STD.IO.READ_LINE()
 ```
 
 Returns a string without the trailing newline.
@@ -253,8 +272,8 @@ Returns `_` if input ends before any text is read.
 Writes prompt values to standard output, then reads a line from standard input.
 
 ```stult
-name : STD["IO"]["PROMPT"]("Name: ")
-STD["IO"]["PRINT"]("Hello ", name)
+name : STD.IO.PROMPT("Name: ")
+STD.IO.PRINT("Hello ", name)
 ```
 
 Returns a string without the trailing newline.
@@ -270,7 +289,7 @@ Runtime and process-context helpers.
 Contains the arguments passed to the Stult program.
 
 ```stult
-STD["IO"]["PRINT"](STD["SYSTEM"]["ARGS"])
+STD.IO.PRINT(STD.SYSTEM.ARGS)
 ```
 
 The array does not include the Stult executable path.
@@ -286,7 +305,7 @@ stult run examples/csv_to_json_converter.stult input.csv output.json
 makes this available to Stult code:
 
 ```stult
-STD["SYSTEM"]["ARGS"] # {"input.csv", "output.json"}
+STD.SYSTEM.ARGS # {"input.csv", "output.json"}
 ```
 
 `ARGS` is an immutable array of strings.
@@ -296,9 +315,9 @@ STD["SYSTEM"]["ARGS"] # {"input.csv", "output.json"}
 Returns the current working directory.
 
 ```stult
-cwd : STD["SYSTEM"]["CWD"]()
+cwd : STD.SYSTEM.CWD()
 
-STD["IO"]["PRINT"](cwd)
+STD.IO.PRINT(cwd)
 ```
 
 Returns a string.
@@ -308,9 +327,9 @@ Returns a string.
 Reads an environment variable.
 
 ```stult
-home : STD["SYSTEM"]["ENV"]("HOME")
+home : STD.SYSTEM.ENV("HOME")
 
-STD["IO"]["PRINT"](home)
+STD.IO.PRINT(home)
 ```
 
 The argument must be a string.
@@ -324,7 +343,7 @@ Returns `_` when the environment variable is not set.
 Exits the current process with the given status code.
 
 ```stult
-STD["SYSTEM"]["EXIT"](0)
+STD.SYSTEM.EXIT(0)
 ```
 
 The exit code must be an integer number from `0` to `255`.
@@ -340,7 +359,7 @@ File-system helpers.
 Reads a file as text.
 
 ```stult
-text : STD["FILE"]["READ"]("notes.txt")
+text : STD.FILE.READ("notes.txt")
 ```
 
 Returns a string.
@@ -350,7 +369,7 @@ Returns a string.
 Writes content to a file, replacing existing contents.
 
 ```stult
-STD["FILE"]["WRITE"]("notes.txt", "Hello")
+STD.FILE.WRITE("notes.txt", "Hello")
 ```
 
 The path must be a string.
@@ -364,7 +383,7 @@ Returns `_`.
 Appends content to a file.
 
 ```stult
-STD["FILE"]["APPEND"]("notes.txt", "\nAnother line")
+STD.FILE.APPEND("notes.txt", "\nAnother line")
 ```
 
 Creates the file if it does not exist.
@@ -376,8 +395,8 @@ Returns `_`.
 Checks whether a file-system path exists.
 
 ```stult
-(STD["FILE"]["EXISTS"]("notes.txt")) {
-	STD["IO"]["PRINT"]("notes.txt exists")
+(STD.FILE.EXISTS("notes.txt")) {
+	STD.IO.PRINT("notes.txt exists")
 }
 ```
 
@@ -388,7 +407,7 @@ Returns a boolean.
 Deletes a file-system path.
 
 ```stult
-STD["FILE"]["DELETE"]("notes.txt")
+STD.FILE.DELETE("notes.txt")
 ```
 
 Returns `_`.
@@ -398,7 +417,7 @@ Returns `_`.
 Renames or moves a file-system path.
 
 ```stult
-STD["FILE"]["RENAME"]("old.txt", "new.txt")
+STD.FILE.RENAME("old.txt", "new.txt")
 ```
 
 Returns `_`.
@@ -408,7 +427,7 @@ Returns `_`.
 Copies a file.
 
 ```stult
-STD["FILE"]["COPY"]("source.txt", "copy.txt")
+STD.FILE.COPY("source.txt", "copy.txt")
 ```
 
 The destination is created or replaced.
@@ -420,7 +439,7 @@ Returns `_`.
 Returns the size of a file-system path in bytes.
 
 ```stult
-size : STD["FILE"]["SIZE"]("notes.txt")
+size : STD.FILE.SIZE("notes.txt")
 ```
 
 Returns a number.
@@ -434,9 +453,9 @@ Path manipulation helpers.
 Joins path parts into one path.
 
 ```stult
-path : STD["PATH"]["JOIN"]("data", "input.csv")
+path : STD.PATH.JOIN("data", "input.csv")
 
-STD["IO"]["PRINT"](path)
+STD.IO.PRINT(path)
 ```
 
 Requires at least one argument.
@@ -450,9 +469,9 @@ Returns a string.
 Returns an absolute version of a path.
 
 ```stult
-absolute_path : STD["PATH"]["ABS"]("input.csv")
+absolute_path : STD.PATH.ABS("input.csv")
 
-STD["IO"]["PRINT"](absolute_path)
+STD.IO.PRINT(absolute_path)
 ```
 
 The argument must be a string.
@@ -464,9 +483,9 @@ Returns a string.
 Returns the final element of a path.
 
 ```stult
-name : STD["PATH"]["BASE"]("data/input.csv")
+name : STD.PATH.BASE("data/input.csv")
 
-STD["IO"]["PRINT"](name)
+STD.IO.PRINT(name)
 ```
 
 The argument must be a string.
@@ -478,9 +497,9 @@ Returns a string.
 Cleans a path by removing redundant path elements.
 
 ```stult
-clean_path : STD["PATH"]["CLEAN"]("./data/../data/input.csv")
+clean_path : STD.PATH.CLEAN("./data/../data/input.csv")
 
-STD["IO"]["PRINT"](clean_path)
+STD.IO.PRINT(clean_path)
 ```
 
 The argument must be a string.
@@ -492,9 +511,9 @@ Returns a string.
 Returns the directory part of a path.
 
 ```stult
-dir : STD["PATH"]["DIR"]("data/input.csv")
+dir : STD.PATH.DIR("data/input.csv")
 
-STD["IO"]["PRINT"](dir)
+STD.IO.PRINT(dir)
 ```
 
 The argument must be a string.
@@ -506,9 +525,9 @@ Returns a string.
 Returns the file extension of a path.
 
 ```stult
-extension : STD["PATH"]["EXT"]("data/input.csv")
+extension : STD.PATH.EXT("data/input.csv")
 
-STD["IO"]["PRINT"](extension)
+STD.IO.PRINT(extension)
 ```
 
 The argument must be a string.
@@ -524,7 +543,7 @@ Timestamps, sleep and calendar snapshots.
 Returns the current Unix timestamp in milliseconds.
 
 ```stult
-start : STD["TIME"]["MILLI_TIMESTAMP"]()
+start : STD.TIME.MILLI_TIMESTAMP()
 ```
 
 Returns a number.
@@ -534,7 +553,7 @@ Returns a number.
 Returns the current Unix timestamp in nanoseconds.
 
 ```stult
-start : STD["TIME"]["NANO_TIMESTAMP"]()
+start : STD.TIME.NANO_TIMESTAMP()
 ```
 
 Returns a number.
@@ -544,7 +563,7 @@ Returns a number.
 Sleeps for the given number of milliseconds.
 
 ```stult
-STD["TIME"]["MILLI_SLEEP"](500)
+STD.TIME.MILLI_SLEEP(500)
 ```
 
 The argument must be a non-negative integer number.
@@ -556,9 +575,9 @@ Returns `_`.
 Returns a map describing the current local time.
 
 ```stult
-now : STD["TIME"]["LOCAL_CALENDAR"]()
+now : STD.TIME.LOCAL_CALENDAR()
 
-STD["IO"]["PRINT"](now["YEAR"], "-", now["MONTH"], "-", now["DAY"])
+STD.IO.PRINT(now.YEAR, "-", now.MONTH, "-", now.DAY)
 ```
 
 The returned map contains:
@@ -582,7 +601,7 @@ OFFSET
 Returns a map describing the current UTC time and date.
 
 ```stult
-utc : STD["TIME"]["UTC_CALENDAR"]()
+utc : STD.TIME.UTC_CALENDAR()
 ```
 
 The returned map has the same keys as `LOCAL_CALENDAR`.
@@ -596,7 +615,7 @@ Numeric helpers, constants and trigonometry.
 The mathematical constant pi.
 
 ```stult
-STD["MATH"]["PI"]
+STD.MATH.PI
 ```
 
 ### `STD["MATH"]["TAU"]`
@@ -604,7 +623,7 @@ STD["MATH"]["PI"]
 The mathematical constant tau.
 
 ```stult
-STD["MATH"]["TAU"]
+STD.MATH.TAU
 ```
 
 `TAU` is `PI * 2`.
@@ -614,7 +633,7 @@ STD["MATH"]["TAU"]
 The mathematical constant e.
 
 ```stult
-STD["MATH"]["E"]
+STD.MATH.E
 ```
 
 ### `STD["MATH"]["SQUARE"](number)`
@@ -622,7 +641,7 @@ STD["MATH"]["E"]
 Returns `number * number`.
 
 ```stult
-STD["MATH"]["SQUARE"](9)
+STD.MATH.SQUARE(9)
 ```
 
 ### `STD["MATH"]["CUBE"](number)`
@@ -630,7 +649,7 @@ STD["MATH"]["SQUARE"](9)
 Returns `number * number * number`.
 
 ```stult
-STD["MATH"]["CUBE"](3)
+STD.MATH.CUBE(3)
 ```
 
 ### `STD["MATH"]["ABS"](number)`
@@ -638,7 +657,7 @@ STD["MATH"]["CUBE"](3)
 Returns the absolute value.
 
 ```stult
-STD["MATH"]["ABS"](-12.5)
+STD.MATH.ABS(-12.5)
 ```
 
 ### `STD["MATH"]["SIGN"](number)`
@@ -652,7 +671,7 @@ Returns:
 ```
 
 ```stult
-STD["MATH"]["SIGN"](-12.5)
+STD.MATH.SIGN(-12.5)
 ```
 
 ### `STD["MATH"]["MIN"](...numbers)`
@@ -660,7 +679,7 @@ STD["MATH"]["SIGN"](-12.5)
 Returns the smallest number.
 
 ```stult
-STD["MATH"]["MIN"](8, -3, 10, 2)
+STD.MATH.MIN(8, -3, 10, 2)
 ```
 
 Requires at least one argument.
@@ -670,7 +689,7 @@ Requires at least one argument.
 Returns the largest number.
 
 ```stult
-STD["MATH"]["MAX"](8, -3, 10, 2)
+STD.MATH.MAX(8, -3, 10, 2)
 ```
 
 Requires at least one argument.
@@ -680,7 +699,7 @@ Requires at least one argument.
 Restricts a number to a range.
 
 ```stult
-STD["MATH"]["CLAMP"](15, 0, 10)
+STD.MATH.CLAMP(15, 0, 10)
 ```
 
 Returns `minimum` if `value` is below `minimum`.
@@ -694,7 +713,7 @@ Returns `value` otherwise.
 Linearly interpolates between `start` and `end`.
 
 ```stult
-STD["MATH"]["LERP"](0, 10, 0.5)
+STD.MATH.LERP(0, 10, 0.5)
 ```
 
 ### `STD["MATH"]["FLOOR"](number)`
@@ -702,7 +721,7 @@ STD["MATH"]["LERP"](0, 10, 0.5)
 Rounds down to an integer.
 
 ```stult
-STD["MATH"]["FLOOR"](3.9)
+STD.MATH.FLOOR(3.9)
 ```
 
 ### `STD["MATH"]["CEIL"](number)`
@@ -710,7 +729,7 @@ STD["MATH"]["FLOOR"](3.9)
 Rounds up to an integer.
 
 ```stult
-STD["MATH"]["CEIL"](3.1)
+STD.MATH.CEIL(3.1)
 ```
 
 ### `STD["MATH"]["ROUND"](number)`
@@ -718,7 +737,7 @@ STD["MATH"]["CEIL"](3.1)
 Rounds to the nearest integer.
 
 ```stult
-STD["MATH"]["ROUND"](3.5)
+STD.MATH.ROUND(3.5)
 ```
 
 Positive halves round upward.
@@ -730,7 +749,7 @@ Negative halves round downward.
 Removes the fractional part.
 
 ```stult
-STD["MATH"]["TRUNC"](-3.9)
+STD.MATH.TRUNC(-3.9)
 ```
 
 ### `STD["MATH"]["SQRT"](number)`
@@ -738,7 +757,7 @@ STD["MATH"]["TRUNC"](-3.9)
 Returns the square root.
 
 ```stult
-STD["MATH"]["SQRT"](2)
+STD.MATH.SQRT(2)
 ```
 
 The argument must be non-negative.
@@ -748,8 +767,8 @@ The argument must be non-negative.
 Raises `base` to `exponent`.
 
 ```stult
-STD["MATH"]["POWER"](2, 10)
-STD["MATH"]["POWER"](2, 0.5)
+STD.MATH.POWER(2, 10)
+STD.MATH.POWER(2, 0.5)
 ```
 
 Zero cannot be raised to a negative exponent.
@@ -761,8 +780,8 @@ Negative bases with non-integer exponents are not allowed.
 Returns the mathematical modulo.
 
 ```stult
-STD["MATH"]["MOD"](10, 3)
-STD["MATH"]["MOD"](-10, 3)
+STD.MATH.MOD(10, 3)
+STD.MATH.MOD(-10, 3)
 ```
 
 The divisor cannot be zero.
@@ -774,8 +793,8 @@ For a positive divisor, the result is greater than or equal to zero and less tha
 Returns the truncating remainder.
 
 ```stult
-STD["MATH"]["REM"](10, 3)
-STD["MATH"]["REM"](-10, 3)
+STD.MATH.REM(10, 3)
+STD.MATH.REM(-10, 3)
 ```
 
 The divisor cannot be zero.
@@ -791,7 +810,7 @@ Trigonometric functions use radians.
 Returns the sine of an angle.
 
 ```stult
-STD["MATH"]["TRIG"]["SIN"](STD["MATH"]["PI"] / 2)
+STD.MATH.TRIG.SIN(STD.MATH.PI / 2)
 ```
 
 ### `STD["MATH"]["TRIG"]["COS"](radians)`
@@ -799,7 +818,7 @@ STD["MATH"]["TRIG"]["SIN"](STD["MATH"]["PI"] / 2)
 Returns the cosine of an angle.
 
 ```stult
-STD["MATH"]["TRIG"]["COS"](0)
+STD.MATH.TRIG.COS(0)
 ```
 
 ### `STD["MATH"]["TRIG"]["TAN"](radians)`
@@ -807,7 +826,7 @@ STD["MATH"]["TRIG"]["COS"](0)
 Returns the tangent of an angle.
 
 ```stult
-STD["MATH"]["TRIG"]["TAN"](STD["MATH"]["PI"] / 4)
+STD.MATH.TRIG.TAN(STD.MATH.PI / 4)
 ```
 
 Tangent is not defined where cosine is zero.
@@ -817,7 +836,7 @@ Tangent is not defined where cosine is zero.
 Converts degrees to radians.
 
 ```stult
-STD["MATH"]["TRIG"]["RADIANS"](180)
+STD.MATH.TRIG.RADIANS(180)
 ```
 
 ### `STD["MATH"]["TRIG"]["DEGREES"](radians)`
@@ -825,7 +844,7 @@ STD["MATH"]["TRIG"]["RADIANS"](180)
 Converts radians to degrees.
 
 ```stult
-STD["MATH"]["TRIG"]["DEGREES"](STD["MATH"]["PI"])
+STD.MATH.TRIG.DEGREES(STD.MATH.PI)
 ```
 
 ## `STD["TYPE"]`
@@ -837,15 +856,15 @@ Type predicates, conversions and collection helpers.
 Each predicate accepts one value and returns a boolean.
 
 ```stult
-STD["TYPE"]["IS_VOID"](_)
-STD["TYPE"]["IS_BOOL"](\/)
-STD["TYPE"]["IS_NUMBER"](123)
-STD["TYPE"]["IS_STRING"]("hello")
-STD["TYPE"]["IS_ARRAY"]({})
-STD["TYPE"]["IS_MAP"]({:})
-STD["TYPE"]["IS_FUNCTION"]({ () (_) })
-STD["TYPE"]["IS_BUILTIN_FUNCTION"](STD["IO"]["PRINT"])
-STD["TYPE"]["IS_COLLECTION"]({"a", "b"})
+STD.TYPE.IS_VOID(_)
+STD.TYPE.IS_BOOL(\/)
+STD.TYPE.IS_NUMBER(123)
+STD.TYPE.IS_STRING("hello")
+STD.TYPE.IS_ARRAY({})
+STD.TYPE.IS_MAP({:})
+STD.TYPE.IS_FUNCTION({ () (_) })
+STD.TYPE.IS_BUILTIN_FUNCTION(STD.IO.PRINT)
+STD.TYPE.IS_COLLECTION({"a", "b"})
 ```
 
 `STD["TYPE"]["IS_COLLECTION"]` returns true for arrays, maps and strings.
@@ -859,7 +878,7 @@ Boolean constants and conversion helpers.
 The standard-library boolean true constant.
 
 ```stult
-STD["TYPE"]["BOOL"]["TRUE"]
+STD.TYPE.BOOL.TRUE
 ```
 
 This value is equivalent to the boolean literal `\/`.
@@ -869,7 +888,7 @@ This value is equivalent to the boolean literal `\/`.
 The standard-library boolean false constant.
 
 ```stult
-STD["TYPE"]["BOOL"]["FALSE"]
+STD.TYPE.BOOL.FALSE
 ```
 
 This value is equivalent to the boolean literal `/\`.
@@ -879,10 +898,10 @@ This value is equivalent to the boolean literal `/\`.
 Converts a value to a boolean when possible.
 
 ```stult
-STD["TYPE"]["BOOL"]["NEW"]("true")
-STD["TYPE"]["BOOL"]["NEW"]("false")
-STD["TYPE"]["BOOL"]["NEW"](1)
-STD["TYPE"]["BOOL"]["NEW"](0)
+STD.TYPE.BOOL.NEW("true")
+STD.TYPE.BOOL.NEW("false")
+STD.TYPE.BOOL.NEW(1)
+STD.TYPE.BOOL.NEW(0)
 ```
 
 Conversion rules:
@@ -906,7 +925,7 @@ Number constants, formatting helpers and conversion helpers.
 The number of decimal places used by ordinary number display.
 
 ```stult
-STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]
+STD.TYPE.NUMBER.DEFAULT_DECIMAL_PLACES
 ```
 
 This controls display only. It does not limit how many decimal places Stult can store internally.
@@ -916,7 +935,7 @@ This controls display only. It does not limit how many decimal places Stult can 
 The maximum number of digits Stult stores after the decimal point.
 
 ```stult
-STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]
+STD.TYPE.NUMBER.MAX_DECIMAL_PLACES
 ```
 
 This limit applies to the decimal part of a number, not to the whole-number part. Whole-number values are theoretically unbounded, subject to available memory and processing time.
@@ -926,12 +945,12 @@ This limit applies to the decimal part of a number, not to the whole-number part
 Formats `number` as a fixed decimal string.
 
 ```stult
-NUMBER : STD["TYPE"]["NUMBER"]
+NUMBER : STD.TYPE.NUMBER
 
-NUMBER["FORMAT"](1 / 3, 32)
+NUMBER.FORMAT(1 / 3, 32)
 # "0.33333333333333333333333333333333"
 
-NUMBER["FORMAT"](10, 256)
+NUMBER.FORMAT(10, 256)
 # "10"
 ```
 
@@ -944,9 +963,9 @@ The result uses up to the requested number of decimal places and trims trailing 
 Formats `number` as a scientific-notation string.
 
 ```stult
-NUMBER : STD["TYPE"]["NUMBER"]
+NUMBER : STD.TYPE.NUMBER
 
-NUMBER["FORMAT_SCIENTIFIC"](12345, 3)
+NUMBER.FORMAT_SCIENTIFIC(12345, 3)
 # "1.23e+4"
 ```
 
@@ -959,9 +978,9 @@ The result is rounded to the requested number of significant digits.
 Converts a value to a number when possible.
 
 ```stult
-STD["TYPE"]["NUMBER"]["NEW"]("123.45")
-STD["TYPE"]["NUMBER"]["NEW"]("\/")  # not useful; booleans are values, so use \/ directly
-STD["TYPE"]["NUMBER"]["NEW"](\/)
+STD.TYPE.NUMBER.NEW("123.45")
+STD.TYPE.NUMBER.NEW("\/")  # not useful; booleans are values, so use \/ directly
+STD.TYPE.NUMBER.NEW(\/)
 ```
 
 Conversion rules:
@@ -984,9 +1003,9 @@ String conversion and string utility functions.
 Converts a value to a string.
 
 ```stult
-STD["TYPE"]["STRING"]["NEW"](123)
-STD["TYPE"]["STRING"]["NEW"](\/)
-STD["TYPE"]["STRING"]["NEW"]({"a", "b"})
+STD.TYPE.STRING.NEW(123)
+STD.TYPE.STRING.NEW(\/)
+STD.TYPE.STRING.NEW({"a", "b"})
 ```
 
 ### `STD["TYPE"]["STRING"]["CHARACTERS"](text)`
@@ -994,7 +1013,7 @@ STD["TYPE"]["STRING"]["NEW"]({"a", "b"})
 Returns an array of one-character strings.
 
 ```stult
-STD["TYPE"]["STRING"]["CHARACTERS"]("cat")
+STD.TYPE.STRING.CHARACTERS("cat")
 ```
 
 Result:
@@ -1008,7 +1027,7 @@ Result:
 Removes leading and trailing whitespace.
 
 ```stult
-STD["TYPE"]["STRING"]["TRIM"]("  hello  ")
+STD.TYPE.STRING.TRIM("  hello  ")
 ```
 
 ### `STD["TYPE"]["STRING"]["TRIM_START"](text)`
@@ -1016,7 +1035,7 @@ STD["TYPE"]["STRING"]["TRIM"]("  hello  ")
 Removes leading whitespace.
 
 ```stult
-STD["TYPE"]["STRING"]["TRIM_START"]("  hello")
+STD.TYPE.STRING.TRIM_START("  hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["TRIM_END"](text)`
@@ -1024,7 +1043,7 @@ STD["TYPE"]["STRING"]["TRIM_START"]("  hello")
 Removes trailing whitespace.
 
 ```stult
-STD["TYPE"]["STRING"]["TRIM_END"]("hello  ")
+STD.TYPE.STRING.TRIM_END("hello  ")
 ```
 
 ### `STD["TYPE"]["STRING"]["TO_LOWER"](text)`
@@ -1032,7 +1051,7 @@ STD["TYPE"]["STRING"]["TRIM_END"]("hello  ")
 Converts text to lowercase.
 
 ```stult
-STD["TYPE"]["STRING"]["TO_LOWER"]("Hello")
+STD.TYPE.STRING.TO_LOWER("Hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["TO_UPPER"](text)`
@@ -1040,7 +1059,7 @@ STD["TYPE"]["STRING"]["TO_LOWER"]("Hello")
 Converts text to uppercase.
 
 ```stult
-STD["TYPE"]["STRING"]["TO_UPPER"]("Hello")
+STD.TYPE.STRING.TO_UPPER("Hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["IS_FOUND_IN"](search, text)`
@@ -1048,7 +1067,7 @@ STD["TYPE"]["STRING"]["TO_UPPER"]("Hello")
 Checks whether `search` appears inside `text`.
 
 ```stult
-STD["TYPE"]["STRING"]["IS_FOUND_IN"]("ell", "hello")
+STD.TYPE.STRING.IS_FOUND_IN("ell", "hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["IS_FOUND_AT_START"](search, text)`
@@ -1056,7 +1075,7 @@ STD["TYPE"]["STRING"]["IS_FOUND_IN"]("ell", "hello")
 Checks whether `text` starts with `search`.
 
 ```stult
-STD["TYPE"]["STRING"]["IS_FOUND_AT_START"]("he", "hello")
+STD.TYPE.STRING.IS_FOUND_AT_START("he", "hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["IS_FOUND_AT_END"](search, text)`
@@ -1064,7 +1083,7 @@ STD["TYPE"]["STRING"]["IS_FOUND_AT_START"]("he", "hello")
 Checks whether `text` ends with `search`.
 
 ```stult
-STD["TYPE"]["STRING"]["IS_FOUND_AT_END"]("lo", "hello")
+STD.TYPE.STRING.IS_FOUND_AT_END("lo", "hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["REPLACE"](text, old, new)`
@@ -1072,7 +1091,7 @@ STD["TYPE"]["STRING"]["IS_FOUND_AT_END"]("lo", "hello")
 Replaces every occurrence of `old` with `new`.
 
 ```stult
-STD["TYPE"]["STRING"]["REPLACE"]("one two one", "one", "three")
+STD.TYPE.STRING.REPLACE("one two one", "one", "three")
 ```
 
 ### `STD["TYPE"]["STRING"]["SPLIT"](text, separator)`
@@ -1080,7 +1099,7 @@ STD["TYPE"]["STRING"]["REPLACE"]("one two one", "one", "three")
 Splits text into an array of strings.
 
 ```stult
-STD["TYPE"]["STRING"]["SPLIT"]("a,b,c", ",")
+STD.TYPE.STRING.SPLIT("a,b,c", ",")
 ```
 
 ### `STD["TYPE"]["STRING"]["JOIN"](array, separator)`
@@ -1088,7 +1107,7 @@ STD["TYPE"]["STRING"]["SPLIT"]("a,b,c", ",")
 Joins array elements into a string.
 
 ```stult
-STD["TYPE"]["STRING"]["JOIN"]({"a", "b", "c"}, ",")
+STD.TYPE.STRING.JOIN({"a", "b", "c"}, ",")
 ```
 
 String elements are used directly.
@@ -1106,7 +1125,7 @@ Appends one or more values to an array.
 ```stult
 items : {}
 
-STD["TYPE"]["ARRAY"]["APPEND"](items, "a", "b", "c")
+STD.TYPE.ARRAY.APPEND(items, "a", "b", "c")
 ```
 
 Returns `_`.
@@ -1124,7 +1143,7 @@ Map-specific helpers.
 Returns an array of map keys sorted lexicographically.
 
 ```stult
-keys : STD["TYPE"]["MAP"]["KEYS"]({"b": 2, "a": 1})
+keys : STD.TYPE.MAP.KEYS({"b": 2, "a": 1})
 ```
 
 Returns `_` when the value is not a map.
@@ -1134,7 +1153,7 @@ Returns `_` when the value is not a map.
 Returns an array of map values sorted by key order.
 
 ```stult
-values : STD["TYPE"]["MAP"]["VALUES"]({"b": 2, "a": 1})
+values : STD.TYPE.MAP.VALUES({"b": 2, "a": 1})
 ```
 
 Returns `_` when the value is not a map.
@@ -1148,9 +1167,9 @@ Helpers shared by arrays, maps and strings.
 Returns the size of a collection.
 
 ```stult
-STD["TYPE"]["COLLECTION"]["SIZE"]({"a", "b", "c"})
-STD["TYPE"]["COLLECTION"]["SIZE"]({"name": "example"})
-STD["TYPE"]["COLLECTION"]["SIZE"]("hello")
+STD.TYPE.COLLECTION.SIZE({"a", "b", "c"})
+STD.TYPE.COLLECTION.SIZE({"name": "example"})
+STD.TYPE.COLLECTION.SIZE("hello")
 ```
 
 For arrays, size is the number of elements.
@@ -1166,8 +1185,8 @@ Returns `_` for non-collections.
 Checks whether a collection is empty.
 
 ```stult
-STD["TYPE"]["COLLECTION"]["IS_EMPTY"]({})
-STD["TYPE"]["COLLECTION"]["IS_EMPTY"]("")
+STD.TYPE.COLLECTION.IS_EMPTY({})
+STD.TYPE.COLLECTION.IS_EMPTY("")
 ```
 
 Returns `_` for non-collections.
@@ -1177,9 +1196,9 @@ Returns `_` for non-collections.
 Checks whether a collection contains a key or index.
 
 ```stult
-STD["TYPE"]["COLLECTION"]["HAS"]({"name": "example"}, "name")
-STD["TYPE"]["COLLECTION"]["HAS"]({"a", "b"}, 1)
-STD["TYPE"]["COLLECTION"]["HAS"]("cat", 0)
+STD.TYPE.COLLECTION.HAS({"name": "example"}, "name")
+STD.TYPE.COLLECTION.HAS({"a", "b"}, 1)
+STD.TYPE.COLLECTION.HAS("cat", 0)
 ```
 
 For maps, the key must be a string.
@@ -1194,7 +1213,7 @@ Removes all contents from a non-frozen collection.
 
 ```stult
 items : {"a", "b"}
-STD["TYPE"]["COLLECTION"]["CLEAR"](items)
+STD.TYPE.COLLECTION.CLEAR(items)
 ```
 
 For arrays, this removes all elements.
@@ -1212,7 +1231,7 @@ Raises a runtime error if the collection is frozen.
 Deeply freezes a collection.
 
 ```stult
-CONFIG : STD["TYPE"]["COLLECTION"]["FREEZE"]({
+CONFIG : STD.TYPE.COLLECTION.FREEZE({
 	"name": "demo"
 	"values": {1, 2, 3}
 })
@@ -1232,9 +1251,9 @@ The freeze is deep. Nested arrays, maps and strings inside the collection are fr
 
 ```stult
 items : {1, 2, 3}
-STD["TYPE"]["COLLECTION"]["FREEZE"](items)
+STD.TYPE.COLLECTION.FREEZE(items)
 
-other_items : STD["TYPE"]["COLLECTION"]["FREEZE"]({4, 5, 6})
+other_items : STD.TYPE.COLLECTION.FREEZE({4, 5, 6})
 ```
 
 Returns `_` for non-collections.
@@ -1244,10 +1263,10 @@ Returns `_` for non-collections.
 Checks whether a value is a frozen collection.
 
 ```stult
-items : STD["TYPE"]["COLLECTION"]["FREEZE"]({1, 2, 3})
+items : STD.TYPE.COLLECTION.FREEZE({1, 2, 3})
 
-STD["TYPE"]["COLLECTION"]["IS_FROZEN"](items)
-STD["TYPE"]["COLLECTION"]["IS_FROZEN"](items[0])
+STD.TYPE.COLLECTION.IS_FROZEN(items)
+STD.TYPE.COLLECTION.IS_FROZEN(items[0])
 ```
 
 Returns `\/` for frozen arrays, maps and strings.
@@ -1275,7 +1294,7 @@ rows : {
 	{"b", 20}
 }
 
-text : STD["DATA"]["CSV"]["NEW"](rows)
+text : STD.DATA.CSV.NEW(rows)
 ```
 
 Fields are converted to strings when possible.
@@ -1287,7 +1306,7 @@ Returns a string.
 Parses CSV text into an array of row arrays.
 
 ```stult
-rows : STD["DATA"]["CSV"]["PARSE"]("name,score\na,10\nb,20\n")
+rows : STD.DATA.CSV.PARSE("name,score\na,10\nb,20\n")
 ```
 
 Returns an array of arrays of strings.
@@ -1297,7 +1316,7 @@ Returns an array of arrays of strings.
 Checks whether text is valid CSV.
 
 ```stult
-STD["DATA"]["CSV"]["IS_VALID"]("name,score\na,10\n")
+STD.DATA.CSV.IS_VALID("name,score\na,10\n")
 ```
 
 Returns a boolean.
@@ -1313,7 +1332,7 @@ JSON encoding, parsing and validation helpers.
 Encodes a Stult value as JSON text.
 
 ```stult
-text : STD["DATA"]["JSON"]["NEW"]({
+text : STD.DATA.JSON.NEW({
 	"name": "example"
 	"active": \/
 })
@@ -1338,7 +1357,7 @@ Returns a string.
 Parses JSON text into a Stult value.
 
 ```stult
-value : STD["DATA"]["JSON"]["PARSE"]("{\"name\":\"example\",\"active\":true}")
+value : STD.DATA.JSON.PARSE("{\"name\":\"example\",\"active\":true}")
 ```
 
 Conversion rules:
@@ -1359,7 +1378,7 @@ The input must contain exactly one JSON value.
 Checks whether text is valid JSON.
 
 ```stult
-STD["DATA"]["JSON"]["IS_VALID"]("{\"ok\":true}")
+STD.DATA.JSON.IS_VALID("{\"ok\":true}")
 ```
 
 Returns a boolean.
@@ -1373,7 +1392,7 @@ STULTON encoding, parsing and validation helpers.
 Encodes a Stult value as STULTON text.
 
 ```stult
-text : STD["DATA"]["STULTON"]["NEW"]({
+text : STD.DATA.STULTON.NEW({
 	"NAME": "example"
 	"active": \/
 	"items": {
@@ -1404,7 +1423,7 @@ Returns a string.
 Parses STULTON text into a Stult value.
 
 ```stult
-value : STD["DATA"]["STULTON"]["PARSE"]("{\"active\": \\/}")
+value : STD.DATA.STULTON.PARSE("{\"active\": \\/}")
 ```
 
 STULTON parsing only allows data expressions.
@@ -1430,7 +1449,7 @@ Exponential number notation is not allowed in STULTON.
 Checks whether text is valid STULTON data.
 
 ```stult
-STD["DATA"]["STULTON"]["IS_VALID"]("{\"active\": \\/}")
+STD.DATA.STULTON.IS_VALID("{\"active\": \\/}")
 ```
 
 Returns a boolean.
