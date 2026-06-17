@@ -127,7 +127,7 @@ Run a manifest-based project:
 Evaluate a source string directly:
 
 ```bash
-./stult run -e 'STD["IO"]["PRINT"]("hello")'
+./stult run -e 'STD.IO.PRINT("hello")'
 ```
 
 Run from the current directory by discovering a manifest upward from `.`:
@@ -214,7 +214,7 @@ With a directory target, `stult run` looks for a manifest in that directory.
 
 With a manifest target, `stult run` runs the files listed by that manifest.
 
-Program arguments after the target are available to Stult code through `STD["SYSTEM"]["ARGS"]`.
+Program arguments after the target are available to Stult code through `STD.SYSTEM.ARGS`.
 
 For example:
 
@@ -225,7 +225,7 @@ stult run examples/csv_to_json_converter.stult input.csv output.json
 makes this available to Stult code:
 
 ```stult
-STD["SYSTEM"]["ARGS"] # {"input.csv", "output.json"}
+STD.SYSTEM.ARGS # {"input.csv", "output.json"}
 ```
 
 ### Runtime modes
@@ -261,19 +261,19 @@ This is useful for quick experiments, shell scripts and short one-off commands.
 For example:
 
 ```bash
-stult run -e 'X : 10,STD["IO"]["PRINT"](X * 20)'
+stult run -e 'X : 10,STD.IO.PRINT(X * 20)'
 ```
 
 Or explicitly through the interpreter:
 
 ```bash
-stult run --interpreter -e 'STD["IO"]["PRINT"]("hello")'
+stult run --interpreter -e 'STD.IO.PRINT("hello")'
 ```
 
 On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
 
 ```powershell
-.\stult.exe run -e 'X : 10,STD[\"IO\"][\"PRINT\"](X * 20)'
+.\stult.exe run -e 'X : 10,STD.IO.PRINT(X * 20)'
 ```
 
 The evaluated source runs with the standard library available as `STD`.
@@ -295,7 +295,7 @@ stult dump --bytecode examples/calculate_circle_area_from_map.stult
 You can also dump bytecode for an evaluated source string:
 
 ```bash
-stult dump -e 'STD["IO"]["PRINT"]("hello")'
+stult dump -e 'STD.IO.PRINT("hello")'
 ```
 
 `dump` is bytecode-only. There is no interpreter dump mode.
@@ -474,7 +474,7 @@ More precisely, whole-number values are theoretically unbounded, subject to avai
 
 Although Stult keeps more decimal places internally, numbers are ordinarily displayed with fewer decimal places (currently 32).
 
-The number-formatting helpers in `STD["TYPE"]["NUMBER"]` can request more decimal places when needed.
+The number-formatting helpers in `STD.TYPE.NUMBER` can request more decimal places when needed.
 
 ### Bindings
 
@@ -537,7 +537,7 @@ Then use those bindings like so:
 TRUE : \/
 FALSE : /\
 
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 SHOULD_RUN : TRUE
 
@@ -553,8 +553,8 @@ This approach is especially useful in manifest-based projects, where shared bind
 The standard library also provides equivalent boolean bindings, which can be used like this:
 
 ```stult
-TRUE : STD["TYPE"]["BOOL"]["TRUE"]
-FALSE : STD["TYPE"]["BOOL"]["FALSE"]
+TRUE : STD.TYPE.BOOL.TRUE
+FALSE : STD.TYPE.BOOL.FALSE
 ```
 
 ### Operators
@@ -698,7 +698,7 @@ The last two lines are equivalent to:
 
 ```stult
 record["title"]
-record["test_key"]
+record["number"]
 ```
 
 The dot, the value on the left and the identifier on the right must touch.
@@ -713,15 +713,15 @@ record["123"]
 
 #### Freezing collections
 
-Collection values can be frozen with `STD["TYPE"]["COLLECTION"]["FREEZE"]`.
+Collection values can be frozen with `STD.TYPE.COLLECTION.FREEZE`.
 
 Freezing is deep, so nested arrays, maps and strings are frozen too.
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
-FREEZE : STD["TYPE"]["COLLECTION"]["FREEZE"]
-IS_FROZEN : STD["TYPE"]["COLLECTION"]["IS_FROZEN"]
+FREEZE : STD.TYPE.COLLECTION.FREEZE
+IS_FROZEN : STD.TYPE.COLLECTION.IS_FROZEN
 
 CONFIG : FREEZE({
 	"name": "demo"
@@ -766,7 +766,7 @@ evens : {2..10[2]}
 Conditionals use a parenthesised condition followed by a brace-enclosed block:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 score : 95
 
@@ -778,7 +778,7 @@ score : 95
 An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 score : 80
 
@@ -792,7 +792,7 @@ score : 80
 Multiple branches can be chained:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 score : 10
 
@@ -814,7 +814,7 @@ score : 10
 A conditional with a true condition can also be used as an idiomatic way to create a temporary local scope:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 (\/) {
 	message : "inside local scope"
@@ -955,7 +955,7 @@ In this example, the division arm is not evaluated.
 Loops use double parentheses:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 count : 3
 
@@ -968,7 +968,7 @@ count : 3
 Loops may have an after-loop block (which runs once, when the condition no longer holds true):
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 count : 3
 
@@ -985,7 +985,7 @@ count : 3
 The same loop syntax can iterate over collections:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 values : {5, 30, 45}
 
@@ -997,7 +997,7 @@ values : {5, 30, 45}
 Collection loops can receive up to four parameters:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 items : {"hat", "coat", "jacket"}
 
@@ -1017,7 +1017,7 @@ For every type of collection, `position` is the zero-based iteration position.
 An infinite loop uses the true literal:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 ((\/)) {
 	PRINT("forever")
@@ -1059,7 +1059,7 @@ Functions return exactly one value.
 Function calls require the callee to touch the opening parenthesis:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 
 SUBTRACT : { (A, B)
 	(A - B)
@@ -1121,7 +1121,7 @@ The variadic parameter must be last.
 
 ```stult
 DESCRIBE : { (label, ...values)
-	STD["IO"]["PRINT"](label, ": ", values)
+	STD.IO.PRINT(label, ": ", values)
 
 	(_)
 }
@@ -1195,7 +1195,7 @@ Stult uses both newlines and commas as separators.
 Most examples use newlines:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD.IO.PRINT
 NAME : "Stult"
 COUNT : 3
 PRINT(NAME)
@@ -1204,7 +1204,7 @@ PRINT(NAME)
 The same statements can be written with commas:
 
 ```stult
-PRINT : STD["IO"]["PRINT"], NAME : "Stult", COUNT : 3, PRINT(NAME)
+PRINT : STD.IO.PRINT, NAME : "Stult", COUNT : 3, PRINT(NAME)
 ```
 
 Commas can also separate function arguments, function parameters, loop parameters, array elements and map entries:
@@ -1216,7 +1216,7 @@ ADD : { (left, right)
 	(left + right)
 }
 
-STD["IO"]["PRINT"]("sum: ", ADD(2, 3))
+STD.IO.PRINT("sum: ", ADD(2, 3))
 
 CONFIG : {"name": "demo", "enabled": \/}
 ```
@@ -1254,7 +1254,6 @@ The standard library is available as the immutable binding `STD`.
 
 It is a map containing other maps that, in turn, contain functions.
 
-
 ```stult
 STD["ASSERT"]
 STD["IO"]
@@ -1270,18 +1269,18 @@ STD["DATA"]
 Here is some example code using functions from the standard library:
 
 ```stult
-PRINT : STD.IO.PRINT
-ASSERT : STD.ASSERT
-SIZE : STD.TYPE.COLLECTION.SIZE
-MATH : STD.MATH
+PRINT : STD["IO"]["PRINT"]
+ASSERT : STD["ASSERT"]
+SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+MATH : STD["MATH"]
 
 ITEMS : {"a", "b", "c"}
 
-ASSERT.EQUAL(SIZE(ITEMS), 3, "items should contain three values")
-PRINT("square: ", MATH.SQUARE(9))
+ASSERT["EQUAL"](SIZE(ITEMS), 3, "items should contain three values")
+PRINT("square: ", MATH["SQUARE"](9))
 ```
 
-Since the standard library is exposed as nested maps, dot-access paths can also be written with bracket indexing:
+Since the standard library is exposed as nested maps, dot-access syntax is a shorter way to write the same string-key lookups:
 
 ```stult
 STD.IO.PRINT
@@ -1293,8 +1292,8 @@ Both forms refer to the same value.
 Program arguments are available through `STD["SYSTEM"]["ARGS"]`:
 
 ```stult
-ARGS : STD["SYSTEM"]["ARGS"]
-PRINT : STD["IO"]["PRINT"]
+ARGS : STD.SYSTEM.ARGS
+PRINT : STD.IO.PRINT
 
 PRINT(ARGS)
 ```
