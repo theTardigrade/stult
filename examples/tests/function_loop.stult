@@ -1,0 +1,109 @@
+##
+
+EXAMPLE: tests/function_loop.stult
+
+This example checks function-loops.
+
+A function-loop calls a user-defined function repeatedly. The function receives
+ the zero-based iteration index when it can accept one argument. The loop stops
+when the function returns void.
+
+##
+
+ASSERT : STD.ASSERT
+SIZE : STD.TYPE.COLLECTION.SIZE
+
+COUNTDOWN : { (index)
+	(index >= 3) {
+		^(_)
+	}
+
+	(3 - index)
+}
+
+values : {}
+positions : {}
+
+((COUNTDOWN)) { (value, position)
+	values[position] : value
+	positions[position] : position
+
+}
+
+ASSERT.EQUAL(SIZE(values), 3, "function loop should collect three returned values")
+ASSERT.EQUAL(values[0], 3, "function loop should store first returned value")
+ASSERT.EQUAL(values[1], 2, "function loop should store second returned value")
+ASSERT.EQUAL(values[2], 1, "function loop should store third returned value")
+ASSERT.EQUAL(positions[0], 0, "function loop position should start at zero")
+ASSERT.EQUAL(positions[2], 2, "function loop position should increase")
+
+zero_count : 0
+
+NEXT_ZERO_ARG : { ()
+	(@zero_count >= 3) {
+		^(_)
+	}
+
+	@zero_count :+ 1
+	(@zero_count * 10)
+}
+
+zero_values : {}
+
+((NEXT_ZERO_ARG)) { (value, position)
+	zero_values[position] : value
+}
+
+ASSERT.EQUAL(SIZE(zero_values), 3, "function loop should support zero-argument generators")
+ASSERT.EQUAL(zero_values[0], 10, "zero-argument generator should produce first value")
+ASSERT.EQUAL(zero_values[2], 30, "zero-argument generator should produce last value")
+
+OPTIONAL_INDEX : { (index?)
+	(index >= 2) {
+		^(_)
+	}
+
+	(index + 100)
+}
+
+optional_values : {}
+
+((OPTIONAL_INDEX)) { (value, position)
+	optional_values[position] : value
+}
+
+ASSERT.EQUAL(SIZE(optional_values), 2, "function loop should pass the index to optional parameters")
+ASSERT.EQUAL(optional_values[0], 100, "optional index should receive zero")
+ASSERT.EQUAL(optional_values[1], 101, "optional index should receive one")
+
+ignored_count : 0
+
+PING : { (index)
+	(index >= 4) {
+		^(_)
+	}
+
+	(index)
+}
+
+((PING)) {
+	@ignored_count :+ 1
+}
+
+ASSERT.EQUAL(ignored_count, 4, "function loop body may ignore generated values")
+
+break_count : 0
+
+ALWAYS_ONE : { ()
+	(1)
+}
+
+((ALWAYS_ONE)) { (value, position)
+	@break_count :+ value
+
+	(position = 2) {
+		^
+	}
+}
+
+ASSERT.EQUAL(break_count, 3, "function loop should still support break")

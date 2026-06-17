@@ -279,7 +279,7 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, nil
 
 	case BytecodeOpIteratorInit:
-		if err := vm.iteratorInit(); err != nil {
+		if err := vm.iteratorInit(instruction.Operand); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 
@@ -370,7 +370,7 @@ func (vm *BytecodeVM) executeInstruction(
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 
-		if bytecodeValueIsCollection(value) {
+		if bytecodeValueIsLoopIterable(value) {
 			if err := vm.jump(instruction.Operand); err != nil {
 				return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 			}

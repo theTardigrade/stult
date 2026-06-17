@@ -11,14 +11,15 @@ func (vm *BytecodeVM) makeFunction(index int) error {
 		return fmt.Errorf("function index %d out of bounds", index)
 	}
 
-	function := vm.chunk.Functions[index]
+	function := &vm.chunk.Functions[index]
 	upvalues, err := vm.captureUpvalueCells(function.Upvalues)
 	if err != nil {
 		return err
 	}
 
-	value := NewBuiltinFunctionValue(func(_ *RuntimeContext, args []Value) (Value, error) {
-		return vm.runFunction(function, upvalues, args)
+	value := NewFunctionValue(&Function{
+		BytecodeFunction: function,
+		BytecodeUpvalues: upvalues,
 	})
 
 	vm.pushValue(value)
@@ -201,6 +202,21 @@ func requiredBytecodeParameterCount(parameters []BytecodeParameter) int {
 	return count
 }
 
+func bytecodeFunctionCanAcceptArgumentCount(function BytecodeFunction, count int) bool {
+	requiredCount := requiredBytecodeParameterCount(function.Parameters)
+	maxCount := len(function.Parameters)
+
+	if count < requiredCount {
+		return false
+	}
+
+	if function.VariadicParameter != nil {
+		return true
+	}
+
+	return count <= maxCount
+}
+
 func (vm *BytecodeVM) localIndexByName(name string) (int, bool) {
 	if vm.chunk == nil {
 		return 0, false
@@ -253,19 +269,38 @@ func (vm *BytecodeVM) callValue(argCount int) error {
 		return err
 	}
 
+	result, err := vm.callResolvedValue(callee, args)
+	if err != nil {
+		return err
+	}
+
+	vm.pushValue(result)
+	return nil
+}
+
+func (vm *BytecodeVM) callResolvedValue(callee Value, args []Value) (Value, error) {
 	callee = resolveSpecializedValue(callee)
 
 	switch callee.Kind {
 	case ValueBuiltinFunction:
-		result, err := callee.BuiltinFunction(vm.runtime, args)
-		if err != nil {
-			return err
-		}
+		return callee.BuiltinFunction(vm.runtime, args)
 
-		vm.pushValue(result)
-		return nil
+	case ValueFunction:
+		return vm.callFunction(callee.Function, args)
 
 	default:
-		return fmt.Errorf("value is not callable")
+		return Value{}, fmt.Errorf("value is not callable")
 	}
+}
+
+func (vm *BytecodeVM) callFunction(fn *Function, args []Value) (Value, error) {
+	if fn == nil {
+		return Value{}, fmt.Errorf("invalid function")
+	}
+
+	if fn.BytecodeFunction == nil {
+		return Value{}, fmt.Errorf("bytecode VM cannot call an interpreter function")
+	}
+
+	return vm.runFunction(*fn.BytecodeFunction, fn.BytecodeUpvalues, args)
 }

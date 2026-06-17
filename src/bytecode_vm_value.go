@@ -504,6 +504,12 @@ func bytecodeValueIsCollection(value Value) bool {
 		value.Kind == ValueString
 }
 
+func bytecodeValueIsLoopIterable(value Value) bool {
+	value = resolveSpecializedValue(value)
+
+	return bytecodeValueIsCollection(value) || value.Kind == ValueFunction
+}
+
 func bytecodeIndexValue(object Value, index Value) (Value, error) {
 	object = resolveSpecializedValue(object)
 	index = resolveSpecializedValue(index)

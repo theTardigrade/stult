@@ -277,7 +277,8 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 
 	case BytecodeOpBuildArray,
 		BytecodeOpBuildMap,
-		BytecodeOpCall:
+		BytecodeOpCall,
+		BytecodeOpIteratorInit:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 
 	case BytecodeOpBuildRange:
@@ -316,7 +317,6 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpLoadFalse,
 		BytecodeOpStoreIndex,
 		BytecodeOpIndex,
-		BytecodeOpIteratorInit,
 		BytecodeOpIteratorEnd,
 		BytecodeOpDuplicateTopTwo,
 		BytecodeOpNegate,

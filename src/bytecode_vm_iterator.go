@@ -3,22 +3,23 @@ package main
 import "fmt"
 
 type bytecodeVMIterator struct {
-	Collection    Value
-	Position      int
-	CurrentKey    Value
-	CurrentValue  Value
-	HasCurrent    bool
-	LastMapKey    string
-	HasLastMapKey bool
+	Source         Value
+	ParameterCount int
+	Position       int
+	CurrentKey     Value
+	CurrentValue   Value
+	HasCurrent     bool
+	LastMapKey     string
+	HasLastMapKey  bool
 }
 
-func (vm *BytecodeVM) iteratorInit() error {
-	collection, err := vm.popValue()
+func (vm *BytecodeVM) iteratorInit(parameterCount int) error {
+	source, err := vm.popValue()
 	if err != nil {
 		return err
 	}
 
-	iterator, err := newBytecodeVMIterator(collection)
+	iterator, err := newBytecodeVMIterator(source, parameterCount)
 	if err != nil {
 		return err
 	}
@@ -28,37 +29,59 @@ func (vm *BytecodeVM) iteratorInit() error {
 	return nil
 }
 
-func newBytecodeVMIterator(collection Value) (bytecodeVMIterator, error) {
-	collection = resolveSpecializedValue(collection)
+func newBytecodeVMIterator(source Value, parameterCount int) (bytecodeVMIterator, error) {
+	source = resolveSpecializedValue(source)
 
 	iterator := bytecodeVMIterator{
-		Collection:    collection,
-		Position:      -1,
-		CurrentKey:    NewVoidValue(),
-		CurrentValue:  NewVoidValue(),
-		HasCurrent:    false,
-		LastMapKey:    "",
-		HasLastMapKey: false,
+		Source:         source,
+		ParameterCount: parameterCount,
+		Position:       -1,
+		CurrentKey:     NewVoidValue(),
+		CurrentValue:   NewVoidValue(),
+		HasCurrent:     false,
+		LastMapKey:     "",
+		HasLastMapKey:  false,
 	}
 
-	switch collection.Kind {
+	switch source.Kind {
 	case ValueArray:
-		if collection.Array == nil {
+		if source.Array == nil {
 			return iterator, fmt.Errorf("invalid array")
 		}
 
+		if !isValidCollectionRangeParameterCount(parameterCount) {
+			return iterator, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+		}
+
 	case ValueMap:
-		if collection.Map == nil {
+		if source.Map == nil {
 			return iterator, fmt.Errorf("invalid map")
 		}
 
+		if !isValidCollectionRangeParameterCount(parameterCount) {
+			return iterator, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+		}
+
 	case ValueString:
-		if collection.Text == nil {
+		if source.Text == nil {
 			return iterator, fmt.Errorf("invalid string")
 		}
 
+		if !isValidCollectionRangeParameterCount(parameterCount) {
+			return iterator, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+		}
+
+	case ValueFunction:
+		if source.Function == nil {
+			return iterator, fmt.Errorf("invalid function")
+		}
+
+		if !isValidFunctionRangeParameterCount(parameterCount) {
+			return iterator, fmt.Errorf("function range loop must have zero, one, or two parameters")
+		}
+
 	default:
-		return iterator, fmt.Errorf("loop expression must evaluate to a map, array or string")
+		return iterator, fmt.Errorf("loop expression must evaluate to a map, array, string, or function")
 	}
 
 	return iterator, nil
@@ -70,7 +93,7 @@ func (vm *BytecodeVM) iteratorNext(target int) error {
 		return err
 	}
 
-	switch iterator.Collection.Kind {
+	switch iterator.Source.Kind {
 	case ValueArray:
 		return vm.iteratorNextArray(iterator, target)
 
@@ -80,13 +103,16 @@ func (vm *BytecodeVM) iteratorNext(target int) error {
 	case ValueString:
 		return vm.iteratorNextString(iterator, target)
 
+	case ValueFunction:
+		return vm.iteratorNextFunction(iterator, target)
+
 	default:
-		return fmt.Errorf("loop expression must evaluate to a map, array or string")
+		return fmt.Errorf("loop expression must evaluate to a map, array, string, or function")
 	}
 }
 
 func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int) error {
-	array := iterator.Collection.Array
+	array := iterator.Source.Array
 	if array == nil {
 		return fmt.Errorf("invalid array")
 	}
@@ -108,7 +134,7 @@ func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int
 }
 
 func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) error {
-	m := iterator.Collection.Map
+	m := iterator.Source.Map
 	if m == nil {
 		return fmt.Errorf("invalid map")
 	}
@@ -139,7 +165,7 @@ func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) 
 }
 
 func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target int) error {
-	text := iterator.Collection.Text
+	text := iterator.Source.Text
 	if text == nil {
 		return fmt.Errorf("invalid string")
 	}
@@ -155,6 +181,39 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 	iterator.Position = position
 	iterator.CurrentKey = key
 	iterator.CurrentValue = NewStringValue(string(text.Runes[position]))
+	iterator.HasCurrent = true
+
+	return nil
+}
+
+func (vm *BytecodeVM) iteratorNextFunction(iterator *bytecodeVMIterator, target int) error {
+	fn := iterator.Source.Function
+	if fn == nil {
+		return fmt.Errorf("invalid function")
+	}
+
+	position := iterator.Position + 1
+	args, err := functionRangeLoopArguments(fn, position)
+	if err != nil {
+		return err
+	}
+
+	value, err := vm.callFunction(fn, args)
+	if err != nil {
+		return err
+	}
+
+	value = resolveSpecializedValue(value)
+	if value.Kind == ValueVoid {
+		iterator.HasCurrent = false
+		return vm.jump(target)
+	}
+
+	positionValue := NewNumberValueFromInt(position)
+
+	iterator.Position = position
+	iterator.CurrentKey = positionValue
+	iterator.CurrentValue = value
 	iterator.HasCurrent = true
 
 	return nil
@@ -200,7 +259,14 @@ func (vm *BytecodeVM) storeIteratorCollection(instructionIndex int, localIndex i
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if err := vm.storeLocal(localIndex, iterator.Collection, false, true); err != nil {
+	if iterator.Source.Kind == ValueFunction {
+		return vm.runtimeError(
+			instructionIndex,
+			"function range loop has no collection parameter",
+		)
+	}
+
+	if err := vm.storeLocal(localIndex, iterator.Source, false, true); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 

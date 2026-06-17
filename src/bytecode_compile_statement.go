@@ -363,7 +363,11 @@ func (compiler *BytecodeCompiler) compileCollectionLoopWithCollectionOnStack(
 		)
 	}
 
-	compiler.chunk.EmitAt(BytecodeOpIteratorInit, sourceSpan)
+	compiler.chunk.EmitOperandAt(
+		BytecodeOpIteratorInit,
+		len(statement.RangeParameters),
+		sourceSpan,
+	)
 
 	loopStart := len(compiler.chunk.Instructions)
 	nextJump := compiler.chunk.EmitOperandAt(BytecodeOpIteratorNext, -1, sourceSpan)

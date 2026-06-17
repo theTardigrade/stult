@@ -3,10 +3,6 @@ package main
 import "fmt"
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
-	if len(stmt.RangeParameters) > 0 {
-		return i.evalCollectionRangeLoopStatement(stmt)
-	}
-
 	loopValue, err := i.evalExpression(stmt.Condition)
 	if err != nil {
 		return Value{}, err
@@ -16,6 +12,12 @@ func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 
 	switch loopValue.Kind {
 	case ValueBool:
+		if len(stmt.RangeParameters) > 0 {
+			return Value{}, fmt.Errorf(
+				"loop with parameters must evaluate to a map, array, string, or function",
+			)
+		}
+
 		return i.evalWhileLoopStatementWithInitialCondition(stmt, loopValue)
 
 	case ValueMap:
@@ -27,8 +29,13 @@ func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
 	case ValueString:
 		return i.evalStringRangeLoopStatement(stmt, loopValue.Text)
 
+	case ValueFunction:
+		return i.evalFunctionRangeLoopStatement(stmt, loopValue.Function)
+
 	default:
-		return Value{}, fmt.Errorf("loop expression must evaluate to a bool, map, array, or string")
+		return Value{}, fmt.Errorf(
+			"loop expression must evaluate to a bool, map, array, string, or function",
+		)
 	}
 }
 
@@ -82,38 +89,19 @@ func (i *Interpreter) evalWhileLoopStatementWithInitialCondition(stmt *LoopState
 	return i.evalAfterLoopBody(stmt)
 }
 
-func (i *Interpreter) evalCollectionRangeLoopStatement(stmt *LoopStatement) (Value, error) {
-	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
-		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
-	}
-
-	iterable, err := i.evalExpression(stmt.Condition)
-	if err != nil {
-		return Value{}, err
-	}
-
-	iterable = resolveSpecializedValue(iterable)
-
-	switch iterable.Kind {
-	case ValueMap:
-		return i.evalMapRangeLoopStatement(stmt, iterable.Map)
-
-	case ValueArray:
-		return i.evalArrayRangeLoopStatement(stmt, iterable.Array)
-
-	case ValueString:
-		return i.evalStringRangeLoopStatement(stmt, iterable.Text)
-
-	default:
-		return Value{}, fmt.Errorf("collection range loop expression must evaluate to a map, array, or string")
-	}
-}
-
 func isValidCollectionRangeParameterCount(count int) bool {
 	return count >= 0 && count <= 4
 }
 
+func isValidFunctionRangeParameterCount(count int) bool {
+	return count >= 0 && count <= 2
+}
+
 func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Value, error) {
+	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
+		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+	}
+
 	position := 0
 	lastKey := ""
 	hasLastKey := false
@@ -171,6 +159,10 @@ func nextMapRangeKey(m *Map, lastKey string, hasLastKey bool) (string, bool) {
 }
 
 func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array) (Value, error) {
+	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
+		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+	}
+
 	index := 0
 
 	for index < len(a.Elements) {
@@ -204,6 +196,10 @@ func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array)
 }
 
 func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *String) (Value, error) {
+	if !isValidCollectionRangeParameterCount(len(stmt.RangeParameters)) {
+		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
+	}
+
 	if s == nil {
 		return Value{}, fmt.Errorf("cannot range over invalid string")
 	}
@@ -240,6 +236,66 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 	return i.evalAfterLoopBody(stmt)
 }
 
+func (i *Interpreter) evalFunctionRangeLoopStatement(stmt *LoopStatement, fn *Function) (Value, error) {
+	if !isValidFunctionRangeParameterCount(len(stmt.RangeParameters)) {
+		return Value{}, fmt.Errorf("function range loop must have zero, one, or two parameters")
+	}
+
+	position := 0
+
+	for {
+		args, err := functionRangeLoopArguments(fn, position)
+		if err != nil {
+			return Value{}, err
+		}
+
+		value, err := i.callFunction(fn, args)
+		if err != nil {
+			return Value{}, err
+		}
+
+		value = resolveSpecializedValue(value)
+		if value.Kind == ValueVoid {
+			break
+		}
+
+		loopBindings := functionRangeBindings(
+			stmt.RangeParameters,
+			value,
+			NewNumberValueFromInt(position),
+		)
+
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
+			return Value{}, err
+		}
+
+		position++
+	}
+
+	return i.evalAfterLoopBody(stmt)
+}
+
+func functionRangeLoopArguments(fn *Function, position int) ([]Value, error) {
+	if functionCanAcceptArgumentCount(fn, 1) {
+		return []Value{NewNumberValueFromInt(position)}, nil
+	}
+
+	if functionCanAcceptArgumentCount(fn, 0) {
+		return []Value{}, nil
+	}
+
+	return nil, fmt.Errorf("function loop source must accept zero or one argument")
+}
+
 func collectionRangeBindings(parameters []Token, value Value, key Value, collection Value, position Value) map[string]Binding {
 	bindings := make(map[string]Binding)
 
@@ -261,6 +317,21 @@ func collectionRangeBindings(parameters []Token, value Value, key Value, collect
 		addRangeBinding(bindings, parameters[1], key)
 		addRangeBinding(bindings, parameters[2], collection)
 		addRangeBinding(bindings, parameters[3], position)
+	}
+
+	return bindings
+}
+
+func functionRangeBindings(parameters []Token, value Value, position Value) map[string]Binding {
+	bindings := make(map[string]Binding)
+
+	switch len(parameters) {
+	case 1:
+		addRangeBinding(bindings, parameters[0], value)
+
+	case 2:
+		addRangeBinding(bindings, parameters[0], value)
+		addRangeBinding(bindings, parameters[1], position)
 	}
 
 	return bindings
