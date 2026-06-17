@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.1
 
 * Added function loops, allowing user-defined functions to act as generator-style loop sources that stop by returning `_`.
 
