@@ -30,6 +30,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [Locals and cells](#locals-and-cells)
   - [Functions and closures](#functions-and-closures)
   - [Collection iteration](#collection-iteration)
+  - [Function loops](#function-loops)
   - [Operators](#operators)
   - [Runtime errors](#runtime-errors)
 - [Tree-walk interpreter](#tree-walk-interpreter)
@@ -374,15 +375,15 @@ A bare `^` inside loops compiles to a loop break.
 
 ### Dynamic loops
 
-Stult uses one loop syntax for condition loops and collection loops:
+Stult uses one loop syntax for condition loops, collection loops and function loops:
 
 ```text
-((condition_or_collection)) { ... }
+((condition_or_collection_or_function)) { ... }
 ```
 
 The bytecode compiler emits runtime-dispatched loop code.
 
-At runtime, the VM decides whether the loop expression is a collection. If it is a collection, the loop uses iterator opcodes. Otherwise, it behaves as a condition loop.
+At runtime, the VM decides whether the loop expression is a collection or a user-defined function. If it is a collection, the loop uses iterator opcodes for collection iteration. If it is a user-defined function, the loop uses the same iterator machinery to call the function repeatedly until it returns void. Otherwise, it behaves as a condition loop.
 
 Collection loops support up to four parameters:
 
@@ -393,7 +394,16 @@ collection
 position
 ```
 
-The compiler allocates locals for those parameters and resets loop-scope locals on each iteration.
+Function loops support up to two parameters:
+
+```text
+value
+position
+```
+
+The compiler allocates locals for loop parameters and resets loop-scope locals on each iteration.
+
+The `ITERATOR_INIT` instruction carries the number of loop parameters as its operand. The VM uses that count when validating whether the runtime loop source is a collection or a function.
 
 ### Source spans and disassembly
 
@@ -478,7 +488,9 @@ The VM caches local indexes by chunk and reset depth to reduce repeated lookup w
 
 Function literals compile to bytecode function metadata and nested chunks.
 
-At runtime, function values need:
+At runtime, user-defined functions remain ordinary `ValueFunction` values in both runtime modes. A `Function` value may be backed by either interpreter data or bytecode data. Interpreter-backed functions store AST parameters, body, return expressions and a defining environment. Bytecode-backed functions store a `BytecodeFunction` pointer and captured VM upvalue cells.
+
+Bytecode-backed function values need:
 
 ```text
 function chunk
@@ -491,7 +503,7 @@ The VM saves and restores execution state when running bytecode functions. This 
 
 Function-call argument binding uses each function's arity metadata. Required ordinary parameters must receive arguments. Optional ordinary parameters receive the supplied argument when present, or void when omitted. Variadic parameters receive an array containing the remaining arguments, or an empty array when no remaining arguments exist.
 
-The interpreter has its own function representation that stores the AST body and defining environment.
+The helper that checks whether a user-defined function can accept a given argument count must work for both interpreter-backed functions and bytecode-backed functions. Function loops rely on that helper when deciding whether to call a generator with the zero-based index or with no arguments.
 
 ### Collection iteration
 
@@ -506,6 +518,24 @@ map     key is string key, value is map entry value
 ```
 
 Map iteration is deterministic only to the degree enforced by the runtime helper used to find the next key. Any change to map iteration order must be checked against examples and interpreter parity.
+
+### Function loops
+
+Function loops reuse the VM iterator stack. A function loop's iterator source is a user-defined `ValueFunction` rather than a collection.
+
+For each iteration, the VM computes the next zero-based position and decides how to call the generator function:
+
+```text
+can accept one argument  call generator(position)
+can accept zero args     call generator()
+otherwise                runtime error
+```
+
+If the generator returns void, the iterator jumps to the loop exit target. Otherwise, the returned value becomes the loop value for that iteration and the position becomes the optional second loop-body parameter.
+
+Function loops allow zero, one or two loop parameters. They deliberately do not provide the collection parameter used by collection loops, because the source is active code rather than passive collection data. If a bytecode instruction tries to store a collection parameter for a function-loop iterator, the VM reports a runtime error.
+
+Builtin functions are not currently function-loop sources. They remain `ValueBuiltinFunction` values rather than `ValueFunction` values, and the loop-source dispatch accepts only user-defined functions.
 
 ### Operators
 
@@ -554,6 +584,8 @@ Conditional expressions are evaluated directly by the interpreter. The interpret
 
 Match expressions are also evaluated directly by the interpreter. The interpreter evaluates the subject once, compares it with explicit scalar-literal patterns using the same equality semantics as `=`, evaluates only the selected result expression, and falls back to the default arm or void when no explicit arm matches.
 
+Function loops are evaluated directly by the interpreter. The interpreter evaluates the loop source once to decide whether the loop is boolean, collection-based or function-based. For a function loop, it repeatedly calls the user-defined generator with the zero-based index when the function can accept one argument, or with no arguments when it can accept zero. A void return stops the loop normally.
+
 The interpreter path is selected with:
 
 ```text
@@ -598,6 +630,8 @@ builtin function
 ```
 
 Specialized or mutable values may be resolved before formatting, comparison or operator application.
+
+`ValueFunction` is the user-defined function kind for both interpreter-backed and bytecode-backed functions. It is distinct from `ValueBuiltinFunction`, which wraps Go standard-library functions. This distinction matters for function loops, which currently accept user-defined functions as generator sources but not builtin functions.
 
 Bindings wrap values with mutability metadata.
 
@@ -797,7 +831,7 @@ A test passes only when both runtime modes complete successfully and produce the
 
 If both runtime modes fail with matching errors, the test still fails. Matching failure is not success for these example-test programs.
 
-The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity.
+The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour.
 
 The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
 
@@ -858,7 +892,9 @@ Other syntax needs its own AST shape even when it looks compact. Conditional exp
 
 Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
-When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned.
+Function loops are different: they deliberately reuse the existing `LoopStatement` AST shape. The parser does not need a new syntax node because `((source)) { ... }` is already parsed as a loop. The interpreter and VM decide at runtime whether the source is a boolean, a collection or a user-defined function.
+
+When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned. Function-loop generator calls also depend on this arity metadata, so optional and variadic parameter changes must be tested against function loops too.
 
 When changing runtime semantics, check both runtime implementations.
 

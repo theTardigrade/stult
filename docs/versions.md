@@ -8,6 +8,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Added function loops, allowing user-defined functions to act as generator-style loop sources that stop by returning `_`.
+
 ### v0.7.0
 
 * Added dot-access syntax for string-key map access, so `value.key` is equivalent to `value["key"]`.

@@ -11,6 +11,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 ## Contents
 
 * [Collection behaviour](#collection-behaviour)
+* [Loops](#loops)
 * [Grouped expressions](#grouped-expressions)
 * [Literal parsing](#literal-parsing)
 * [Maps](#maps)
@@ -29,6 +30,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Collection loop parameters](../examples/tests/collection_loop_parameters.stult)  
   Checks that collection loops provide value, key, collection and position parameters correctly.
+
+## Loops
+
+- [Looping over functions](../examples/tests/function_loop.stult)  
+  Checks that user-defined functions can be used as loop sources, including indexed generators, zero-argument generators, optional index parameters, ignored loop values and ordinary break behaviour.
 
 ## Grouped expressions
 
