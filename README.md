@@ -55,10 +55,10 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Conditional expressions](#conditional-expressions)
     - [Match expressions](#match-expressions)
   - [Loops](#loops)
+    - [Break](#break)
+    - [Infinite loops](#infinite-loops)
     - [Iterating over collections](#iterating-over-collections)
     - [Function loops](#function-loops)
-    - [Infinite loops](#infinite-loops)
-    - [Break](#break)
   - [Commas and newlines](#commas-and-newlines)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
@@ -1123,6 +1123,32 @@ count : 3
 }
 ```
 
+#### Break
+
+A bare `^` breaks the nearest loop:
+
+```stult
+count : 0
+
+((\/)) {
+	@count :+ 1
+
+	(count = 3) {
+		^
+	}
+}
+```
+
+#### Infinite loops
+
+An infinite loop uses the true literal:
+
+```stult
+((\/)) {
+	STD.IO.PRINT("forever")
+}
+```
+
 #### Iterating over collections
 
 The same loop syntax can iterate over collections:
@@ -1219,32 +1245,6 @@ NEXT : { (index?)
 ```
 
 Function-loops support user-defined functions. Builtin functions are not function-loop sources. This may change in future versions of Stult, but it holds true for now.
-
-#### Infinite loops
-
-An infinite loop uses the true literal:
-
-```stult
-((\/)) {
-	STD.IO.PRINT("forever")
-}
-```
-
-#### Break
-
-A bare `^` breaks the nearest loop:
-
-```stult
-count : 0
-
-((\/)) {
-	@count :+ 1
-
-	(count = 3) {
-		^
-	}
-}
-```
 
 ### Commas and newlines
 
