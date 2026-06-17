@@ -45,6 +45,11 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Dot access](#dot-access)
     - [Freezing collections](#freezing-collections)
     - [Ranges](#ranges)
+  - [Functions](#functions)
+    - [Early return](#early-return)
+    - [Variadic function parameters](#variadic-function-parameters)
+    - [Optional parameters](#optional-parameters)
+    - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
   - [Conditionals](#conditionals)
     - [Creating a local scope](#creating-a-local-scope)
     - [Conditional expressions](#conditional-expressions)
@@ -54,11 +59,6 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Function loops](#function-loops)
     - [Infinite loops](#infinite-loops)
     - [Break](#break)
-  - [Functions](#functions)
-    - [Early return](#early-return)
-    - [Variadic function parameters](#variadic-function-parameters)
-    - [Optional parameters](#optional-parameters)
-    - [Immediately invoked function expressions](#immediately-invoked-function-expressions)
   - [Commas and newlines](#commas-and-newlines)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
@@ -762,6 +762,154 @@ Ranges may also include a step:
 evens : {2..10[2]}
 ```
 
+### Functions
+
+Functions are values.
+
+A function literal is a block with a parameter list:
+
+```stult
+ADD : { (A, B)
+	(A + B)
+}
+```
+
+The final expression is the return value.
+
+Functions return exactly one value.
+
+Function calls require the callee to touch the opening parenthesis:
+
+```stult
+PRINT : STD.IO.PRINT
+
+SUBTRACT : { (A, B)
+	(A - B)
+}
+
+PRINT("hello")
+PRINT(SUBTRACT(10, 2))
+```
+
+This means `PRINT ("hello")` or `PRINT( SUBTRACT (10, 2))` are not a valid function calls.
+
+Functions can be stored in maps and arrays:
+
+```stult
+MULTIPLY : { (A, B)
+	(A * B)
+}
+
+TOOLS : {
+	"MULT": MULTIPLY
+}
+
+TOOLS["MULT"](2, 3)
+```
+
+#### Early return
+
+Inside a function, `^(value)` returns early:
+
+```stult
+FIND_FIRST : { (items)
+	((items)) { (item)
+		(item = "target") {
+			^(item)
+		}
+	}
+
+	(_)
+}
+```
+
+#### Variadic function parameters
+
+A function can collect remaining arguments into an array using a variadic parameter:
+
+```stult
+SUM : { (...numbers)
+	total : 0
+
+	((numbers)) { (number)
+		@total :+ number
+	}
+
+	(total)
+}
+```
+
+The variadic parameter must be last.
+
+```stult
+DESCRIBE : { (label, ...values)
+	STD.IO.PRINT(label, ": ", values)
+
+	(_)
+}
+```
+
+#### Optional parameters
+
+A user-defined function can mark an ordinary parameter as optional by writing `?` after the parameter name.
+
+```stult
+GREET : { (text, suffix?)
+	(suffix = _) {
+		^("Hello, " + text + "!")
+	}
+
+	("Hello, " + text + suffix)
+}
+
+GREET("world")       # "Hello, world!"
+GREET("world", ".")  # "Hello, world."
+```
+
+An omitted optional parameter receives `_`.
+
+Required parameters must come before optional parameters.
+
+```stult
+{ (left, right?) (_) }  # valid
+{ (left?, right) (_) }  # invalid
+```
+
+A variadic parameter, if present, still comes last.
+
+```stult
+COLLECT : { (first, second?, ...rest)
+	({
+		first
+		second
+		rest
+	})
+}
+
+COLLECT(1)          # {1, _, {}}
+COLLECT(1, 2)       # {1, 2, {}}
+COLLECT(1, 2, 3, 4) # {1, 2, {3, 4}}
+```
+
+Optional parameters and variadic parameters are different. An omitted optional parameter receives `_`, while a variadic parameter receives an empty array when no remaining arguments are supplied.
+
+#### Immediately invoked function expressions
+
+Stult supports immediately invoked function expressions, or **IIFEs**, which are useful when a value needs a small temporary scope while it is being calculated.
+
+```stult
+STATUS : ({ ()
+	done : 7
+	total : 10
+
+	(done = total) {
+		^("complete")
+	}
+
+	("in progress")
+})()
+```
+
 ### Conditionals
 
 Conditionals use a parenthesised condition followed by a brace-enclosed block:
@@ -1112,154 +1260,6 @@ count : 0
 		^
 	}
 }
-```
-
-### Functions
-
-Functions are values.
-
-A function literal is a block with a parameter list:
-
-```stult
-ADD : { (A, B)
-	(A + B)
-}
-```
-
-The final expression is the return value.
-
-Functions return exactly one value.
-
-Function calls require the callee to touch the opening parenthesis:
-
-```stult
-PRINT : STD.IO.PRINT
-
-SUBTRACT : { (A, B)
-	(A - B)
-}
-
-PRINT("hello")
-PRINT(SUBTRACT(10, 2))
-```
-
-This means `PRINT ("hello")` or `PRINT( SUBTRACT (10, 2))` are not a valid function calls.
-
-Functions can be stored in maps and arrays:
-
-```stult
-MULTIPLY : { (A, B)
-	(A * B)
-}
-
-TOOLS : {
-	"MULT": MULTIPLY
-}
-
-TOOLS["MULT"](2, 3)
-```
-
-#### Early return
-
-Inside a function, `^(value)` returns early:
-
-```stult
-FIND_FIRST : { (items)
-	((items)) { (item)
-		(item = "target") {
-			^(item)
-		}
-	}
-
-	(_)
-}
-```
-
-#### Variadic function parameters
-
-A function can collect remaining arguments into an array using a variadic parameter:
-
-```stult
-SUM : { (...numbers)
-	total : 0
-
-	((numbers)) { (number)
-		@total :+ number
-	}
-
-	(total)
-}
-```
-
-The variadic parameter must be last.
-
-```stult
-DESCRIBE : { (label, ...values)
-	STD.IO.PRINT(label, ": ", values)
-
-	(_)
-}
-```
-
-#### Optional parameters
-
-A user-defined function can mark an ordinary parameter as optional by writing `?` after the parameter name.
-
-```stult
-GREET : { (text, suffix?)
-	(suffix = _) {
-		^("Hello, " + text + "!")
-	}
-
-	("Hello, " + text + suffix)
-}
-
-GREET("world")       # "Hello, world!"
-GREET("world", ".")  # "Hello, world."
-```
-
-An omitted optional parameter receives `_`.
-
-Required parameters must come before optional parameters.
-
-```stult
-{ (left, right?) (_) }  # valid
-{ (left?, right) (_) }  # invalid
-```
-
-A variadic parameter, if present, still comes last.
-
-```stult
-COLLECT : { (first, second?, ...rest)
-	({
-		first
-		second
-		rest
-	})
-}
-
-COLLECT(1)          # {1, _, {}}
-COLLECT(1, 2)       # {1, 2, {}}
-COLLECT(1, 2, 3, 4) # {1, 2, {3, 4}}
-```
-
-Optional parameters and variadic parameters are different. An omitted optional parameter receives `_`, while a variadic parameter receives an empty array when no remaining arguments are supplied.
-
-#### Immediately invoked function expressions
-
-Stult supports immediately invoked function expressions, or **IIFEs**, which are useful when a value needs a small temporary scope while it is being calculated.
-
-```stult
-STATUS : ({ ()
-	done : 7
-	total : 10
-
-	(done = total) {
-		^("complete")
-	}
-
-	("in progress")
-})()
 ```
 
 ### Commas and newlines
