@@ -7,7 +7,7 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- arrays, maps, strings, functions, conditionals, conditional expressions, loops and ranges,
+- arrays, maps, strings, functions, conditionals, conditional expressions, match expressions, loops and ranges,
 - concise literals for booleans, arrays, maps and void,
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
 - a map-shaped standard library available through `STD`.
@@ -48,6 +48,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Conditionals](#conditionals)
     - [Creating a local scope](#creating-a-local-scope)
     - [Conditional expressions](#conditional-expressions)
+    - [Match expressions](#match-expressions)
   - [Loops](#loops)
     - [Iterating over collections](#iterating-over-collections)
     - [Infinite loops](#infinite-loops)
@@ -858,6 +859,96 @@ safe : (denominator = 0)?(0, 10 / denominator)
 In this example, the division branch is not evaluated because the condition is true.
 
 Conditional expressions are useful when a value depends on a condition and both outcomes are simple expressions. Use a conditional statement when either branch needs multiple statements.
+
+#### Match expressions
+
+A match expression chooses a value by comparing one expression with a list of cases.
+
+```stult
+TEXT : "yes"
+
+NUMBER : (TEXT)?{
+	"yes": 50
+	"no": 0
+	"maybe": 2.5
+	_: -1
+}
+```
+
+Here, `NUMBER` becomes `50` because `TEXT` is `"yes"`.
+
+The subject expression must be parenthesised.
+
+The `?` must touch the closing parenthesis of the subject, and the opening `{` must touch the `?`.
+
+```stult
+(TEXT)?{
+	"yes": 1
+	_: 0
+}   # valid
+
+(TEXT) ?{
+	"yes": 1
+	_: 0
+}   # invalid
+
+(TEXT)? {
+	"yes": 1
+	_: 0
+}   # invalid
+```
+
+Match expressions evaluate the subject once, then check explicit arms before using the `_` default arm.
+
+```stult
+TEXT : "yes"
+
+RESULT : (TEXT)?{
+	_: "unknown"
+	"yes": "confirmed"
+}
+```
+
+`RESULT` is `"confirmed"`, because explicit arms are checked before the default arm, even when `_` appears first.
+
+The current version of match expressions supports scalar literal arms:
+
+```stult
+VALUE : 2
+
+TEXT : (VALUE)?{
+	1: "one"
+	2: "two"
+	\/: "true"
+	/\: "false"
+	_: "other"
+}
+```
+
+Supported match patterns are:
+
+```text
+string literal
+number literal
+boolean literal
+_ default
+```
+
+`_` is the fallback branch. It is used only when no explicit arm matches.
+
+Only the selected result expression is evaluated.
+
+```stult
+denominator : 0
+
+RESULT : ("safe")?{
+	"safe": "ok"
+	"divide": 10 / denominator
+	_: "fallback"
+}
+```
+
+In this example, the division arm is not evaluated.
 
 ### Loops
 

@@ -13,6 +13,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Added dot-access syntax for string-key map access, so `value.key` is equivalent to `value["key"]`.
 * Added optional user-function parameters using `?`, with omitted optional parameters receiving `_`.
 * Added parenthesized conditional expressions using `(CONDITION)?(WHEN_TRUE, WHEN_FALSE)`.
+* Added match expressions using `(SUBJECT)?{ ... }` with scalar literal arms and `_` fallback.
 * Added `STD["MATH"]["RAND"]` with random number, integer, choice and shuffle helpers.
 * Added examples and documentation for the new syntax and random helpers.
 

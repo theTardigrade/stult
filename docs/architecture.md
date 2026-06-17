@@ -267,6 +267,7 @@ assignments
 compound assignments
 conditionals
 conditional expressions
+match expressions
 dynamic loops
 function literals
 optional function parameters
@@ -282,6 +283,8 @@ outer-name expressions
 Dot access is parsed as syntax sugar for string-key indexing. The parser lowers `object.key` to the same AST shape as `object["key"]`, preserving the identifier spelling as the string key. This keeps interpreter and bytecode behaviour aligned with ordinary map indexing.
 
 Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a touching `?` branch list, such as `(condition)?(when_true, when_false)`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
+
+Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a touching `?` arm list, such as `(subject)?{ "case": result _: fallback }`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
 
 Function literal parameters are represented with parameter metadata rather than plain identifier tokens. Ordinary parameters can be required or optional. Optional parameters are written with `?` in source and receive void when omitted at call time.
 
@@ -355,13 +358,15 @@ Top-level block scopes are a special case because they can have an outer context
 
 ### Control flow
 
-Conditionals, conditional expressions, loops, break and early return are lowered to jumps and returns.
+Conditionals, conditional expressions, match expressions, loops, break and early return are lowered to jumps and returns.
 
 The compiler emits placeholder jump operands and patches them once target instruction indexes are known.
 
-Logical `&`, logical `|` and conditional expressions are compiled with short-circuit control flow rather than eager evaluation.
+Logical `&`, logical `|`, conditional expressions and match expressions are compiled with control flow rather than eager evaluation.
 
 For a conditional expression, the compiler emits the condition, jumps to the false branch when needed, compiles exactly one selected branch at runtime and leaves that branch value on the stack.
+
+For a match expression, the compiler evaluates the subject once, stores it in a compiler-generated local slot, compares it with each explicit arm pattern in source order, and jumps to the selected result expression. If no explicit arm matches, the compiler emits the default expression when one exists, or void when no default exists.
 
 Early return from functions compiles to a return path that exits the current function chunk.
 
@@ -546,6 +551,8 @@ It uses chained `Environment` values for lexical scope.
 The interpreter remains useful because it is simpler to reason about than the bytecode compiler plus VM. When bytecode behavior differs from interpreter behavior, the interpreter should usually be treated as the reference unless the interpreter is known to be wrong.
 
 Conditional expressions are evaluated directly by the interpreter. The interpreter evaluates the condition first, checks that it is a boolean and then evaluates only the selected branch expression.
+
+Match expressions are also evaluated directly by the interpreter. The interpreter evaluates the subject once, compares it with explicit scalar-literal patterns using the same equality semantics as `=`, evaluates only the selected result expression, and falls back to the default arm or void when no explicit arm matches.
 
 The interpreter path is selected with:
 
@@ -848,6 +855,8 @@ tests
 Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth.
 
 Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition)?(when_true, when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
+
+Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
 When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned.
 
