@@ -8,6 +8,11 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Added an internal range-loop optimisation for direct single-range loop sources with zero, one or two loop parameters, avoiding unnecessary array materialisation while preserving observable collection semantics.
+* Fixed range evaluation so exact integer range bounds and steps are not narrowed to host-sized integers.
+
 ### v0.7.1
 
 * Added function loops, allowing user-defined functions to act as generator-style loop sources that stop by returning `_`.

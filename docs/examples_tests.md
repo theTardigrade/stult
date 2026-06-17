@@ -1,3 +1,4 @@
+
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -35,6 +36,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Looping over functions](../examples/tests/function_loop.stult)  
   Checks that user-defined functions can be used as loop sources, including indexed generators, zero-argument generators, optional index parameters, ignored loop values and ordinary break behaviour.
+
+- [Range loop optimisation](../examples/tests/range_loop_optimization.stult)  
+  Checks that direct single-range loop sources can be streamed without changing observable behaviour, including very large integer bounds, descending ranges, stepped ranges and the collection-parameter fallback.
 
 ## Grouped expressions
 

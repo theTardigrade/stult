@@ -22,6 +22,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [Locals, globals and upvalues](#locals-globals-and-upvalues)
   - [Control flow](#control-flow)
   - [Dynamic loops](#dynamic-loops)
+  - [Range-backed loop optimisation](#range-backed-loop-optimisation)
   - [Source spans and disassembly](#source-spans-and-disassembly)
 - [Bytecode virtual machine](#bytecode-virtual-machine)
   - [VM state](#vm-state)
@@ -405,6 +406,20 @@ The compiler allocates locals for loop parameters and resets loop-scope locals o
 
 The `ITERATOR_INIT` instruction carries the number of loop parameters as its operand. The VM uses that count when validating whether the runtime loop source is a collection or a function.
 
+### Range-backed loop optimisation
+
+A loop source can be written as a range-only array literal:
+
+```text
+(({1..1000})) { ... }
+```
+
+The ordinary meaning of `{1..1000}` is still an array literal. However, when that literal is used directly as the loop source, contains exactly one range segment and the loop body has fewer than three loop parameters, the compiler can avoid materialising the array and emit direct range-iterator setup instead.
+
+The optimisation is not valid when the loop body has three or four parameters, because the third collection-loop parameter exposes the collection object itself. In that case, the compiler must preserve ordinary array semantics by emitting the normal range-building and array-building instructions before iterator initialisation.
+
+Range bounds, steps and current values must use Stult's exact integer number representation rather than Go host-sized integers. This keeps the optimised path aligned with ordinary range materialisation for values larger than `int64`.
+
 ### Source spans and disassembly
 
 A source span is the source file, line and column range that produced a bytecode instruction.
@@ -519,6 +534,8 @@ map     key is string key, value is map entry value
 
 Map iteration is deterministic only to the degree enforced by the runtime helper used to find the next key. Any change to map iteration order must be checked against examples and interpreter parity.
 
+The iterator stack can also hold direct range-iterator state for the single-range loop optimisation. This state stores the current value, end value, step and inclusivity using exact Stult number data, so direct range loops do not impose an `int64` limit.
+
 ### Function loops
 
 Function loops reuse the VM iterator stack. A function loop's iterator source is a user-defined `ValueFunction` rather than a collection.
@@ -585,6 +602,8 @@ Conditional expressions are evaluated directly by the interpreter. The interpret
 Match expressions are also evaluated directly by the interpreter. The interpreter evaluates the subject once, compares it with explicit scalar-literal patterns using the same equality semantics as `=`, evaluates only the selected result expression, and falls back to the default arm or void when no explicit arm matches.
 
 Function loops are evaluated directly by the interpreter. The interpreter evaluates the loop source once to decide whether the loop is boolean, collection-based or function-based. For a function loop, it repeatedly calls the user-defined generator with the zero-based index when the function can accept one argument, or with no arguments when it can accept zero. A void return stops the loop normally.
+
+The interpreter also has the same direct range-loop fast path as the bytecode runtime: a single range-only array literal used directly as a loop source may be streamed when the body has fewer than three parameters. If the body requests the collection parameter, the interpreter materialises the array to preserve observable behaviour.
 
 The interpreter path is selected with:
 
@@ -831,7 +850,7 @@ A test passes only when both runtime modes complete successfully and produce the
 
 If both runtime modes fail with matching errors, the test still fails. Matching failure is not success for these example-test programs.
 
-The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour.
+The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour. The range-loop optimisation fixture checks direct range streaming, very large integer bounds, descending and stepped ranges, and the fallback path where the loop body can observe the materialised collection.
 
 The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
 
@@ -893,6 +912,8 @@ Other syntax needs its own AST shape even when it looks compact. Conditional exp
 Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
 Function loops are different: they deliberately reuse the existing `LoopStatement` AST shape. The parser does not need a new syntax node because `((source)) { ... }` is already parsed as a loop. The interpreter and VM decide at runtime whether the source is a boolean, a collection or a user-defined function.
+
+The range-loop optimisation is also deliberately not new syntax. It recognises a specific existing AST shape in loop-source position and must never change observable behaviour. In particular, the collection parameter forces materialisation, and exact integer range semantics must not be narrowed to host integer widths.
 
 When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned. Function-loop generator calls also depend on this arity metadata, so optional and variadic parameter changes must be tested against function loops too.
 

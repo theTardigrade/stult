@@ -1179,6 +1179,16 @@ For maps, `key` is the string key.
 
 For every type of collection, `position` is the zero-based iteration position.
 
+##### Iterating efficiently over a range
+
+When a loop goes straight over a range like `{1..1000}`, Stult can count through the range directly instead of building the whole array first. This keeps large range loops memory-friendly, so long as the loop-body only asks for the value and position, not the collection itself.
+
+```stult
+(({1..1000000})) { (value)
+	STD.IO.PRINT(value)
+}
+```
+
 #### Function loops
 
 A loop can also use a function as its source.
