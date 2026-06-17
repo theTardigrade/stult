@@ -766,12 +766,10 @@ evens : {2..10[2]}
 Conditionals use a parenthesised condition followed by a brace-enclosed block:
 
 ```stult
-PRINT : STD.IO.PRINT
-
 score : 95
 
 (score >= 90) {
-	PRINT("excellent")
+	STD.IO.PRINT("excellent")
 }
 ```
 
@@ -814,11 +812,9 @@ score : 10
 A conditional with a true condition can also be used as an idiomatic way to create a temporary local scope:
 
 ```stult
-PRINT : STD.IO.PRINT
-
 (\/) {
 	message : "inside local scope"
-	PRINT(message)
+	STD.IO.PRINT(message)
 }
 ```
 
@@ -829,7 +825,7 @@ Bindings created inside that block do not leak into the surrounding scope.
 A conditional expression chooses between two branch expressions and returns the selected branch value.
 
 ```stult
-marker : (LEFT | RIGHT)?("*", " ")
+marker : (CONDITION)?("*", " ")
 ```
 
 The condition must be parenthesised.
@@ -955,12 +951,10 @@ In this example, the division arm is not evaluated.
 Loops use double parentheses:
 
 ```stult
-PRINT : STD.IO.PRINT
-
 count : 3
 
 ((count > 0)) {
-	PRINT(count)
+	STD.IO.PRINT(count)
 	@count :- 1
 }
 ```
@@ -985,12 +979,10 @@ count : 3
 The same loop syntax can iterate over collections:
 
 ```stult
-PRINT : STD.IO.PRINT
-
 values : {5, 30, 45}
 
 ((values)) { (value)
-	PRINT(value)
+	STD.IO.PRINT(value)
 }
 ```
 
@@ -1017,10 +1009,8 @@ For every type of collection, `position` is the zero-based iteration position.
 An infinite loop uses the true literal:
 
 ```stult
-PRINT : STD.IO.PRINT
-
 ((\/)) {
-	PRINT("forever")
+	STD.IO.PRINT("forever")
 }
 ```
 
