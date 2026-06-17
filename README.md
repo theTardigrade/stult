@@ -51,6 +51,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Match expressions](#match-expressions)
   - [Loops](#loops)
     - [Iterating over collections](#iterating-over-collections)
+    - [Function loops](#function-loops)
     - [Infinite loops](#infinite-loops)
     - [Break](#break)
   - [Functions](#functions)
@@ -1003,6 +1004,89 @@ For arrays and strings, `key` is the numeric index.
 For maps, `key` is the string key.
 
 For every type of collection, `position` is the zero-based iteration position.
+
+#### Function loops
+
+A loop can also use a function as its source.
+
+The function is called repeatedly. Each returned value becomes the loop value for that iteration.
+
+When the function returns `_`, the loop stops.
+
+```stult
+COUNTDOWN : { (index)
+	(index >= 10) {
+		^(_)
+	}
+
+	(10 - index)
+}
+
+((COUNTDOWN)) { (value)
+	STD.IO.PRINT(value)
+}
+```
+
+If the function can accept one argument, the loop passes it the zero-based index.
+
+In the example above, `COUNTDOWN` is called as `COUNTDOWN(0)`, `COUNTDOWN(1)`, `COUNTDOWN(2)` and so on, until it returns `_`.
+
+A function-loop body can also receive the zero-based iteration position:
+
+```stult
+((COUNTDOWN)) { (value, position)
+	STD.IO.PRINT(position, ": ", value)
+}
+```
+
+If the function takes no arguments, it is called without arguments instead.
+
+```stult
+count : 0
+
+NEXT : { ()
+	(@count >= 3) {
+		^(_)
+	}
+
+	@count :+ 1
+	(@count)
+}
+
+((NEXT)) { (value)
+	STD.IO.PRINT(value)
+}
+```
+
+A function with an optional first parameter is treated as able to accept one argument, so it always receives the index.
+
+```stult
+NEXT : { (index?)
+	(index >= 3) {
+		^(_)
+	}
+
+	(index)
+}
+```
+
+Function-loop bodies may use zero, one or two parameters:
+
+```stult
+((NEXT)) {
+	STD.IO.PRINT("tick")
+}
+
+((NEXT)) { (value)
+	STD.IO.PRINT(value)
+}
+
+((NEXT)) { (value, position)
+	STD.IO.PRINT(position, ": ", value)
+}
+```
+
+Function-loops support user-defined functions. Builtin functions are not function-loop sources. This may change in future versions of Stult, but it holds true for now.
 
 #### Infinite loops
 
