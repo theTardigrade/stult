@@ -273,6 +273,10 @@ func (compiler *BytecodeCompiler) compileConditionalStatement(statement *Conditi
 }
 
 func (compiler *BytecodeCompiler) compileLoopStatement(statement *LoopStatement) error {
+	if directRange, ok := directRangeLoopElement(statement.Condition); ok && len(statement.RangeParameters) <= 2 {
+		return compiler.compileDirectRangeLoopStatement(statement, directRange)
+	}
+
 	if len(statement.RangeParameters) > 0 {
 		return compiler.compileCollectionLoopStatement(statement)
 	}
@@ -369,6 +373,57 @@ func (compiler *BytecodeCompiler) compileCollectionLoopWithCollectionOnStack(
 		sourceSpan,
 	)
 
+	return compiler.compileIteratorLoopBody(statement, sourceSpan)
+}
+
+func (compiler *BytecodeCompiler) compileDirectRangeLoopStatement(
+	statement *LoopStatement,
+	rangeElement *RangeArrayElement,
+) error {
+	if len(statement.RangeParameters) > 2 {
+		return fmt.Errorf(
+			"%s: bytecode compiler expected at most two direct range loop parameters",
+			formatBytecodeSourceSpan(compiler.sourceSpanForExpression(statement.Condition)),
+		)
+	}
+
+	if err := compiler.compileExpression(rangeElement.Start); err != nil {
+		return err
+	}
+
+	if err := compiler.compileExpression(rangeElement.End); err != nil {
+		return err
+	}
+
+	if rangeElement.Step == nil {
+		compiler.chunk.EmitAt(
+			BytecodeOpLoadVoid,
+			compiler.sourceSpanForExpression(rangeElement.End),
+		)
+	} else {
+		if err := compiler.compileExpression(rangeElement.Step); err != nil {
+			return err
+		}
+	}
+
+	sourceSpan := compiler.sourceSpanForExpression(statement.Condition)
+	compiler.chunk.EmitOperandAt(
+		BytecodeOpIteratorRangeInit,
+		encodeIteratorRangeInitOperand(len(statement.RangeParameters), rangeElement.IsInclusive),
+		sourceSpan,
+	)
+
+	if err := compiler.compileIteratorLoopBody(statement, sourceSpan); err != nil {
+		return err
+	}
+
+	return compiler.compileScopedStatementList(statement.AfterLoopBody)
+}
+
+func (compiler *BytecodeCompiler) compileIteratorLoopBody(
+	statement *LoopStatement,
+	sourceSpan BytecodeSourceSpan,
+) error {
 	loopStart := len(compiler.chunk.Instructions)
 	nextJump := compiler.chunk.EmitOperandAt(BytecodeOpIteratorNext, -1, sourceSpan)
 

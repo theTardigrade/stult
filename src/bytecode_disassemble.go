@@ -281,6 +281,15 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpIteratorInit:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 
+	case BytecodeOpIteratorRangeInit:
+		parameterCount, isInclusive := decodeIteratorRangeInitOperand(instruction.Operand)
+		fmt.Fprintf(&builder, " %d    ; parameters=%d", instruction.Operand, parameterCount)
+		if isInclusive {
+			builder.WriteString(", inclusive")
+		} else {
+			builder.WriteString(", exclusive")
+		}
+
 	case BytecodeOpBuildRange:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 

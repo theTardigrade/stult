@@ -3,6 +3,10 @@ package main
 import "fmt"
 
 func (i *Interpreter) evalLoopStatement(stmt *LoopStatement) (Value, error) {
+	if directRange, ok := directRangeLoopElement(stmt.Condition); ok && len(stmt.RangeParameters) <= 2 {
+		return i.evalDirectRangeLoopStatement(stmt, directRange)
+	}
+
 	loopValue, err := i.evalExpression(stmt.Condition)
 	if err != nil {
 		return Value{}, err
@@ -231,6 +235,82 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		}
 
 		index++
+	}
+
+	return i.evalAfterLoopBody(stmt)
+}
+
+func directRangeLoopElement(expression Expression) (*RangeArrayElement, bool) {
+	arrayLiteral, ok := expression.(*ArrayLiteral)
+	if !ok || len(arrayLiteral.Elements) != 1 {
+		return nil, false
+	}
+
+	rangeElement, ok := arrayLiteral.Elements[0].(*RangeArrayElement)
+	return rangeElement, ok
+}
+
+func (i *Interpreter) evalDirectRangeLoopStatement(
+	stmt *LoopStatement,
+	rangeElement *RangeArrayElement,
+) (Value, error) {
+	if len(stmt.RangeParameters) > 2 {
+		return Value{}, fmt.Errorf("direct range loop must have zero, one, or two parameters")
+	}
+
+	startValue, err := i.evalExpression(rangeElement.Start)
+	if err != nil {
+		return Value{}, err
+	}
+
+	endValue, err := i.evalExpression(rangeElement.End)
+	if err != nil {
+		return Value{}, err
+	}
+
+	stepValue := NewVoidValue()
+	if rangeElement.Step != nil {
+		stepValue, err = i.evalExpression(rangeElement.Step)
+		if err != nil {
+			return Value{}, err
+		}
+	}
+
+	iterator, err := newStultRangeIterator(startValue, endValue, stepValue, rangeElement.IsInclusive)
+	if err != nil {
+		return Value{}, err
+	}
+
+	position := 0
+	for {
+		value, ok := iterator.nextValue()
+		if !ok {
+			break
+		}
+
+		positionValue := NewNumberValueFromInt(position)
+		loopBindings := collectionRangeBindings(
+			stmt.RangeParameters,
+			value,
+			positionValue,
+			NewVoidValue(),
+			positionValue,
+		)
+
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
+			}
+
+			return Value{}, err
+		}
+
+		position++
 	}
 
 	return i.evalAfterLoopBody(stmt)

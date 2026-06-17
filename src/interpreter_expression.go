@@ -297,56 +297,15 @@ func (i *Interpreter) evalRangeArrayElement(element *RangeArrayElement) ([]Value
 		return nil, err
 	}
 
-	step := int64(1)
+	stepValue := NewVoidValue()
 	if element.Step != nil {
-		stepValue, err := i.evalExpression(element.Step)
+		stepValue, err = i.evalExpression(element.Step)
 		if err != nil {
 			return nil, err
 		}
-
-		step, err = numberToInt64(stepValue, "range step")
-		if err != nil {
-			return nil, err
-		}
-
-		if step <= 0 {
-			return nil, fmt.Errorf("range step must be positive")
-		}
 	}
 
-	start, err := numberToInt64(startValue, "range start")
-	if err != nil {
-		return nil, err
-	}
-
-	end, err := numberToInt64(endValue, "range end")
-	if err != nil {
-		return nil, err
-	}
-
-	values := []Value{}
-
-	if start <= end {
-		limit := end
-		if !element.IsInclusive {
-			limit = end - 1
-		}
-
-		for current := start; current <= limit; current += step {
-			values = append(values, NewNumberValueFromInt64(current))
-		}
-	} else {
-		limit := end
-		if !element.IsInclusive {
-			limit = end + 1
-		}
-
-		for current := start; current >= limit; current -= step {
-			values = append(values, NewNumberValueFromInt64(current))
-		}
-	}
-
-	return values, nil
+	return stultRangeValues(startValue, endValue, stepValue, element.IsInclusive)
 }
 
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {

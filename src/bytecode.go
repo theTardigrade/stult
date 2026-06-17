@@ -31,6 +31,7 @@ const (
 	BytecodeOpCall
 
 	BytecodeOpIteratorInit
+	BytecodeOpIteratorRangeInit
 	BytecodeOpIteratorNext
 	BytecodeOpIteratorValue
 	BytecodeOpIteratorKey
@@ -209,6 +210,19 @@ func EmptyBytecodeSourceSpan() BytecodeSourceSpan {
 	return BytecodeSourceSpan{}
 }
 
+func encodeIteratorRangeInitOperand(parameterCount int, isInclusive bool) int {
+	operand := parameterCount * 2
+	if isInclusive {
+		operand++
+	}
+
+	return operand
+}
+
+func decodeIteratorRangeInitOperand(operand int) (int, bool) {
+	return operand / 2, operand%2 == 1
+}
+
 func (opcode BytecodeOpcode) String() string {
 	switch opcode {
 	case BytecodeOpLoadVoid:
@@ -273,6 +287,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpIteratorInit:
 		return "ITERATOR_INIT"
+
+	case BytecodeOpIteratorRangeInit:
+		return "ITERATOR_RANGE_INIT"
 
 	case BytecodeOpIteratorNext:
 		return "ITERATOR_NEXT"

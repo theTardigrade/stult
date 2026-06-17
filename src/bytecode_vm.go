@@ -285,6 +285,13 @@ func (vm *BytecodeVM) executeInstruction(
 
 		return Value{}, false, nil
 
+	case BytecodeOpIteratorRangeInit:
+		if err := vm.iteratorRangeInit(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
 	case BytecodeOpIteratorNext:
 		if err := vm.iteratorNext(instruction.Operand); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())

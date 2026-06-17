@@ -3,14 +3,15 @@ package main
 import "fmt"
 
 type bytecodeVMIterator struct {
-	Source         Value
-	ParameterCount int
-	Position       int
-	CurrentKey     Value
-	CurrentValue   Value
-	HasCurrent     bool
-	LastMapKey     string
-	HasLastMapKey  bool
+	Source              Value
+	ParameterCount      int
+	Position            int
+	CurrentKey          Value
+	CurrentValue        Value
+	HasCurrent          bool
+	LastMapKey          string
+	HasLastMapKey       bool
+	DirectRangeIterator *stultRangeIterator
 }
 
 func (vm *BytecodeVM) iteratorInit(parameterCount int) error {
@@ -27,6 +28,64 @@ func (vm *BytecodeVM) iteratorInit(parameterCount int) error {
 	vm.iterators = append(vm.iterators, iterator)
 
 	return nil
+}
+
+func (vm *BytecodeVM) iteratorRangeInit(operand int) error {
+	parameterCount, isInclusive := decodeIteratorRangeInitOperand(operand)
+
+	step, err := vm.popValue()
+	if err != nil {
+		return err
+	}
+
+	end, err := vm.popValue()
+	if err != nil {
+		return err
+	}
+
+	start, err := vm.popValue()
+	if err != nil {
+		return err
+	}
+
+	iterator, err := newBytecodeVMDirectRangeIterator(start, end, step, isInclusive, parameterCount)
+	if err != nil {
+		return err
+	}
+
+	vm.iterators = append(vm.iterators, iterator)
+
+	return nil
+}
+
+func newBytecodeVMDirectRangeIterator(
+	startValue Value,
+	endValue Value,
+	stepValue Value,
+	isInclusive bool,
+	parameterCount int,
+) (bytecodeVMIterator, error) {
+	iterator := bytecodeVMIterator{
+		Source:         NewVoidValue(),
+		ParameterCount: parameterCount,
+		Position:       -1,
+		CurrentKey:     NewVoidValue(),
+		CurrentValue:   NewVoidValue(),
+		HasCurrent:     false,
+	}
+
+	if !isValidFunctionRangeParameterCount(parameterCount) {
+		return iterator, fmt.Errorf("direct range loop must have zero, one, or two parameters")
+	}
+
+	rangeIterator, err := newStultRangeIterator(startValue, endValue, stepValue, isInclusive)
+	if err != nil {
+		return iterator, err
+	}
+
+	iterator.DirectRangeIterator = rangeIterator
+
+	return iterator, nil
 }
 
 func newBytecodeVMIterator(source Value, parameterCount int) (bytecodeVMIterator, error) {
@@ -93,6 +152,10 @@ func (vm *BytecodeVM) iteratorNext(target int) error {
 		return err
 	}
 
+	if iterator.DirectRangeIterator != nil {
+		return vm.iteratorNextDirectRange(iterator, target)
+	}
+
 	switch iterator.Source.Kind {
 	case ValueArray:
 		return vm.iteratorNextArray(iterator, target)
@@ -109,6 +172,24 @@ func (vm *BytecodeVM) iteratorNext(target int) error {
 	default:
 		return fmt.Errorf("loop expression must evaluate to a map, array, string, or function")
 	}
+}
+
+func (vm *BytecodeVM) iteratorNextDirectRange(iterator *bytecodeVMIterator, target int) error {
+	value, ok := iterator.DirectRangeIterator.nextValue()
+	if !ok {
+		iterator.HasCurrent = false
+		return vm.jump(target)
+	}
+
+	position := iterator.Position + 1
+	positionValue := NewNumberValueFromInt(position)
+
+	iterator.Position = position
+	iterator.CurrentKey = positionValue
+	iterator.CurrentValue = value
+	iterator.HasCurrent = true
+
+	return nil
 }
 
 func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int) error {
@@ -259,10 +340,10 @@ func (vm *BytecodeVM) storeIteratorCollection(instructionIndex int, localIndex i
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if iterator.Source.Kind == ValueFunction {
+	if iterator.Source.Kind == ValueFunction || iterator.DirectRangeIterator != nil {
 		return vm.runtimeError(
 			instructionIndex,
-			"function range loop has no collection parameter",
+			"loop source has no collection parameter",
 		)
 	}
 

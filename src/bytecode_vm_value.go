@@ -375,59 +375,7 @@ func bytecodeRangeValues(
 	stepValue Value,
 	isInclusive bool,
 ) ([]Value, error) {
-	start, err := numberToInt64(startValue, "range start")
-	if err != nil {
-		return nil, err
-	}
-
-	end, err := numberToInt64(endValue, "range end")
-	if err != nil {
-		return nil, err
-	}
-
-	step := int64(0)
-	stepValue = resolveSpecializedValue(stepValue)
-
-	if stepValue.Kind == ValueVoid {
-		if start <= end {
-			step = 1
-		} else {
-			step = -1
-		}
-	} else {
-		step, err = numberToInt64(stepValue, "range step")
-		if err != nil {
-			return nil, err
-		}
-
-		if step == 0 {
-			return nil, fmt.Errorf("range step cannot be zero")
-		}
-	}
-
-	values := []Value{}
-
-	if step > 0 {
-		limit := end
-		if !isInclusive {
-			limit = end - 1
-		}
-
-		for current := start; current <= limit; current += step {
-			values = append(values, NewNumberValueFromInt64(current))
-		}
-	} else {
-		limit := end
-		if !isInclusive {
-			limit = end + 1
-		}
-
-		for current := start; current >= limit; current += step {
-			values = append(values, NewNumberValueFromInt64(current))
-		}
-	}
-
-	return values, nil
+	return stultRangeValues(startValue, endValue, stepValue, isInclusive)
 }
 
 func (vm *BytecodeVM) jump(target int) error {
