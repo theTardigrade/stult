@@ -55,8 +55,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Conditional expressions](#conditional-expressions)
     - [Match expressions](#match-expressions)
   - [Loops](#loops)
-    - [Break](#break)
     - [Infinite loops](#infinite-loops)
+    - [Breaking out of a loop](#breaking-out-of-a-loop)
     - [Iterating over collections](#iterating-over-collections)
     - [Function loops](#function-loops)
   - [Commas and newlines](#commas-and-newlines)
@@ -1123,7 +1123,17 @@ count : 3
 }
 ```
 
-#### Break
+#### Infinite loops
+
+An infinite loop uses the true literal:
+
+```stult
+((\/)) {
+	STD.IO.PRINT("forever")
+}
+```
+
+#### Breaking out of a loop
 
 A bare `^` breaks the nearest loop:
 
@@ -1136,16 +1146,6 @@ count : 0
 	(count = 3) {
 		^
 	}
-}
-```
-
-#### Infinite loops
-
-An infinite loop uses the true literal:
-
-```stult
-((\/)) {
-	STD.IO.PRINT("forever")
 }
 ```
 
