@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.0
 
 * Added dot-access syntax for string-key map access, so `value.key` is equivalent to `value["key"]`.
 * Added optional user-function parameters using `?`, with omitted optional parameters receiving `_`.
