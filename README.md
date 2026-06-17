@@ -1179,7 +1179,7 @@ If the function can accept one argument, the loop passes it the zero-based index
 
 In the example above, `COUNTDOWN` is called as `COUNTDOWN(0)`, `COUNTDOWN(1)`, `COUNTDOWN(2)` and so on, until it returns `_`.
 
-A function-loop body can also receive the zero-based iteration position:
+A function-loop body can also receive the zero-based iteration position as a second argument:
 
 ```stult
 ((COUNTDOWN)) { (value, position)
@@ -1187,7 +1187,7 @@ A function-loop body can also receive the zero-based iteration position:
 }
 ```
 
-If the function takes no arguments, it is called without arguments instead.
+If the function can accept no arguments, it is called without arguments instead.
 
 ```stult
 count : 0
@@ -1215,22 +1215,6 @@ NEXT : { (index?)
 	}
 
 	(index)
-}
-```
-
-Function-loop bodies may use zero, one or two parameters:
-
-```stult
-((NEXT)) {
-	STD.IO.PRINT("tick")
-}
-
-((NEXT)) { (value)
-	STD.IO.PRINT(value)
-}
-
-((NEXT)) { (value, position)
-	STD.IO.PRINT(position, ": ", value)
 }
 ```
 
