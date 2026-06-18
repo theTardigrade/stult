@@ -1,4 +1,3 @@
-
 # Versions
 
 This document summarises notable Stult changes by released version.
@@ -12,6 +11,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 ### Future release
 
 * Added try-catch statements using `'{ ... },{ ... }` for recovering from runtime errors, with an optional catch parameter for the error message.
+* Added percentage-suffixed number literals, so `50%` evaluates to `0.5`.
 
 ### v0.7.2
 
@@ -220,3 +220,4 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
+

@@ -1,0 +1,21 @@
+##
+
+EXAMPLE: tests/percentage_numbers.stult
+
+This test checks percentage number literals.
+
+A percentage suffix is part of the number literal and divides that literal by
+one hundred, so 50% behaves like 0.5.
+
+##
+
+ASSERT : STD["ASSERT"]
+NUMBER : STD["TYPE"]["NUMBER"]
+
+ASSERT["EQUAL"](50%, 0.5, "50% should equal 0.5")
+ASSERT["EQUAL"](99.9%, 0.999, "99.9% should equal 0.999")
+ASSERT["EQUAL"](128 * 50%, 64, "percentage literals should work in arithmetic")
+ASSERT["EQUAL"](-20%, -0.2, "unary minus should apply to percentage literals")
+ASSERT["EQUAL"](.5%, 0.005, "dot-prefixed percentage literals should be accepted")
+ASSERT["EQUAL"](1e2%, 1, "exponential percentage literals should be accepted")
+ASSERT["EQUAL"](NUMBER["NEW"]("75%"), 0.75, "NUMBER.NEW should parse percentage strings")

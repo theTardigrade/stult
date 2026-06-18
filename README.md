@@ -37,6 +37,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Comments](#comments)
   - [Values](#values)
   - [Numbers](#numbers)
+    - [Percentage literals](#percentage-literals)
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
     - [Boolean bindings](#boolean-bindings)
@@ -479,6 +480,14 @@ More precisely, whole-number values are theoretically unbounded, subject to avai
 Although Stult keeps more decimal places internally, numbers are ordinarily displayed with fewer decimal places (currently 32).
 
 The number-formatting helpers in `STD.TYPE.NUMBER` can request more decimal places when needed.
+
+#### Percentage literals
+
+A number literal may end with `%`.
+
+The suffix is part of the literal and divides that literal by one hundred, so `50%` is `0.5` and `99.9%` is `0.999`. It follows that `128 * 50%` is `64`.
+
+The `%` must touch the number. `50%` is a percentage literal, but `50 %` is not.
 
 ### Bindings
 

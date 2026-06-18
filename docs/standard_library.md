@@ -1084,6 +1084,7 @@ Converts a value to a number when possible.
 
 ```stult
 STD.TYPE.NUMBER.NEW("123.45")
+STD.TYPE.NUMBER.NEW("75%")
 STD.TYPE.NUMBER.NEW("\/")  # not useful; booleans are values, so use \/ directly
 STD.TYPE.NUMBER.NEW(\/)
 ```
@@ -1093,7 +1094,7 @@ Conversion rules:
 ```text
 number    returns a cloned number
 bool      true becomes 1, false becomes 0
-string    parsed as a number after trimming whitespace
+string    parsed as a number after trimming whitespace; percentage strings such as "75%" are accepted
 other     returns _
 ```
 
@@ -1539,6 +1540,7 @@ It allows:
 _
 booleans
 numbers
+percentage-suffixed numbers
 negative numbers
 strings
 arrays
@@ -1547,7 +1549,7 @@ maps
 
 It does not allow executable syntax such as assignments, identifiers, function calls, function literals, index expressions, binary operators or ranges.
 
-Exponential number notation is not allowed in STULTON.
+Exponential number notation is not allowed in STULTON. Percentage-suffixed numbers are allowed when the underlying number does not use exponent notation.
 
 ### `STD["DATA"]["STULTON"]["IS_VALID"](text)`
 

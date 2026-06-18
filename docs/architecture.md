@@ -243,7 +243,7 @@ line comments
 bounded comments
 ```
 
-A single `.` token is used for dot access. Number and range lexing still handle dot-prefixed numbers and range operators specially, so `.5`, `1.5`, `..` and `...` remain distinct from dot access.
+A single `.` token is used for dot access. Number and range lexing still handle dot-prefixed numbers, percentage-suffixed numbers and range operators specially, so `.5`, `1.5`, `50%`, `..` and `...` remain distinct from dot access.
 
 Identifier mutability is detected lexically:
 
@@ -721,7 +721,7 @@ Stult has one user-visible number type.
 
 Internally, number values may be represented as small integers, arbitrary-size integers or scaled decimals. This is an implementation detail: Stult programs still see a single number type.
 
-For scaled decimals, Stult stores a signed whole-number coefficient plus a decimal scale. The value is the coefficient divided by ten to the power of that scale.
+For scaled decimals, Stult stores a signed whole-number coefficient plus a decimal scale. The value is the coefficient divided by ten to the power of that scale. Percentage-suffixed number literals are normalised by increasing the decimal scale by two, so `50%` enters the runtime as the same number value as `0.5`. The suffix is handled while reading and parsing the number literal; it does not introduce a separate percentage operator.
 
 Whole-number values are theoretically unbounded, subject to available memory and processing time. Digits after the decimal point are bounded and rounded to a maximum number of decimal places.
 

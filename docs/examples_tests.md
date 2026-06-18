@@ -1,5 +1,3 @@
-
-
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -86,6 +84,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Huge numbers](../examples/tests/huge_numbers.stult)  
   Checks that very large whole-number values can be compared and changed without losing their whole-number precision, while decimal values remain bounded.
+
+- [Percentages](../examples/tests/percentage_numbers.stult)  
+  Checks that percentage-suffixed number literals divide their literal value by one hundred and work in ordinary arithmetic.
 
 - [Number formatting](../examples/tests/number_formatting.stult)  
   Checks fixed decimal formatting with requested decimal places and scientific-notation formatting with requested significant digits.
