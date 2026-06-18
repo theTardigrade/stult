@@ -69,6 +69,15 @@ type LoopStatement struct {
 
 func (s *LoopStatement) statementNode() {}
 
+type TryCatchStatement struct {
+	Token          Token
+	TryBody        []Statement
+	CatchParameter *Token
+	CatchBody      []Statement
+}
+
+func (s *TryCatchStatement) statementNode() {}
+
 type VoidLiteral struct {
 	Token Token
 }

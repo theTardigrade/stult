@@ -9,6 +9,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLoopStatement()
 	}
 
+	if p.current.Type == TokenTry {
+		return p.parseTryCatchStatement()
+	}
+
 	if p.current.Type == TokenLParen {
 		expr, closeParen, ok := p.parseParenthesizedExpression("conditional expression cannot be empty")
 		if !ok {
@@ -140,7 +144,7 @@ func (p *Parser) parseCaretStatement() Statement {
 
 func statementAllowsTightFollower(stmt Statement) bool {
 	switch stmt.(type) {
-	case *ConditionalStatement, *LoopStatement:
+	case *ConditionalStatement, *LoopStatement, *TryCatchStatement:
 		return true
 	default:
 		return false

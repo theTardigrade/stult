@@ -51,6 +51,9 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 	case *LoopStatement:
 		return i.evalLoopStatement(s)
 
+	case *TryCatchStatement:
+		return i.evalTryCatchStatement(s)
+
 	default:
 		return Value{}, fmt.Errorf("unknown statement type %T", stmt)
 	}
@@ -108,4 +111,25 @@ func (i *Interpreter) evalStatementBlockWithBindings(statements []Statement, ini
 	}
 
 	return result, nil
+}
+
+func (i *Interpreter) evalTryCatchStatement(stmt *TryCatchStatement) (Value, error) {
+	value, err := i.evalStatementBlock(stmt.TryBody)
+	if err == nil {
+		return value, nil
+	}
+
+	if _, ok := asControlFlow(err); ok {
+		return Value{}, err
+	}
+
+	bindings := map[string]Binding{}
+	if stmt.CatchParameter != nil && stmt.CatchParameter.Literal != "_" {
+		bindings[stmt.CatchParameter.Literal] = Binding{
+			Value:       NewStringValue(err.Error()),
+			IsImmutable: stmt.CatchParameter.IsImmutable,
+		}
+	}
+
+	return i.evalStatementBlockWithBindings(stmt.CatchBody, bindings)
 }

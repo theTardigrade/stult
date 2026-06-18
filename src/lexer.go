@@ -123,6 +123,10 @@ func (l *Lexer) NextToken() Token {
 		l.readChar()
 		return l.makeToken(TokenColon, ":", line, col)
 
+	case '\'':
+		l.readChar()
+		return l.makeToken(TokenTry, "'", line, col)
+
 	case '@':
 		l.readChar()
 		return l.makeToken(TokenAt, "@", line, col)

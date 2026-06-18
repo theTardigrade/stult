@@ -1,0 +1,113 @@
+##
+
+EXAMPLE: tests/try_catch.stult
+
+This example checks try-catch statements.
+
+A try-catch statement catches runtime errors raised by the try block. The catch
+block may ignore the error message or bind it with one catch parameter.
+
+##
+
+ASSERT : STD.ASSERT
+SIZE : STD.TYPE.COLLECTION.SIZE
+
+caught_without_parameter : /\
+
+'{
+	ASSERT.EQUAL(1, 2, "failed assertion should be caught")
+},{
+	@caught_without_parameter : \/
+}
+
+ASSERT.TRUE(caught_without_parameter, "catch block without a parameter should run")
+
+message : ""
+
+'{
+	items : {:}
+	items.missing
+},{ (error)
+	@message : error
+}
+
+ASSERT.TRUE(SIZE(message) > 0, "catch parameter should receive an error message")
+
+catch_was_skipped : /\
+
+'{
+	value : 10
+},{
+	@catch_was_skipped : \/
+}
+
+ASSERT.TRUE(!catch_was_skipped, "catch block should be skipped when try block succeeds")
+
+discard_caught : /\
+
+'{
+	1()
+},{ (_)
+	@discard_caught : \/
+}
+
+ASSERT.TRUE(discard_caught, "discard catch parameter should be accepted")
+
+outer_caught : /\
+
+'{
+	'{
+		1()
+	},{
+		missing : {:}
+		missing.key
+	}
+},{ (error)
+	@outer_caught : \/
+}
+
+ASSERT.TRUE(outer_caught, "errors from a catch block should still escape to an outer try")
+
+nearest_handler : ""
+outer_handler_ran : /\
+
+'{
+	'{
+		1()
+	},{ (error)
+		@nearest_handler : "inner"
+	}
+},{ (error)
+	@outer_handler_ran : \/
+}
+
+ASSERT.EQUAL(nearest_handler, "inner", "nearest catch block should handle the error")
+ASSERT.TRUE(!outer_handler_ran, "outer catch block should not run after inner catch succeeds")
+
+break_count : 0
+
+(({1..5})) { (value)
+	'{
+		@break_count :+ 1
+
+		(value = 3) {
+			^
+		}
+	},{
+		@break_count : 999
+	}
+}
+
+ASSERT.EQUAL(break_count, 3, "break inside try should still break the loop")
+
+RETURN_THROUGH_TRY : { ()
+	'{
+		^("done")
+	},{ (_)
+		("caught")
+	}
+
+	("not done")
+}
+
+ASSERT.EQUAL(RETURN_THROUGH_TRY(), "done", "early return inside try should still return")

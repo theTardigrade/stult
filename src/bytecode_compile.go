@@ -11,6 +11,8 @@ type BytecodeCompiler struct {
 	localScopes    []map[string]int
 	upvalueIndexes map[string]int
 	loopBreakJumps [][]int
+	loopTryDepths  []int
+	tryDepth       int
 }
 
 func NewBytecodeCompiler(
@@ -28,6 +30,8 @@ func NewBytecodeCompiler(
 		localScopes:    []map[string]int{{}},
 		upvalueIndexes: map[string]int{},
 		loopBreakJumps: [][]int{},
+		loopTryDepths:  []int{},
+		tryDepth:       0,
 	}
 }
 

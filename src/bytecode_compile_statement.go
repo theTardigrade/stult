@@ -58,6 +58,9 @@ func (compiler *BytecodeCompiler) compileStatement(statement Statement) error {
 	case *LoopStatement:
 		return compiler.compileLoopStatement(statement)
 
+	case *TryCatchStatement:
+		return compiler.compileTryCatchStatement(statement)
+
 	default:
 		return fmt.Errorf(
 			"bytecode compiler does not know statement type %T",
@@ -199,6 +202,59 @@ func (compiler *BytecodeCompiler) compileIndexAssignmentStatement(statement *Ind
 	return nil
 }
 
+func (compiler *BytecodeCompiler) compileTryCatchStatement(statement *TryCatchStatement) error {
+	sourceSpan := compiler.sourceSpanFromToken(statement.Token)
+
+	tryStart := compiler.chunk.EmitOperandAt(BytecodeOpTryStart, -1, sourceSpan)
+
+	compiler.tryDepth++
+	if err := compiler.compileScopedStatementList(statement.TryBody); err != nil {
+		compiler.tryDepth--
+		return err
+	}
+	compiler.tryDepth--
+
+	compiler.chunk.EmitAt(BytecodeOpTryEnd, sourceSpan)
+	afterCatchJump := compiler.chunk.EmitOperandAt(BytecodeOpJump, -1, sourceSpan)
+	catchStart := len(compiler.chunk.Instructions)
+
+	if err := compiler.chunk.PatchOperand(tryStart, catchStart); err != nil {
+		return err
+	}
+
+	scopeDepth := compiler.beginLocalScope()
+	compiler.chunk.EmitOperandAt(BytecodeOpResetLocals, scopeDepth, sourceSpan)
+
+	if statement.CatchParameter == nil || statement.CatchParameter.Literal == "_" {
+		compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+	} else {
+		localIndex := compiler.ensureLocal(
+			statement.CatchParameter.Literal,
+			statement.CatchParameter.IsImmutable,
+		)
+
+		opcode := BytecodeOpStoreLocalMutable
+		if statement.CatchParameter.IsImmutable {
+			opcode = BytecodeOpStoreLocalImmutable
+		}
+
+		compiler.chunk.EmitOperandAt(
+			opcode,
+			localIndex,
+			compiler.sourceSpanFromToken(*statement.CatchParameter),
+		)
+	}
+
+	if err := compiler.compileStatementList(statement.CatchBody); err != nil {
+		compiler.endLocalScope()
+		return err
+	}
+
+	compiler.endLocalScope()
+
+	return compiler.patchJumpToCurrent(afterCatchJump)
+}
+
 func (compiler *BytecodeCompiler) compileBreakStatement(statement *BreakStatement) error {
 	if len(compiler.loopBreakJumps) == 0 {
 		return compiler.compileError(
@@ -206,6 +262,8 @@ func (compiler *BytecodeCompiler) compileBreakStatement(statement *BreakStatemen
 			"bytecode compiler cannot compile break outside a loop",
 		)
 	}
+
+	compiler.emitTryEndForBreak()
 
 	jump := compiler.chunk.EmitOperandAt(
 		BytecodeOpJump,
@@ -223,6 +281,8 @@ func (compiler *BytecodeCompiler) compileReturnStatement(statement *ReturnStatem
 	if err := compiler.compileExpression(statement.Value); err != nil {
 		return err
 	}
+
+	compiler.emitTryEndForReturn()
 
 	compiler.chunk.EmitAt(
 		BytecodeOpReturn,
@@ -465,6 +525,7 @@ func (compiler *BytecodeCompiler) compileIteratorLoopBody(
 
 func (compiler *BytecodeCompiler) beginLoop() {
 	compiler.loopBreakJumps = append(compiler.loopBreakJumps, []int{})
+	compiler.loopTryDepths = append(compiler.loopTryDepths, compiler.tryDepth)
 }
 
 func (compiler *BytecodeCompiler) endLoop() []int {
@@ -475,6 +536,24 @@ func (compiler *BytecodeCompiler) endLoop() []int {
 	last := len(compiler.loopBreakJumps) - 1
 	breakJumps := compiler.loopBreakJumps[last]
 	compiler.loopBreakJumps = compiler.loopBreakJumps[:last]
+	compiler.loopTryDepths = compiler.loopTryDepths[:last]
 
 	return breakJumps
+}
+
+func (compiler *BytecodeCompiler) emitTryEndForBreak() {
+	if len(compiler.loopTryDepths) == 0 {
+		return
+	}
+
+	loopTryDepth := compiler.loopTryDepths[len(compiler.loopTryDepths)-1]
+	for depth := compiler.tryDepth; depth > loopTryDepth; depth-- {
+		compiler.chunk.Emit(BytecodeOpTryEnd)
+	}
+}
+
+func (compiler *BytecodeCompiler) emitTryEndForReturn() {
+	for depth := compiler.tryDepth; depth > 0; depth-- {
+		compiler.chunk.Emit(BytecodeOpTryEnd)
+	}
 }

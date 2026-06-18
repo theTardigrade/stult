@@ -68,6 +68,7 @@ func (vm *BytecodeVM) runFunction(
 	vm.stack = make([]bytecodeVMStackEntry, 0, 8)
 	vm.upvalues = upvalues
 	vm.iterators = []bytecodeVMIterator{}
+	vm.errorHandlers = []bytecodeVMErrorHandler{}
 
 	vm.initializeLocals(function.Chunk)
 
@@ -85,12 +86,13 @@ func (vm *BytecodeVM) runFunction(
 
 func (vm *BytecodeVM) saveExecutionState() bytecodeVMExecutionState {
 	return bytecodeVMExecutionState{
-		Chunk:     vm.chunk,
-		IP:        vm.ip,
-		Stack:     vm.stack,
-		Locals:    vm.locals,
-		Upvalues:  vm.upvalues,
-		Iterators: vm.iterators,
+		Chunk:         vm.chunk,
+		IP:            vm.ip,
+		Stack:         vm.stack,
+		Locals:        vm.locals,
+		Upvalues:      vm.upvalues,
+		Iterators:     vm.iterators,
+		ErrorHandlers: vm.errorHandlers,
 	}
 }
 
@@ -101,6 +103,7 @@ func (vm *BytecodeVM) restoreExecutionState(state bytecodeVMExecutionState) {
 	vm.locals = state.Locals
 	vm.upvalues = state.Upvalues
 	vm.iterators = state.Iterators
+	vm.errorHandlers = state.ErrorHandlers
 }
 
 func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Value) error {

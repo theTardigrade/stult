@@ -41,6 +41,9 @@ const (
 
 	BytecodeOpResetLocals
 
+	BytecodeOpTryStart
+	BytecodeOpTryEnd
+
 	BytecodeOpJump
 	BytecodeOpJumpIfFalse
 	BytecodeOpJumpIfTrue
@@ -311,6 +314,12 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpResetLocals:
 		return "RESET_LOCALS"
+
+	case BytecodeOpTryStart:
+		return "TRY_START"
+
+	case BytecodeOpTryEnd:
+		return "TRY_END"
 
 	case BytecodeOpJump:
 		return "JUMP"

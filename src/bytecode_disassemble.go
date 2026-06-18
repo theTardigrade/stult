@@ -314,7 +314,8 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 			instruction.Operand,
 		)
 
-	case BytecodeOpJump,
+	case BytecodeOpTryStart,
+		BytecodeOpJump,
 		BytecodeOpJumpIfFalse,
 		BytecodeOpJumpIfTrue,
 		BytecodeOpJumpIfCollection,
@@ -327,6 +328,7 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpStoreIndex,
 		BytecodeOpIndex,
 		BytecodeOpIteratorEnd,
+		BytecodeOpTryEnd,
 		BytecodeOpDuplicateTopTwo,
 		BytecodeOpNegate,
 		BytecodeOpNot,

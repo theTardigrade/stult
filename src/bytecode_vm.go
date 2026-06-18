@@ -10,6 +10,7 @@ type BytecodeVM struct {
 	locals                   []bytecodeVMCell
 	upvalues                 []*bytecodeVMCell
 	iterators                []bytecodeVMIterator
+	errorHandlers            []bytecodeVMErrorHandler
 	runtime                  *RuntimeContext
 	args                     []string
 	localIndexCache          map[*BytecodeChunk]map[string]int
@@ -28,12 +29,13 @@ type bytecodeVMStackEntry struct {
 }
 
 type bytecodeVMExecutionState struct {
-	Chunk     *BytecodeChunk
-	IP        int
-	Stack     []bytecodeVMStackEntry
-	Locals    []bytecodeVMCell
-	Upvalues  []*bytecodeVMCell
-	Iterators []bytecodeVMIterator
+	Chunk         *BytecodeChunk
+	IP            int
+	Stack         []bytecodeVMStackEntry
+	Locals        []bytecodeVMCell
+	Upvalues      []*bytecodeVMCell
+	Iterators     []bytecodeVMIterator
+	ErrorHandlers []bytecodeVMErrorHandler
 }
 
 func RunBytecode(chunk *BytecodeChunk) (Value, error) {
@@ -61,6 +63,7 @@ func NewBytecodeVMWithRuntime(runtime *RuntimeContext) *BytecodeVM {
 		locals:                   []bytecodeVMCell{},
 		upvalues:                 []*bytecodeVMCell{},
 		iterators:                []bytecodeVMIterator{},
+		errorHandlers:            []bytecodeVMErrorHandler{},
 		runtime:                  runtime,
 		args:                     append([]string{}, runtime.Args...),
 		localIndexCache:          map[*BytecodeChunk]map[string]int{},
@@ -87,6 +90,7 @@ func (vm *BytecodeVM) runChunk(chunk *BytecodeChunk, initializeLocals bool) (Val
 	vm.ip = 0
 	vm.stack = vm.stack[:0]
 	vm.iterators = vm.iterators[:0]
+	vm.errorHandlers = vm.errorHandlers[:0]
 
 	if initializeLocals {
 		vm.initializeLocals(chunk)
@@ -103,6 +107,10 @@ func (vm *BytecodeVM) runActiveChunk() (Value, error) {
 
 		result, returned, err := vm.executeInstruction(instructionIndex, instruction)
 		if err != nil {
+			if vm.handleRuntimeError(err) {
+				continue
+			}
+
 			return Value{}, err
 		}
 
@@ -321,6 +329,20 @@ func (vm *BytecodeVM) executeInstruction(
 
 	case BytecodeOpResetLocals:
 		if err := vm.resetLocalsFromDepth(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpTryStart:
+		if err := vm.tryStart(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpTryEnd:
+		if err := vm.tryEnd(); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 
