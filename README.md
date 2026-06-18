@@ -7,7 +7,8 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- arrays, maps, strings, functions, conditionals, conditional expressions, match expressions, loops and ranges,
+- arrays, maps, strings, functions, conditionals, loops and ranges,
+- try-catch blocks, conditional expressions and match expressions,
 - concise literals for booleans, arrays, maps and void,
 - manifest-based projects, direct source-string evaluation and bundled executables *and*
 - a map-shaped standard library available through `STD`.
@@ -54,6 +55,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Creating a local scope](#creating-a-local-scope)
     - [Conditional expressions](#conditional-expressions)
     - [Match expressions](#match-expressions)
+  - [Error handling](#error-handling)
+    - [Try-catch blocks](#try-catch-blocks)
   - [Loops](#loops)
     - [Infinite loops](#infinite-loops)
     - [Breaking out of a loop](#breaking-out-of-a-loop)
@@ -1095,6 +1098,45 @@ RESULT : ("safe")?{
 
 In this example, the division arm is not evaluated.
 
+### Error handling
+
+#### Try-catch blocks
+
+A try-catch block lets a program recover from runtime errors.
+
+```stult
+'{
+	STD.ASSERT.EQUAL(1, 2, "these values should match")
+},{
+	STD.IO.PRINT("Recovered from the error")
+}
+```
+
+The catch block may also receive the error message:
+
+```stult
+'{
+	items : {:}
+	items.missing
+},{ (error_message)
+	STD.IO.PRINT("Error: ", error_message)
+}
+```
+
+The catch parameter is optional. You may use `_` when you want to show that the error message is intentionally ignored:
+
+```stult
+'{
+	1()
+},{ (_)
+	STD.IO.PRINT("Something went wrong")
+}
+```
+
+Try-catch blocks catch runtime errors only. Syntax errors, parser errors and bytecode compile errors happen before the program runs, so they cannot be caught by a try-catch block.
+
+Break and early return are control flow, not runtime errors. A `^` inside a try block still breaks the nearest loop, and `^(value)` still returns from the nearest function.
+
 ### Loops
 
 Loops use double parentheses:
@@ -1181,7 +1223,7 @@ For every type of collection, `position` is the zero-based iteration position.
 
 ##### Iterating efficiently over a range
 
-When a loop goes straight over a range like `{1..1000}`, Stult can count through the range directly instead of building the whole array first. This keeps large range loops memory-friendly, so long as the loop-body only asks for the value and position, not the collection itself.
+When a loop goes straight over a range like `{1..1000}`, Stult can count through the range directly instead of building the whole array first. This keeps large range loops memory-friendly, as long as the loop body only asks for the value and position, not the collection itself.
 
 ```stult
 (({1..1000000})) { (value)
