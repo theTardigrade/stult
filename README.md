@@ -1133,7 +1133,7 @@ The catch parameter is optional. You may use `_` when you want to show that the 
 }
 ```
 
-Try-catch blocks catch runtime errors only. Syntax errors, parser errors and bytecode compile errors happen before the program runs, so they cannot be caught by a try-catch block.
+Try-catch blocks catch runtime errors only. Syntax errors, parsing errors and bytecode compile errors happen before the program runs, so they cannot be caught by a try-catch block.
 
 Break and early return are control flow, not runtime errors. A `^` inside a try block still breaks the nearest loop, and `^(value)` still returns from the nearest function.
 
