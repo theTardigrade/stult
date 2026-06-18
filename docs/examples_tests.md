@@ -1,4 +1,5 @@
 
+
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -14,6 +15,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Collection behaviour](#collection-behaviour)
 * [Loops](#loops)
 * [Grouped expressions](#grouped-expressions)
+* [Error handling](#error-handling)
 * [Literal parsing](#literal-parsing)
 * [Maps](#maps)
 * [Functions](#functions)
@@ -56,6 +58,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Match expression](../examples/tests/match_expression.stult)  
   Checks that `(SUBJECT)?{ ... }` matches explicit scalar-literal arms before falling back to `_`.
+
+## Error handling
+
+- [Try-catch](../examples/tests/try_catch.stult)  
+  Checks that try-catch catches runtime errors, supports an optional error-message parameter, skips the catch block when the try block succeeds, lets catch-block errors escape, catches the nearest handler and preserves break and early-return control flow.
 
 ## Literal parsing
 

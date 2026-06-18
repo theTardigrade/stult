@@ -56,7 +56,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Conditional expressions](#conditional-expressions)
     - [Match expressions](#match-expressions)
   - [Error handling](#error-handling)
-    - [Try-catch blocks](#try-catch-blocks)
+    - [Try-catch statements](#try-catch-statements)
   - [Loops](#loops)
     - [Infinite loops](#infinite-loops)
     - [Breaking out of a loop](#breaking-out-of-a-loop)
@@ -1100,9 +1100,9 @@ In this example, the division arm is not evaluated.
 
 ### Error handling
 
-#### Try-catch blocks
+#### Try-catch statements
 
-A try-catch block lets a program recover from runtime errors.
+A try-catch statement lets a program recover from runtime errors. The try block is introduced with an `'`, as shown below:
 
 ```stult
 '{
@@ -1133,7 +1133,7 @@ The catch parameter is optional. You may use `_` when you want to show that the 
 }
 ```
 
-Try-catch blocks catch runtime errors only. Syntax errors, parsing errors and bytecode compile errors happen before the program runs, so they cannot be caught by a try-catch block.
+Try-catch statements catch runtime errors only. Syntax errors, parsing errors and bytecode compile errors happen before the program runs, so they cannot be caught by a try-catch block.
 
 Break and early return are control flow, not runtime errors. A `^` inside a try block still breaks the nearest loop, and `^(value)` still returns from the nearest function.
 

@@ -1,3 +1,4 @@
+
 # Versions
 
 This document summarises notable Stult changes by released version.
@@ -7,6 +8,10 @@ For downloadable binaries and checksums, see the GitHub Releases page once relea
 Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shape, bytecode details and command-line behaviour may still change between minor versions.
 
 ## Changelog
+
+### Future release
+
+* Added try-catch statements using `'{ ... },{ ... }` for recovering from runtime errors, with an optional catch parameter for the error message.
 
 ### v0.7.2
 

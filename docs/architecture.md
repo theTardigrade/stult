@@ -22,6 +22,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [Locals, globals and upvalues](#locals-globals-and-upvalues)
   - [Control flow](#control-flow)
   - [Dynamic loops](#dynamic-loops)
+  - [Try-catch](#try-catch)
   - [Range-backed loop optimisation](#range-backed-loop-optimisation)
   - [Source spans and disassembly](#source-spans-and-disassembly)
 - [Bytecode virtual machine](#bytecode-virtual-machine)
@@ -32,6 +33,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [Functions and closures](#functions-and-closures)
   - [Collection iteration](#collection-iteration)
   - [Function loops](#function-loops)
+  - [Try handlers](#try-handlers)
   - [Operators](#operators)
   - [Runtime errors](#runtime-errors)
 - [Tree-walk interpreter](#tree-walk-interpreter)
@@ -270,6 +272,7 @@ compound assignments
 conditionals
 conditional expressions
 match expressions
+try-catch statements
 dynamic loops
 function literals
 optional function parameters
@@ -374,6 +377,8 @@ Early return from functions compiles to a return path that exits the current fun
 
 A bare `^` inside loops compiles to a loop break.
 
+Try-catch statements compile to explicit try-handler setup and teardown instructions. The compiler emits `TRY_START` before the try body, `TRY_END` when the try body completes normally, and a jump around the catch body. Break and early-return code paths emit any needed `TRY_END` instructions so control flow does not leave stale handlers behind.
+
 ### Dynamic loops
 
 Stult uses one loop syntax for condition loops, collection loops and function loops:
@@ -405,6 +410,27 @@ position
 The compiler allocates locals for loop parameters and resets loop-scope locals on each iteration.
 
 The `ITERATOR_INIT` instruction carries the number of loop parameters as its operand. The VM uses that count when validating whether the runtime loop source is a collection or a function.
+
+### Try-catch
+
+Try-catch is a statement-level control-flow construct. The compiler lowers it with an active error-handler range rather than by wrapping whole chunks.
+
+The emitted shape is:
+
+```text
+TRY_START catch_start
+try body
+TRY_END
+JUMP after_catch
+catch_start:
+  optional error-message binding
+  catch body
+after_catch:
+```
+
+The catch parameter is optional. When present and not `_`, the compiler creates a local binding for the runtime error message string at the beginning of the catch block.
+
+The compiler tracks try depth so that break and early return can close active handlers before leaving the protected region. Those control-flow paths must not be treated as catchable errors.
 
 ### Range-backed loop optimisation
 
@@ -452,6 +478,7 @@ globals
 locals
 upvalues
 iterator stack
+try-handler stack
 runtime context
 local-index caches
 reset-local caches
@@ -554,6 +581,21 @@ Function loops allow zero, one or two loop parameters. They deliberately do not 
 
 Builtin functions are not currently function-loop sources. They remain `ValueBuiltinFunction` values rather than `ValueFunction` values, and the loop-source dispatch accepts only user-defined functions.
 
+### Try handlers
+
+The VM keeps a stack of active try handlers. Each handler records the catch instruction pointer and enough VM state to restore execution when a runtime error is caught. This includes the operand stack size and iterator-stack depth at the point where the try block began.
+
+When an instruction returns a runtime error and at least one try handler is active, the VM handles the error by:
+
+1. popping the nearest handler,
+2. restoring the protected stack and iterator state,
+3. pushing the error message as a string for the catch block and
+4. jumping to the catch instruction pointer.
+
+When no try handler is active, runtime errors keep the ordinary uncaught-error behaviour.
+
+`TRY_END` removes the nearest handler when a try body completes normally or when compiler-emitted control flow deliberately leaves the protected region.
+
 ### Operators
 
 The VM implements common operators directly in opcode-specific helper functions.
@@ -587,7 +629,7 @@ The instruction index is useful for VM debugging.
 
 The source location is useful for Stult users.
 
-Runtime error text is part of user-visible behavior, so changes should be made carefully.
+Runtime error text is part of user-visible behavior, so changes should be made carefully. Try-catch exposes the caught runtime error message as a Stult string, so changes to error wording can also affect programs that inspect caught errors.
 
 ## Tree-walk interpreter
 
@@ -600,6 +642,8 @@ The interpreter remains useful because it is simpler to reason about than the by
 Conditional expressions are evaluated directly by the interpreter. The interpreter evaluates the condition first, checks that it is a boolean and then evaluates only the selected branch expression.
 
 Match expressions are also evaluated directly by the interpreter. The interpreter evaluates the subject once, compares it with explicit scalar-literal patterns using the same equality semantics as `=`, evaluates only the selected result expression, and falls back to the default arm or void when no explicit arm matches.
+
+Try-catch statements are evaluated directly by the interpreter. The interpreter runs the try body in a child frame. If it receives an ordinary runtime error, it runs the catch body in a fresh child frame and optionally binds the error message string to the catch parameter. Break and early-return control values pass through unchanged.
 
 Function loops are evaluated directly by the interpreter. The interpreter evaluates the loop source once to decide whether the loop is boolean, collection-based or function-based. For a function loop, it repeatedly calls the user-defined generator with the zero-based index when the function can accept one argument, or with no arguments when it can accept zero. A void return stops the loop normally.
 
@@ -827,6 +871,8 @@ Bytecode runtime errors should include source location and instruction index.
 
 Interpreter runtime errors should include source context where possible.
 
+Try-catch catches runtime execution errors only. Lexing, parsing, bytecode compilation and command-line setup errors happen before program execution and are not catchable by Stult code.
+
 Do not replace user-facing Stult error messages with raw Go panics.
 
 ## Tests
@@ -910,6 +956,8 @@ Some syntax can deliberately reuse existing AST and runtime paths. Dot access is
 Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition)?(when_true, when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
 
 Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
+
+Try-catch has both syntax and runtime implications. Parser changes should preserve the touching `'{` opener and the touching `},{` separator. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
 
 Function loops are different: they deliberately reuse the existing `LoopStatement` AST shape. The parser does not need a new syntax node because `((source)) { ... }` is already parsed as a loop. The interpreter and VM decide at runtime whether the source is a boolean, a collection or a user-defined function.
 
