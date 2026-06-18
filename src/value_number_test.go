@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -116,3 +117,28 @@ func TestHugeDecimalComparisonPreservesWholePart(t *testing.T) {
 		t.Fatalf("expected %s to be greater than %s", left.Format(MaxDecimalPlaces), right.Format(MaxDecimalPlaces))
 	}
 }
+
+func TestPercentageNumberLiteralScalesByHundred(t *testing.T) {
+	tests := []struct {
+		literal string
+		want    string
+	}{
+		{"50%", "0.5"},
+		{"99.9%", "0.999"},
+		{".5%", "0.005"},
+		{"1e2%", "1"},
+	}
+
+	for _, tt := range tests {
+		number, err := NewNumberFromString(tt.literal)
+		if err != nil {
+			t.Fatalf("NewNumberFromString(%q) returned error: %v", tt.literal, err)
+		}
+
+		got := number.Format(MaxDecimalPlaces)
+		if got != tt.want {
+			t.Fatalf("NewNumberFromString(%q) = %q, want %q", tt.literal, got, tt.want)
+		}
+	}
+}
+

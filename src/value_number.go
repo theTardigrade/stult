@@ -66,6 +66,25 @@ func NewNumberFromString(literal string) (*Number, error) {
 		return nil, fmt.Errorf("invalid number %q", literal)
 	}
 
+	if beforeSuffix, foundSuffix := strings.CutSuffix(literal, "%"); foundSuffix {
+		numberLiteral := beforeSuffix
+		if numberLiteral == "" {
+			return nil, fmt.Errorf("invalid number %q", literal)
+		}
+
+		number, err := newNumberFromPlainString(numberLiteral)
+		if err != nil {
+			return nil, fmt.Errorf("invalid number %q", literal)
+		}
+
+		coefficient, scale := numberCoefficientAndScale(number)
+		return normaliseCoefficientAndScale(coefficient, scale+2), nil
+	}
+
+	return newNumberFromPlainString(literal)
+}
+
+func newNumberFromPlainString(literal string) (*Number, error) {
 	if isIntegerNumberLiteral(literal) {
 		if small, err := strconv.ParseInt(literal, 10, 64); err == nil {
 			return NewSmallNumber(small), nil

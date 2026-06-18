@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -429,6 +430,10 @@ func (l *Lexer) readNumber() (string, bool) {
 		}
 	}
 
+	if l.ch == '%' {
+		l.readChar()
+	}
+
 	return string(l.input[start:l.literalEnd()]), true
 }
 
@@ -544,3 +549,4 @@ func isImmutableIdentifier(name string) bool {
 
 	return hasUpper
 }
+
