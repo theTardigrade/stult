@@ -705,6 +705,10 @@ builtin function
 
 Specialized or mutable values may be resolved before formatting, comparison or operator application.
 
+Runtime value formatting is cycle-aware for arrays and maps. Formatting keeps a recursion-stack of arrays and maps currently being visited. If the formatter reaches the same array or map again through the active formatting path, it emits `<cyclical array>` or `<cyclical map>` instead of recursing indefinitely. The guard is path-based rather than a global seen-set, so shared non-cyclical subcollections still format normally each time they appear.
+
+This cycle handling belongs in the value-formatting layer rather than in individual IO builtins. Callers such as `STD.IO.PRINT`, `STD.IO.WRITE`, `STD.IO.WRITE_ERROR`, debug string helpers and other value-to-text paths should therefore receive safe formatting consistently.
+
 `ValueFunction` is the user-defined function kind for both interpreter-backed and bytecode-backed functions. It is distinct from `ValueBuiltinFunction`, which wraps Go standard-library functions. This distinction matters for function loops, which currently accept user-defined functions as generator sources but not builtin functions.
 
 Bindings wrap values with mutability metadata.

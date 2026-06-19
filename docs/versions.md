@@ -8,6 +8,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Unreleased
+
+* Made array and map value formatting cycle-safe, displaying `<cyclical array>` or `<cyclical map>` for recursive collection references instead of recursing indefinitely.
+
 ### v0.7.4
 
 * Fixed bytecode compilation so early return outside a function is rejected instead of being emitted as a top-level return.

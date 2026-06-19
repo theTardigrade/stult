@@ -248,6 +248,21 @@ Alias for `STD.IO.WRITE_LINE`.
 STD.IO.PRINT("Hello")
 ```
 
+Collection formatting is cycle-safe. If an array or map contains itself, directly or indirectly, the repeated value is displayed as `<cyclical array>` or `<cyclical map>` instead of causing unbounded recursive formatting. Shared subcollections that are not on a cyclical path still display normally.
+
+```stult
+a : {}
+a[0] : a
+
+STD.IO.PRINT(a)
+```
+
+prints:
+
+```text
+{<cyclical array>}
+```
+
 Returns `_`.
 
 ### `STD["IO"]["WRITE_ERROR"](...values)`
@@ -1560,3 +1575,4 @@ STD.DATA.STULTON.IS_VALID("{\"active\": \\/}")
 ```
 
 Returns a boolean.
+
