@@ -246,7 +246,8 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 	case BytecodeOpLoadConst,
 		BytecodeOpLoadGlobal,
 		BytecodeOpStoreGlobalMutable,
-		BytecodeOpStoreGlobalImmutable:
+		BytecodeOpStoreGlobalImmutable,
+		BytecodeOpStoreExistingGlobal:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 
 		if instruction.Operand >= 0 && instruction.Operand < len(chunk.Constants) {

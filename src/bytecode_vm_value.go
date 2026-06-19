@@ -24,6 +24,27 @@ func (vm *BytecodeVM) storeGlobalFromStack(
 	return nil
 }
 
+func (vm *BytecodeVM) storeExistingGlobalFromStack(
+	instructionIndex int,
+	operand int,
+) error {
+	name, err := vm.constantName(operand)
+	if err != nil {
+		return vm.runtimeError(instructionIndex, "%s", err.Error())
+	}
+
+	value, err := vm.popValue()
+	if err != nil {
+		return vm.runtimeError(instructionIndex, "%s", err.Error())
+	}
+
+	if err := vm.storeExistingGlobal(name, value); err != nil {
+		return vm.runtimeError(instructionIndex, "%s", err.Error())
+	}
+
+	return nil
+}
+
 func (vm *BytecodeVM) storeLocalFromStack(
 	instructionIndex int,
 	index int,
@@ -113,6 +134,24 @@ func (vm *BytecodeVM) storeGlobal(name string, value Value, isImmutable bool) er
 	vm.globals[name] = Binding{
 		Value:       value,
 		IsImmutable: isImmutable,
+	}
+
+	return nil
+}
+
+func (vm *BytecodeVM) storeExistingGlobal(name string, value Value) error {
+	existing, exists := vm.globals[name]
+	if !exists {
+		return fmt.Errorf("no outer binding named %q", name)
+	}
+
+	if existing.IsImmutable {
+		return fmt.Errorf("cannot reassign immutable outer constant %q", name)
+	}
+
+	vm.globals[name] = Binding{
+		Value:       value,
+		IsImmutable: existing.IsImmutable,
 	}
 
 	return nil

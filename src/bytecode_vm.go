@@ -198,6 +198,9 @@ func (vm *BytecodeVM) executeInstruction(
 	case BytecodeOpStoreGlobalImmutable:
 		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true)
 
+	case BytecodeOpStoreExistingGlobal:
+		return Value{}, false, vm.storeExistingGlobalFromStack(instructionIndex, instruction.Operand)
+
 	case BytecodeOpStoreLocalMutable:
 		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false)
 

@@ -291,14 +291,8 @@ func (compiler *BytecodeCompiler) compileOuterNameStore(token Token) error {
 
 	if compiler.hasOuterContext() {
 		name := compiler.chunk.AddNameConstant(token.Literal)
-		opcode := BytecodeOpStoreGlobalMutable
-
-		if token.IsImmutable {
-			opcode = BytecodeOpStoreGlobalImmutable
-		}
-
 		compiler.chunk.EmitOperandAt(
-			opcode,
+			BytecodeOpStoreExistingGlobal,
 			name,
 			compiler.sourceSpanFromToken(token),
 		)

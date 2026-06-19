@@ -68,6 +68,8 @@ const (
 
 	BytecodeOpPop
 	BytecodeOpReturn
+
+	BytecodeOpStoreExistingGlobal
 )
 
 type BytecodeInstruction struct {
@@ -254,6 +256,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpStoreGlobalImmutable:
 		return "STORE_GLOBAL_IMMUTABLE"
+
+	case BytecodeOpStoreExistingGlobal:
+		return "STORE_EXISTING_GLOBAL"
 
 	case BytecodeOpStoreLocalMutable:
 		return "STORE_LOCAL_MUTABLE"

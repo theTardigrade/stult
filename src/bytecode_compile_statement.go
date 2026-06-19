@@ -278,6 +278,13 @@ func (compiler *BytecodeCompiler) compileBreakStatement(statement *BreakStatemen
 }
 
 func (compiler *BytecodeCompiler) compileReturnStatement(statement *ReturnStatement) error {
+	if !compiler.isFunction {
+		return compiler.compileError(
+			statement.Token,
+			"return used outside function",
+		)
+	}
+
 	if err := compiler.compileExpression(statement.Value); err != nil {
 		return err
 	}
