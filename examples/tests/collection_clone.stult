@@ -1,0 +1,111 @@
+##
+
+EXAMPLE: tests/collection_clone.stult
+
+This example checks that TYPE.COLLECTION.CLONE deeply clones collection
+values, preserves aliases and cycles, returns mutable collections and reuses
+function values.
+
+##
+
+PRINT : STD["IO"]["PRINT"]
+
+ASSERT : STD["ASSERT"]
+ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_EQUAL : ASSERT["EQUAL"]
+
+COLLECTION : STD["TYPE"]["COLLECTION"]
+CLONE : COLLECTION["CLONE"]
+FREEZE : COLLECTION["FREEZE"]
+IS_FROZEN : COLLECTION["IS_FROZEN"]
+SIZE : COLLECTION["SIZE"]
+
+shared : {"value": 1}
+original : {
+	"a": shared
+	"b": shared
+}
+
+copy : CLONE(original)
+
+ASSERT_TRUE(copy ! original, "clone root should be a distinct map")
+ASSERT_TRUE(copy.a = copy.b, "clone should preserve aliases inside the cloned graph")
+ASSERT_TRUE(copy.a ! original.a, "nested alias should be cloned away from the original graph")
+
+copy.a.value : 9
+
+ASSERT_EQUAL(original.a.value, 1, "mutating clone should not mutate original nested map")
+ASSERT_EQUAL(copy.b.value, 9, "preserved clone alias should observe mutation through either path")
+
+cycle : {}
+cycle[0] : cycle
+
+cycle_copy : CLONE(cycle)
+
+ASSERT_TRUE(cycle_copy ! cycle, "cyclical clone root should be distinct from original")
+ASSERT_TRUE(cycle_copy[0] = cycle_copy, "cyclical clone should point back to itself")
+ASSERT_TRUE(cycle_copy[0] ! cycle, "cyclical clone should not point back to original")
+
+cycle_copy[1] : "copy only"
+
+ASSERT_EQUAL(SIZE(cycle), 1, "mutating cyclical clone should not append to original")
+ASSERT_EQUAL(SIZE(cycle_copy), 2, "cyclical clone should remain mutable")
+
+frozen_original : FREEZE({
+	"nested": {"value": 1}
+	"text": "cat"
+})
+
+frozen_copy : CLONE(frozen_original)
+
+ASSERT_TRUE(IS_FROZEN(frozen_original), "original should be frozen")
+ASSERT_TRUE(!IS_FROZEN(frozen_copy), "clone root should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(frozen_copy.nested), "nested clone should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(frozen_copy.text), "string clone should be mutable even when original is frozen")
+
+frozen_copy.nested.value : 2
+frozen_copy.text[0] : "b"
+
+ASSERT_EQUAL(frozen_original.nested.value, 1, "mutating clone should not mutate frozen original nested map")
+ASSERT_EQUAL(frozen_copy.nested.value, 2, "nested clone should accept mutation")
+ASSERT_EQUAL(frozen_original.text, "cat", "mutating cloned string should not mutate original string")
+ASSERT_EQUAL(frozen_copy.text, "bat", "cloned string should accept mutation")
+
+immutable_entry_source : {"LOCKED": 1}
+immutable_entry_copy : CLONE(immutable_entry_source)
+immutable_entry_error : ""
+
+'{
+	immutable_entry_copy.LOCKED : 2
+},{
+	(error)
+	@immutable_entry_error : error
+}
+
+ASSERT_TRUE(immutable_entry_error ! "", "clone should preserve immutable map-entry bindings")
+ASSERT_EQUAL(immutable_entry_copy.LOCKED, 1, "failed immutable-entry assignment should not change cloned value")
+
+number_source : {123456789012345678901234567890.125}
+number_copy : CLONE(number_source)
+
+number_copy[0] : number_copy[0] + 1.875
+
+ASSERT_EQUAL(number_source[0], 123456789012345678901234567890.125, "number clone mutation by replacement should not affect original")
+ASSERT_EQUAL(number_copy[0], 123456789012345678901234567892, "number clone should accept independent replacement")
+
+MAKE_COUNTER : { ()
+	count : 0
+
+	({ ()
+		@count :+ 1
+
+		(count)
+	})
+}
+
+counter : MAKE_COUNTER()
+function_source : {counter}
+function_copy : CLONE(function_source)
+
+ASSERT_EQUAL(function_source[0](), 1, "original function should be callable from original collection")
+ASSERT_EQUAL(function_copy[0](), 2, "cloned collection should reuse function closure state")
