@@ -8,6 +8,11 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Fixed bytecode compilation so early return outside a function is rejected instead of being emitted as a top-level return.
+* Fixed bytecode outer-assignment fallback so `@name : value` updates only an existing outer global binding and never creates a missing global.
+
 ### v0.7.3
 
 * Added try-catch statements using `'{ ... },{ ... }` for recovering from runtime errors, with an optional catch parameter for the error message.
@@ -220,4 +225,3 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
-

@@ -361,6 +361,8 @@ The important invariant is that bytecode must preserve the interpreter's `@` beh
 
 Top-level block scopes are a special case because they can have an outer context even without a parent function compiler. The compiler therefore needs to know whether it has an outer context when deciding whether an outer-name operation should fall back to a global operation.
 
+Plain global stores and outer-assignment global fallback deliberately use different VM instructions. Ordinary top-level assignment uses `STORE_GLOBAL_MUTABLE` or `STORE_GLOBAL_IMMUTABLE`, which may create a new global binding. An outer assignment that falls back to the global frame uses `STORE_EXISTING_GLOBAL`, which may update a mutable existing global but must raise a runtime error when the global binding is missing or immutable. This preserves the language rule that `@name : value` never creates a binding.
+
 ### Control flow
 
 Conditionals, conditional expressions, match expressions, loops, break and early return are lowered to jumps and returns.
@@ -373,7 +375,7 @@ For a conditional expression, the compiler emits the condition, jumps to the fal
 
 For a match expression, the compiler evaluates the subject once, stores it in a compiler-generated local slot, compares it with each explicit arm pattern in source order, and jumps to the selected result expression. If no explicit arm matches, the compiler emits the default expression when one exists, or void when no default exists.
 
-Early return from functions compiles to a return path that exits the current function chunk.
+Early return is valid only while compiling a function chunk. If a return statement is encountered outside a function, bytecode compilation reports an error instead of emitting a top-level `RETURN`. Inside functions, early return compiles to a return path that exits the current function chunk.
 
 A bare `^` inside loops compiles to a loop break.
 
@@ -899,6 +901,8 @@ If both runtime modes fail with matching errors, the test still fails. Matching 
 The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour. The range-loop optimisation fixture checks direct range streaming, very large integer bounds, descending and stepped ranges, and the fallback path where the loop body can observe the materialised collection.
 
 The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
+
+Focused Go regression tests also live in `src/` when the behavior being checked is implementation-specific or intentionally invalid source that should not become a public example fixture. For example, bytecode regression tests cover compiler and VM edge cases such as rejecting early return outside functions and preserving `@` outer-assignment semantics for missing, mutable and immutable globals.
 
 When changing compiler, VM, interpreter, standard library, manifests or bundling, run:
 
