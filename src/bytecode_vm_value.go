@@ -2,6 +2,14 @@ package main
 
 import "fmt"
 
+func newBytecodeVMCell(local BytecodeLocal) *bytecodeVMCell {
+	return &bytecodeVMCell{
+		Value:       NewVoidValue(),
+		Initialized: false,
+		IsImmutable: local.IsImmutable,
+	}
+}
+
 func (vm *BytecodeVM) storeGlobalFromStack(
 	instructionIndex int,
 	operand int,
@@ -197,7 +205,12 @@ func (vm *BytecodeVM) localCell(index int) (*bytecodeVMCell, error) {
 		return nil, fmt.Errorf("local index %d out of bounds", index)
 	}
 
-	return &vm.locals[index], nil
+	cell := vm.locals[index]
+	if cell == nil {
+		return nil, fmt.Errorf("local index %d has no storage cell", index)
+	}
+
+	return cell, nil
 }
 
 func (vm *BytecodeVM) resetLocalsFromDepth(scopeDepth int) error {
@@ -216,11 +229,7 @@ func (vm *BytecodeVM) resetLocalsFromDepth(scopeDepth int) error {
 	for _, index := range vm.resetLocalIndexesFromDepth(vm.chunk, scopeDepth) {
 		local := vm.chunk.Locals[index]
 
-		vm.locals[index] = bytecodeVMCell{
-			Value:       NewVoidValue(),
-			Initialized: false,
-			IsImmutable: local.IsImmutable,
-		}
+		vm.locals[index] = newBytecodeVMCell(local)
 	}
 
 	return nil
@@ -370,6 +379,9 @@ func (vm *BytecodeVM) buildMap(entryCount int) error {
 		}
 
 		keyText := key.Text.String()
+		if _, exists := entries[keyText]; exists {
+			return fmt.Errorf("duplicate map key %q", keyText)
+		}
 
 		entries[keyText] = Binding{
 			Value:       value,

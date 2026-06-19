@@ -7,7 +7,7 @@ type BytecodeVM struct {
 	ip                       int
 	stack                    []bytecodeVMStackEntry
 	globals                  map[string]Binding
-	locals                   []bytecodeVMCell
+	locals                   []*bytecodeVMCell
 	upvalues                 []*bytecodeVMCell
 	iterators                []bytecodeVMIterator
 	errorHandlers            []bytecodeVMErrorHandler
@@ -32,7 +32,7 @@ type bytecodeVMExecutionState struct {
 	Chunk         *BytecodeChunk
 	IP            int
 	Stack         []bytecodeVMStackEntry
-	Locals        []bytecodeVMCell
+	Locals        []*bytecodeVMCell
 	Upvalues      []*bytecodeVMCell
 	Iterators     []bytecodeVMIterator
 	ErrorHandlers []bytecodeVMErrorHandler
@@ -60,7 +60,7 @@ func NewBytecodeVMWithRuntime(runtime *RuntimeContext) *BytecodeVM {
 	return &BytecodeVM{
 		stack:                    []bytecodeVMStackEntry{},
 		globals:                  bytecodeInitialGlobals(runtime),
-		locals:                   []bytecodeVMCell{},
+		locals:                   []*bytecodeVMCell{},
 		upvalues:                 []*bytecodeVMCell{},
 		iterators:                []bytecodeVMIterator{},
 		errorHandlers:            []bytecodeVMErrorHandler{},
@@ -123,14 +123,10 @@ func (vm *BytecodeVM) runActiveChunk() (Value, error) {
 }
 
 func (vm *BytecodeVM) initializeLocals(chunk *BytecodeChunk) {
-	vm.locals = make([]bytecodeVMCell, len(chunk.Locals))
+	vm.locals = make([]*bytecodeVMCell, len(chunk.Locals))
 
 	for index, local := range chunk.Locals {
-		vm.locals[index] = bytecodeVMCell{
-			Value:       NewVoidValue(),
-			Initialized: false,
-			IsImmutable: local.IsImmutable,
-		}
+		vm.locals[index] = newBytecodeVMCell(local)
 	}
 }
 
