@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.5
 
 * Made array and map value formatting cycle-safe, displaying `<cyclical array>` or `<cyclical map>` for recursive collection references instead of recursing indefinitely.
 * Added `STD["TYPE"]["COLLECTION"]["CLONE"]` for deep, cycle-safe, alias-preserving collection cloning.
