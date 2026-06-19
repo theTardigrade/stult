@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 type collectionFreezeState struct {
 	maps    map[*Map]bool
@@ -19,6 +22,7 @@ func NewStdTypeCollectionMap() Value {
 		"CLEAR":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClear)),
 		"CLONE":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClone)),
 		"FREEZE":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionFreeze)),
+		"GET":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionGet)),
 		"HAS":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionHas)),
 		"IS_EMPTY":  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsEmpty)),
 		"IS_FROZEN": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsFrozen)),
@@ -116,6 +120,109 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 	default:
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of unknown value kind")
 	}
+}
+
+func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 2 && len(args) != 3 {
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.GET expected 2 or 3 arguments, got %d", len(args))
+	}
+
+	collection := resolveSpecializedValue(args[0])
+	key := resolveSpecializedValue(args[1])
+	fallback := collectionGetFallback(args)
+
+	switch collection.Kind {
+	case ValueMap:
+		if collection.Map == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid map")
+		}
+
+		if key.Kind != ValueString || key.Text == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET map key must be a string")
+		}
+
+		binding, exists := collection.Map.Entries[key.Text.String()]
+		if !exists {
+			return fallback, nil
+		}
+
+		return binding.Value, nil
+
+	case ValueArray:
+		if collection.Array == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid array")
+		}
+
+		index, valid, err := collectionGetIndex(key, "array")
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !valid || index >= int64(len(collection.Array.Elements)) {
+			return fallback, nil
+		}
+
+		return collection.Array.Elements[index], nil
+
+	case ValueString:
+		if collection.Text == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid string")
+		}
+
+		index, valid, err := collectionGetIndex(key, "string")
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !valid || index >= int64(len(collection.Text.Runes)) {
+			return fallback, nil
+		}
+
+		return NewStringValue(string(collection.Text.Runes[index])), nil
+
+	case ValueVoid,
+		ValueNumber,
+		ValueBool,
+		ValueFunction,
+		ValueBuiltinFunction:
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.GET first argument must be a collection")
+
+	default:
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect unknown value kind")
+	}
+}
+
+func collectionGetFallback(args []Value) Value {
+	if len(args) == 3 {
+		return args[2]
+	}
+
+	return NewVoidValue()
+}
+
+func collectionGetIndex(key Value, collectionName string) (int64, bool, error) {
+	key = resolveSpecializedValue(key)
+
+	if key.Kind != ValueNumber {
+		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be a number", collectionName)
+	}
+
+	integer, accuracy := key.Number.Int(nil)
+	if accuracy != big.Exact {
+		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be an integer", collectionName)
+	}
+
+	if integer.Sign() < 0 {
+		return 0, false, nil
+	}
+
+	if !integer.IsInt64() {
+		return 0, false, nil
+	}
+
+	index := integer.Int64()
+
+	return index, true, nil
 }
 
 func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {

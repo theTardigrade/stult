@@ -155,6 +155,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["SIZE"](collection)`](#stdtypecollectionsizecollection)
     - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
     - [`STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`](#stdtypecollectionhascollection-key)
+    - [`STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`](#stdtypecollectiongetcollection-key_or_index-default)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
     - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
     - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`](#stdtypecollectionfreezecollection)
@@ -1314,6 +1315,49 @@ For arrays and strings, the key must be a valid numeric index.
 
 Returns `_` for non-collections.
 
+### `STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`
+
+Safely retrieves an item from a collection.
+
+```stult
+GET : STD.TYPE.COLLECTION.GET
+
+GET({"name": "example"}, "name")
+GET({"a", "b"}, 1)
+GET("cat", 0)
+```
+
+For maps, `key_or_index` must be a string key. If the key exists, `GET` returns the corresponding map entry value. If the key is missing, `GET` returns the optional default value, or `_` when no default value was supplied.
+
+```stult
+config : {"timeout": 1000}
+
+STD.TYPE.COLLECTION.GET(config, "timeout", 500) # 1000
+STD.TYPE.COLLECTION.GET(config, "retries", 3)   # 3
+STD.TYPE.COLLECTION.GET(config, "missing")      # _
+```
+
+For arrays, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns the array element. If the index is negative, out of bounds, or too large to be a possible host-backed dense-array index, `GET` returns the optional default value, or `_` when no default value was supplied.
+
+```stult
+items : {"a", "b"}
+
+STD.TYPE.COLLECTION.GET(items, 1, "missing")  # b
+STD.TYPE.COLLECTION.GET(items, 30, "missing") # missing
+STD.TYPE.COLLECTION.GET(items, -1)             # _
+```
+
+For strings, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns a new one-rune string. If the index is negative, out of bounds, or too large to be a possible host-backed string index, `GET` returns the optional default value, or `_` when no default value was supplied.
+
+```stult
+STD.TYPE.COLLECTION.GET("cat", 1, "missing")  # a
+STD.TYPE.COLLECTION.GET("cat", 10, "missing") # missing
+```
+
+`GET` raises a runtime error when the first argument is not a collection, when a map key is not a string, or when an array/string index is not an exact integer number.
+
+The optional default is an ordinary argument, so it is evaluated before `GET` is called.
+
 ### `STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`
 
 Removes all contents from a non-frozen collection.
@@ -1613,4 +1657,3 @@ STD.DATA.STULTON.IS_VALID("{\"active\": \\/}")
 ```
 
 Returns a boolean.
-

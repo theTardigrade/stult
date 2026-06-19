@@ -767,20 +767,6 @@ Standard-library functions should return Stult values and errors, not print inte
 
 Because both runtime modes use the same standard library, changes to builtins usually affect both bytecode and interpreter behavior.
 
-Collection helpers live under:
-
-```text
-STD["TYPE"]["COLLECTION"]
-```
-
-These helpers operate on arrays, maps and strings where appropriate.
-
-`STD["TYPE"]["COLLECTION"]["CLONE"]` deeply clones arrays, maps and strings. It uses visited maps keyed by source collection identity so aliases and cycles are preserved in the cloned graph. The cloned collections are created unfrozen. Map-entry mutability is copied from the source map entries. Number values are copied defensively; booleans, void, functions and builtin functions are reused.
-
-`STD["TYPE"]["COLLECTION"]["FREEZE"]` deeply freezes arrays, maps and strings in place and returns the frozen collection. This means aliases to nested collections observe the frozen state too.
-
-`STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` returns a boolean for arrays, maps and strings. It returns false for non-collection values.
-
 ## Manifests
 
 A manifest lists source files to run in order.
