@@ -8,9 +8,16 @@ type collectionFreezeState struct {
 	strings map[*String]bool
 }
 
+type collectionCloneState struct {
+	maps    map[*Map]*Map
+	arrays  map[*Array]*Array
+	strings map[*String]*String
+}
+
 func NewStdTypeCollectionMap() Value {
 	entries := map[string]Binding{
 		"CLEAR":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClear)),
+		"CLONE":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClone)),
 		"FREEZE":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionFreeze)),
 		"HAS":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionHas)),
 		"IS_EMPTY":  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsEmpty)),
@@ -19,6 +26,14 @@ func NewStdTypeCollectionMap() Value {
 	}
 
 	return NewMapValue(entries, true)
+}
+
+func StdTypeCollectionClone(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE expected 1 argument, got %d", len(args))
+	}
+
+	return deepCloneValue(args[0], newCollectionCloneState())
 }
 
 func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
@@ -390,5 +405,110 @@ func deepFreezeNestedCollectionValue(value Value, state *collectionFreezeState) 
 
 	default:
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze unknown value kind")
+	}
+}
+
+func newCollectionCloneState() *collectionCloneState {
+	return &collectionCloneState{
+		maps:    make(map[*Map]*Map),
+		arrays:  make(map[*Array]*Array),
+		strings: make(map[*String]*String),
+	}
+}
+
+func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
+	value = resolveSpecializedValue(value)
+
+	switch value.Kind {
+	case ValueMap:
+		if value.Map == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid map")
+		}
+
+		if clone, exists := state.maps[value.Map]; exists {
+			return Value{Kind: ValueMap, Map: clone}, nil
+		}
+
+		clone := &Map{
+			Entries:     make(map[string]Binding, len(value.Map.Entries)),
+			IsImmutable: false,
+		}
+
+		state.maps[value.Map] = clone
+
+		for key, binding := range value.Map.Entries {
+			clonedValue, err := deepCloneValue(binding.Value, state)
+			if err != nil {
+				return Value{}, err
+			}
+
+			clone.Entries[key] = Binding{
+				Value:       clonedValue,
+				IsImmutable: binding.IsImmutable,
+			}
+		}
+
+		return Value{Kind: ValueMap, Map: clone}, nil
+
+	case ValueArray:
+		if value.Array == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid array")
+		}
+
+		if clone, exists := state.arrays[value.Array]; exists {
+			return Value{Kind: ValueArray, Array: clone}, nil
+		}
+
+		clone := &Array{
+			Elements:    make([]Value, len(value.Array.Elements)),
+			IsImmutable: false,
+		}
+
+		state.arrays[value.Array] = clone
+
+		for index, element := range value.Array.Elements {
+			clonedValue, err := deepCloneValue(element, state)
+			if err != nil {
+				return Value{}, err
+			}
+
+			clone.Elements[index] = clonedValue
+		}
+
+		return Value{Kind: ValueArray, Array: clone}, nil
+
+	case ValueString:
+		if value.Text == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid string")
+		}
+
+		if clone, exists := state.strings[value.Text]; exists {
+			return Value{Kind: ValueString, Text: clone}, nil
+		}
+
+		clone := &String{
+			Runes:       append([]rune(nil), value.Text.Runes...),
+			IsImmutable: false,
+		}
+
+		state.strings[value.Text] = clone
+
+		return Value{Kind: ValueString, Text: clone}, nil
+
+	case ValueNumber:
+		if value.Number == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid number")
+		}
+
+		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+
+	case ValueVoid,
+		ValueBool,
+		ValueFunction,
+		ValueBuiltinFunction:
+		return value, nil
+
+	default:
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone unknown value kind")
 	}
 }

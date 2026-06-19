@@ -38,6 +38,10 @@ const (
 // Integer decimal values are collapsed to NumberSmallInt or NumberBigInt.
 // Decimal operations that would produce more than MaxDecimalScale decimal
 // places are rounded to MaxDecimalScale.
+//
+// Number values are treated as immutable by the runtime. Runtime code must
+// not mutate a Number's internal big.Int in place; operations that transform
+// numbers should return a new *Number.
 type Number struct {
 	kind     NumberKind
 	smallInt int64
