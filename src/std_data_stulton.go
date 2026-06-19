@@ -242,7 +242,7 @@ func stdDataStultonFormatArray(array *Array, indent int) (string, error) {
 		return "", fmt.Errorf("DATA.STULTON.NEW cannot encode invalid array")
 	}
 
-	if len(array.Elements) == 0 {
+	if array.Len().Sign() == 0 {
 		return "{}", nil
 	}
 
@@ -251,13 +251,16 @@ func stdDataStultonFormatArray(array *Array, indent int) (string, error) {
 
 	lines := []string{"{"}
 
-	for _, element := range array.Elements {
+	if err := array.ForEach(func(_ *Number, element Value) error {
 		text, err := stdDataStultonFormatValue(element, indent+1)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		lines = append(lines, childIndent+text)
+		return nil
+	}); err != nil {
+		return "", err
 	}
 
 	lines = append(lines, currentIndent+"}")

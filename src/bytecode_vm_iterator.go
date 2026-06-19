@@ -199,16 +199,20 @@ func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int
 	}
 
 	position := iterator.Position + 1
-	if position >= len(array.Elements) {
+	key := NewNumberValueFromInt(position)
+	value, ok, err := array.Get(key.Number)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
 		iterator.HasCurrent = false
 		return vm.jump(target)
 	}
 
-	key := NewNumberValueFromInt(position)
-
 	iterator.Position = position
 	iterator.CurrentKey = key
-	iterator.CurrentValue = array.Elements[position]
+	iterator.CurrentValue = value
 	iterator.HasCurrent = true
 
 	return nil

@@ -60,7 +60,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid array")
 		}
 
-		return NewNumberValueFromInt(len(value.Array.Elements)), nil
+		return NewNumberValueFromNumber(value.Array.Len()), nil
 
 	case ValueString:
 		if value.Text == nil {
@@ -101,7 +101,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid array")
 		}
 
-		return NewBoolValue(len(value.Array.Elements) == 0), nil
+		return NewBoolValue(value.Array.Len().Sign() == 0), nil
 
 	case ValueString:
 		if value.Text == nil {
@@ -153,16 +153,20 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid array")
 		}
 
-		index, valid, err := collectionGetIndex(key, "array")
+		if key.Kind != ValueNumber {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET array index must be a number")
+		}
+
+		value, exists, err := collection.Array.Get(key.Number)
 		if err != nil {
 			return Value{}, err
 		}
 
-		if !valid || index >= int64(len(collection.Array.Elements)) {
+		if !exists {
 			return fallback, nil
 		}
 
-		return collection.Array.Elements[index], nil
+		return value, nil
 
 	case ValueString:
 		if collection.Text == nil {
@@ -174,7 +178,7 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if !valid || index >= int64(len(collection.Text.Runes)) {
+		if !valid || index >= len(collection.Text.Runes) {
 			return fallback, nil
 		}
 
@@ -200,7 +204,7 @@ func collectionGetFallback(args []Value) Value {
 	return NewVoidValue()
 }
 
-func collectionGetIndex(key Value, collectionName string) (int64, bool, error) {
+func collectionGetIndex(key Value, collectionName string) (int, bool, error) {
 	key = resolveSpecializedValue(key)
 
 	if key.Kind != ValueNumber {
@@ -220,7 +224,11 @@ func collectionGetIndex(key Value, collectionName string) (int64, bool, error) {
 		return 0, false, nil
 	}
 
-	index := integer.Int64()
+	index64 := integer.Int64()
+	index := int(index64)
+	if int64(index) != index64 {
+		return 0, false, nil
+	}
 
 	return index, true, nil
 }
@@ -251,12 +259,16 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid array")
 		}
 
-		index, err := numberToArrayIndex(key)
+		if key.Kind != ValueNumber {
+			return NewBoolValue(false), nil
+		}
+
+		_, exists, err := collection.Array.Get(key.Number)
 		if err != nil {
 			return NewBoolValue(false), nil
 		}
 
-		return NewBoolValue(index >= 0 && index < len(collection.Array.Elements)), nil
+		return NewBoolValue(exists), nil
 
 	case ValueString:
 		if collection.Text == nil {
@@ -311,7 +323,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen array")
 		}
 
-		value.Array.Elements = nil
+		value.Array.Clear()
 		return NewVoidValue(), nil
 
 	case ValueString:
@@ -457,22 +469,24 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze invalid array")
 		}
 
-		if state.arrays[value.Array] {
+		if state.arrays[value.Array] || value.Array.IsImmutable {
 			return value, nil
 		}
 
 		state.arrays[value.Array] = true
-		value.Array.IsImmutable = true
 
-		for index, element := range value.Array.Elements {
+		if err := value.Array.ForEach(func(index *Number, element Value) error {
 			frozenValue, err := deepFreezeNestedCollectionValue(element, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
-			value.Array.Elements[index] = frozenValue
+			return value.Array.Set(index, frozenValue)
+		}); err != nil {
+			return Value{}, err
 		}
 
+		value.Array.IsImmutable = true
 		return value, nil
 
 	case ValueString:
@@ -567,19 +581,22 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Array{
-			Elements:    make([]Value, len(value.Array.Elements)),
+			Elements:    make([]Value, 0, len(value.Array.Elements)),
 			IsImmutable: false,
 		}
 
 		state.arrays[value.Array] = clone
 
-		for index, element := range value.Array.Elements {
+		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			clonedValue, err := deepCloneValue(element, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
-			clone.Elements[index] = clonedValue
+			clone.Append(clonedValue)
+			return nil
+		}); err != nil {
+			return Value{}, err
 		}
 
 		return Value{Kind: ValueArray, Array: clone}, nil

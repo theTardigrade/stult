@@ -82,16 +82,30 @@ func builtinStdMathRandChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from invalid array")
 		}
 
-		if len(value.Array.Elements) == 0 {
+		if value.Array.Len().Sign() == 0 {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty array")
 		}
 
-		index, err := stdMathRandIndex(len(value.Array.Elements))
+		length, err := stdMathRandArrayLength(value.Array, "MATH.RAND.CHOICE")
 		if err != nil {
 			return Value{}, err
 		}
 
-		return value.Array.Elements[index], nil
+		index, err := stdMathRandIndex(length)
+		if err != nil {
+			return Value{}, err
+		}
+
+		chosen, ok, err := value.Array.Get(NewSmallNumber(int64(index)))
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !ok {
+			return Value{}, fmt.Errorf("MATH.RAND.CHOICE generated array index out of bounds")
+		}
+
+		return chosen, nil
 
 	case ValueString:
 		if value.Text == nil {
@@ -152,7 +166,17 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.SHUFFLE cannot shuffle invalid array")
 		}
 
-		elements := append([]Value{}, value.Array.Elements...)
+		if _, err := stdMathRandArrayLength(value.Array, "MATH.RAND.SHUFFLE"); err != nil {
+			return Value{}, err
+		}
+
+		elements := make([]Value, 0, len(value.Array.Elements))
+		if err := value.Array.ForEach(func(_ *Number, element Value) error {
+			elements = append(elements, element)
+			return nil
+		}); err != nil {
+			return Value{}, err
+		}
 
 		if err := stdMathRandShuffleValues(elements); err != nil {
 			return Value{}, err
@@ -304,6 +328,24 @@ func stdMathRandExactInteger(number *Number) (*big.Int, bool) {
 	}
 
 	return quotient, true
+}
+
+func stdMathRandArrayLength(array *Array, name string) (int, error) {
+	if array == nil {
+		return 0, fmt.Errorf("%s cannot inspect invalid array", name)
+	}
+
+	length64, accuracy := array.Len().Int64()
+	if accuracy != big.Exact {
+		return 0, fmt.Errorf("%s array is too large", name)
+	}
+
+	length := int(length64)
+	if int64(length) != length64 {
+		return 0, fmt.Errorf("%s array is too large", name)
+	}
+
+	return length, nil
 }
 
 func stdMathRandIndex(length int) (int, error) {

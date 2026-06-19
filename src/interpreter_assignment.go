@@ -148,33 +148,15 @@ func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 }
 
 func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
-	if a.IsImmutable {
-		return Value{}, fmt.Errorf("cannot modify frozen array")
+	index = resolveSpecializedValue(index)
+	if index.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("array index must be a number")
 	}
 
-	arrayIndex, err := numberToArrayIndex(index)
-	if err != nil {
+	if err := a.Set(index.Number, value); err != nil {
 		return Value{}, err
 	}
 
-	if arrayIndex < 0 {
-		return Value{}, fmt.Errorf("array index cannot be negative")
-	}
-
-	if arrayIndex > len(a.Elements) {
-		return Value{}, fmt.Errorf(
-			"array index %d is past the next append position %d",
-			arrayIndex,
-			len(a.Elements),
-		)
-	}
-
-	if arrayIndex == len(a.Elements) {
-		a.Elements = append(a.Elements, value)
-		return value, nil
-	}
-
-	a.Elements[arrayIndex] = value
 	return value, nil
 }
 

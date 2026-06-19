@@ -167,33 +167,30 @@ func (i *Interpreter) evalArrayRangeLoopStatement(stmt *LoopStatement, a *Array)
 		return Value{}, fmt.Errorf("collection range loop must have zero, one, two, three, or four parameters")
 	}
 
-	index := 0
-
-	for index < len(a.Elements) {
-		key := NewNumberValueFromInt(index)
+	if err := a.ForEach(func(index *Number, value Value) error {
+		key := NewNumberValueFromNumber(index)
 
 		loopBindings := collectionRangeBindings(
 			stmt.RangeParameters,
-			a.Elements[index],
+			value,
 			key,
 			Value{Kind: ValueArray, Array: a},
 			key,
 		)
 
-		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
-			if flow, ok := asControlFlow(err); ok {
-				switch flow.Kind {
-				case controlFlowBreak:
-					return i.evalAfterLoopBody(stmt)
-				case controlFlowReturn:
-					return Value{}, flow
-				}
+		_, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings)
+		return err
+	}); err != nil {
+		if flow, ok := asControlFlow(err); ok {
+			switch flow.Kind {
+			case controlFlowBreak:
+				return i.evalAfterLoopBody(stmt)
+			case controlFlowReturn:
+				return Value{}, flow
 			}
-
-			return Value{}, err
 		}
 
-		index++
+		return Value{}, err
 	}
 
 	return i.evalAfterLoopBody(stmt)

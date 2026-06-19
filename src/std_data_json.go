@@ -167,13 +167,16 @@ func stdJSONFromValue(value Value) (any, error) {
 
 		elements := make([]any, 0, len(value.Array.Elements))
 
-		for _, element := range value.Array.Elements {
+		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			converted, err := stdJSONFromValue(element)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			elements = append(elements, converted)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 
 		return elements, nil

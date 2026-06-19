@@ -35,11 +35,14 @@ func appendArrayValue(target Value, value Value) error {
 		return fmt.Errorf("TYPE.ARRAY.APPEND expected an array")
 	}
 
-	_, err := assignArrayIndex(
-		target.Array,
-		NewNumberValueFromInt(len(target.Array.Elements)),
-		value,
-	)
+	if target.Array == nil {
+		return fmt.Errorf("TYPE.ARRAY.APPEND cannot append to invalid array")
+	}
 
-	return err
+	if target.Array.IsImmutable {
+		return fmt.Errorf("cannot modify frozen array")
+	}
+
+	target.Array.Append(value)
+	return nil
 }

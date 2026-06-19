@@ -136,34 +136,44 @@ func stdCSVRowsFromValue(value Value) ([][]string, error) {
 
 	rows := make([][]string, 0, len(value.Array.Elements))
 
-	for rowIndex, rowValue := range value.Array.Elements {
+	if err := value.Array.ForEach(func(rowIndex *Number, rowValue Value) error {
 		row, err := stdCSVRowFromValue(rowValue, rowIndex)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		rows = append(rows, row)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return rows, nil
 }
 
-func stdCSVRowFromValue(value Value, rowIndex int) ([]string, error) {
+func stdCSVRowFromValue(value Value, rowIndex *Number) ([]string, error) {
 	value = resolveSpecializedValue(value)
 
 	if value.Kind != ValueArray || value.Array == nil {
-		return nil, fmt.Errorf("CSV.NEW row %d expected an array", rowIndex)
+		return nil, fmt.Errorf("CSV.NEW row %s expected an array", formatArrayIndex(rowIndex))
 	}
 
 	row := make([]string, 0, len(value.Array.Elements))
 
-	for columnIndex, fieldValue := range value.Array.Elements {
+	if err := value.Array.ForEach(func(columnIndex *Number, fieldValue Value) error {
 		field, err := stdCSVFieldFromValue(fieldValue)
 		if err != nil {
-			return nil, fmt.Errorf("CSV.NEW row %d column %d: %w", rowIndex, columnIndex, err)
+			return fmt.Errorf("CSV.NEW row %s column %s: %w",
+				formatArrayIndex(rowIndex),
+				formatArrayIndex(columnIndex),
+				err,
+			)
 		}
 
 		row = append(row, field)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	return row, nil

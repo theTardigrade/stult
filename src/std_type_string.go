@@ -246,7 +246,7 @@ func StdTypeStringJoin(_ *RuntimeContext, args []Value) (Value, error) {
 
 	parts := make([]string, 0, len(array.Array.Elements))
 
-	for _, element := range array.Array.Elements {
+	if err := array.Array.ForEach(func(_ *Number, element Value) error {
 		value := resolveSpecializedValue(element)
 
 		if value.Kind == ValueString {
@@ -256,10 +256,13 @@ func StdTypeStringJoin(_ *RuntimeContext, args []Value) (Value, error) {
 				parts = append(parts, value.Text.String())
 			}
 
-			continue
+			return nil
 		}
 
 		parts = append(parts, value.PrintString())
+		return nil
+	}); err != nil {
+		return Value{}, err
 	}
 
 	return NewStringValue(strings.Join(parts, separator)), nil

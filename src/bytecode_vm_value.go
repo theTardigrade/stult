@@ -338,7 +338,13 @@ func (vm *BytecodeVM) buildArray(count int) error {
 				return fmt.Errorf("range segment did not produce an array")
 			}
 
-			values = append(values, entry.Value.Array.Elements...)
+			if err := entry.Value.Array.ForEach(func(_ *Number, value Value) error {
+				values = append(values, value)
+				return nil
+			}); err != nil {
+				return err
+			}
+
 			continue
 		}
 
@@ -537,16 +543,21 @@ func bytecodeIndexValue(object Value, index Value) (Value, error) {
 			return Value{}, fmt.Errorf("invalid array")
 		}
 
-		arrayIndex, err := numberToArrayIndex(index)
+		index = resolveSpecializedValue(index)
+		if index.Kind != ValueNumber {
+			return Value{}, fmt.Errorf("array index must be a number")
+		}
+
+		value, ok, err := object.Array.Get(index.Number)
 		if err != nil {
 			return Value{}, err
 		}
 
-		if arrayIndex < 0 || arrayIndex >= len(object.Array.Elements) {
-			return Value{}, fmt.Errorf("array index %d out of bounds", arrayIndex)
+		if !ok {
+			return Value{}, fmt.Errorf("array index %s out of bounds", formatArrayIndex(index.Number))
 		}
 
-		return object.Array.Elements[arrayIndex], nil
+		return value, nil
 
 	case ValueString:
 		if object.Text == nil {

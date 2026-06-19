@@ -181,13 +181,16 @@ func manifestRunListFromValue(value Value) (manifestRunList, error) {
 
 		runFiles := make(manifestRunList, 0, len(value.Array.Elements))
 
-		for index, element := range value.Array.Elements {
+		if err := value.Array.ForEach(func(index *Number, element Value) error {
 			text, err := manifestStringFromValue(element)
 			if err != nil {
-				return nil, fmt.Errorf("run array item at index %d must be a string", index)
+				return fmt.Errorf("run array item at index %s must be a string", formatArrayIndex(index))
 			}
 
 			runFiles = append(runFiles, text)
+			return nil
+		}); err != nil {
+			return nil, err
 		}
 
 		return runFiles, nil
