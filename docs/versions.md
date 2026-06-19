@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.6
 
 * Added `STD["TYPE"]["COLLECTION"]["GET"]` for safe map, array and string access with an optional default value.
 * `GET` returns the default, or void when no default is supplied, for missing map keys and out-of-bounds array/string indexes while still raising runtime errors for non-collection receivers and invalid key/index kinds.
