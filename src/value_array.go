@@ -17,15 +17,22 @@ func NewArrayValue(elements []Value, isImmutable bool) Value {
 	}
 }
 
-func formatArray(a *Array, fractionDigits int) string {
+func (state *valueFormatState) formatArray(a *Array) string {
 	if a == nil {
 		return "{}"
 	}
 
+	if state.arrays[a] {
+		return "<cyclical array>"
+	}
+
+	state.arrays[a] = true
+	defer delete(state.arrays, a)
+
 	parts := make([]string, 0, len(a.Elements))
 
 	for _, element := range a.Elements {
-		parts = append(parts, element.Format(fractionDigits))
+		parts = append(parts, state.formatValue(element))
 	}
 
 	return "{" + strings.Join(parts, ", ") + "}"

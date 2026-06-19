@@ -18,6 +18,30 @@ func (v Value) PrintString() string {
 }
 
 func (v Value) Format(fractionDigits int) string {
+	state := newValueFormatState(fractionDigits)
+	return state.formatValue(v)
+}
+
+func (v Value) DebugString() string {
+	state := newValueFormatState(DefaultDecimalPlacesToDisplay)
+	return state.formatValue(v)
+}
+
+type valueFormatState struct {
+	fractionDigits int
+	arrays         map[*Array]bool
+	maps           map[*Map]bool
+}
+
+func newValueFormatState(fractionDigits int) *valueFormatState {
+	return &valueFormatState{
+		fractionDigits: fractionDigits,
+		arrays:         make(map[*Array]bool),
+		maps:           make(map[*Map]bool),
+	}
+}
+
+func (state *valueFormatState) formatValue(v Value) string {
 	v = resolveSpecializedValue(v)
 
 	switch v.Kind {
@@ -25,7 +49,7 @@ func (v Value) Format(fractionDigits int) string {
 		return "_"
 
 	case ValueNumber:
-		return formatNumber(v.Number, fractionDigits)
+		return formatNumber(v.Number, state.fractionDigits)
 
 	case ValueBool:
 		if v.Bool {
@@ -37,49 +61,16 @@ func (v Value) Format(fractionDigits int) string {
 		return strconv.Quote(v.Text.String())
 
 	case ValueMap:
-		return formatMap(v.Map, fractionDigits)
+		return state.formatMap(v.Map)
 
 	case ValueArray:
-		return formatArray(v.Array, fractionDigits)
+		return state.formatArray(v.Array)
 
 	case ValueBuiltinFunction:
 		return "<builtin function>"
 
 	case ValueFunction:
 		return "<function>"
-
-	default:
-		return "<unknown>"
-	}
-}
-
-func (v Value) DebugString() string {
-	v = resolveSpecializedValue(v)
-
-	switch v.Kind {
-	case ValueVoid:
-		return "_"
-
-	case ValueNumber:
-		return formatNumber(v.Number, DefaultDecimalPlacesToDisplay)
-
-	case ValueBool:
-		return v.String()
-
-	case ValueString:
-		return strconv.Quote(v.Text.String())
-
-	case ValueMap:
-		return formatMap(v.Map, DefaultDecimalPlacesToDisplay)
-
-	case ValueArray:
-		return formatArray(v.Array, DefaultDecimalPlacesToDisplay)
-
-	case ValueFunction:
-		return "<function>"
-
-	case ValueBuiltinFunction:
-		return "<builtin function>"
 
 	default:
 		return "<unknown>"

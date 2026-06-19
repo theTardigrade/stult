@@ -21,10 +21,17 @@ func NewMapValue(entries map[string]Binding, isImmutable bool) Value {
 	}
 }
 
-func formatMap(m *Map, fractionDigits int) string {
+func (state *valueFormatState) formatMap(m *Map) string {
 	if m == nil || len(m.Entries) == 0 {
 		return "{:}"
 	}
+
+	if state.maps[m] {
+		return "<cyclical map>"
+	}
+
+	state.maps[m] = true
+	defer delete(state.maps, m)
 
 	keys := sortedMapKeys(m)
 
@@ -32,7 +39,7 @@ func formatMap(m *Map, fractionDigits int) string {
 
 	for _, key := range keys {
 		binding := m.Entries[key]
-		parts = append(parts, strconv.Quote(key)+": "+binding.Value.Format(fractionDigits))
+		parts = append(parts, strconv.Quote(key)+": "+state.formatValue(binding.Value))
 	}
 
 	return "{" + strings.Join(parts, ", ") + "}"
