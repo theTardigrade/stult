@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Unreleased
+### v0.7.4
 
 * Fixed bytecode compilation so early return outside a function is rejected instead of being emitted as a top-level return.
 * Fixed bytecode outer-assignment fallback so `@name : value` updates only an existing outer global binding and never creates a missing global.
