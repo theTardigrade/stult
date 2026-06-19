@@ -8,10 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### Unreleased
 
 * Fixed bytecode compilation so early return outside a function is rejected instead of being emitted as a top-level return.
 * Fixed bytecode outer-assignment fallback so `@name : value` updates only an existing outer global binding and never creates a missing global.
+* Fixed bytecode map literal construction so duplicate keys raise a runtime error instead of silently overwriting an earlier entry.
+* Fixed bytecode closure captures for block and loop locals so captured cells survive later local-slot resets and reuse.
 
 ### v0.7.3
 
@@ -225,3 +227,5 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
+
+

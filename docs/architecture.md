@@ -29,6 +29,7 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [VM state](#vm-state)
   - [Globals and standard library setup](#globals-and-standard-library-setup)
   - [Stack entries](#stack-entries)
+  - [Collection construction](#collection-construction)
   - [Locals and cells](#locals-and-cells)
   - [Functions and closures](#functions-and-closures)
   - [Collection iteration](#collection-iteration)
@@ -510,9 +511,15 @@ Some stack entries carry extra metadata, for example to mark range segments whil
 
 Most instructions push and pop `Value` instances. Some helper methods resolve specialized values before applying operators or truthiness checks.
 
+### Collection construction
+
+Array and map literals are built by VM instructions after their element or entry expressions have been evaluated and pushed onto the operand stack.
+
+For map literals, the VM must validate duplicate keys while constructing the map. The bytecode compiler preserves the source-level entries, but duplicate-key detection is a runtime responsibility because map entry values are evaluated at runtime and the interpreter reports duplicate map keys while evaluating the literal. `BUILD_MAP` must therefore reject a second entry with the same string key instead of silently overwriting the earlier entry in the host Go map.
+
 ### Locals and cells
 
-Locals are stored as VM cells.
+Local slots store pointers to VM cells rather than embedding cells directly.
 
 A local cell tracks:
 
@@ -524,7 +531,7 @@ immutability
 
 Immutability must be enforced for uppercase-only names and immutable parameters.
 
-The compiler emits `RESET_LOCALS` instructions for scoped blocks so locals from a previous iteration or block execution do not leak into later executions of the same local slot.
+The compiler emits `RESET_LOCALS` instructions for scoped blocks so locals from a previous iteration or block execution do not leak into later executions of the same local slot. When a local slot is reset, the VM replaces that slot with a fresh cell pointer rather than clearing the existing cell in place. This distinction is important for closures: a closure that captured the old cell must keep seeing that captured value even after the VM reuses the local slot for a later block or loop iteration.
 
 The VM caches local indexes by chunk and reset depth to reduce repeated lookup work.
 
@@ -542,6 +549,8 @@ parameters
 optional variadic parameter
 captured upvalues
 ```
+
+Captured upvalues are pointers to VM cells. Those cells must remain valid for as long as any closure can reference them. A block or loop reset may make a local name unavailable to later code in the current scope, but it must not destroy the cell already captured by an existing closure. The current local slot can be rebound to a fresh cell while closures continue to hold the old cell.
 
 The VM saves and restores execution state when running bytecode functions. This avoids constructing a separate VM for every function call while still isolating chunk, stack, locals, upvalues and iterator state for the call.
 
@@ -901,8 +910,6 @@ If both runtime modes fail with matching errors, the test still fails. Matching 
 The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour. The range-loop optimisation fixture checks direct range streaming, very large integer bounds, descending and stepped ranges, and the fallback path where the loop body can observe the materialised collection.
 
 The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
-
-Focused Go regression tests also live in `src/` when the behavior being checked is implementation-specific or intentionally invalid source that should not become a public example fixture. For example, bytecode regression tests cover compiler and VM edge cases such as rejecting early return outside functions and preserving `@` outer-assignment semantics for missing, mutable and immutable globals.
 
 When changing compiler, VM, interpreter, standard library, manifests or bundling, run:
 
