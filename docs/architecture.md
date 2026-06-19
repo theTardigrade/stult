@@ -29,7 +29,6 @@ For language-level usage and syntax, start with [`../README.md`](../README.md).
   - [VM state](#vm-state)
   - [Globals and standard library setup](#globals-and-standard-library-setup)
   - [Stack entries](#stack-entries)
-  - [Collection construction](#collection-construction)
   - [Locals and cells](#locals-and-cells)
   - [Functions and closures](#functions-and-closures)
   - [Collection iteration](#collection-iteration)
@@ -362,8 +361,6 @@ The important invariant is that bytecode must preserve the interpreter's `@` beh
 
 Top-level block scopes are a special case because they can have an outer context even without a parent function compiler. The compiler therefore needs to know whether it has an outer context when deciding whether an outer-name operation should fall back to a global operation.
 
-Plain global stores and outer-assignment global fallback deliberately use different VM instructions. Ordinary top-level assignment uses `STORE_GLOBAL_MUTABLE` or `STORE_GLOBAL_IMMUTABLE`, which may create a new global binding. An outer assignment that falls back to the global frame uses `STORE_EXISTING_GLOBAL`, which may update a mutable existing global but must raise a runtime error when the global binding is missing or immutable. This preserves the language rule that `@name : value` never creates a binding.
-
 ### Control flow
 
 Conditionals, conditional expressions, match expressions, loops, break and early return are lowered to jumps and returns.
@@ -376,7 +373,7 @@ For a conditional expression, the compiler emits the condition, jumps to the fal
 
 For a match expression, the compiler evaluates the subject once, stores it in a compiler-generated local slot, compares it with each explicit arm pattern in source order, and jumps to the selected result expression. If no explicit arm matches, the compiler emits the default expression when one exists, or void when no default exists.
 
-Early return is valid only while compiling a function chunk. If a return statement is encountered outside a function, bytecode compilation reports an error instead of emitting a top-level `RETURN`. Inside functions, early return compiles to a return path that exits the current function chunk.
+Early return from functions compiles to a return path that exits the current function chunk.
 
 A bare `^` inside loops compiles to a loop break.
 
@@ -511,15 +508,9 @@ Some stack entries carry extra metadata, for example to mark range segments whil
 
 Most instructions push and pop `Value` instances. Some helper methods resolve specialized values before applying operators or truthiness checks.
 
-### Collection construction
-
-Array and map literals are built by VM instructions after their element or entry expressions have been evaluated and pushed onto the operand stack.
-
-For map literals, the VM must validate duplicate keys while constructing the map. The bytecode compiler preserves the source-level entries, but duplicate-key detection is a runtime responsibility because map entry values are evaluated at runtime and the interpreter reports duplicate map keys while evaluating the literal. `BUILD_MAP` must therefore reject a second entry with the same string key instead of silently overwriting the earlier entry in the host Go map.
-
 ### Locals and cells
 
-Local slots store pointers to VM cells rather than embedding cells directly.
+Locals are stored as VM cells.
 
 A local cell tracks:
 
@@ -531,7 +522,7 @@ immutability
 
 Immutability must be enforced for uppercase-only names and immutable parameters.
 
-The compiler emits `RESET_LOCALS` instructions for scoped blocks so locals from a previous iteration or block execution do not leak into later executions of the same local slot. When a local slot is reset, the VM replaces that slot with a fresh cell pointer rather than clearing the existing cell in place. This distinction is important for closures: a closure that captured the old cell must keep seeing that captured value even after the VM reuses the local slot for a later block or loop iteration.
+The compiler emits `RESET_LOCALS` instructions for scoped blocks so locals from a previous iteration or block execution do not leak into later executions of the same local slot.
 
 The VM caches local indexes by chunk and reset depth to reduce repeated lookup work.
 
@@ -549,8 +540,6 @@ parameters
 optional variadic parameter
 captured upvalues
 ```
-
-Captured upvalues are pointers to VM cells. Those cells must remain valid for as long as any closure can reference them. A block or loop reset may make a local name unavailable to later code in the current scope, but it must not destroy the cell already captured by an existing closure. The current local slot can be rebound to a fresh cell while closures continue to hold the old cell.
 
 The VM saves and restores execution state when running bytecode functions. This avoids constructing a separate VM for every function call while still isolating chunk, stack, locals, upvalues and iterator state for the call.
 
@@ -705,10 +694,6 @@ builtin function
 
 Specialized or mutable values may be resolved before formatting, comparison or operator application.
 
-Runtime value formatting is cycle-aware for arrays and maps. Formatting keeps a recursion-stack of arrays and maps currently being visited. If the formatter reaches the same array or map again through the active formatting path, it emits `<cyclical array>` or `<cyclical map>` instead of recursing indefinitely. The guard is path-based rather than a global seen-set, so shared non-cyclical subcollections still format normally each time they appear.
-
-This cycle handling belongs in the value-formatting layer rather than in individual IO builtins. Callers such as `STD.IO.PRINT`, `STD.IO.WRITE`, `STD.IO.WRITE_ERROR`, debug string helpers and other value-to-text paths should therefore receive safe formatting consistently.
-
 `ValueFunction` is the user-defined function kind for both interpreter-backed and bytecode-backed functions. It is distinct from `ValueBuiltinFunction`, which wraps Go standard-library functions. This distinction matters for function loops, which currently accept user-defined functions as generator sources but not builtin functions.
 
 Bindings wrap values with mutability metadata.
@@ -754,6 +739,8 @@ Binding immutability controls whether a name or map entry can be rebound. Collec
 
 Arrays, maps and strings carry collection-level frozen flags. The standard-library function `STD["TYPE"]["COLLECTION"]["FREEZE"]` sets those flags deeply and in place for arrays, maps and strings, then returns the same collection value. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level frozen flag set.
 
+`STD["TYPE"]["COLLECTION"]["CLONE"]` deeply clones collection graphs. The clone operation is cycle-safe and alias-preserving: if the original graph contains multiple references to the same nested collection, the cloned graph contains multiple references to the same cloned nested collection. Cycles in the original graph become cycles in the cloned graph. Cloned arrays, maps and strings are mutable even when the original collections are frozen. Map-entry binding mutability is preserved. Numbers are cloned defensively, while booleans, void, functions and builtin functions are reused.
+
 Mutation helpers for arrays, maps and strings must check collection-level freezing before changing collection contents. User-facing errors for frozen collection mutation should describe the collection as frozen, rather than describing the binding as immutable.
 
 ## Standard library
@@ -787,6 +774,8 @@ STD["TYPE"]["COLLECTION"]
 ```
 
 These helpers operate on arrays, maps and strings where appropriate.
+
+`STD["TYPE"]["COLLECTION"]["CLONE"]` deeply clones arrays, maps and strings. It uses visited maps keyed by source collection identity so aliases and cycles are preserved in the cloned graph. The cloned collections are created unfrozen. Map-entry mutability is copied from the source map entries. Number values are copied defensively; booleans, void, functions and builtin functions are reused.
 
 `STD["TYPE"]["COLLECTION"]["FREEZE"]` deeply freezes arrays, maps and strings in place and returns the frozen collection. This means aliases to nested collections observe the frozen state too.
 

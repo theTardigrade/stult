@@ -29,6 +29,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Deep frozen aliases](../examples/tests/deep_frozen_aliases.stult)  
   Checks that `FREEZE` deeply freezes nested collections and that aliases to nested collections observe the frozen state.
 
+- [Cloning collections](../examples/tests/collection_clone.stult)  
+  Checks that `CLONE` deeply clones collection graphs, preserves aliases and cycles, returns mutable collections, preserves map-entry mutability and reuses function closure values.
+
 - [Collection loop parameters](../examples/tests/collection_loop_parameters.stult)  
   Checks that collection loops provide value, key, collection and position parameters correctly.
 

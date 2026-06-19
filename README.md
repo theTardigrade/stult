@@ -724,9 +724,27 @@ record["first name"]
 record["123"]
 ```
 
-#### Freezing collections
+#### Cloning and freezing collections
 
-Collection values can be frozen with `STD.TYPE.COLLECTION.FREEZE`.
+Collection values can be deeply cloned with `STD.TYPE.COLLECTION.CLONE`.
+
+`CLONE` returns a new mutable collection graph. Nested arrays, maps and strings are cloned recursively, internal aliases and cycles are preserved, and numbers are copied defensively. Functions and builtin functions are reused.
+
+```stult
+PRINT : STD.IO.PRINT
+
+original : {
+	"nested": {"value": 1}
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original)
+copy.nested.value : 2
+
+PRINT(original.nested.value) # 1
+PRINT(copy.nested.value)     # 2
+```
+
+Collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`.
 
 Freezing is deep, so nested arrays, maps and strings are frozen too.
 
@@ -1491,3 +1509,4 @@ For a technical overview of the implementation, including the compiler pipeline,
 <!--
 For the formal language definition, see [docs/specification.md](docs/specification.md).
 -->
+

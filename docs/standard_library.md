@@ -156,6 +156,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
     - [`STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`](#stdtypecollectionhascollection-key)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
+    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
     - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`](#stdtypecollectionfreezecollection)
     - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
 - [`STD["DATA"]`](#stddata)
@@ -246,21 +247,6 @@ Alias for `STD.IO.WRITE_LINE`.
 
 ```stult
 STD.IO.PRINT("Hello")
-```
-
-Collection formatting is cycle-safe. If an array or map contains itself, directly or indirectly, the repeated value is displayed as `<cyclical array>` or `<cyclical map>` instead of causing unbounded recursive formatting. Shared subcollections that are not on a cyclical path still display normally.
-
-```stult
-a : {}
-a[0] : a
-
-STD.IO.PRINT(a)
-```
-
-prints:
-
-```text
-{<cyclical array>}
 ```
 
 Returns `_`.
@@ -1346,6 +1332,58 @@ For strings, this removes all characters.
 Returns `_`.
 
 Raises a runtime error if the collection is frozen.
+
+
+### `STD["TYPE"]["COLLECTION"]["CLONE"](value)`
+
+Deeply clones a value.
+
+```stult
+original : {
+	"nested": {"value": 1}
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original)
+copy.nested.value : 2
+
+STD.IO.PRINT(original.nested.value) # 1
+STD.IO.PRINT(copy.nested.value)     # 2
+```
+
+For arrays, maps and strings, `CLONE` returns new mutable collection values. Nested arrays, maps and strings are cloned recursively.
+
+Internal aliases are preserved inside the cloned graph.
+
+```stult
+shared : {"value": 1}
+original : {
+	"a": shared
+	"b": shared
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original)
+copy.a.value : 9
+
+STD.IO.PRINT(original.a.value) # 1
+STD.IO.PRINT(copy.b.value)     # 9
+```
+
+Cyclical collection graphs are preserved.
+
+```stult
+array : {}
+array[0] : array
+
+copy : STD.TYPE.COLLECTION.CLONE(array)
+copy[1] : "copy only"
+
+STD.IO.PRINT(array) # {<cyclical array>}
+STD.IO.PRINT(copy)  # {<cyclical array>, "copy only"}
+```
+
+`CLONE` returns mutable collections even when the original collections are frozen. Map-entry mutability is preserved: entries whose keys are immutable-form in the source map remain immutable entries in the clone.
+
+Numbers are copied defensively. Booleans, void, functions and builtin functions are reused. Reusing function values means cloned collections containing closures still refer to the same closure state.
 
 ### `STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`
 
