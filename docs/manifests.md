@@ -107,7 +107,7 @@ With this manifest:
 `bindings.stult` might define shared standard-library aliases:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 ```
 

@@ -7,10 +7,10 @@ import (
 
 func NewStdIOOutputMap() Value {
 	entries := map[string]Binding{
-		"PRINT":       NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteLine)), // alias for WRITE_LINE
-		"WRITE":       NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWrite)),
-		"WRITE_ERROR": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteError)),
-		"WRITE_LINE":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteLine)),
+		"WRITE":            NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWrite)),
+		"WRITE_ERROR":      NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteError)),
+		"WRITE_ERROR_LINE": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteErrorLine)),
+		"WRITE_LINE":       NewImmutableBinding(NewBuiltinFunctionValue(builtinStdIOOutputWriteLine)),
 	}
 
 	return NewMapValue(entries, true)
@@ -35,6 +35,14 @@ func builtinStdIOOutputWriteLine(_ *RuntimeContext, args []Value) (Value, error)
 }
 
 func builtinStdIOOutputWriteError(_ *RuntimeContext, args []Value) (Value, error) {
+	for _, arg := range args {
+		fmt.Fprint(os.Stderr, arg.PrintString())
+	}
+
+	return NewVoidValue(), nil
+}
+
+func builtinStdIOOutputWriteErrorLine(_ *RuntimeContext, args []Value) (Value, error) {
 	for _, arg := range args {
 		fmt.Fprint(os.Stderr, arg.PrintString())
 	}

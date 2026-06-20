@@ -37,10 +37,10 @@ Standard-library functions are ordinary callable values stored inside maps.
 Here's an example:
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 SIZE : STD.TYPE.COLLECTION.SIZE
 
-PRINT(
+WRITE_LINE(
 	"size: "
 	SIZE({"a", "b", "c"})
 )
@@ -56,12 +56,14 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["ASSERT"]["TRUE"](condition, message)`](#stdasserttruecondition-message)
   - [`STD["ASSERT"]["EQUAL"](actual, expected, message)`](#stdassertequalactual-expected-message)
 - [`STD["IO"]`](#stdio)
-  - [`STD["IO"]["WRITE"](...values)`](#stdiowritevalues)
-  - [`STD["IO"]["WRITE_LINE"](...values)`](#stdiowrite_linevalues)
-  - [`STD["IO"]["PRINT"](...values)`](#stdioprintvalues)
-  - [`STD["IO"]["WRITE_ERROR"](...values)`](#stdiowrite_errorvalues)
-  - [`STD["IO"]["READ_LINE"]()`](#stdioread_line)
-  - [`STD["IO"]["PROMPT"](...values)`](#stdiopromptvalues)
+  - [`STD["IO"]["INPUT"]`](#stdioinput)
+    - [`STD["IO"]["INPUT"]["READ_LINE"]()`](#stdioinputread_line)
+    - [`STD["IO"]["INPUT"]["PROMPT"](...values)`](#stdioinputpromptvalues)
+  - [`STD["IO"]["OUTPUT"]`](#stdiooutput)
+    - [`STD["IO"]["OUTPUT"]["WRITE"](...values)`](#stdiooutputwritevalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`](#stdiooutputwrite_linevalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`](#stdiooutputwrite_errorvalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`](#stdiooutputwrite_error_linevalues)
 - [`STD["SYSTEM"]`](#stdsystem)
   - [`STD["SYSTEM"]["ARGS"]`](#stdsystemargs)
   - [`STD["SYSTEM"]["CWD"]()`](#stdsystemcwd)
@@ -219,73 +221,93 @@ STD.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
 
 Console input and output.
 
-### `STD["IO"]["WRITE"](...values)`
-
-Writes values to standard output without adding a newline.
+`STD["IO"]` contains two submaps:
 
 ```stult
-STD.IO.WRITE("Hello")
-STD.IO.WRITE(" ")
-STD.IO.WRITE("world")
+STD.IO.INPUT
+STD.IO.OUTPUT
 ```
 
-Returns `_`.
+`STD.IO.INPUT` contains functions that read from standard input.
 
-### `STD["IO"]["WRITE_LINE"](...values)`
+`STD.IO.OUTPUT` contains functions that write to standard output or standard error.
 
-Writes values to standard output and then writes a newline.
+### `STD["IO"]["INPUT"]`
 
-```stult
-STD.IO.WRITE_LINE("Hello world")
-STD.IO.WRITE_LINE("Count: ", 3)
-```
+Console input helpers.
 
-Returns `_`.
-
-### `STD["IO"]["PRINT"](...values)`
-
-Alias for `STD.IO.WRITE_LINE`.
-
-```stult
-STD.IO.PRINT("Hello")
-```
-
-Returns `_`.
-
-### `STD["IO"]["WRITE_ERROR"](...values)`
-
-Writes values to standard error and then writes a newline.
-
-```stult
-STD.IO.WRITE_ERROR("Something went wrong")
-```
-
-Returns `_`.
-
-### `STD["IO"]["READ_LINE"]()`
+### `STD["IO"]["INPUT"]["READ_LINE"]()`
 
 Reads one line from standard input.
 
 ```stult
-line : STD.IO.READ_LINE()
+line : STD.IO.INPUT.READ_LINE()
 ```
 
 Returns a string without the trailing newline.
 
 Returns `_` if input ends before any text is read.
 
-### `STD["IO"]["PROMPT"](...values)`
+### `STD["IO"]["INPUT"]["PROMPT"](...values)`
 
 Writes prompt values to standard output, then reads a line from standard input.
 
 ```stult
-name : STD.IO.PROMPT("Name: ")
-STD.IO.PRINT("Hello ", name)
+name : STD.IO.INPUT.PROMPT("Name: ")
+STD.IO.OUTPUT.WRITE_LINE("Hello ", name)
 ```
 
 Returns a string without the trailing newline.
 
 Returns `_` if input ends before any text is read.
+
+### `STD["IO"]["OUTPUT"]`
+
+Console output helpers.
+
+### `STD["IO"]["OUTPUT"]["WRITE"](...values)`
+
+Writes values to standard output without adding a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE("Hello")
+STD.IO.OUTPUT.WRITE(" ")
+STD.IO.OUTPUT.WRITE("world")
+```
+
+Returns `_`.
+
+### `STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`
+
+Writes values to standard output and then writes a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE_LINE("Hello world")
+STD.IO.OUTPUT.WRITE_LINE("Count: ", 3)
+```
+
+Returns `_`.
+
+### `STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`
+
+Writes values to standard error without adding a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE_ERROR("Warning: ")
+STD.IO.OUTPUT.WRITE_ERROR("something changed")
+```
+
+Returns `_`.
+
+### `STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`
+
+Writes values to standard error and then writes a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE_ERROR_LINE("Something went wrong")
+```
+
+Returns `_`.
 
 ## `STD["SYSTEM"]`
 
@@ -296,7 +318,7 @@ Runtime and process-context helpers.
 Contains the arguments passed to the Stult program.
 
 ```stult
-STD.IO.PRINT(STD.SYSTEM.ARGS)
+STD.IO.OUTPUT.WRITE_LINE(STD.SYSTEM.ARGS)
 ```
 
 The array does not include the Stult executable path.
@@ -324,7 +346,7 @@ Returns the current working directory.
 ```stult
 cwd : STD.SYSTEM.CWD()
 
-STD.IO.PRINT(cwd)
+STD.IO.OUTPUT.WRITE_LINE(cwd)
 ```
 
 Returns a string.
@@ -336,7 +358,7 @@ Reads an environment variable.
 ```stult
 home : STD.SYSTEM.ENV("HOME")
 
-STD.IO.PRINT(home)
+STD.IO.OUTPUT.WRITE_LINE(home)
 ```
 
 The argument must be a string.
@@ -403,7 +425,7 @@ Checks whether a file-system path exists.
 
 ```stult
 (STD.FILE.EXISTS("notes.txt")) {
-	STD.IO.PRINT("notes.txt exists")
+	STD.IO.OUTPUT.WRITE_LINE("notes.txt exists")
 }
 ```
 
@@ -462,7 +484,7 @@ Joins path parts into one path.
 ```stult
 path : STD.PATH.JOIN("data", "input.csv")
 
-STD.IO.PRINT(path)
+STD.IO.OUTPUT.WRITE_LINE(path)
 ```
 
 Requires at least one argument.
@@ -478,7 +500,7 @@ Returns an absolute version of a path.
 ```stult
 absolute_path : STD.PATH.ABS("input.csv")
 
-STD.IO.PRINT(absolute_path)
+STD.IO.OUTPUT.WRITE_LINE(absolute_path)
 ```
 
 The argument must be a string.
@@ -492,7 +514,7 @@ Returns the final element of a path.
 ```stult
 name : STD.PATH.BASE("data/input.csv")
 
-STD.IO.PRINT(name)
+STD.IO.OUTPUT.WRITE_LINE(name)
 ```
 
 The argument must be a string.
@@ -506,7 +528,7 @@ Cleans a path by removing redundant path elements.
 ```stult
 clean_path : STD.PATH.CLEAN("./data/../data/input.csv")
 
-STD.IO.PRINT(clean_path)
+STD.IO.OUTPUT.WRITE_LINE(clean_path)
 ```
 
 The argument must be a string.
@@ -520,7 +542,7 @@ Returns the directory part of a path.
 ```stult
 dir : STD.PATH.DIR("data/input.csv")
 
-STD.IO.PRINT(dir)
+STD.IO.OUTPUT.WRITE_LINE(dir)
 ```
 
 The argument must be a string.
@@ -534,7 +556,7 @@ Returns the file extension of a path.
 ```stult
 extension : STD.PATH.EXT("data/input.csv")
 
-STD.IO.PRINT(extension)
+STD.IO.OUTPUT.WRITE_LINE(extension)
 ```
 
 The argument must be a string.
@@ -584,7 +606,7 @@ Returns a map describing the current local time.
 ```stult
 now : STD.TIME.LOCAL_CALENDAR()
 
-STD.IO.PRINT(now.YEAR, "-", now.MONTH, "-", now.DAY)
+STD.IO.OUTPUT.WRITE_LINE(now.YEAR, "-", now.MONTH, "-", now.DAY)
 ```
 
 The returned map contains:
@@ -970,7 +992,7 @@ STD.TYPE.IS_STRING("hello")
 STD.TYPE.IS_ARRAY({})
 STD.TYPE.IS_MAP({:})
 STD.TYPE.IS_FUNCTION({ () (_) })
-STD.TYPE.IS_BUILTIN_FUNCTION(STD.IO.PRINT)
+STD.TYPE.IS_BUILTIN_FUNCTION(STD.IO.OUTPUT.WRITE_LINE)
 STD.TYPE.IS_COLLECTION({"a", "b"})
 ```
 
@@ -1390,8 +1412,8 @@ original : {
 copy : STD.TYPE.COLLECTION.CLONE(original)
 copy.nested.value : 2
 
-STD.IO.PRINT(original.nested.value) # 1
-STD.IO.PRINT(copy.nested.value)     # 2
+STD.IO.OUTPUT.WRITE_LINE(original.nested.value) # 1
+STD.IO.OUTPUT.WRITE_LINE(copy.nested.value)     # 2
 ```
 
 For arrays, maps and strings, `CLONE` returns new mutable collection values. Nested arrays, maps and strings are cloned recursively.
@@ -1408,8 +1430,8 @@ original : {
 copy : STD.TYPE.COLLECTION.CLONE(original)
 copy.a.value : 9
 
-STD.IO.PRINT(original.a.value) # 1
-STD.IO.PRINT(copy.b.value)     # 9
+STD.IO.OUTPUT.WRITE_LINE(original.a.value) # 1
+STD.IO.OUTPUT.WRITE_LINE(copy.b.value)     # 9
 ```
 
 Cyclical collection graphs are preserved.
@@ -1421,8 +1443,8 @@ array[0] : array
 copy : STD.TYPE.COLLECTION.CLONE(array)
 copy[1] : "copy only"
 
-STD.IO.PRINT(array) # {<cyclical array>}
-STD.IO.PRINT(copy)  # {<cyclical array>, "copy only"}
+STD.IO.OUTPUT.WRITE_LINE(array) # {<cyclical array>}
+STD.IO.OUTPUT.WRITE_LINE(copy)  # {<cyclical array>, "copy only"}
 ```
 
 `CLONE` returns mutable collections even when the original collections are frozen. Map-entry mutability is preserved: entries whose keys are immutable-form in the source map remain immutable entries in the clone.

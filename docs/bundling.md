@@ -137,9 +137,9 @@ with this manifest:
 and this source file:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
-PRINT("Hello from a bundled Stult executable.")
+WRITE_LINE("Hello from a bundled Stult executable.")
 ```
 
 Build the default bytecode bundle:

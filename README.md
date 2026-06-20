@@ -7,7 +7,7 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- dense arrays of unbounded length that can grow dynamically,
+- finite, dense, resource-bounded arrays whose indices and lengths use Stult numbers,
 - maps, strings, functions, conditionals, loops and ranges,
 - try-catch blocks, conditional expressions and match expressions,
 - concise literals for booleans, arrays, maps and void,
@@ -19,7 +19,6 @@ Idiomatic Stult code should be light on syntax, but never deliberately cryptic.
 Source files use the `.stult` extension.
 
 STULTON, Stult’s native data notation, uses the `.stulton` extension.
-
 
 ## Contents
 
@@ -134,7 +133,7 @@ Run a manifest-based project:
 Evaluate a source string directly:
 
 ```bash
-./stult run -e 'STD.IO.PRINT("hello")'
+./stult run -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 ```
 
 Run from the current directory by discovering a manifest upward from `.`:
@@ -268,19 +267,19 @@ This is useful for quick experiments, shell scripts and short one-off commands.
 For example:
 
 ```bash
-stult run -e 'X : 10,STD.IO.PRINT(X * 20)'
+stult run -e 'X : 10,STD.IO.OUTPUT.WRITE_LINE(X * 20)'
 ```
 
 Or explicitly through the interpreter:
 
 ```bash
-stult run --interpreter -e 'STD.IO.PRINT("hello")'
+stult run --interpreter -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 ```
 
 On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
 
 ```powershell
-.\stult.exe run -e 'X : 10,STD.IO.PRINT(X * 20)'
+.\stult.exe run -e 'X : 10,STD.IO.OUTPUT.WRITE_LINE(X * 20)'
 ```
 
 The evaluated source runs with the standard library available as `STD`.
@@ -302,7 +301,7 @@ stult dump --bytecode examples/calculate_circle_area_from_map.stult
 You can also dump bytecode for an evaluated source string:
 
 ```bash
-stult dump -e 'STD.IO.PRINT("hello")'
+stult dump -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 ```
 
 `dump` is bytecode-only. There is no interpreter dump mode.
@@ -552,14 +551,14 @@ Then use those bindings like so:
 TRUE : \/
 FALSE : /\
 
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 SHOULD_RUN : TRUE
 
 # the code below contains a conditional statement,
-# so the PRINT statement only runs if SHOULD_RUN is true
+# so the WRITE_LINE statement only runs if SHOULD_RUN is true
 (SHOULD_RUN) {
-	PRINT("running")
+	WRITE_LINE("running")
 }
 ```
 
@@ -741,7 +740,7 @@ Collection values can be deeply cloned with `STD.TYPE.COLLECTION.CLONE`.
 `CLONE` returns a new mutable collection graph. Nested arrays, maps and strings are cloned recursively, internal aliases and cycles are preserved, and numbers are copied defensively. Functions and builtin functions are reused.
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 original : {
 	"nested": {"value": 1}
@@ -750,8 +749,8 @@ original : {
 copy : STD.TYPE.COLLECTION.CLONE(original)
 copy.nested.value : 2
 
-PRINT(original.nested.value) # 1
-PRINT(copy.nested.value)     # 2
+WRITE_LINE(original.nested.value) # 1
+WRITE_LINE(copy.nested.value)     # 2
 ```
 
 Collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`.
@@ -759,7 +758,7 @@ Collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`.
 Freezing is deep, so nested arrays, maps and strings are frozen too.
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 FREEZE : STD.TYPE.COLLECTION.FREEZE
 IS_FROZEN : STD.TYPE.COLLECTION.IS_FROZEN
@@ -769,8 +768,8 @@ CONFIG : FREEZE({
 	"values": {1, 2, 3}
 })
 
-PRINT(IS_FROZEN(CONFIG))
-PRINT(IS_FROZEN(CONFIG["values"]))
+WRITE_LINE(IS_FROZEN(CONFIG))
+WRITE_LINE(IS_FROZEN(CONFIG["values"]))
 ```
 
 A frozen collection cannot be internally modified, even when it is held by a mutable binding.
@@ -821,17 +820,17 @@ Functions return exactly one value.
 Function calls require the callee to touch the opening parenthesis:
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 SUBTRACT : { (A, B)
 	(A - B)
 }
 
-PRINT("hello")
-PRINT(SUBTRACT(10, 2))
+WRITE_LINE("hello")
+WRITE_LINE(SUBTRACT(10, 2))
 ```
 
-This means `PRINT ("hello")` or `PRINT( SUBTRACT (10, 2))` are not a valid function calls.
+This means `WRITE_LINE ("hello")` or `WRITE_LINE( SUBTRACT (10, 2))` are not a valid function calls.
 
 Functions can be stored in maps and arrays:
 
@@ -883,7 +882,7 @@ The variadic parameter must be last.
 
 ```stult
 DESCRIBE : { (label, ...values)
-	STD.IO.PRINT(label, ": ", values)
+	STD.IO.OUTPUT.WRITE_LINE(label, ": ", values)
 
 	(_)
 }
@@ -958,41 +957,41 @@ Conditionals use a parenthesised condition followed by a brace-enclosed block:
 score : 95
 
 (score >= 90) {
-	STD.IO.PRINT("excellent")
+	STD.IO.OUTPUT.WRITE_LINE("excellent")
 }
 ```
 
 An alternative block, which runs when the condition is false, follows `},{`:
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 score : 80
 
 (score >= 90) {
-	PRINT("excellent")
+	WRITE_LINE("excellent")
 },{
-	PRINT("keep going")
+	WRITE_LINE("keep going")
 }
 ```
 
 Multiple branches can be chained:
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 score : 10
 
 (score >= 90) {
-	PRINT("excellent")
+	WRITE_LINE("excellent")
 },(score >= 70) {
-	PRINT("good")
+	WRITE_LINE("good")
 },(score >= 50) {
-	PRINT("keep going")
+	WRITE_LINE("keep going")
 },(score >= 20) {
-	PRINT("bad")
+	WRITE_LINE("bad")
 },{
-	PRINT("terrible")
+	WRITE_LINE("terrible")
 }
 ```
 
@@ -1003,7 +1002,7 @@ A conditional with a true condition can also be used as an idiomatic way to crea
 ```stult
 (\/) {
 	message : "inside local scope"
-	STD.IO.PRINT(message)
+	STD.IO.OUTPUT.WRITE_LINE(message)
 }
 ```
 
@@ -1145,7 +1144,7 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 '{
 	STD.ASSERT.EQUAL(1, 2, "these values should match")
 },{
-	STD.IO.PRINT("Recovered from the error")
+	STD.IO.OUTPUT.WRITE_LINE("Recovered from the error")
 }
 ```
 
@@ -1156,7 +1155,7 @@ The catch block may also receive the error message:
 	items : {:}
 	items.missing
 },{ (error_message)
-	STD.IO.PRINT("Error: ", error_message)
+	STD.IO.OUTPUT.WRITE_LINE("Error: ", error_message)
 }
 ```
 
@@ -1166,7 +1165,7 @@ The catch parameter is optional. You may use `_` when you want to show that the 
 '{
 	1()
 },{ (_)
-	STD.IO.PRINT("Something went wrong")
+	STD.IO.OUTPUT.WRITE_LINE("Something went wrong")
 }
 ```
 
@@ -1182,7 +1181,7 @@ Loops use double parentheses:
 count : 3
 
 ((count > 0)) {
-	STD.IO.PRINT(count)
+	STD.IO.OUTPUT.WRITE_LINE(count)
 	@count :- 1
 }
 ```
@@ -1190,15 +1189,15 @@ count : 3
 Loops may have an after-loop block (which runs once, when the condition no longer holds true):
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 count : 3
 
 ((count > 0)) {
-	PRINT(count)
+	WRITE_LINE(count)
 	@count :- 1
 },{
-	PRINT("done")
+	WRITE_LINE("done")
 }
 ```
 
@@ -1208,7 +1207,7 @@ An infinite loop uses the true literal:
 
 ```stult
 ((\/)) {
-	STD.IO.PRINT("forever")
+	STD.IO.OUTPUT.WRITE_LINE("forever")
 }
 ```
 
@@ -1236,19 +1235,19 @@ The same loop syntax can iterate over collections:
 values : {5, 30, 45}
 
 ((values)) { (value)
-	STD.IO.PRINT(value)
+	STD.IO.OUTPUT.WRITE_LINE(value)
 }
 ```
 
 Collection loops can receive up to four parameters:
 
 ```stult
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 items : {"hat", "coat", "jacket"}
 
 ((items)) { (value, key, collection, position)
-	PRINT(position, ": ", key, " -> ", value)
+	WRITE_LINE(position, ": ", key, " -> ", value)
 }
 ```
 
@@ -1264,7 +1263,7 @@ When a loop goes straight over a range like `{1..1000}`, Stult can count through
 
 ```stult
 (({1..1000000})) { (value)
-	STD.IO.PRINT(value)
+	STD.IO.OUTPUT.WRITE_LINE(value)
 }
 ```
 
@@ -1286,7 +1285,7 @@ COUNTDOWN : { (index)
 }
 
 ((COUNTDOWN)) { (value)
-	STD.IO.PRINT(value)
+	STD.IO.OUTPUT.WRITE_LINE(value)
 }
 ```
 
@@ -1298,7 +1297,7 @@ A function-loop body can also receive the zero-based iteration position as a sec
 
 ```stult
 ((COUNTDOWN)) { (value, position)
-	STD.IO.PRINT(position, ": ", value)
+	STD.IO.OUTPUT.WRITE_LINE(position, ": ", value)
 }
 ```
 
@@ -1317,7 +1316,7 @@ NEXT : { ()
 }
 
 ((NEXT)) { (value)
-	STD.IO.PRINT(value)
+	STD.IO.OUTPUT.WRITE_LINE(value)
 }
 ```
 
@@ -1342,7 +1341,7 @@ Stult uses both newlines and commas as separators.
 Most examples use newlines:
 
 ```stult
-PRINT : STD.IO.PRINT
+PRINT : STD.IO.OUTPUT.WRITE_LINE
 NAME : "Stult"
 COUNT : 3
 PRINT(NAME)
@@ -1351,7 +1350,7 @@ PRINT(NAME)
 The same statements can be written with commas:
 
 ```stult
-PRINT : STD.IO.PRINT, NAME : "Stult", COUNT : 3, PRINT(NAME)
+PRINT : STD.IO.OUTPUT.WRITE_LINE, NAME : "Stult", COUNT : 3, PRINT(NAME)
 ```
 
 Commas can also separate function arguments, function parameters, loop parameters, array elements and map entries:
@@ -1363,7 +1362,7 @@ ADD : { (left, right)
 	(left + right)
 }
 
-STD.IO.PRINT("sum: ", ADD(2, 3))
+STD.IO.OUTPUT.WRITE_LINE("sum: ", ADD(2, 3))
 
 CONFIG : {"name": "demo", "enabled": \/}
 ```
@@ -1416,22 +1415,22 @@ STD["DATA"]
 Here is some example code using functions from the standard library:
 
 ```stult
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 ASSERT : STD["ASSERT"]
-SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
+COLLECTION_SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 MATH : STD["MATH"]
 
 ITEMS : {"a", "b", "c"}
 
-ASSERT["EQUAL"](SIZE(ITEMS), 3, "items should contain three values")
-PRINT("square: ", MATH["SQUARE"](9))
+ASSERT["EQUAL"](COLLECTION_SIZE(ITEMS), 3, "items should contain three values")
+WRITE_LINE("square: ", MATH["SQUARE"](9))
 ```
 
 Since the standard library is exposed as nested maps, dot-access syntax is a shorter way to write the same string-key lookups:
 
 ```stult
-STD.IO.PRINT
-STD["IO"]["PRINT"]
+STD.IO.OUTPUT.WRITE_LINE
+STD["IO"]["OUTPUT"]["WRITE_LINE"]
 ```
 
 Both forms refer to the same value.
@@ -1440,9 +1439,9 @@ Program arguments are available through `STD["SYSTEM"]["ARGS"]`:
 
 ```stult
 ARGS : STD.SYSTEM.ARGS
-PRINT : STD.IO.PRINT
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
-PRINT(ARGS)
+WRITE_LINE(ARGS)
 ```
 
 For the full standard-library reference, please see [docs/standard_library.md](docs/standard_library.md).
