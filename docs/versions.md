@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.8
 
 * Centralised collection access and mutation behind value-owned method layers for arrays, strings and maps. This is an internal implementation cleanup with no intended user-visible language change.
 * Array behaviour is now owned by `Array` methods such as `Len`, `Get`, `Set`, `Append`, `Clear` and `ForEach`, keeping ordinary and overflow storage details representation-local.
