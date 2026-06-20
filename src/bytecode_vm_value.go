@@ -626,7 +626,7 @@ func bytecodeCloneValueForLoad(value Value) Value {
 			return value
 		}
 
-		return NewNumberValueFromNumber(CloneNumber(value.Number))
+		return NewNumberValueFromNumber(value.Number.Clone())
 
 	case ValueString:
 		if value.Text == nil {

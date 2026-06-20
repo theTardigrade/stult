@@ -15,7 +15,7 @@ func valuesEqual(left Value, right Value) (bool, error) {
 		return true, nil
 
 	case ValueNumber:
-		return numberCompare(left.Number, right.Number) == 0, nil
+		return left.Number.Cmp(right.Number) == 0, nil
 
 	case ValueBool:
 		return left.Bool == right.Bool, nil

@@ -54,7 +54,7 @@ func (array *Array) Len() *Number {
 	}
 
 	if array.Length != nil {
-		return CloneNumber(array.Length)
+		return array.Length.Clone()
 	}
 
 	return NewSmallNumber(int64(len(array.Ordinary)))

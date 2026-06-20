@@ -32,7 +32,7 @@ func builtinStdMathRandNumber(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if numberCompare(lower.Number, upper.Number) >= 0 {
+	if lower.Number.Cmp(upper.Number) >= 0 {
 		return Value{}, fmt.Errorf(
 			"MATH.RAND.NUMBER inclusive lower bound must be less than exclusive upper bound",
 		)
@@ -332,7 +332,7 @@ func stdMathRandInteger(minimum *Number, maximum *Number) (*Number, error) {
 }
 
 func stdMathRandScaledCoefficient(number *Number, targetScale int) *big.Int {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 
 	out := new(big.Int)
 	out.Set(coefficient)
@@ -349,7 +349,7 @@ func stdMathRandScaledCoefficient(number *Number, targetScale int) *big.Int {
 }
 
 func stdMathRandExactInteger(number *Number) (*big.Int, bool) {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 
 	if scale == 0 {
 		return coefficient, true

@@ -20,19 +20,19 @@ var (
 func stdMathPiValue() Value {
 	stdMathPiOnce.Do(func() {
 		value := calculatePiValue(FloatPrecision)
-		stdMathPiNumber = CloneNumber(value.Number)
+		stdMathPiNumber = value.Number.Clone()
 	})
 
-	return NewNumberValueFromNumber(CloneNumber(stdMathPiNumber))
+	return NewNumberValueFromNumber(stdMathPiNumber.Clone())
 }
 
 func stdMathEValue() Value {
 	stdMathEOnce.Do(func() {
 		value := calculateEValue(FloatPrecision)
-		stdMathENumber = CloneNumber(value.Number)
+		stdMathENumber = value.Number.Clone()
 	})
 
-	return NewNumberValueFromNumber(CloneNumber(stdMathENumber))
+	return NewNumberValueFromNumber(stdMathENumber.Clone())
 }
 
 func NewStdMathMap() Value {
@@ -210,11 +210,11 @@ func builtinStdMathAbs(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if numberSign(value.Number) < 0 {
+	if value.Number.Sign() < 0 {
 		return NewNumberValueFromNumber(numberNegate(value.Number)), nil
 	}
 
-	return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+	return NewNumberValueFromNumber(value.Number.Clone()), nil
 }
 
 func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
@@ -223,7 +223,7 @@ func builtinStdMathSign(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	return NewNumberValueFromInt(numberSign(value.Number)), nil
+	return NewNumberValueFromInt(value.Number.Sign()), nil
 }
 
 func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
@@ -249,13 +249,13 @@ func builtinStdMathLerp(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathWorkingPrecision(FloatPrecision)
 
 	startNumber := newFloatWithPrecision(workPrecision)
-	startNumber.Set(numberToBigFloat(start.Number))
+	startNumber.Set(start.Number.BigFloat())
 
 	endNumber := newFloatWithPrecision(workPrecision)
-	endNumber.Set(numberToBigFloat(end.Number))
+	endNumber.Set(end.Number.BigFloat())
 
 	amountNumber := newFloatWithPrecision(workPrecision)
-	amountNumber.Set(numberToBigFloat(amount.Number))
+	amountNumber.Set(amount.Number.BigFloat())
 
 	difference := newFloatWithPrecision(workPrecision)
 	difference.Sub(endNumber, startNumber)
@@ -288,12 +288,12 @@ func builtinStdMathMin(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if numberCompare(value.Number, min.Number) < 0 {
+		if value.Number.Cmp(min.Number) < 0 {
 			min = value
 		}
 	}
 
-	return NewNumberValueFromNumber(CloneNumber(min.Number)), nil
+	return NewNumberValueFromNumber(min.Number.Clone()), nil
 }
 
 func builtinStdMathMax(_ *RuntimeContext, args []Value) (Value, error) {
@@ -312,12 +312,12 @@ func builtinStdMathMax(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if numberCompare(value.Number, max.Number) > 0 {
+		if value.Number.Cmp(max.Number) > 0 {
 			max = value
 		}
 	}
 
-	return NewNumberValueFromNumber(CloneNumber(max.Number)), nil
+	return NewNumberValueFromNumber(max.Number.Clone()), nil
 }
 
 func builtinStdMathClamp(_ *RuntimeContext, args []Value) (Value, error) {
@@ -340,19 +340,19 @@ func builtinStdMathClamp(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if numberCompare(minimum.Number, maximum.Number) > 0 {
+	if minimum.Number.Cmp(maximum.Number) > 0 {
 		return Value{}, fmt.Errorf("MATH.CLAMP minimum cannot be greater than maximum")
 	}
 
-	if numberCompare(value.Number, minimum.Number) < 0 {
-		return NewNumberValueFromNumber(CloneNumber(minimum.Number)), nil
+	if value.Number.Cmp(minimum.Number) < 0 {
+		return NewNumberValueFromNumber(minimum.Number.Clone()), nil
 	}
 
-	if numberCompare(value.Number, maximum.Number) > 0 {
-		return NewNumberValueFromNumber(CloneNumber(maximum.Number)), nil
+	if value.Number.Cmp(maximum.Number) > 0 {
+		return NewNumberValueFromNumber(maximum.Number.Clone()), nil
 	}
 
-	return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+	return NewNumberValueFromNumber(value.Number.Clone()), nil
 }
 
 func builtinStdMathFloor(_ *RuntimeContext, args []Value) (Value, error) {
@@ -397,12 +397,12 @@ func builtinStdMathSqrt(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if numberSign(value.Number) < 0 {
+	if value.Number.Sign() < 0 {
 		return Value{}, fmt.Errorf("MATH.SQRT expected a non-negative number")
 	}
 
 	out := newFloat()
-	out.Sqrt(numberToBigFloat(value.Number))
+	out.Sqrt(value.Number.BigFloat())
 
 	return NewBigNumberValue(out), nil
 }
@@ -428,7 +428,7 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 	}
 
 	if isIntegerExponent {
-		if numberSign(base.Number) == 0 && integerExponent < 0 {
+		if base.Number.Sign() == 0 && integerExponent < 0 {
 			return Value{}, fmt.Errorf("MATH.POWER cannot raise zero to a negative exponent")
 		}
 
@@ -440,12 +440,12 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 		return NewNumberValueFromNumber(out), nil
 	}
 
-	if numberSign(base.Number) < 0 {
+	if base.Number.Sign() < 0 {
 		return Value{}, fmt.Errorf("MATH.POWER cannot raise a negative base to a non-integer exponent")
 	}
 
-	if numberSign(base.Number) == 0 {
-		if numberSign(exponent.Number) < 0 {
+	if base.Number.Sign() == 0 {
+		if exponent.Number.Sign() < 0 {
 			return Value{}, fmt.Errorf("MATH.POWER cannot raise zero to a negative exponent")
 		}
 
@@ -454,13 +454,13 @@ func builtinStdMathPower(_ *RuntimeContext, args []Value) (Value, error) {
 
 	workPrecision := stdMathWorkingPrecision(FloatPrecision)
 
-	lnBase, err := lnFloat(numberToBigFloat(base.Number), workPrecision)
+	lnBase, err := lnFloat(base.Number.BigFloat(), workPrecision)
 	if err != nil {
 		return Value{}, err
 	}
 
 	exponentAtWorkPrecision := newFloatWithPrecision(workPrecision)
-	exponentAtWorkPrecision.Set(numberToBigFloat(exponent.Number))
+	exponentAtWorkPrecision.Set(exponent.Number.BigFloat())
 
 	powerExponent := newFloatWithPrecision(workPrecision)
 	powerExponent.Mul(exponentAtWorkPrecision, lnBase)
@@ -523,12 +523,12 @@ func builtinStdMathRem(_ *RuntimeContext, args []Value) (Value, error) {
 }
 
 func stdMathRemNumbers(left *Number, right *Number) (*Number, error) {
-	if numberSign(right) == 0 {
+	if right.Sign() == 0 {
 		return nil, fmt.Errorf("MATH.REM divisor cannot be zero")
 	}
 
-	leftCoefficient, leftScale := numberCoefficientAndScale(left)
-	rightCoefficient, rightScale := numberCoefficientAndScale(right)
+	leftCoefficient, leftScale := left.CoefficientAndScale()
+	rightCoefficient, rightScale := right.CoefficientAndScale()
 
 	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
 
@@ -576,7 +576,7 @@ func stdMathExactInt64(name string, value Value, position int) (int64, bool, err
 }
 
 func stdMathFloorNumber(number *Number) *Number {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 	if scale == 0 {
 		return normaliseCoefficientAndScale(coefficient, 0)
 	}
@@ -594,7 +594,7 @@ func stdMathFloorNumber(number *Number) *Number {
 }
 
 func stdMathCeilNumber(number *Number) *Number {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 	if scale == 0 {
 		return normaliseCoefficientAndScale(coefficient, 0)
 	}
@@ -612,7 +612,7 @@ func stdMathCeilNumber(number *Number) *Number {
 }
 
 func stdMathTruncNumber(number *Number) *Number {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 	if scale == 0 {
 		return normaliseCoefficientAndScale(coefficient, 0)
 	}
@@ -624,7 +624,7 @@ func stdMathTruncNumber(number *Number) *Number {
 }
 
 func stdMathRoundNumber(number *Number) *Number {
-	coefficient, scale := numberCoefficientAndScale(number)
+	coefficient, scale := number.CoefficientAndScale()
 	if scale == 0 {
 		return normaliseCoefficientAndScale(coefficient, 0)
 	}
@@ -635,12 +635,12 @@ func stdMathRoundNumber(number *Number) *Number {
 }
 
 func stdMathModNumbers(left *Number, right *Number) (*Number, error) {
-	if numberSign(right) == 0 {
+	if right.Sign() == 0 {
 		return nil, fmt.Errorf("MATH.MOD divisor cannot be zero")
 	}
 
-	leftCoefficient, leftScale := numberCoefficientAndScale(left)
-	rightCoefficient, rightScale := numberCoefficientAndScale(right)
+	leftCoefficient, leftScale := left.CoefficientAndScale()
+	rightCoefficient, rightScale := right.CoefficientAndScale()
 
 	leftCoefficient, rightCoefficient, scale := alignCoefficients(leftCoefficient, leftScale, rightCoefficient, rightScale)
 
@@ -677,7 +677,7 @@ func stdMathPowerByInteger(base *Number, exponent int64) (*Number, error) {
 	magnitude := exponentMagnitude(exponent)
 
 	result := NewSmallNumber(1)
-	factor := CloneNumber(base)
+	factor := base.Clone()
 
 	for magnitude > 0 {
 		if magnitude%2 == 1 {

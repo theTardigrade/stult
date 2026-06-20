@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -113,7 +112,7 @@ func TestHugeDecimalComparisonPreservesWholePart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if numberCompare(left, right) <= 0 {
+	if left.Cmp(right) <= 0 {
 		t.Fatalf("expected %s to be greater than %s", left.Format(MaxDecimalPlaces), right.Format(MaxDecimalPlaces))
 	}
 }
@@ -141,4 +140,3 @@ func TestPercentageNumberLiteralScalesByHundred(t *testing.T) {
 		}
 	}
 }
-

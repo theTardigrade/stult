@@ -70,7 +70,7 @@ func StdTypeNumberNew(_ *RuntimeContext, args []Value) (Value, error) {
 
 	switch value.Kind {
 	case ValueNumber:
-		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+		return NewNumberValueFromNumber(value.Number.Clone()), nil
 
 	case ValueBool:
 		if value.Bool {

@@ -620,7 +620,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid number")
 		}
 
-		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+		return NewNumberValueFromNumber(value.Number.Clone()), nil
 
 	case ValueVoid,
 		ValueBool,

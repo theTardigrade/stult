@@ -231,7 +231,7 @@ func NewBigNumber(value *big.Float) *Number {
 	return newDecimalNumberFromBigFloat(value, MaxDecimalPlaces)
 }
 
-func CloneNumber(number *Number) *Number {
+func (number *Number) Clone() *Number {
 	if number == nil {
 		return NewSmallNumber(0)
 	}
@@ -276,7 +276,11 @@ func (number *Number) IsSmall() bool {
 }
 
 func (number *Number) BigFloat() *big.Float {
-	return numberToBigFloat(number)
+	return number.BigFloatWithPrecision(FloatPrecision)
+}
+
+func (number *Number) BigFloatWithPrecision(precision uint) *big.Float {
+	return numberToBigFloatWithPrecision(number, precision)
 }
 
 func (number *Number) Sign() int {
@@ -576,10 +580,6 @@ func numberSign(number *Number) int {
 	}
 }
 
-func numberToBigFloat(number *Number) *big.Float {
-	return numberToBigFloatWithPrecision(number, FloatPrecision)
-}
-
 func numberToBigFloatWithPrecision(number *Number, precision uint) *big.Float {
 	if precision < FloatPrecision {
 		precision = FloatPrecision
@@ -685,6 +685,10 @@ func normaliseCoefficientAndScale(coefficient *big.Int, scale int) *Number {
 		bigInt: coefficient,
 		scale:  scale,
 	}
+}
+
+func (number *Number) CoefficientAndScale() (*big.Int, int) {
+	return numberCoefficientAndScale(number)
 }
 
 func numberCoefficientAndScale(number *Number) (*big.Int, int) {
@@ -925,25 +929,6 @@ func multiplySmallNumbers(left int64, right int64) (int64, bool) {
 	}
 
 	return out, true
-}
-
-func numberToArrayIndex(index Value) (int, error) {
-	index = resolveSpecializedValue(index)
-
-	if index.Kind != ValueNumber {
-		return 0, fmt.Errorf("array index must be a number")
-	}
-
-	i, accuracy := index.Number.Int64()
-	if accuracy != big.Exact {
-		return 0, fmt.Errorf("array index must be an integer")
-	}
-
-	if int64(int(i)) != i {
-		return 0, fmt.Errorf("array index %d out of bounds", i)
-	}
-
-	return int(i), nil
 }
 
 func numberToInt64(value Value, name string) (int64, error) {
