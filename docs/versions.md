@@ -13,6 +13,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Reworked the internal array representation into ordinary slice-backed storage plus overflow chunks for extremely large dense arrays.
 * Array length and array iteration now use Stult-number indices rather than being inherently tied to the host slice index size.
 * Clarified that arrays remain finite, dense and resource-bounded, while strings remain host-representation-bounded Unicode code-point sequences.
+* Renamed the internal collection frozen-state fields from `IsImmutable` to `IsFrozen` for arrays, maps and strings, while keeping binding and map-entry rebinding metadata as `IsImmutable`.
 
 ### v0.7.6
 
@@ -244,5 +245,3 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
-
-
