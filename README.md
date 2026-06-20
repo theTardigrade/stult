@@ -705,7 +705,7 @@ person["NAME"]
 
 Map entries with identifier-shaped string keys can also be accessed with dot access.
 
-Dot access is syntax sugar for bracket indexing with a string key.
+Dot access is syntactic sugar for bracket indexing with a string key.
 
 ```stult
 record : {
