@@ -45,7 +45,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
-    - [Dot access](#dot-access)
+    - [Dot access for maps](#dot-access-for-maps)
     - [Freezing collections](#freezing-collections)
     - [Ranges](#ranges)
   - [Functions](#functions)
@@ -732,6 +732,29 @@ record["content-type"]
 record["first name"]
 record["123"]
 ```
+
+##### Leading dot access
+
+Inside a function written inside a map, a leading dot can be used to access fields from that map, as below:
+
+```stult
+person {
+	NAME: "Ada"
+	age: 36
+
+	birthday: { ()
+		STD.IO.OUTPUT.WRITE_LINE("Happy birthday, ", .NAME, ".")
+
+		.age :+ 1
+
+		(_)
+	}
+}
+```
+
+Here, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.age :+ 1` updates the `age` field from that same map.
+
+A leading dot only looks in the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
 
 #### Cloning and freezing collections
 
