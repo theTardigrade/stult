@@ -118,7 +118,7 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 }
 
 func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
-	if m.IsImmutable {
+	if m.IsFrozen {
 		return Value{}, fmt.Errorf("cannot modify frozen map")
 	}
 
@@ -165,7 +165,7 @@ func assignStringIndex(s *String, index Value, value Value) (Value, error) {
 		return Value{}, fmt.Errorf("invalid string")
 	}
 
-	if s.IsImmutable {
+	if s.IsFrozen {
 		return Value{}, fmt.Errorf("cannot modify frozen string")
 	}
 

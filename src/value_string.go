@@ -3,20 +3,20 @@ package main
 import "fmt"
 
 type String struct {
-	Runes       []rune
-	IsImmutable bool
+	Runes    []rune
+	IsFrozen bool
 }
 
 func NewStringValue(value string) Value {
-	return NewStringValueWithImmutability(value, false)
+	return NewStringValueWithFrozen(value, false)
 }
 
-func NewStringValueWithImmutability(value string, isImmutable bool) Value {
+func NewStringValueWithFrozen(value string, isFrozen bool) Value {
 	return Value{
 		Kind: ValueString,
 		Text: &String{
-			Runes:       []rune(value),
-			IsImmutable: isImmutable,
+			Runes:    []rune(value),
+			IsFrozen: isFrozen,
 		},
 	}
 }

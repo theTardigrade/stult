@@ -40,11 +40,11 @@ type bundledBytecodeFunction struct {
 }
 
 type bundledBytecodeValue struct {
-	Kind            ValueKind
-	Number          string
-	Bool            bool
-	String          string
-	StringImmutable bool
+	Kind         ValueKind
+	Number       string
+	Bool         bool
+	String       string
+	StringFrozen bool
 }
 
 func embeddedBundleWantsBytecode(files fs.FS) bool {
@@ -242,9 +242,9 @@ func bundledBytecodeValueFromValue(value Value) (bundledBytecodeValue, error) {
 		}
 
 		return bundledBytecodeValue{
-			Kind:            ValueString,
-			String:          value.Text.String(),
-			StringImmutable: value.Text.IsImmutable,
+			Kind:         ValueString,
+			String:       value.Text.String(),
+			StringFrozen: value.Text.IsFrozen,
 		}, nil
 
 	default:
@@ -323,7 +323,7 @@ func (value bundledBytecodeValue) toValue() (Value, error) {
 		return NewBoolValue(value.Bool), nil
 
 	case ValueString:
-		return NewStringValueWithImmutability(value.String, value.StringImmutable), nil
+		return NewStringValueWithFrozen(value.String, value.StringFrozen), nil
 
 	default:
 		return Value{}, fmt.Errorf("unsupported bytecode constant kind %d", value.Kind)

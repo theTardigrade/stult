@@ -7,16 +7,16 @@ import (
 )
 
 type Map struct {
-	Entries     map[string]Binding
-	IsImmutable bool
+	Entries  map[string]Binding
+	IsFrozen bool
 }
 
-func NewMapValue(entries map[string]Binding, isImmutable bool) Value {
+func NewMapValue(entries map[string]Binding, isFrozen bool) Value {
 	return Value{
 		Kind: ValueMap,
 		Map: &Map{
-			Entries:     entries,
-			IsImmutable: isImmutable,
+			Entries:  entries,
+			IsFrozen: isFrozen,
 		},
 	}
 }

@@ -16,17 +16,17 @@ var (
 )
 
 type Array struct {
-	Ordinary    []Value
-	Overflow    *ArrayOverflow
-	Length      *Number
-	IsImmutable bool
+	Ordinary []Value
+	Overflow *ArrayOverflow
+	Length   *Number
+	IsFrozen bool
 }
 
 type ArrayOverflow struct {
 	Chunks map[string][]Value
 }
 
-func NewArrayValue(elements []Value, isImmutable bool) Value {
+func NewArrayValue(elements []Value, isFrozen bool) Value {
 	array := &Array{
 		Length: NewSmallNumber(0),
 	}
@@ -40,7 +40,7 @@ func NewArrayValue(elements []Value, isImmutable bool) Value {
 		}
 	}
 
-	array.IsImmutable = isImmutable
+	array.IsFrozen = isFrozen
 
 	return Value{
 		Kind:  ValueArray,
@@ -96,7 +96,7 @@ func (array *Array) Set(index *Number, value Value) error {
 		return fmt.Errorf("invalid array")
 	}
 
-	if array.IsImmutable {
+	if array.IsFrozen {
 		return fmt.Errorf("cannot modify frozen array")
 	}
 
@@ -163,7 +163,7 @@ func (array *Array) Clear() error {
 		return fmt.Errorf("invalid array")
 	}
 
-	if array.IsImmutable {
+	if array.IsFrozen {
 		return fmt.Errorf("cannot modify frozen array")
 	}
 

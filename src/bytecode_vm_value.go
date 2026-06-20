@@ -625,7 +625,7 @@ func bytecodeCloneValueForLoad(value Value) Value {
 			return value
 		}
 
-		return NewStringValueWithImmutability(value.Text.String(), value.Text.IsImmutable)
+		return NewStringValueWithFrozen(value.Text.String(), value.Text.IsFrozen)
 
 	default:
 		return value

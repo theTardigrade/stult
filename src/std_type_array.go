@@ -39,7 +39,7 @@ func appendArrayValue(target Value, value Value) error {
 		return fmt.Errorf("TYPE.ARRAY.APPEND cannot append to invalid array")
 	}
 
-	if target.Array.IsImmutable {
+	if target.Array.IsFrozen {
 		return fmt.Errorf("cannot modify frozen array")
 	}
 

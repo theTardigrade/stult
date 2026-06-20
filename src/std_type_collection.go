@@ -307,7 +307,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid map")
 		}
 
-		if value.Map.IsImmutable {
+		if value.Map.IsFrozen {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
 		}
 
@@ -319,7 +319,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid array")
 		}
 
-		if value.Array.IsImmutable {
+		if value.Array.IsFrozen {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen array")
 		}
 
@@ -334,7 +334,7 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid string")
 		}
 
-		if value.Text.IsImmutable {
+		if value.Text.IsFrozen {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen string")
 		}
 
@@ -403,21 +403,21 @@ func StdTypeCollectionIsFrozen(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_FROZEN cannot inspect invalid map")
 		}
 
-		return NewBoolValue(value.Map.IsImmutable), nil
+		return NewBoolValue(value.Map.IsFrozen), nil
 
 	case ValueArray:
 		if value.Array == nil {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_FROZEN cannot inspect invalid array")
 		}
 
-		return NewBoolValue(value.Array.IsImmutable), nil
+		return NewBoolValue(value.Array.IsFrozen), nil
 
 	case ValueString:
 		if value.Text == nil {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_FROZEN cannot inspect invalid string")
 		}
 
-		return NewBoolValue(value.Text.IsImmutable), nil
+		return NewBoolValue(value.Text.IsFrozen), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -453,7 +453,7 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 		}
 
 		state.maps[value.Map] = true
-		value.Map.IsImmutable = true
+		value.Map.IsFrozen = true
 
 		for key, binding := range value.Map.Entries {
 			frozenValue, err := deepFreezeNestedCollectionValue(binding.Value, state)
@@ -472,7 +472,7 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze invalid array")
 		}
 
-		if state.arrays[value.Array] || value.Array.IsImmutable {
+		if state.arrays[value.Array] || value.Array.IsFrozen {
 			return value, nil
 		}
 
@@ -489,7 +489,7 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 			return Value{}, err
 		}
 
-		value.Array.IsImmutable = true
+		value.Array.IsFrozen = true
 		return value, nil
 
 	case ValueString:
@@ -502,7 +502,7 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 		}
 
 		state.strings[value.Text] = true
-		value.Text.IsImmutable = true
+		value.Text.IsFrozen = true
 
 		return value, nil
 
@@ -554,8 +554,8 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Map{
-			Entries:     make(map[string]Binding, len(value.Map.Entries)),
-			IsImmutable: false,
+			Entries:  make(map[string]Binding, len(value.Map.Entries)),
+			IsFrozen: false,
 		}
 
 		state.maps[value.Map] = clone
@@ -584,9 +584,9 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Array{
-			Ordinary:    make([]Value, 0, len(value.Array.Ordinary)),
-			Length:      NewSmallNumber(0),
-			IsImmutable: false,
+			Ordinary: make([]Value, 0, len(value.Array.Ordinary)),
+			Length:   NewSmallNumber(0),
+			IsFrozen: false,
 		}
 
 		state.arrays[value.Array] = clone
@@ -618,8 +618,8 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &String{
-			Runes:       append([]rune(nil), value.Text.Runes...),
-			IsImmutable: false,
+			Runes:    append([]rune(nil), value.Text.Runes...),
+			IsFrozen: false,
 		}
 
 		state.strings[value.Text] = clone
