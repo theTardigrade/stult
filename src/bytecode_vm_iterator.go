@@ -244,16 +244,13 @@ func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) 
 			return vm.jump(target)
 		}
 
-		binding, ok, err := m.Binding(key)
-		if err != nil {
-			return err
-		}
+		binding, ok := m.Entries[key]
 
 		iterator.LastMapKey = key
 		iterator.HasLastMapKey = true
 
 		if !ok {
-			return fmt.Errorf("invalid map storage")
+			continue
 		}
 
 		iterator.Position++
@@ -274,20 +271,16 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 	}
 
 	position := iterator.Position + 1
-	key := NewNumberValueFromInt(position)
-	value, ok, err := text.Get(key.Number)
-	if err != nil {
-		return err
-	}
-
-	if !ok {
+	if position >= len(text.Runes) {
 		iterator.HasCurrent = false
 		return vm.jump(target)
 	}
 
+	key := NewNumberValueFromInt(position)
+
 	iterator.Position = position
 	iterator.CurrentKey = key
-	iterator.CurrentValue = value
+	iterator.CurrentValue = NewStringValue(string(text.Runes[position]))
 	iterator.CurrentPosition = key
 	iterator.HasCurrent = true
 

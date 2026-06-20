@@ -118,8 +118,30 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 }
 
 func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
-	if err := m.Set(index, value); err != nil {
-		return Value{}, err
+	if m.IsFrozen {
+		return Value{}, fmt.Errorf("cannot modify frozen map")
+	}
+
+	if index.Kind != ValueString {
+		return Value{}, fmt.Errorf("map index must be a string")
+	}
+
+	key := index.Text.String()
+
+	binding, exists := m.Entries[key]
+	if exists && binding.IsImmutable {
+		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", key)
+	}
+
+	if exists {
+		binding.Value = value
+		m.Entries[key] = binding
+		return value, nil
+	}
+
+	m.Entries[key] = Binding{
+		Value:       value,
+		IsImmutable: isImmutableIdentifier(key),
 	}
 
 	return value, nil
@@ -139,14 +161,41 @@ func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
 }
 
 func assignStringIndex(s *String, index Value, value Value) (Value, error) {
-	index = resolveSpecializedValue(index)
-	if index.Kind != ValueNumber {
-		return Value{}, fmt.Errorf("string index must be a number")
+	if s == nil {
+		return Value{}, fmt.Errorf("invalid string")
 	}
 
-	if err := s.Set(index.Number, value); err != nil {
+	if s.IsFrozen {
+		return Value{}, fmt.Errorf("cannot modify frozen string")
+	}
+
+	stringIndex, err := numberToArrayIndex(index)
+	if err != nil {
 		return Value{}, err
 	}
 
+	if stringIndex < 0 {
+		return Value{}, fmt.Errorf("string index cannot be negative")
+	}
+
+	if stringIndex > len(s.Runes) {
+		return Value{}, fmt.Errorf(
+			"string index %d is past the next append position %d",
+			stringIndex,
+			len(s.Runes),
+		)
+	}
+
+	replacement, err := stringAssignmentRune(value)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if stringIndex == len(s.Runes) {
+		s.Runes = append(s.Runes, replacement)
+		return value, nil
+	}
+
+	s.Runes[stringIndex] = replacement
 	return value, nil
 }

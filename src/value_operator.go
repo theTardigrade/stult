@@ -69,16 +69,16 @@ func evalBinary(operator string, left Value, right Value) (Value, error) {
 		return NewNumberValueFromNumber(out), nil
 
 	case "<":
-		return NewBoolValue(left.Number.Cmp(right.Number) < 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) < 0), nil
 
 	case "<=":
-		return NewBoolValue(left.Number.Cmp(right.Number) <= 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) <= 0), nil
 
 	case ">":
-		return NewBoolValue(left.Number.Cmp(right.Number) > 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) > 0), nil
 
 	case ">=":
-		return NewBoolValue(left.Number.Cmp(right.Number) >= 0), nil
+		return NewBoolValue(numberCompare(left.Number, right.Number) >= 0), nil
 
 	default:
 		return Value{}, fmt.Errorf("unknown binary operator %q", operator)

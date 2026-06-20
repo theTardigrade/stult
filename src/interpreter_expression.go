@@ -323,25 +323,18 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 
 	switch object.Kind {
 	case ValueMap:
-		if object.Map == nil {
-			return Value{}, fmt.Errorf("invalid map")
+		if index.Kind != ValueString {
+			return Value{}, fmt.Errorf("map index must be a string")
 		}
 
-		key, err := mapKeyString(index)
-		if err != nil {
-			return Value{}, err
-		}
+		key := index.Text.String()
 
-		value, ok, err := object.Map.GetFromString(key)
-		if err != nil {
-			return Value{}, err
-		}
-
+		binding, ok := object.Map.Entries[key]
 		if !ok {
 			return Value{}, fmt.Errorf("map has no key %q", key)
 		}
 
-		return value, nil
+		return binding.Value, nil
 
 	case ValueArray:
 		index = resolveSpecializedValue(index)
@@ -361,25 +354,20 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		return value, nil
 
 	case ValueString:
-		if object.Text == nil {
-			return Value{}, fmt.Errorf("invalid string")
-		}
-
-		index = resolveSpecializedValue(index)
-		if index.Kind != ValueNumber {
-			return Value{}, fmt.Errorf("string index must be a number")
-		}
-
-		value, ok, err := object.Text.Get(index.Number)
+		stringIndex, err := numberToArrayIndex(index)
 		if err != nil {
 			return Value{}, err
 		}
 
-		if !ok {
-			return Value{}, fmt.Errorf("string index %s out of bounds", formatStringIndex(index.Number))
+		if object.Text == nil {
+			return Value{}, fmt.Errorf("invalid string")
 		}
 
-		return value, nil
+		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
+			return Value{}, fmt.Errorf("string index %d out of bounds", stringIndex)
+		}
+
+		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")

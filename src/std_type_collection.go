@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 type collectionFreezeState struct {
 	maps    map[*Map]bool
@@ -50,7 +53,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid map")
 		}
 
-		return NewNumberValueFromNumber(value.Map.Len()), nil
+		return NewNumberValueFromInt(len(value.Map.Entries)), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -64,7 +67,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid string")
 		}
 
-		return NewNumberValueFromNumber(value.Text.Len()), nil
+		return NewNumberValueFromInt(len(value.Text.Runes)), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -91,7 +94,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid map")
 		}
 
-		return NewBoolValue(value.Map.Len().Sign() == 0), nil
+		return NewBoolValue(len(value.Map.Entries) == 0), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -105,7 +108,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid string")
 		}
 
-		return NewBoolValue(value.Text.Len().Sign() == 0), nil
+		return NewBoolValue(len(value.Text.Runes) == 0), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -134,21 +137,16 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid map")
 		}
 
-		keyText, err := mapKeyString(key)
-		if err != nil {
+		if key.Kind != ValueString || key.Text == nil {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET map key must be a string")
 		}
 
-		value, exists, err := collection.Map.GetFromString(keyText)
-		if err != nil {
-			return Value{}, err
-		}
-
+		binding, exists := collection.Map.Entries[key.Text.String()]
 		if !exists {
 			return fallback, nil
 		}
 
-		return value, nil
+		return binding.Value, nil
 
 	case ValueArray:
 		if collection.Array == nil {
@@ -175,20 +173,16 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid string")
 		}
 
-		if key.Kind != ValueNumber {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET string index must be a number")
-		}
-
-		value, exists, err := collection.Text.Get(key.Number)
+		index, valid, err := collectionGetIndex(key, "string")
 		if err != nil {
 			return Value{}, err
 		}
 
-		if !exists {
+		if !valid || index >= len(collection.Text.Runes) {
 			return fallback, nil
 		}
 
-		return value, nil
+		return NewStringValue(string(collection.Text.Runes[index])), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -210,6 +204,35 @@ func collectionGetFallback(args []Value) Value {
 	return NewVoidValue()
 }
 
+func collectionGetIndex(key Value, collectionName string) (int, bool, error) {
+	key = resolveSpecializedValue(key)
+
+	if key.Kind != ValueNumber {
+		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be a number", collectionName)
+	}
+
+	integer, accuracy := key.Number.Int(nil)
+	if accuracy != big.Exact {
+		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be an integer", collectionName)
+	}
+
+	if integer.Sign() < 0 {
+		return 0, false, nil
+	}
+
+	if !integer.IsInt64() {
+		return 0, false, nil
+	}
+
+	index64 := integer.Int64()
+	index := int(index64)
+	if int64(index) != index64 {
+		return 0, false, nil
+	}
+
+	return index, true, nil
+}
+
 func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS expected 2 arguments, got %d", len(args))
@@ -224,16 +247,11 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid map")
 		}
 
-		keyText, err := mapKeyString(key)
-		if err != nil {
+		if key.Kind != ValueString || key.Text == nil {
 			return NewBoolValue(false), nil
 		}
 
-		_, exists, err := collection.Map.GetFromString(keyText)
-		if err != nil {
-			return NewBoolValue(false), nil
-		}
-
+		_, exists := collection.Map.Entries[key.Text.String()]
 		return NewBoolValue(exists), nil
 
 	case ValueArray:
@@ -257,16 +275,12 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid string")
 		}
 
-		if key.Kind != ValueNumber {
-			return NewBoolValue(false), nil
-		}
-
-		_, exists, err := collection.Text.Get(key.Number)
+		index, err := numberToArrayIndex(key)
 		if err != nil {
 			return NewBoolValue(false), nil
 		}
 
-		return NewBoolValue(exists), nil
+		return NewBoolValue(index >= 0 && index < len(collection.Text.Runes)), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -293,14 +307,11 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid map")
 		}
 
-		if err := value.Map.Clear(); err != nil {
-			if value.Map.IsFrozen {
-				return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
-			}
-
-			return Value{}, err
+		if value.Map.IsFrozen {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
 		}
 
+		value.Map.Entries = make(map[string]Binding)
 		return NewVoidValue(), nil
 
 	case ValueArray:
@@ -323,10 +334,11 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid string")
 		}
 
-		if err := value.Text.Clear(); err != nil {
-			return Value{}, err
+		if value.Text.IsFrozen {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen string")
 		}
 
+		value.Text.Runes = nil
 		return NewVoidValue(), nil
 
 	case ValueVoid,
@@ -443,16 +455,14 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 		state.maps[value.Map] = true
 		value.Map.IsFrozen = true
 
-		if err := value.Map.ForEach(func(key string, binding Binding) error {
+		for key, binding := range value.Map.Entries {
 			frozenValue, err := deepFreezeNestedCollectionValue(binding.Value, state)
 			if err != nil {
-				return err
+				return Value{}, err
 			}
 
 			binding.Value = frozenValue
-			return value.Map.SetBindingUnchecked(key, binding)
-		}); err != nil {
-			return Value{}, err
+			value.Map.Entries[key] = binding
 		}
 
 		return value, nil
@@ -544,24 +554,22 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Map{
-			Entries:  make(map[string]Binding, len(value.Map.Keys())),
+			Entries:  make(map[string]Binding, len(value.Map.Entries)),
 			IsFrozen: false,
 		}
 
 		state.maps[value.Map] = clone
 
-		if err := value.Map.ForEach(func(key string, binding Binding) error {
+		for key, binding := range value.Map.Entries {
 			clonedValue, err := deepCloneValue(binding.Value, state)
 			if err != nil {
-				return err
+				return Value{}, err
 			}
 
-			return clone.SetBindingUnchecked(key, Binding{
+			clone.Entries[key] = Binding{
 				Value:       clonedValue,
 				IsImmutable: binding.IsImmutable,
-			})
-		}); err != nil {
-			return Value{}, err
+			}
 		}
 
 		return Value{Kind: ValueMap, Map: clone}, nil
@@ -609,7 +617,10 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueString, Text: clone}, nil
 		}
 
-		clone := NewStringValue(value.Text.String()).Text
+		clone := &String{
+			Runes:    append([]rune(nil), value.Text.Runes...),
+			IsFrozen: false,
+		}
 
 		state.strings[value.Text] = clone
 
@@ -620,7 +631,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid number")
 		}
 
-		return NewNumberValueFromNumber(value.Number.Clone()), nil
+		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
 
 	case ValueVoid,
 		ValueBool,

@@ -188,16 +188,13 @@ func stdJSONFromValue(value Value) (any, error) {
 
 		entries := make(map[string]any)
 
-		if err := value.Map.ForEach(func(key string, binding Binding) error {
+		for key, binding := range value.Map.Entries {
 			converted, err := stdJSONFromValue(binding.Value)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			entries[key] = converted
-			return nil
-		}); err != nil {
-			return nil, err
 		}
 
 		return entries, nil

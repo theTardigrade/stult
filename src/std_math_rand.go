@@ -32,7 +32,7 @@ func builtinStdMathRandNumber(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	if lower.Number.Cmp(upper.Number) >= 0 {
+	if numberCompare(lower.Number, upper.Number) >= 0 {
 		return Value{}, fmt.Errorf(
 			"MATH.RAND.NUMBER inclusive lower bound must be less than exclusive upper bound",
 		)
@@ -112,57 +112,34 @@ func builtinStdMathRandChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from invalid string")
 		}
 
-		length, err := stdMathRandStringLength(value.Text, "MATH.RAND.CHOICE")
-		if err != nil {
-			return Value{}, err
-		}
-
-		if length == 0 {
+		if len(value.Text.Runes) == 0 {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty string")
 		}
 
-		index, err := stdMathRandIndex(length)
+		index, err := stdMathRandIndex(len(value.Text.Runes))
 		if err != nil {
 			return Value{}, err
 		}
 
-		chosen, ok, err := value.Text.Get(NewSmallNumber(int64(index)))
-		if err != nil {
-			return Value{}, err
-		}
-
-		if !ok {
-			return Value{}, fmt.Errorf("MATH.RAND.CHOICE generated string index out of bounds")
-		}
-
-		return chosen, nil
+		return NewStringValue(string(value.Text.Runes[index])), nil
 
 	case ValueMap:
 		if value.Map == nil {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from invalid map")
 		}
 
-		if value.Map.Len().Sign() == 0 {
+		if len(value.Map.Entries) == 0 {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty map")
 		}
 
-		keys := value.Map.Keys()
+		keys := sortedMapKeys(value.Map)
 
 		index, err := stdMathRandIndex(len(keys))
 		if err != nil {
 			return Value{}, err
 		}
 
-		chosen, exists, err := value.Map.GetFromString(keys[index])
-		if err != nil {
-			return Value{}, err
-		}
-
-		if !exists {
-			return Value{}, fmt.Errorf("invalid map storage")
-		}
-
-		return chosen, nil
+		return value.Map.Entries[keys[index]].Value, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -212,7 +189,7 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.SHUFFLE cannot shuffle invalid string")
 		}
 
-		runes := []rune(value.Text.String())
+		runes := append([]rune{}, value.Text.Runes...)
 
 		if err := stdMathRandShuffleRunes(runes); err != nil {
 			return Value{}, err
@@ -225,20 +202,11 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.SHUFFLE cannot shuffle invalid map")
 		}
 
-		keys := value.Map.Keys()
+		keys := sortedMapKeys(value.Map)
 		values := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
-			entryValue, exists, err := value.Map.GetFromString(key)
-			if err != nil {
-				return Value{}, err
-			}
-
-			if !exists {
-				return Value{}, fmt.Errorf("invalid map storage")
-			}
-
-			values = append(values, entryValue)
+			values = append(values, value.Map.Entries[key].Value)
 		}
 
 		if err := stdMathRandShuffleValues(values); err != nil {
@@ -248,14 +216,7 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 		entries := make(map[string]Binding, len(keys))
 
 		for index, key := range keys {
-			originalBinding, exists, err := value.Map.Binding(key)
-			if err != nil {
-				return Value{}, err
-			}
-
-			if !exists {
-				return Value{}, fmt.Errorf("invalid map storage")
-			}
+			originalBinding := value.Map.Entries[key]
 
 			entries[key] = Binding{
 				Value:       values[index],
@@ -332,7 +293,7 @@ func stdMathRandInteger(minimum *Number, maximum *Number) (*Number, error) {
 }
 
 func stdMathRandScaledCoefficient(number *Number, targetScale int) *big.Int {
-	coefficient, scale := number.CoefficientAndScale()
+	coefficient, scale := numberCoefficientAndScale(number)
 
 	out := new(big.Int)
 	out.Set(coefficient)
@@ -349,7 +310,7 @@ func stdMathRandScaledCoefficient(number *Number, targetScale int) *big.Int {
 }
 
 func stdMathRandExactInteger(number *Number) (*big.Int, bool) {
-	coefficient, scale := number.CoefficientAndScale()
+	coefficient, scale := numberCoefficientAndScale(number)
 
 	if scale == 0 {
 		return coefficient, true
@@ -367,24 +328,6 @@ func stdMathRandExactInteger(number *Number) (*big.Int, bool) {
 	}
 
 	return quotient, true
-}
-
-func stdMathRandStringLength(text *String, name string) (int, error) {
-	if text == nil {
-		return 0, fmt.Errorf("%s cannot inspect invalid string", name)
-	}
-
-	length64, accuracy := text.Len().Int64()
-	if accuracy != big.Exact {
-		return 0, fmt.Errorf("%s string length must be an integer", name)
-	}
-
-	length := int(length64)
-	if int64(length) != length64 {
-		return 0, fmt.Errorf("%s string length is too large for this operation", name)
-	}
-
-	return length, nil
 }
 
 func stdMathRandArrayLength(array *Array, name string) (int, error) {

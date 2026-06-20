@@ -107,15 +107,18 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 	}
 
 	position := 0
+	lastKey := ""
+	hasLastKey := false
 
-	for _, key := range m.Keys() {
-		binding, ok, err := m.Binding(key)
-		if err != nil {
-			return Value{}, err
+	for {
+		key, ok := nextMapRangeKey(m, lastKey, hasLastKey)
+		if !ok {
+			break
 		}
 
+		binding, ok := m.Entries[key]
 		if !ok {
-			return Value{}, fmt.Errorf("invalid map storage")
+			continue
 		}
 
 		loopBindings := collectionRangeBindings(
@@ -139,6 +142,8 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 			return Value{}, err
 		}
 
+		lastKey = key
+		hasLastKey = true
 		position++
 	}
 
@@ -200,30 +205,33 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		return Value{}, fmt.Errorf("cannot range over invalid string")
 	}
 
-	if err := s.ForEach(func(index *Number, value Value) error {
-		key := NewNumberValueFromNumber(index)
+	index := 0
+
+	for index < len(s.Runes) {
+		key := NewNumberValueFromInt(index)
 
 		loopBindings := collectionRangeBindings(
 			stmt.RangeParameters,
-			value,
+			NewStringValue(string(s.Runes[index])),
 			key,
 			Value{Kind: ValueString, Text: s},
 			key,
 		)
 
-		_, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings)
-		return err
-	}); err != nil {
-		if flow, ok := asControlFlow(err); ok {
-			switch flow.Kind {
-			case controlFlowBreak:
-				return i.evalAfterLoopBody(stmt)
-			case controlFlowReturn:
-				return Value{}, flow
+		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
+			if flow, ok := asControlFlow(err); ok {
+				switch flow.Kind {
+				case controlFlowBreak:
+					return i.evalAfterLoopBody(stmt)
+				case controlFlowReturn:
+					return Value{}, flow
+				}
 			}
+
+			return Value{}, err
 		}
 
-		return Value{}, err
+		index++
 	}
 
 	return i.evalAfterLoopBody(stmt)

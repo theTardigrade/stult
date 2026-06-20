@@ -1347,7 +1347,7 @@ STD.TYPE.COLLECTION.GET(items, 30, "missing") # missing
 STD.TYPE.COLLECTION.GET(items, -1)             # _
 ```
 
-For strings, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns a new one-rune string. If the index is negative, out of bounds, or too large to be a possible host-backed string index, `GET` returns the optional default value, or `_` when no default value was supplied.
+For strings, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns a new one-rune string. If the index is negative or out of bounds, `GET` returns the optional default value, or `_` when no default value was supplied. String indices are checked against the string's code-point length.
 
 ```stult
 STD.TYPE.COLLECTION.GET("cat", 1, "missing")  # a

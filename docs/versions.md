@@ -8,6 +8,14 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Centralised collection access and mutation behind value-owned method layers for arrays, strings and maps. This is an internal implementation cleanup with no intended user-visible language change.
+* Array behaviour is now owned by `Array` methods such as `Len`, `Get`, `Set`, `Append`, `Clear` and `ForEach`, keeping ordinary and overflow storage details representation-local.
+* String behaviour is now owned by `String` methods such as `Len`, `Get`, `Set`, `Append`, `Clear` and `ForEach`, keeping direct rune-slice access representation-local.
+* Map behaviour is now owned by `Map` methods such as `Len`, `Get`, `Set`, `Define`, `ForEach`, `Keys` and `Clear`, while preserving the distinction between map frozen state and per-entry binding immutability.
+* Cleaned up number internals by moving useful conversion and cloning operations onto `Number` methods and removing the unused `numberToArrayIndex` helper.
+
 ### v0.7.7
 
 * Reworked the internal array representation into ordinary slice-backed storage plus overflow chunks for extremely large dense arrays.

@@ -98,9 +98,9 @@ func builtinStdMathRadians(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathTrigWorkingPrecision(value.Number)
 
 	degrees := newFloatWithPrecision(workPrecision)
-	degrees.Set(value.Number.BigFloatWithPrecision(workPrecision))
+	degrees.Set(numberToBigFloatWithPrecision(value.Number, workPrecision))
 
-	pi := calculatePiValue(workPrecision).Number.BigFloatWithPrecision(workPrecision)
+	pi := numberToBigFloatWithPrecision(calculatePiValue(workPrecision).Number, workPrecision)
 
 	out := newFloatWithPrecision(workPrecision)
 	out.Mul(degrees, pi)
@@ -118,9 +118,9 @@ func builtinStdMathDegrees(_ *RuntimeContext, args []Value) (Value, error) {
 	workPrecision := stdMathTrigWorkingPrecision(value.Number)
 
 	radians := newFloatWithPrecision(workPrecision)
-	radians.Set(value.Number.BigFloatWithPrecision(workPrecision))
+	radians.Set(numberToBigFloatWithPrecision(value.Number, workPrecision))
 
-	pi := calculatePiValue(workPrecision).Number.BigFloatWithPrecision(workPrecision)
+	pi := numberToBigFloatWithPrecision(calculatePiValue(workPrecision).Number, workPrecision)
 
 	out := newFloatWithPrecision(workPrecision)
 	out.Mul(radians, newFloatWithPrecision(workPrecision).SetInt64(180))
@@ -133,11 +133,11 @@ func stdMathTrigWorkingPrecision(values ...*Number) uint {
 	precision := FloatPrecision + StdMathTrigGuardPrecisionBits
 
 	for _, value := range values {
-		if value == nil || value.Sign() == 0 {
+		if value == nil || numberSign(value) == 0 {
 			continue
 		}
 
-		floatValue := value.BigFloat()
+		floatValue := numberToBigFloat(value)
 		mantissa := new(big.Float)
 		exponent := floatValue.MantExp(mantissa)
 
@@ -155,9 +155,9 @@ func reduceTrigAngle(value *Number, precision uint) (*big.Float, int, error) {
 	}
 
 	x := newFloatWithPrecision(precision)
-	x.Set(value.BigFloatWithPrecision(precision))
+	x.Set(numberToBigFloatWithPrecision(value, precision))
 
-	pi := calculatePiValue(precision).Number.BigFloatWithPrecision(precision)
+	pi := numberToBigFloatWithPrecision(calculatePiValue(precision).Number, precision)
 
 	tau := newFloatWithPrecision(precision)
 	tau.Mul(pi, newFloatWithPrecision(precision).SetInt64(2))
