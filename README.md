@@ -733,28 +733,54 @@ record["first name"]
 record["123"]
 ```
 
-##### Leading dot access
+##### Leading dot for keys in a map
 
-Inside a function written inside a map, a leading dot can be used to access fields from that map, as below:
+Inside a map literal, a leading dot can be used as shorthand for an identifier-shaped string key.
 
 ```stult
 person : {
-	NAME : "Ada"
-	age : 36
-
-	handle_birthday : { ()
-		STD.IO.OUTPUT.WRITE_LINE("Happy birthday, ", .NAME, ".")
-
-		.age :+ 1
-
-		(_)
-	}
+	.NAME : "Andrew"
+	.age : 51
 }
 ```
 
-In the `handle_birthday` function, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.age :+ 1` increments the `age` field from that same map.
+This is equivalent to:
 
-A leading dot only looks in the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
+```stult
+person : {
+	"NAME" : "Andrew"
+	"age" : 51
+}
+```
+
+The identifier spelling is preserved exactly. This means that `.NAME` creates the key `"NAME"` and `.age` creates the key `"age"`.
+
+The usual map-entry mutability rules still apply, so `.NAME` creates an immutable map entry and `.age` creates a mutable map entry.
+
+##### Leading dot for accessing fields within a map's function
+
+Inside a function written inside a map, a leading dot can be used to access fields from that map.
+
+```stult
+person : {
+	.NAME : "Erica"
+	.age : 36
+
+	.handle_birthday : { ()
+		BIRTHDAY_GREETING : "Happy birthday, " + .NAME + "."
+
+		.age :+ 1
+
+		(BIRTHDAY_GREETING)
+	}
+}
+
+STD.IO.OUTPUT.WRITE_LINE(person.handle_birthday())
+```
+
+Here, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.age :+ 1` updates the `age` field from that same map.
+
+A leading dot used in this way only looks within the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
 
 #### Cloning and freezing collections
 
