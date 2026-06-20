@@ -63,10 +63,10 @@ func (m *Map) Set(key Value, value Value) error {
 		return err
 	}
 
-	return m.SetString(keyText, value)
+	return m.SetFromString(keyText, value)
 }
 
-func (m *Map) SetString(key string, value Value) error {
+func (m *Map) SetFromString(key string, value Value) error {
 	if m == nil {
 		return fmt.Errorf("invalid map")
 	}
