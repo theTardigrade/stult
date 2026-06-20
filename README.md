@@ -7,7 +7,7 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- dense arrays of unbounded length,
+- dense arrays of unbounded length that can grow dynamically,
 - maps, strings, functions, conditionals, loops and ranges,
 - try-catch blocks, conditional expressions and match expressions,
 - concise literals for booleans, arrays, maps and void,
@@ -19,6 +19,7 @@ Idiomatic Stult code should be light on syntax, but never deliberately cryptic.
 Source files use the `.stult` extension.
 
 STULTON, Stult’s native data notation, uses the `.stulton` extension.
+
 
 ## Contents
 
@@ -654,6 +655,14 @@ VALUE : 5
 ### Collections
 
 Arrays, maps and strings can be indexed. For this reason, we call them collections.
+
+Arrays are ordered lists of values. You can read or replace an item by index, and assigning to the next index appends a new item.
+
+Strings are ordered sequences of characters. Strings are generally used to store text. They can be indexed and updated in much the same way as arrays (although extremely large strings are limited by the host system, ).
+
+Maps store values under string keys. Map entries can be mutable or immutable, depending on the same capitalization rules that apply to ordinary bindings.
+
+Arrays and maps can grow as your program runs, subject to available memory and processing time. Strings can also grow when you append characters, but extremely large strings are still limited by the host system. Most programs will never come close to those limits.
 
 Arrays use `{}`:
 
