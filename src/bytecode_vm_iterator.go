@@ -1,13 +1,18 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/big"
+)
 
 type bytecodeVMIterator struct {
 	Source              Value
 	ParameterCount      int
 	Position            int
+	ArrayIndex          *big.Int
 	CurrentKey          Value
 	CurrentValue        Value
+	CurrentPosition     Value
 	HasCurrent          bool
 	LastMapKey          string
 	HasLastMapKey       bool
@@ -66,12 +71,13 @@ func newBytecodeVMDirectRangeIterator(
 	parameterCount int,
 ) (bytecodeVMIterator, error) {
 	iterator := bytecodeVMIterator{
-		Source:         NewVoidValue(),
-		ParameterCount: parameterCount,
-		Position:       -1,
-		CurrentKey:     NewVoidValue(),
-		CurrentValue:   NewVoidValue(),
-		HasCurrent:     false,
+		Source:          NewVoidValue(),
+		ParameterCount:  parameterCount,
+		Position:        -1,
+		CurrentKey:      NewVoidValue(),
+		CurrentValue:    NewVoidValue(),
+		CurrentPosition: NewVoidValue(),
+		HasCurrent:      false,
 	}
 
 	if !isValidFunctionRangeParameterCount(parameterCount) {
@@ -92,14 +98,15 @@ func newBytecodeVMIterator(source Value, parameterCount int) (bytecodeVMIterator
 	source = resolveSpecializedValue(source)
 
 	iterator := bytecodeVMIterator{
-		Source:         source,
-		ParameterCount: parameterCount,
-		Position:       -1,
-		CurrentKey:     NewVoidValue(),
-		CurrentValue:   NewVoidValue(),
-		HasCurrent:     false,
-		LastMapKey:     "",
-		HasLastMapKey:  false,
+		Source:          source,
+		ParameterCount:  parameterCount,
+		Position:        -1,
+		CurrentKey:      NewVoidValue(),
+		CurrentValue:    NewVoidValue(),
+		CurrentPosition: NewVoidValue(),
+		HasCurrent:      false,
+		LastMapKey:      "",
+		HasLastMapKey:   false,
 	}
 
 	switch source.Kind {
@@ -187,6 +194,7 @@ func (vm *BytecodeVM) iteratorNextDirectRange(iterator *bytecodeVMIterator, targ
 	iterator.Position = position
 	iterator.CurrentKey = positionValue
 	iterator.CurrentValue = value
+	iterator.CurrentPosition = positionValue
 	iterator.HasCurrent = true
 
 	return nil
@@ -198,8 +206,12 @@ func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int
 		return fmt.Errorf("invalid array")
 	}
 
-	position := iterator.Position + 1
-	key := NewNumberValueFromInt(position)
+	index := big.NewInt(0)
+	if iterator.ArrayIndex != nil {
+		index = new(big.Int).Add(iterator.ArrayIndex, big.NewInt(1))
+	}
+
+	key := NewNumberValueFromBigInt(index)
 	value, ok, err := array.Get(key.Number)
 	if err != nil {
 		return err
@@ -210,9 +222,10 @@ func (vm *BytecodeVM) iteratorNextArray(iterator *bytecodeVMIterator, target int
 		return vm.jump(target)
 	}
 
-	iterator.Position = position
+	iterator.ArrayIndex = new(big.Int).Set(index)
 	iterator.CurrentKey = key
 	iterator.CurrentValue = value
+	iterator.CurrentPosition = key
 	iterator.HasCurrent = true
 
 	return nil
@@ -241,8 +254,10 @@ func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) 
 		}
 
 		iterator.Position++
+		positionValue := NewNumberValueFromInt(iterator.Position)
 		iterator.CurrentKey = NewStringValue(key)
 		iterator.CurrentValue = binding.Value
+		iterator.CurrentPosition = positionValue
 		iterator.HasCurrent = true
 
 		return nil
@@ -266,6 +281,7 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 	iterator.Position = position
 	iterator.CurrentKey = key
 	iterator.CurrentValue = NewStringValue(string(text.Runes[position]))
+	iterator.CurrentPosition = key
 	iterator.HasCurrent = true
 
 	return nil
@@ -299,6 +315,7 @@ func (vm *BytecodeVM) iteratorNextFunction(iterator *bytecodeVMIterator, target 
 	iterator.Position = position
 	iterator.CurrentKey = positionValue
 	iterator.CurrentValue = value
+	iterator.CurrentPosition = positionValue
 	iterator.HasCurrent = true
 
 	return nil
@@ -370,7 +387,7 @@ func (vm *BytecodeVM) storeIteratorPosition(instructionIndex int, localIndex int
 
 	if err := vm.storeLocal(
 		localIndex,
-		NewNumberValueFromInt(iterator.Position),
+		iterator.CurrentPosition,
 		false,
 		true,
 	); err != nil {

@@ -323,7 +323,10 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen array")
 		}
 
-		value.Array.Clear()
+		if err := value.Array.Clear(); err != nil {
+			return Value{}, err
+		}
+
 		return NewVoidValue(), nil
 
 	case ValueString:
@@ -581,7 +584,8 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Array{
-			Elements:    make([]Value, 0, len(value.Array.Elements)),
+			Ordinary:    make([]Value, 0, len(value.Array.Ordinary)),
+			Length:      NewSmallNumber(0),
 			IsImmutable: false,
 		}
 
@@ -593,7 +597,10 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 				return err
 			}
 
-			clone.Append(clonedValue)
+			if err := clone.Append(clonedValue); err != nil {
+				return err
+			}
+
 			return nil
 		}); err != nil {
 			return Value{}, err

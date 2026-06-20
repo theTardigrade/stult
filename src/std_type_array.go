@@ -43,6 +43,5 @@ func appendArrayValue(target Value, value Value) error {
 		return fmt.Errorf("cannot modify frozen array")
 	}
 
-	target.Array.Append(value)
-	return nil
+	return target.Array.Append(value)
 }

@@ -170,7 +170,7 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		elements := make([]Value, 0, len(value.Array.Elements))
+		elements := make([]Value, 0, len(value.Array.Ordinary))
 		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			elements = append(elements, element)
 			return nil
