@@ -88,6 +88,14 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		left = outer
 
+	case TokenDot:
+		leadingDot, ok := p.parseLeadingDotAccessExpression()
+		if !ok {
+			return nil
+		}
+
+		left = leadingDot
+
 	case TokenMinus, TokenNotEqual:
 		operator := p.current
 		p.advance()
@@ -237,6 +245,32 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 	}
 
 	return left
+}
+
+func (p *Parser) parseLeadingDotAccessExpression() (Expression, bool) {
+	dot := p.current
+	p.advance() // consume "."
+
+	if p.current.Type != TokenIdentifier {
+		p.errorAtCurrent("expected identifier after '.'")
+		return nil, false
+	}
+
+	if !tokensTouch(dot, p.current) {
+		p.errorAtCurrent("expected dot-access identifier to touch '.'")
+		return nil, false
+	}
+
+	identifier := p.current
+	p.advance()
+
+	return &IndexExpression{
+		Object: &LeadingDotMapExpression{Token: dot},
+		Index: &StringLiteral{
+			Token: identifier,
+			Value: identifier.Literal,
+		},
+	}, true
 }
 
 func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) {

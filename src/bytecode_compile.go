@@ -13,6 +13,7 @@ type BytecodeCompiler struct {
 	loopBreakJumps [][]int
 	loopTryDepths  []int
 	tryDepth       int
+	dotMapNames    []string
 }
 
 func NewBytecodeCompiler(
@@ -375,6 +376,9 @@ func (compiler *BytecodeCompiler) sourceSpanForExpression(expression Expression)
 	case *IdentifierExpression:
 		return compiler.sourceSpanFromToken(expression.Token)
 
+	case *LeadingDotMapExpression:
+		return compiler.sourceSpanFromToken(expression.Token)
+
 	case *PrefixExpression:
 		return compiler.sourceSpanFromToken(expression.Token)
 
@@ -415,4 +419,16 @@ func (compiler *BytecodeCompiler) compileError(token Token, message string) erro
 		token.StartOfColumn,
 		message,
 	)
+}
+
+func (compiler *BytecodeCompiler) newDotMapName() string {
+	return fmt.Sprintf("$dot_map_%d", len(compiler.chunk.Locals))
+}
+
+func (compiler *BytecodeCompiler) currentDotMapName() (string, bool) {
+	if len(compiler.dotMapNames) == 0 {
+		return "", false
+	}
+
+	return compiler.dotMapNames[len(compiler.dotMapNames)-1], true
 }

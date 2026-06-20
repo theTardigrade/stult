@@ -3,6 +3,7 @@ package main
 type Interpreter struct {
 	Env     *Environment
 	Runtime *RuntimeContext
+	dotMaps []*Map
 }
 
 func NewInterpreter() *Interpreter {

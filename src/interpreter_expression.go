@@ -44,6 +44,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 		return binding.Value, nil
 
+	case *LeadingDotMapExpression:
+		return i.evalLeadingDotMapExpression(e)
+
 	case *PrefixExpression:
 		value, err := i.evalExpression(e.Right)
 		if err != nil {
@@ -91,6 +94,7 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 			Body:              e.Body,
 			Returns:           e.Returns,
 			Env:               i.Env,
+			DotMap:            i.currentDotMap(),
 		}), nil
 
 	case *CallExpression:
@@ -224,13 +228,42 @@ func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value
 	}
 }
 
+func (i *Interpreter) evalLeadingDotMapExpression(expr *LeadingDotMapExpression) (Value, error) {
+	currentMap := i.currentDotMap()
+	if currentMap == nil {
+		return Value{}, fmt.Errorf(
+			"line %d, column %d: leading dot access has no surrounding map",
+			expr.Token.StartOfLine,
+			expr.Token.StartOfColumn,
+		)
+	}
+
+	return Value{Kind: ValueMap, Map: currentMap}, nil
+}
+
+func (i *Interpreter) currentDotMap() *Map {
+	if len(i.dotMaps) == 0 {
+		return nil
+	}
+
+	return i.dotMaps[len(i.dotMaps)-1]
+}
+
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
-	entries := make(map[string]Binding)
+	value := NewMapValue(map[string]Binding{}, false)
+	if value.Map == nil {
+		return Value{}, fmt.Errorf("invalid map")
+	}
+
+	i.dotMaps = append(i.dotMaps, value.Map)
+	defer func() {
+		i.dotMaps = i.dotMaps[:len(i.dotMaps)-1]
+	}()
 
 	for _, entry := range lit.Entries {
 		key := entry.Key.Literal
 
-		if _, exists := entries[key]; exists {
+		if _, exists := value.Map.Entries[key]; exists {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: duplicate map key %q",
 				entry.Key.StartOfLine,
@@ -239,18 +272,18 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 			)
 		}
 
-		value, err := i.evalExpression(entry.Value)
+		entryValue, err := i.evalExpression(entry.Value)
 		if err != nil {
 			return Value{}, err
 		}
 
-		entries[key] = Binding{
-			Value:       value,
+		value.Map.Entries[key] = Binding{
+			Value:       entryValue,
 			IsImmutable: isImmutableIdentifier(key),
 		}
 	}
 
-	return NewMapValue(entries, false), nil
+	return value, nil
 }
 
 func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {

@@ -136,6 +136,14 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		entries := make(map[string]Binding)
 
 		for _, entry := range e.Entries {
+			if entry.Key.Type != TokenString {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: DATA.STULTON.PARSE only allows string map keys",
+					entry.Key.StartOfLine,
+					entry.Key.StartOfColumn,
+				)
+			}
+
 			key := entry.Key.Literal
 
 			if _, exists := entries[key]; exists {

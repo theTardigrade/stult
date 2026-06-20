@@ -36,7 +36,7 @@ func (p *Parser) parseBraceLiteral() Expression {
 		}
 	}
 
-	if p.current.Type == TokenString && p.peek.Type == TokenColon {
+	if p.isMapEntryStart() {
 		return p.parseMapLiteral(openBrace)
 	}
 
@@ -142,12 +142,17 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 	}
 }
 
+func (p *Parser) isMapEntryStart() bool {
+	return (p.current.Type == TokenString || p.current.Type == TokenIdentifier) &&
+		p.peek.Type == TokenColon
+}
+
 func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	entries := []MapEntry{}
 
 	for {
-		if p.current.Type != TokenString {
-			p.errorAtCurrent("expected string map key")
+		if p.current.Type != TokenString && p.current.Type != TokenIdentifier {
+			p.errorAtCurrent("expected map key")
 			return nil
 		}
 

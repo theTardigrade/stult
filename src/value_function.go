@@ -6,6 +6,7 @@ type Function struct {
 	Body              []Statement
 	Returns           []Expression
 	Env               *Environment
+	DotMap            *Map
 	BytecodeFunction  *BytecodeFunction
 	BytecodeUpvalues  []*bytecodeVMCell
 }

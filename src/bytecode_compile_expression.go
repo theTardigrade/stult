@@ -43,6 +43,9 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 	case *IdentifierExpression:
 		return compiler.compileIdentifierExpression(expression)
 
+	case *LeadingDotMapExpression:
+		return compiler.compileLeadingDotMapExpression(expression)
+
 	case *ArrayLiteral:
 		return compiler.compileArrayLiteral(expression)
 
@@ -138,6 +141,18 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 	}
 }
 
+func (compiler *BytecodeCompiler) compileLeadingDotMapExpression(expression *LeadingDotMapExpression) error {
+	name, ok := compiler.currentDotMapName()
+	if !ok {
+		return compiler.compileError(
+			expression.Token,
+			"leading dot access has no surrounding map",
+		)
+	}
+
+	return compiler.compileNamedLoad(name, expression.Token)
+}
+
 func (compiler *BytecodeCompiler) compileIdentifierExpression(expression *IdentifierExpression) error {
 	if expression.Name == "_" {
 		compiler.chunk.EmitAt(BytecodeOpLoadVoid, compiler.sourceSpanFromToken(expression.Token))
@@ -168,11 +183,35 @@ func (compiler *BytecodeCompiler) compileIdentifierExpression(expression *Identi
 		return nil
 	}
 
-	name := compiler.chunk.AddNameConstant(expression.Name)
+	return compiler.compileNamedLoad(expression.Name, expression.Token)
+}
+
+func (compiler *BytecodeCompiler) compileNamedLoad(name string, token Token) error {
+	if index, ok := compiler.localIndex(name); ok {
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpLoadLocal,
+			index,
+			compiler.sourceSpanFromToken(token),
+		)
+
+		return nil
+	}
+
+	if index, ok := compiler.resolveUpvalue(name); ok {
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpLoadUpvalue,
+			index,
+			compiler.sourceSpanFromToken(token),
+		)
+
+		return nil
+	}
+
+	constant := compiler.chunk.AddNameConstant(name)
 	compiler.chunk.EmitOperandAt(
 		BytecodeOpLoadGlobal,
-		name,
-		compiler.sourceSpanFromToken(expression.Token),
+		constant,
+		compiler.sourceSpanFromToken(token),
 	)
 
 	return nil
@@ -372,7 +411,35 @@ func (compiler *BytecodeCompiler) compileRangeArrayElement(element *RangeArrayEl
 }
 
 func (compiler *BytecodeCompiler) compileMapLiteral(expression *MapLiteral) error {
+	if err := compiler.validateMapLiteralKeys(expression); err != nil {
+		return err
+	}
+
+	dotMapName := compiler.newDotMapName()
+	dotMapLocal := compiler.ensureLocal(dotMapName, false)
+
+	compiler.chunk.EmitOperandAt(
+		BytecodeOpBuildMap,
+		0,
+		compiler.sourceSpanFromToken(expression.Token),
+	)
+
+	compiler.chunk.EmitOperandAt(
+		BytecodeOpStoreLocalMutable,
+		dotMapLocal,
+		compiler.sourceSpanFromToken(expression.Token),
+	)
+
+	compiler.dotMapNames = append(compiler.dotMapNames, dotMapName)
+	defer func() {
+		compiler.dotMapNames = compiler.dotMapNames[:len(compiler.dotMapNames)-1]
+	}()
+
 	for _, entry := range expression.Entries {
+		if err := compiler.compileNamedLoad(dotMapName, entry.Key); err != nil {
+			return err
+		}
+
 		key := compiler.chunk.AddConstant(NewStringValue(entry.Key.Literal))
 		compiler.chunk.EmitOperandAt(
 			BytecodeOpLoadConst,
@@ -383,13 +450,30 @@ func (compiler *BytecodeCompiler) compileMapLiteral(expression *MapLiteral) erro
 		if err := compiler.compileExpression(entry.Value); err != nil {
 			return err
 		}
+
+		compiler.chunk.EmitAt(
+			BytecodeOpStoreIndex,
+			compiler.sourceSpanFromToken(entry.Key),
+		)
 	}
 
-	compiler.chunk.EmitOperandAt(
-		BytecodeOpBuildMap,
-		len(expression.Entries),
-		compiler.sourceSpanFromToken(expression.Token),
-	)
+	return compiler.compileNamedLoad(dotMapName, expression.Token)
+}
+
+func (compiler *BytecodeCompiler) validateMapLiteralKeys(expression *MapLiteral) error {
+	seen := map[string]Token{}
+
+	for _, entry := range expression.Entries {
+		key := entry.Key.Literal
+		if _, exists := seen[key]; exists {
+			return compiler.compileError(
+				entry.Key,
+				fmt.Sprintf("duplicate map key %q", key),
+			)
+		}
+
+		seen[key] = entry.Key
+	}
 
 	return nil
 }
@@ -399,6 +483,7 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 	functionName := fmt.Sprintf("%s:<function:%d>", compiler.functionPrefix, functionIndex)
 
 	functionCompiler := NewBytecodeCompiler(functionName, compiler.filename, true, compiler)
+	functionCompiler.dotMapNames = append([]string{}, compiler.dotMapNames...)
 
 	for _, parameter := range expression.Parameters {
 		functionCompiler.defineParameterLocal(parameter.Token)
