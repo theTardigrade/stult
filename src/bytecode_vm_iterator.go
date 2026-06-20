@@ -271,16 +271,20 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 	}
 
 	position := iterator.Position + 1
-	if position >= len(text.Runes) {
+	key := NewNumberValueFromInt(position)
+	value, ok, err := text.Get(key.Number)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
 		iterator.HasCurrent = false
 		return vm.jump(target)
 	}
 
-	key := NewNumberValueFromInt(position)
-
 	iterator.Position = position
 	iterator.CurrentKey = key
-	iterator.CurrentValue = NewStringValue(string(text.Runes[position]))
+	iterator.CurrentValue = value
 	iterator.CurrentPosition = key
 	iterator.HasCurrent = true
 

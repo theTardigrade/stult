@@ -161,41 +161,14 @@ func assignArrayIndex(a *Array, index Value, value Value) (Value, error) {
 }
 
 func assignStringIndex(s *String, index Value, value Value) (Value, error) {
-	if s == nil {
-		return Value{}, fmt.Errorf("invalid string")
+	index = resolveSpecializedValue(index)
+	if index.Kind != ValueNumber {
+		return Value{}, fmt.Errorf("string index must be a number")
 	}
 
-	if s.IsFrozen {
-		return Value{}, fmt.Errorf("cannot modify frozen string")
-	}
-
-	stringIndex, err := numberToArrayIndex(index)
-	if err != nil {
+	if err := s.Set(index.Number, value); err != nil {
 		return Value{}, err
 	}
 
-	if stringIndex < 0 {
-		return Value{}, fmt.Errorf("string index cannot be negative")
-	}
-
-	if stringIndex > len(s.Runes) {
-		return Value{}, fmt.Errorf(
-			"string index %d is past the next append position %d",
-			stringIndex,
-			len(s.Runes),
-		)
-	}
-
-	replacement, err := stringAssignmentRune(value)
-	if err != nil {
-		return Value{}, err
-	}
-
-	if stringIndex == len(s.Runes) {
-		s.Runes = append(s.Runes, replacement)
-		return value, nil
-	}
-
-	s.Runes[stringIndex] = replacement
 	return value, nil
 }

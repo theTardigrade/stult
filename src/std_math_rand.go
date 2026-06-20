@@ -112,16 +112,30 @@ func builtinStdMathRandChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from invalid string")
 		}
 
-		if len(value.Text.Runes) == 0 {
-			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty string")
-		}
-
-		index, err := stdMathRandIndex(len(value.Text.Runes))
+		length, err := stdMathRandStringLength(value.Text, "MATH.RAND.CHOICE")
 		if err != nil {
 			return Value{}, err
 		}
 
-		return NewStringValue(string(value.Text.Runes[index])), nil
+		if length == 0 {
+			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty string")
+		}
+
+		index, err := stdMathRandIndex(length)
+		if err != nil {
+			return Value{}, err
+		}
+
+		chosen, ok, err := value.Text.Get(NewSmallNumber(int64(index)))
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !ok {
+			return Value{}, fmt.Errorf("MATH.RAND.CHOICE generated string index out of bounds")
+		}
+
+		return chosen, nil
 
 	case ValueMap:
 		if value.Map == nil {
@@ -189,7 +203,7 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.SHUFFLE cannot shuffle invalid string")
 		}
 
-		runes := append([]rune{}, value.Text.Runes...)
+		runes := []rune(value.Text.String())
 
 		if err := stdMathRandShuffleRunes(runes); err != nil {
 			return Value{}, err
@@ -328,6 +342,24 @@ func stdMathRandExactInteger(number *Number) (*big.Int, bool) {
 	}
 
 	return quotient, true
+}
+
+func stdMathRandStringLength(text *String, name string) (int, error) {
+	if text == nil {
+		return 0, fmt.Errorf("%s cannot inspect invalid string", name)
+	}
+
+	length64, accuracy := text.Len().Int64()
+	if accuracy != big.Exact {
+		return 0, fmt.Errorf("%s string length must be an integer", name)
+	}
+
+	length := int(length64)
+	if int64(length) != length64 {
+		return 0, fmt.Errorf("%s string length is too large for this operation", name)
+	}
+
+	return length, nil
 }
 
 func stdMathRandArrayLength(array *Array, name string) (int, error) {

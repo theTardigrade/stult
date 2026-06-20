@@ -354,20 +354,25 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 		return value, nil
 
 	case ValueString:
-		stringIndex, err := numberToArrayIndex(index)
-		if err != nil {
-			return Value{}, err
-		}
-
 		if object.Text == nil {
 			return Value{}, fmt.Errorf("invalid string")
 		}
 
-		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
-			return Value{}, fmt.Errorf("string index %d out of bounds", stringIndex)
+		index = resolveSpecializedValue(index)
+		if index.Kind != ValueNumber {
+			return Value{}, fmt.Errorf("string index must be a number")
 		}
 
-		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
+		value, ok, err := object.Text.Get(index.Number)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !ok {
+			return Value{}, fmt.Errorf("string index %s out of bounds", formatStringIndex(index.Number))
+		}
+
+		return value, nil
 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")

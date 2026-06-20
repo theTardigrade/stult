@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-	"math/big"
-)
+import "fmt"
 
 type collectionFreezeState struct {
 	maps    map[*Map]bool
@@ -67,7 +64,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid string")
 		}
 
-		return NewNumberValueFromInt(len(value.Text.Runes)), nil
+		return NewNumberValueFromNumber(value.Text.Len()), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -108,7 +105,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid string")
 		}
 
-		return NewBoolValue(len(value.Text.Runes) == 0), nil
+		return NewBoolValue(value.Text.Len().Sign() == 0), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -173,16 +170,20 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid string")
 		}
 
-		index, valid, err := collectionGetIndex(key, "string")
+		if key.Kind != ValueNumber {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET string index must be a number")
+		}
+
+		value, exists, err := collection.Text.Get(key.Number)
 		if err != nil {
 			return Value{}, err
 		}
 
-		if !valid || index >= len(collection.Text.Runes) {
+		if !exists {
 			return fallback, nil
 		}
 
-		return NewStringValue(string(collection.Text.Runes[index])), nil
+		return value, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -202,35 +203,6 @@ func collectionGetFallback(args []Value) Value {
 	}
 
 	return NewVoidValue()
-}
-
-func collectionGetIndex(key Value, collectionName string) (int, bool, error) {
-	key = resolveSpecializedValue(key)
-
-	if key.Kind != ValueNumber {
-		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be a number", collectionName)
-	}
-
-	integer, accuracy := key.Number.Int(nil)
-	if accuracy != big.Exact {
-		return 0, false, fmt.Errorf("TYPE.COLLECTION.GET %s index must be an integer", collectionName)
-	}
-
-	if integer.Sign() < 0 {
-		return 0, false, nil
-	}
-
-	if !integer.IsInt64() {
-		return 0, false, nil
-	}
-
-	index64 := integer.Int64()
-	index := int(index64)
-	if int64(index) != index64 {
-		return 0, false, nil
-	}
-
-	return index, true, nil
 }
 
 func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
@@ -275,12 +247,16 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid string")
 		}
 
-		index, err := numberToArrayIndex(key)
+		if key.Kind != ValueNumber {
+			return NewBoolValue(false), nil
+		}
+
+		_, exists, err := collection.Text.Get(key.Number)
 		if err != nil {
 			return NewBoolValue(false), nil
 		}
 
-		return NewBoolValue(index >= 0 && index < len(collection.Text.Runes)), nil
+		return NewBoolValue(exists), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -334,11 +310,10 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid string")
 		}
 
-		if value.Text.IsFrozen {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen string")
+		if err := value.Text.Clear(); err != nil {
+			return Value{}, err
 		}
 
-		value.Text.Runes = nil
 		return NewVoidValue(), nil
 
 	case ValueVoid,
@@ -617,10 +592,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueString, Text: clone}, nil
 		}
 
-		clone := &String{
-			Runes:    append([]rune(nil), value.Text.Runes...),
-			IsFrozen: false,
-		}
+		clone := NewStringValue(value.Text.String()).Text
 
 		state.strings[value.Text] = clone
 
