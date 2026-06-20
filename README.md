@@ -738,11 +738,11 @@ record["123"]
 Inside a function written inside a map, a leading dot can be used to access fields from that map, as below:
 
 ```stult
-person {
-	NAME: "Ada"
-	age: 36
+person : {
+	NAME : "Ada"
+	age : 36
 
-	birthday: { ()
+	handle_birthday : { ()
 		STD.IO.OUTPUT.WRITE_LINE("Happy birthday, ", .NAME, ".")
 
 		.age :+ 1
@@ -752,7 +752,7 @@ person {
 }
 ```
 
-Here, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.age :+ 1` updates the `age` field from that same map.
+In the `handle_birthday` function, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.age :+ 1` increments the `age` field from that same map.
 
 A leading dot only looks in the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
 
