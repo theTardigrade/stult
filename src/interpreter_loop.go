@@ -107,18 +107,15 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 	}
 
 	position := 0
-	lastKey := ""
-	hasLastKey := false
 
-	for {
-		key, ok := nextMapRangeKey(m, lastKey, hasLastKey)
-		if !ok {
-			break
+	for _, key := range m.Keys() {
+		binding, ok, err := m.Binding(key)
+		if err != nil {
+			return Value{}, err
 		}
 
-		binding, ok := m.Entries[key]
 		if !ok {
-			continue
+			return Value{}, fmt.Errorf("invalid map storage")
 		}
 
 		loopBindings := collectionRangeBindings(
@@ -142,8 +139,6 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 			return Value{}, err
 		}
 
-		lastKey = key
-		hasLastKey = true
 		position++
 	}
 

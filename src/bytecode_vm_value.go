@@ -525,18 +525,21 @@ func bytecodeIndexValue(object Value, index Value) (Value, error) {
 			return Value{}, fmt.Errorf("invalid map")
 		}
 
-		if index.Kind != ValueString || index.Text == nil {
-			return Value{}, fmt.Errorf("map index must be a string")
+		key, err := mapKeyString(index)
+		if err != nil {
+			return Value{}, err
 		}
 
-		key := index.Text.String()
+		value, ok, err := object.Map.GetFromString(key)
+		if err != nil {
+			return Value{}, err
+		}
 
-		binding, ok := object.Map.Entries[key]
 		if !ok {
 			return Value{}, fmt.Errorf("map has no key %q", key)
 		}
 
-		return binding.Value, nil
+		return value, nil
 
 	case ValueArray:
 		if object.Array == nil {

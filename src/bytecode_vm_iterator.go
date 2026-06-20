@@ -244,13 +244,16 @@ func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) 
 			return vm.jump(target)
 		}
 
-		binding, ok := m.Entries[key]
+		binding, ok, err := m.Binding(key)
+		if err != nil {
+			return err
+		}
 
 		iterator.LastMapKey = key
 		iterator.HasLastMapKey = true
 
 		if !ok {
-			continue
+			return fmt.Errorf("invalid map storage")
 		}
 
 		iterator.Position++

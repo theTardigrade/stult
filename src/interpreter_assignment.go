@@ -118,30 +118,8 @@ func (i *Interpreter) assignIndexExpression(target *IndexExpression, value Value
 }
 
 func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
-	if m.IsFrozen {
-		return Value{}, fmt.Errorf("cannot modify frozen map")
-	}
-
-	if index.Kind != ValueString {
-		return Value{}, fmt.Errorf("map index must be a string")
-	}
-
-	key := index.Text.String()
-
-	binding, exists := m.Entries[key]
-	if exists && binding.IsImmutable {
-		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", key)
-	}
-
-	if exists {
-		binding.Value = value
-		m.Entries[key] = binding
-		return value, nil
-	}
-
-	m.Entries[key] = Binding{
-		Value:       value,
-		IsImmutable: isImmutableIdentifier(key),
+	if err := m.Set(index, value); err != nil {
+		return Value{}, err
 	}
 
 	return value, nil

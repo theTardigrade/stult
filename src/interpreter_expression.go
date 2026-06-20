@@ -323,18 +323,25 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 
 	switch object.Kind {
 	case ValueMap:
-		if index.Kind != ValueString {
-			return Value{}, fmt.Errorf("map index must be a string")
+		if object.Map == nil {
+			return Value{}, fmt.Errorf("invalid map")
 		}
 
-		key := index.Text.String()
+		key, err := mapKeyString(index)
+		if err != nil {
+			return Value{}, err
+		}
 
-		binding, ok := object.Map.Entries[key]
+		value, ok, err := object.Map.GetFromString(key)
+		if err != nil {
+			return Value{}, err
+		}
+
 		if !ok {
 			return Value{}, fmt.Errorf("map has no key %q", key)
 		}
 
-		return binding.Value, nil
+		return value, nil
 
 	case ValueArray:
 		index = resolveSpecializedValue(index)

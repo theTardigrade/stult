@@ -181,7 +181,7 @@ func stringNumberToInteger(index *Number) (*big.Int, error) {
 
 func stringIntegerToHostIndex(index *big.Int) (int, error) {
 	if index == nil || !index.IsInt64() {
-		return 0, fmt.Errorf("string index %s out of bounds", formatBigIntIndex(index))
+		return 0, fmt.Errorf("string index %s out of bounds", formatStringBigIntIndex(index))
 	}
 
 	hostIndex64 := index.Int64()
@@ -201,7 +201,7 @@ func formatStringIndex(index *Number) string {
 	return index.Format(DefaultDecimalPlacesToDisplay)
 }
 
-func formatBigIntIndex(index *big.Int) string {
+func formatStringBigIntIndex(index *big.Int) string {
 	if index == nil {
 		return "<invalid>"
 	}

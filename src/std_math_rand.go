@@ -142,18 +142,27 @@ func builtinStdMathRandChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from invalid map")
 		}
 
-		if len(value.Map.Entries) == 0 {
+		if value.Map.Len().Sign() == 0 {
 			return Value{}, fmt.Errorf("MATH.RAND.CHOICE cannot choose from empty map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 
 		index, err := stdMathRandIndex(len(keys))
 		if err != nil {
 			return Value{}, err
 		}
 
-		return value.Map.Entries[keys[index]].Value, nil
+		chosen, exists, err := value.Map.GetFromString(keys[index])
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
+			return Value{}, fmt.Errorf("invalid map storage")
+		}
+
+		return chosen, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -216,11 +225,20 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("MATH.RAND.SHUFFLE cannot shuffle invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		values := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
-			values = append(values, value.Map.Entries[key].Value)
+			entryValue, exists, err := value.Map.GetFromString(key)
+			if err != nil {
+				return Value{}, err
+			}
+
+			if !exists {
+				return Value{}, fmt.Errorf("invalid map storage")
+			}
+
+			values = append(values, entryValue)
 		}
 
 		if err := stdMathRandShuffleValues(values); err != nil {
@@ -230,7 +248,14 @@ func builtinStdMathRandShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 		entries := make(map[string]Binding, len(keys))
 
 		for index, key := range keys {
-			originalBinding := value.Map.Entries[key]
+			originalBinding, exists, err := value.Map.Binding(key)
+			if err != nil {
+				return Value{}, err
+			}
+
+			if !exists {
+				return Value{}, fmt.Errorf("invalid map storage")
+			}
 
 			entries[key] = Binding{
 				Value:       values[index],

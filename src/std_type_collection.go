@@ -50,7 +50,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid map")
 		}
 
-		return NewNumberValueFromInt(len(value.Map.Entries)), nil
+		return NewNumberValueFromNumber(value.Map.Len()), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -91,7 +91,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid map")
 		}
 
-		return NewBoolValue(len(value.Map.Entries) == 0), nil
+		return NewBoolValue(value.Map.Len().Sign() == 0), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -134,16 +134,21 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET cannot inspect invalid map")
 		}
 
-		if key.Kind != ValueString || key.Text == nil {
+		keyText, err := mapKeyString(key)
+		if err != nil {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET map key must be a string")
 		}
 
-		binding, exists := collection.Map.Entries[key.Text.String()]
+		value, exists, err := collection.Map.GetFromString(keyText)
+		if err != nil {
+			return Value{}, err
+		}
+
 		if !exists {
 			return fallback, nil
 		}
 
-		return binding.Value, nil
+		return value, nil
 
 	case ValueArray:
 		if collection.Array == nil {
@@ -219,11 +224,16 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.HAS cannot inspect invalid map")
 		}
 
-		if key.Kind != ValueString || key.Text == nil {
+		keyText, err := mapKeyString(key)
+		if err != nil {
 			return NewBoolValue(false), nil
 		}
 
-		_, exists := collection.Map.Entries[key.Text.String()]
+		_, exists, err := collection.Map.GetFromString(keyText)
+		if err != nil {
+			return NewBoolValue(false), nil
+		}
+
 		return NewBoolValue(exists), nil
 
 	case ValueArray:
@@ -283,11 +293,14 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid map")
 		}
 
-		if value.Map.IsFrozen {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
+		if err := value.Map.Clear(); err != nil {
+			if value.Map.IsFrozen {
+				return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
+			}
+
+			return Value{}, err
 		}
 
-		value.Map.Entries = make(map[string]Binding)
 		return NewVoidValue(), nil
 
 	case ValueArray:
@@ -430,14 +443,16 @@ func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value
 		state.maps[value.Map] = true
 		value.Map.IsFrozen = true
 
-		for key, binding := range value.Map.Entries {
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			frozenValue, err := deepFreezeNestedCollectionValue(binding.Value, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
 			binding.Value = frozenValue
-			value.Map.Entries[key] = binding
+			return value.Map.SetBindingUnchecked(key, binding)
+		}); err != nil {
+			return Value{}, err
 		}
 
 		return value, nil
@@ -529,22 +544,24 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 		}
 
 		clone := &Map{
-			Entries:  make(map[string]Binding, len(value.Map.Entries)),
+			Entries:  make(map[string]Binding, len(value.Map.Keys())),
 			IsFrozen: false,
 		}
 
 		state.maps[value.Map] = clone
 
-		for key, binding := range value.Map.Entries {
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			clonedValue, err := deepCloneValue(binding.Value, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
-			clone.Entries[key] = Binding{
+			return clone.SetBindingUnchecked(key, Binding{
 				Value:       clonedValue,
 				IsImmutable: binding.IsImmutable,
-			}
+			})
+		}); err != nil {
+			return Value{}, err
 		}
 
 		return Value{Kind: ValueMap, Map: clone}, nil

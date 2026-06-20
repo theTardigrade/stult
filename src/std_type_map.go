@@ -24,7 +24,7 @@ func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		elements := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
@@ -60,11 +60,20 @@ func StdTypeMapValues(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		elements := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
-			elements = append(elements, value.Map.Entries[key].Value)
+			entryValue, exists, err := value.Map.GetFromString(key)
+			if err != nil {
+				return Value{}, err
+			}
+
+			if !exists {
+				return Value{}, fmt.Errorf("invalid map storage")
+			}
+
+			elements = append(elements, entryValue)
 		}
 
 		return NewArrayValue(elements, false), nil

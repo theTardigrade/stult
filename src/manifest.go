@@ -125,8 +125,15 @@ func manifestFileFromStultonValue(value Value) (manifestFile, error) {
 		return manifestFile{}, fmt.Errorf("manifest root map is invalid")
 	}
 
-	upperRunBinding, hasUpperRun := value.Map.Entries["RUN"]
-	lowerRunBinding, hasLowerRun := value.Map.Entries["run"]
+	upperRunBinding, hasUpperRun, err := value.Map.Binding("RUN")
+	if err != nil {
+		return manifestFile{}, err
+	}
+
+	lowerRunBinding, hasLowerRun, err := value.Map.Binding("run")
+	if err != nil {
+		return manifestFile{}, err
+	}
 
 	if hasUpperRun && hasLowerRun {
 		return manifestFile{}, fmt.Errorf(`manifest.stulton cannot contain both "RUN" and "run"`)
