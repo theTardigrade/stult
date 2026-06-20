@@ -9,6 +9,12 @@ import (
 const arrayOrdinaryLimit int64 = 1 << 24
 const arrayOverflowChunkSize int64 = 1 << 16
 
+var (
+	arrayOrdinaryLimitBig     = big.NewInt(arrayOrdinaryLimit)
+	arrayOverflowChunkSizeBig = big.NewInt(arrayOverflowChunkSize)
+	arrayOneBig               = big.NewInt(1)
+)
+
 type Array struct {
 	Ordinary    []Value
 	Overflow    *ArrayOverflow
@@ -68,18 +74,18 @@ func (array *Array) Get(index *Number) (Value, bool, error) {
 		return Value{}, false, nil
 	}
 
-	if integer.Cmp(big.NewInt(arrayOrdinaryLimit)) < 0 {
+	if integer.Cmp(arrayOrdinaryLimitBig) < 0 {
 		hostIndex64 := integer.Int64()
 		hostIndex := int(hostIndex64)
 		if int64(hostIndex) != hostIndex64 || hostIndex < 0 || hostIndex >= len(array.Ordinary) {
-			return Value{}, false, nil
+			return Value{}, false, fmt.Errorf("invalid array ordinary storage")
 		}
 
 		return array.Ordinary[hostIndex], true, nil
 	}
 
 	if array.Overflow == nil {
-		return Value{}, false, nil
+		return Value{}, false, fmt.Errorf("invalid array overflow storage")
 	}
 
 	return array.Overflow.Get(integer)
@@ -129,6 +135,12 @@ func (array *Array) ForEach(fn func(index *Number, value Value) error) error {
 		return fmt.Errorf("invalid array")
 	}
 
+	length := array.lengthInteger()
+
+	if length.Cmp(arrayOrdinaryLimitBig) > 0 && int64(len(array.Ordinary)) != arrayOrdinaryLimit {
+		return fmt.Errorf("invalid array ordinary storage")
+	}
+
 	for index, value := range array.Ordinary {
 		if err := fn(NewSmallNumber(int64(index)), value); err != nil {
 			return err
@@ -136,10 +148,14 @@ func (array *Array) ForEach(fn func(index *Number, value Value) error) error {
 	}
 
 	if array.Overflow == nil {
+		if length.Cmp(arrayOrdinaryLimitBig) > 0 {
+			return fmt.Errorf("invalid array overflow storage")
+		}
+
 		return nil
 	}
 
-	return array.Overflow.ForEach(array.lengthInteger(), fn)
+	return array.Overflow.ForEach(length, fn)
 }
 
 func (array *Array) Clear() error {
@@ -165,7 +181,7 @@ func (array *Array) appendUnchecked(value Value) error {
 
 	length := array.lengthInteger()
 
-	if length.Cmp(big.NewInt(arrayOrdinaryLimit)) < 0 {
+	if length.Cmp(arrayOrdinaryLimitBig) < 0 {
 		hostIndex64 := length.Int64()
 		hostIndex := int(hostIndex64)
 		if int64(hostIndex) != hostIndex64 || hostIndex != len(array.Ordinary) {
@@ -178,19 +194,19 @@ func (array *Array) appendUnchecked(value Value) error {
 			array.Overflow = &ArrayOverflow{Chunks: make(map[string][]Value)}
 		}
 
-		if err := array.Overflow.Set(length, value); err != nil {
+		if err := array.Overflow.AppendAt(length, value); err != nil {
 			return err
 		}
 	}
 
-	length.Add(length, big.NewInt(1))
-	array.Length = NewBigIntNumber(length)
+	nextLength := new(big.Int).Add(length, arrayOneBig)
+	array.Length = NewBigIntNumber(nextLength)
 
 	return nil
 }
 
 func (array *Array) setExisting(index *big.Int, value Value) error {
-	if index.Cmp(big.NewInt(arrayOrdinaryLimit)) < 0 {
+	if index.Cmp(arrayOrdinaryLimitBig) < 0 {
 		hostIndex64 := index.Int64()
 		hostIndex := int(hostIndex64)
 		if int64(hostIndex) != hostIndex64 || hostIndex < 0 || hostIndex >= len(array.Ordinary) {
@@ -205,7 +221,7 @@ func (array *Array) setExisting(index *big.Int, value Value) error {
 		return fmt.Errorf("array index %s out of bounds", index.String())
 	}
 
-	return array.Overflow.Set(index, value)
+	return array.Overflow.SetExisting(index, value)
 }
 
 func (array *Array) lengthInteger() *big.Int {
@@ -233,29 +249,40 @@ func (overflow *ArrayOverflow) Get(logicalIndex *big.Int) (Value, bool, error) {
 	key, offset := arrayOverflowPosition(logicalIndex)
 	chunk, ok := overflow.Chunks[key]
 	if !ok || offset < 0 || offset >= len(chunk) {
-		return Value{}, false, nil
+		return Value{}, false, fmt.Errorf("invalid array overflow storage")
 	}
 
 	return chunk[offset], true, nil
 }
 
-func (overflow *ArrayOverflow) Set(logicalIndex *big.Int, value Value) error {
+func (overflow *ArrayOverflow) AppendAt(logicalIndex *big.Int, value Value) error {
 	if overflow == nil || logicalIndex == nil {
 		return fmt.Errorf("invalid array overflow storage")
 	}
 
 	key, offset := arrayOverflowPosition(logicalIndex)
 	chunk := overflow.Chunks[key]
-	if offset < 0 || offset > len(chunk) {
-		return fmt.Errorf("invalid array overflow index %s", logicalIndex.String())
+	if offset < 0 || offset != len(chunk) {
+		return fmt.Errorf("invalid array overflow append index %s", logicalIndex.String())
 	}
 
-	if offset == len(chunk) {
-		chunk = append(chunk, value)
-	} else {
-		chunk[offset] = value
+	chunk = append(chunk, value)
+	overflow.Chunks[key] = chunk
+	return nil
+}
+
+func (overflow *ArrayOverflow) SetExisting(logicalIndex *big.Int, value Value) error {
+	if overflow == nil || logicalIndex == nil {
+		return fmt.Errorf("invalid array overflow storage")
 	}
 
+	key, offset := arrayOverflowPosition(logicalIndex)
+	chunk, ok := overflow.Chunks[key]
+	if !ok || offset < 0 || offset >= len(chunk) {
+		return fmt.Errorf("array index %s out of bounds", logicalIndex.String())
+	}
+
+	chunk[offset] = value
 	overflow.Chunks[key] = chunk
 	return nil
 }
@@ -265,46 +292,50 @@ func (overflow *ArrayOverflow) ForEach(length *big.Int, fn func(index *Number, v
 		return nil
 	}
 
-	ordinaryLimit := big.NewInt(arrayOrdinaryLimit)
-	if length.Cmp(ordinaryLimit) <= 0 {
+	if length.Cmp(arrayOrdinaryLimitBig) <= 0 {
 		return nil
 	}
 
-	chunkSize := big.NewInt(arrayOverflowChunkSize)
-	overflowCount := new(big.Int).Sub(length, ordinaryLimit)
-	chunkCount := new(big.Int).Sub(overflowCount, big.NewInt(1))
-	chunkCount.Quo(chunkCount, chunkSize)
-	chunkCount.Add(chunkCount, big.NewInt(1))
+	overflowCount := new(big.Int).Sub(length, arrayOrdinaryLimitBig)
+	chunkCount := new(big.Int).Sub(overflowCount, arrayOneBig)
+	chunkCount.Quo(chunkCount, arrayOverflowChunkSizeBig)
+	chunkCount.Add(chunkCount, arrayOneBig)
 
-	for chunkIndex := big.NewInt(0); chunkIndex.Cmp(chunkCount) < 0; chunkIndex.Add(chunkIndex, big.NewInt(1)) {
+	remaining := new(big.Int).Set(overflowCount)
+
+	for chunkIndex := big.NewInt(0); chunkIndex.Cmp(chunkCount) < 0; chunkIndex.Add(chunkIndex, arrayOneBig) {
 		chunk := overflow.Chunks[chunkIndex.String()]
-		if len(chunk) == 0 {
+
+		expectedLength := arrayOverflowChunkSize
+		if remaining.Cmp(arrayOverflowChunkSizeBig) < 0 {
+			expectedLength = remaining.Int64()
+		}
+
+		if expectedLength <= 0 || int64(len(chunk)) != expectedLength {
 			return fmt.Errorf("invalid array overflow storage")
 		}
 
 		for offset, value := range chunk {
-			logicalIndex := new(big.Int).Mul(chunkIndex, chunkSize)
+			logicalIndex := new(big.Int).Mul(chunkIndex, arrayOverflowChunkSizeBig)
 			logicalIndex.Add(logicalIndex, big.NewInt(int64(offset)))
-			logicalIndex.Add(logicalIndex, ordinaryLimit)
-
-			if logicalIndex.Cmp(length) >= 0 {
-				return nil
-			}
+			logicalIndex.Add(logicalIndex, arrayOrdinaryLimitBig)
 
 			if err := fn(NewBigIntNumber(logicalIndex), value); err != nil {
 				return err
 			}
 		}
+
+		remaining.Sub(remaining, big.NewInt(expectedLength))
 	}
 
 	return nil
 }
 
 func arrayOverflowPosition(logicalIndex *big.Int) (string, int) {
-	overflowIndex := new(big.Int).Sub(logicalIndex, big.NewInt(arrayOrdinaryLimit))
+	overflowIndex := new(big.Int).Sub(logicalIndex, arrayOrdinaryLimitBig)
 	chunkIndex := new(big.Int)
 	offset := new(big.Int)
-	chunkIndex.QuoRem(overflowIndex, big.NewInt(arrayOverflowChunkSize), offset)
+	chunkIndex.QuoRem(overflowIndex, arrayOverflowChunkSizeBig, offset)
 
 	return chunkIndex.String(), int(offset.Int64())
 }
