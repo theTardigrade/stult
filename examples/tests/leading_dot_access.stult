@@ -1,0 +1,61 @@
+##
+
+EXAMPLE: tests/leading_dot_access.stult
+
+This example checks leading-dot access inside functions stored in maps.
+
+A leading dot should read and update fields from the nearest surrounding map,
+allowing map-owned functions to work naturally with that map's state.
+
+##
+
+person : {
+	NAME : "Celia"
+	age : 36
+
+	handle_birthday : { ()
+		MESSAGE : "Happy birthday, " + .NAME + "."
+
+		.age :+ 1
+
+		(MESSAGE)
+	}
+}
+
+STD.ASSERT.EQUAL(
+	person.handle_birthday(),
+	"Happy birthday, Celia.",
+	"leading dot should read from the surrounding map",
+)
+
+STD.ASSERT.EQUAL(
+	person.age,
+	37,
+	"leading dot compound assignment should update the surrounding map",
+)
+
+handle_birthday : person.handle_birthday
+handle_birthday()
+
+STD.ASSERT.EQUAL(
+	person.age,
+	38,
+	"leading dot functions should keep their captured map when called through another binding",
+)
+
+outer : {
+	NAME : "Outer"
+	inner : {
+		NAME : "Inner"
+
+		show_name : { ()
+			(.NAME)
+		}
+	}
+}
+
+STD.ASSERT.EQUAL(
+	outer.inner.show_name(),
+	"Inner",
+	"leading dot should use the nearest surrounding map",
+)
