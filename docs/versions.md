@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### Future release
+### v0.7.7
 
 * Reworked the internal array representation into ordinary slice-backed storage plus overflow chunks for extremely large dense arrays.
 * Array length and array iteration now use Stult-number indices rather than being inherently tied to the host slice index size.
