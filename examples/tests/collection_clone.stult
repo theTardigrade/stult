@@ -8,7 +8,7 @@ function values.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]

@@ -13,7 +13,7 @@ The first array is multiline. The second array is single-line.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
@@ -33,9 +33,9 @@ MULTIPLY : FUNCTIONS[1]
 SUBTRACT : INLINE_FUNCTIONS[0]
 DIVIDE : INLINE_FUNCTIONS[1]
 
-PRINT("function count: " + STRING_NEW(SIZE(FUNCTIONS)))
-PRINT("inline function count: " + STRING_NEW(SIZE(INLINE_FUNCTIONS)))
-PRINT("add: " + STRING_NEW(ADD(8, 2)))
-PRINT("multiply: " + STRING_NEW(MULTIPLY(8, 2)))
-PRINT("subtract: " + STRING_NEW(SUBTRACT(8, 2)))
-PRINT("divide: " + STRING_NEW(DIVIDE(8, 2)))
+WRITE_LINE("function count: " + STRING_NEW(SIZE(FUNCTIONS)))
+WRITE_LINE("inline function count: " + STRING_NEW(SIZE(INLINE_FUNCTIONS)))
+WRITE_LINE("add: " + STRING_NEW(ADD(8, 2)))
+WRITE_LINE("multiply: " + STRING_NEW(MULTIPLY(8, 2)))
+WRITE_LINE("subtract: " + STRING_NEW(SUBTRACT(8, 2)))
+WRITE_LINE("divide: " + STRING_NEW(DIVIDE(8, 2)))

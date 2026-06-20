@@ -10,7 +10,7 @@ percentage calculation and outer-scope assignment.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 SCORES : {
 	"TEAM_RED": 0.45
@@ -29,4 +29,4 @@ sum_of_scores : 0, number_of_scores : 0
 AVERAGE_DECIMAL_SCORE : ( sum_of_scores / number_of_scores )
 AVERAGE_PERCENTAGE_SCORE : ( AVERAGE_DECIMAL_SCORE * 100 )
 
-PRINT("The average score at the world championship was ", AVERAGE_PERCENTAGE_SCORE, "%.")
+WRITE_LINE("The average score at the world championship was ", AVERAGE_PERCENTAGE_SCORE, "%.")

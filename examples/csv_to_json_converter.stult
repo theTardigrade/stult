@@ -26,8 +26,8 @@ JSON : STD["DATA"]["JSON"]
 ARRAY : STD["TYPE"]["ARRAY"]
 COLLECTION : STD["TYPE"]["COLLECTION"]
 
-PRINT : IO["PRINT"]
-WRITE_ERROR : IO["WRITE_ERROR"]
+WRITE_LINE : IO["OUTPUT"]["WRITE_LINE"]
+WRITE_ERROR_LINE : IO["OUTPUT"]["WRITE_ERROR_LINE"]
 
 READ : FILE["READ"]
 WRITE : FILE["WRITE"]
@@ -40,7 +40,7 @@ SIZE : COLLECTION["SIZE"]
 HAS : COLLECTION["HAS"]
 
 USAGE : { ()
-	WRITE_ERROR("Usage: stult examples/csv_to_json_converter.stult input.csv [output.json]")
+	WRITE_ERROR_LINE("Usage: stult examples/csv_to_json_converter.stult input.csv [output.json]")
 	EXIT(1)
 
 	(_)
@@ -85,7 +85,7 @@ CSV_ROWS_TO_MAPS : { (rows)
 input_path : PATH["CLEAN"](ARGS[0])
 
 (PATH["EXT"](input_path) ! ".csv") {
-	WRITE_ERROR("Warning: input file does not use the .csv extension: ", input_path)
+	WRITE_ERROR_LINE("Warning: input file does not use the .csv extension: ", input_path)
 }
 
 csv_text : READ(input_path)
@@ -98,11 +98,11 @@ json_text : JSON["NEW"](records)
 	output_path : PATH["CLEAN"](ARGS[1])
 
 	(PATH["EXT"](output_path) ! ".json") {
-		WRITE_ERROR("Warning: output file does not use the .json extension: ", output_path)
+		WRITE_ERROR_LINE("Warning: output file does not use the .json extension: ", output_path)
 	}
 
 	WRITE(output_path, json_text)
-	PRINT("Wrote JSON to ", output_path)
+	WRITE_LINE("Wrote JSON to ", output_path)
 },{
-	PRINT(json_text)
+	WRITE_LINE(json_text)
 }

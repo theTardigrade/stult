@@ -11,7 +11,7 @@ bindings.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
@@ -49,4 +49,4 @@ ASSERT_EQUAL(SIZE(INNER_ARRAY), 2, "inner array size should be 2")
 ASSERT_EQUAL(INNER_TEXT, "snake", "inner text should keep its contents")
 ASSERT_EQUAL(INNER_MAP["TEXT"], "snake", "map text should keep its contents")
 
-PRINT("deep frozen alias checks passed")
+WRITE_LINE("deep frozen alias checks passed")

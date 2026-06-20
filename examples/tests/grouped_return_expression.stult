@@ -13,7 +13,7 @@ because it appears where an expression is required.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
 
 SCALE_SUM : { (A, B, C)
@@ -22,4 +22,4 @@ SCALE_SUM : { (A, B, C)
 
 RESULT : SCALE_SUM(2, 3, 4)
 
-PRINT("result: " + STRING_NEW(RESULT))
+WRITE_LINE("result: " + STRING_NEW(RESULT))

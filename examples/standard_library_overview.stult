@@ -11,8 +11,8 @@ type predicates, collection helpers and formatted console output.
 ##
 
 IO : STD["IO"]
-W : IO["WRITE"]
-WL : IO["WRITE_LINE"]
+W : IO["OUTPUT"]["WRITE"]
+WL : IO["OUTPUT"]["WRITE_LINE"]
 T : STD["TYPE"]
 C : T["COLLECTION"]
 

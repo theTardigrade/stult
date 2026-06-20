@@ -9,7 +9,7 @@ reports their frozen state.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
@@ -54,4 +54,4 @@ ASSERT_EQUAL(FREEZE(ARRAY_VALUE), ARRAY_VALUE, "freezing a frozen array should r
 ASSERT_EQUAL(FREEZE(MAP_VALUE), MAP_VALUE, "freezing a frozen map should return the same map")
 ASSERT_EQUAL(FREEZE(STRING_VALUE), STRING_VALUE, "freezing a frozen string should return the same string")
 
-PRINT("frozen collection checks passed")
+WRITE_LINE("frozen collection checks passed")

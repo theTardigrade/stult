@@ -18,7 +18,7 @@ A loop using the same grouped condition would need another pair of parentheses:
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 A : \/
 B : /\
@@ -26,7 +26,7 @@ C : \/
 D : \/
 
 ((A & B) | (C & D)) {
-	PRINT("grouped conditional")
+	WRITE_LINE("grouped conditional")
 }
 
 LOOP_ITERATIONS : 10
@@ -39,5 +39,5 @@ loop_counter : 0
 
 	@loop_counter :+ 1
 },{
-	PRINT("grouped loop")
+	WRITE_LINE("grouped loop")
 }

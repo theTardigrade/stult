@@ -10,7 +10,7 @@ logical operators and manifest-based project execution.
 
 ##
 
-P : STD["IO"]["PRINT"]
+P : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 P("TRUE: ", T)
 P("FALSE: ", F)

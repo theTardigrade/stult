@@ -10,7 +10,7 @@ parser should parse the brace literal as an array.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
@@ -24,7 +24,7 @@ VALUES : {
 	(C - A)
 }
 
-PRINT("array size: " + STRING_NEW(SIZE(VALUES)))
-PRINT("first: " + STRING_NEW(VALUES[0]))
-PRINT("second: " + STRING_NEW(VALUES[1]))
-PRINT("third: " + STRING_NEW(VALUES[2]))
+WRITE_LINE("array size: " + STRING_NEW(SIZE(VALUES)))
+WRITE_LINE("first: " + STRING_NEW(VALUES[0]))
+WRITE_LINE("second: " + STRING_NEW(VALUES[1]))
+WRITE_LINE("third: " + STRING_NEW(VALUES[2]))

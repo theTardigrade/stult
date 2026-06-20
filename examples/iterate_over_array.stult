@@ -11,7 +11,7 @@ explicit outer-scope reads with @.
 
 ##
 
-P : STD["IO"]["PRINT"]
+P : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 CS : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 

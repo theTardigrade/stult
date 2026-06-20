@@ -14,8 +14,8 @@ specified in the manifest file.
 ##
 
 IO : STD["IO"]
-WRITE : IO["WRITE"]
-WRITE_LINE : IO["WRITE_LINE"]
+WRITE : IO["OUTPUT"]["WRITE"]
+WRITE_LINE : IO["OUTPUT"]["WRITE_LINE"]
 
 TYPE : STD["TYPE"]
 IS_STRING : TYPE["IS_STRING"]

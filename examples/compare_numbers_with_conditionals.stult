@@ -10,7 +10,7 @@ else-if blocks, else blocks and explicit outer-scope reads with @.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+PRINT : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 MY_AGE : 21
 YOUR_AGE : 99

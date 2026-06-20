@@ -9,7 +9,7 @@ conditionals and outer-scope assignment.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 TEXT : "In the beginning was the word."
@@ -19,7 +19,7 @@ word_count : 0
 
 ((TEXT)) { (CHAR)
 	(CHAR = " " & SIZE(current_word) ! 0) {
-		PRINT(current_word)
+		WRITE_LINE(current_word)
 		@current_word : ""
 		@word_count :+ 1
 	},{
@@ -28,8 +28,8 @@ word_count : 0
 }
 
 (SIZE(current_word) ! 0) {
-	PRINT(current_word)
+	WRITE_LINE(current_word)
 	@word_count :+ 1
 }
 
-PRINT("Word count: ", word_count)
+WRITE_LINE("Word count: ", word_count)

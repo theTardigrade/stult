@@ -9,7 +9,7 @@ arguments, collection size checks, loops and mutable accumulators.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 JOIN_WORDS : { (separator, ...words)
@@ -37,13 +37,13 @@ SUM : { (...numbers)
 }
 
 DESCRIBE_VALUES : { (label, ...values)
-	PRINT(label, " received ", SIZE(values), " value(s): ", values, ".")
+	WRITE_LINE(label, " received ", SIZE(values), " value(s): ", values, ".")
 
 	(_)
 }
 
-PRINT(JOIN_WORDS(", ", "red", "green", "blue"))
-PRINT("Sum: ", SUM(1, 2, 3, 4, 5))
+WRITE_LINE(JOIN_WORDS(", ", "red", "green", "blue"))
+WRITE_LINE("Sum: ", SUM(1, 2, 3, 4, 5))
 
 DESCRIBE_VALUES("Function with no variadic arguments")
 DESCRIBE_VALUES("Function with three variadic arguments", "hammer", "saw", "plane")

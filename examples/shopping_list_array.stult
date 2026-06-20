@@ -10,7 +10,7 @@ standard-library array helpers and collection size checks.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 ARRAY : STD["TYPE"]["ARRAY"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
@@ -22,10 +22,10 @@ SHOPPING_LIST : {
 
 AISLES : { "bakery", "dairy", "grocery" }
 
-PRINT("Shopping list before append: ", SHOPPING_LIST)
-PRINT("Aisles: ", AISLES)
+WRITE_LINE("Shopping list before append: ", SHOPPING_LIST)
+WRITE_LINE("Aisles: ", AISLES)
 
 ARRAY["APPEND"](SHOPPING_LIST, "coffee", "rice")
 
-PRINT("Shopping list after append: ", SHOPPING_LIST)
-PRINT("Number of shopping list items: ", SIZE(SHOPPING_LIST))
+WRITE_LINE("Shopping list after append: ", SHOPPING_LIST)
+WRITE_LINE("Number of shopping list items: ", SIZE(SHOPPING_LIST))

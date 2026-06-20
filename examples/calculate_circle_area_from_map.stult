@@ -11,7 +11,7 @@ standard library math helpers and explicit outer-scope reads with @.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 MATH : STD["MATH"]
 PI : MATH["PI"]
@@ -22,8 +22,8 @@ CIRCLE : {
 	"AREA": { () R : CIRCLE["radius"] (@PI * @SQUARE(R)) }
 }
 
-PRINT("The area of the small circle:  ", CIRCLE["AREA"]())
+WRITE_LINE("The area of the small circle:  ", CIRCLE["AREA"]())
 
 CIRCLE["radius"] : 20
 
-PRINT("The area of the big circle:    ", CIRCLE["AREA"]())
+WRITE_LINE("The area of the big circle:    ", CIRCLE["AREA"]())

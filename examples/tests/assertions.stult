@@ -11,7 +11,7 @@ Stult equality semantics.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
@@ -37,4 +37,4 @@ ASSERT_EQUAL(
 	"ASSERT.TRUE should return void"
 )
 
-PRINT("assertion checks passed")
+WRITE_LINE("assertion checks passed")

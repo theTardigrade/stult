@@ -11,7 +11,7 @@ literals and one-line arrays containing nested literals.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 STRING_NEW : STD["TYPE"]["STRING"]["NEW"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
@@ -41,19 +41,19 @@ INLINE_INFO : INLINE_VALUES[2]
 INLINE_NUMBERS : INLINE_VALUES[3]
 INLINE_COLOURS : INLINE_VALUES[4]
 
-PRINT("values size: " + STRING_NEW(SIZE(VALUES)))
-PRINT("empty map size: " + STRING_NEW(SIZE(EMPTY_MAP)))
-PRINT("empty array size: " + STRING_NEW(SIZE(EMPTY_ARRAY)))
-PRINT("name: " + INFO["NAME"])
-PRINT("numbers size: " + STRING_NEW(SIZE(NUMBERS)))
-PRINT("colours size: " + STRING_NEW(SIZE(COLOURS)))
-PRINT("first colour: " + COLOURS[0])
-PRINT("increment: " + STRING_NEW(INCREMENT(9)))
+WRITE_LINE("values size: " + STRING_NEW(SIZE(VALUES)))
+WRITE_LINE("empty map size: " + STRING_NEW(SIZE(EMPTY_MAP)))
+WRITE_LINE("empty array size: " + STRING_NEW(SIZE(EMPTY_ARRAY)))
+WRITE_LINE("name: " + INFO["NAME"])
+WRITE_LINE("numbers size: " + STRING_NEW(SIZE(NUMBERS)))
+WRITE_LINE("colours size: " + STRING_NEW(SIZE(COLOURS)))
+WRITE_LINE("first colour: " + COLOURS[0])
+WRITE_LINE("increment: " + STRING_NEW(INCREMENT(9)))
 
-PRINT("inline values size: " + STRING_NEW(SIZE(INLINE_VALUES)))
-PRINT("inline empty map size: " + STRING_NEW(SIZE(INLINE_EMPTY_MAP)))
-PRINT("inline empty array size: " + STRING_NEW(SIZE(INLINE_EMPTY_ARRAY)))
-PRINT("inline name: " + INLINE_INFO["NAME"])
-PRINT("inline numbers size: " + STRING_NEW(SIZE(INLINE_NUMBERS)))
-PRINT("inline colours size: " + STRING_NEW(SIZE(INLINE_COLOURS)))
-PRINT("inline first colour: " + INLINE_COLOURS[0])
+WRITE_LINE("inline values size: " + STRING_NEW(SIZE(INLINE_VALUES)))
+WRITE_LINE("inline empty map size: " + STRING_NEW(SIZE(INLINE_EMPTY_MAP)))
+WRITE_LINE("inline empty array size: " + STRING_NEW(SIZE(INLINE_EMPTY_ARRAY)))
+WRITE_LINE("inline name: " + INLINE_INFO["NAME"])
+WRITE_LINE("inline numbers size: " + STRING_NEW(SIZE(INLINE_NUMBERS)))
+WRITE_LINE("inline colours size: " + STRING_NEW(SIZE(INLINE_COLOURS)))
+WRITE_LINE("inline first colour: " + INLINE_COLOURS[0])

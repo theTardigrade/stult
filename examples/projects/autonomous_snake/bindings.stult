@@ -7,7 +7,7 @@ This file defines shared immutable standard-library bindings.
 ##
 
 IO : STD["IO"]
-WRITE : IO["WRITE"]
+WRITE : IO["OUTPUT"]["WRITE"]
 
 TYPE : STD["TYPE"]
 STRING : TYPE["STRING"]

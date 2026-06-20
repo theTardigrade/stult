@@ -10,7 +10,7 @@ functions, collection loops, conditionals and mutable accumulators.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 CSV : STD["DATA"]["CSV"]
 NUMBER : STD["TYPE"]["NUMBER"]
 ARRAY : STD["TYPE"]["ARRAY"]
@@ -91,16 +91,16 @@ average : { (total, count)
 	}
 }
 
-PRINT("Score report")
-PRINT("------------")
+WRITE_LINE("Score report")
+WRITE_LINE("------------")
 
 ((records)) { (record)
-	PRINT(describe_record(record))
+	WRITE_LINE(describe_record(record))
 }
 
-PRINT("")
-PRINT("Rows: ", summary["count"])
-PRINT("Average: ", average(summary["total"], summary["count"]))
-PRINT("Passing: ", summary["passing"])
-PRINT("Failing: ", summary["failing"])
-PRINT("Highest: ", summary["highest_name"], " with ", summary["highest_score"])
+WRITE_LINE("")
+WRITE_LINE("Rows: ", summary["count"])
+WRITE_LINE("Average: ", average(summary["total"], summary["count"]))
+WRITE_LINE("Passing: ", summary["passing"])
+WRITE_LINE("Failing: ", summary["failing"])
+WRITE_LINE("Highest: ", summary["highest_name"], " with ", summary["highest_score"])

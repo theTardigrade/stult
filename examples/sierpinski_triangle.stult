@@ -13,7 +13,7 @@ rather than a narrow right-angled wedge.
 
 ##
 
-PRINT : STD["IO"]["PRINT"]
+WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 
 REPEAT_CHAR : { (CHAR, COUNT)
@@ -71,6 +71,6 @@ index : 0
 		@current_row : @GET_NEXT_ROW(@current_row)
 	}
 
-	@PRINT(@REPEAT_CHAR(" ", @HEIGHT - @index) + @GET_SPACED_ROW(@current_row))
+	@WRITE_LINE(@REPEAT_CHAR(" ", @HEIGHT - @index) + @GET_SPACED_ROW(@current_row))
 	@index :+ 1
 }
