@@ -8,10 +8,16 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+* Reworked the internal array representation into ordinary slice-backed storage plus overflow chunks for extremely large dense arrays.
+* Array length and array iteration now use Stult-number indices rather than being inherently tied to the host slice index size.
+* Clarified that arrays remain finite, dense and resource-bounded, while strings remain host-representation-bounded Unicode code-point sequences.
+
 ### v0.7.6
 
 * Added `STD["TYPE"]["COLLECTION"]["GET"]` for safe map, array and string access with an optional default value.
-* `GET` returns the default, or void when no default is supplied, for missing map keys and out-of-bounds array/string indexes while still raising runtime errors for non-collection receivers and invalid key/index kinds.
+* `GET` returns the default, or void when no default is supplied, for missing map keys and out-of-bounds array/string indices while still raising runtime errors for non-collection receivers and invalid key/index kinds.
 
 ### v0.7.5
 

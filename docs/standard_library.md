@@ -1337,7 +1337,7 @@ STD.TYPE.COLLECTION.GET(config, "retries", 3)   # 3
 STD.TYPE.COLLECTION.GET(config, "missing")      # _
 ```
 
-For arrays, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns the array element. If the index is negative, out of bounds, or too large to be a possible host-backed dense-array index, `GET` returns the optional default value, or `_` when no default value was supplied.
+For arrays, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns the array element. If the index is negative or out of bounds for the dense array, `GET` returns the optional default value, or `_` when no default value was supplied. Array indices are checked against the array's length.
 
 ```stult
 items : {"a", "b"}

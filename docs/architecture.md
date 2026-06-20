@@ -365,7 +365,7 @@ Top-level block scopes are a special case because they can have an outer context
 
 Conditionals, conditional expressions, match expressions, loops, break and early return are lowered to jumps and returns.
 
-The compiler emits placeholder jump operands and patches them once target instruction indexes are known.
+The compiler emits placeholder jump operands and patches them once target instruction indices are known.
 
 Logical `&`, logical `|`, conditional expressions and match expressions are compiled with control flow rather than eager evaluation.
 
@@ -524,7 +524,7 @@ Immutability must be enforced for uppercase-only names and immutable parameters.
 
 The compiler emits `RESET_LOCALS` instructions for scoped blocks so locals from a previous iteration or block execution do not leak into later executions of the same local slot.
 
-The VM caches local indexes by chunk and reset depth to reduce repeated lookup work.
+The VM caches local indices by chunk and reset depth to reduce repeated lookup work.
 
 ### Functions and closures
 
@@ -561,7 +561,7 @@ map     key is string key, value is map entry value
 
 Map iteration is deterministic only to the degree enforced by the runtime helper used to find the next key. Any change to map iteration order must be checked against examples and interpreter parity.
 
-The iterator stack can also hold direct range-iterator state for the single-range loop optimisation. This state stores the current value, end value, step and inclusivity using exact Stult number data, so direct range loops do not impose an `int64` limit.
+The iterator stack can also hold direct range-iterator state for the single-range loop optimisation. This state stores the current value, end value, step and inclusivity using exact Stult number data, so direct range loops do not impose an `int64` limit. Array iteration uses the array method layer and Stult-number indices so overflow-backed arrays and direct range loops share the same arbitrary-size index model.
 
 ### Function loops
 
@@ -730,6 +730,24 @@ The maximum decimal-place limit controls the number of digits after the decimal 
 Exact arithmetic and comparison should use the integer or scaled-decimal representation directly where possible. This includes ordinary arithmetic, exact integer operations, fixed decimal formatting and exact serialisation.
 
 Approximate mathematical operations, such as square roots, non-integer powers, interpolation constants and trigonometric functions, may use high-precision floating-point working values internally.
+
+### Array and string values
+
+Arrays are dense ordered collections. The public semantics remain simple: an index below the current length replaces or reads an existing element, an index equal to the current length appends, and an index greater than the current length is out of bounds.
+
+The reference implementation stores arrays in two segments:
+
+```text
+Ordinary    fast slice-backed storage for indices below 1 << 24
+Overflow    map-backed continuation chunks for indices at or above 1 << 24
+Length      Stult number length for arrays that may exceed ordinary storage
+```
+
+Overflow chunks are keyed by decimal string chunk indices. This keeps ordinary arrays fast while allowing extremely large dense arrays to continue beyond the host slice index size. Overflow storage is still dense: it is a continuation of the ordinary segment, not a sparse map of arbitrary indices.
+
+Array helper methods such as `Len`, `Get`, `Set`, `Append`, `Clear` and `ForEach` are the source of truth for whole-array behaviour. Code that intentionally works only with the ordinary segment may use the ordinary slice directly, but formatting, cloning, freezing, iteration, standard-library traversal and serialisation should use the method layer so overflow elements are preserved.
+
+Strings remain contiguous Unicode code-point slices in the reference implementation. They are mutable unless frozen, but unlike arrays they are still bounded by the host representation and by operations that convert to or from Go strings. Making strings chunked or streaming would require a larger representation and standard-library refactor.
 
 ### Immutability versus freezing
 
