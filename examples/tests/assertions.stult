@@ -6,6 +6,8 @@ This example checks the standard assertion helpers.
 
 ASSERT.TRUE succeeds when its condition is true.
 
+ASSERT.FALSE succeeds when its condition is false.
+
 ASSERT.EQUAL succeeds when its first two values compare equal using normal
 Stult equality semantics.
 
@@ -15,6 +17,7 @@ WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_FALSE : ASSERT["FALSE"]
 ASSERT_EQUAL : ASSERT["EQUAL"]
 
 SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
@@ -24,17 +27,54 @@ ITEMS_ALIAS : ITEMS
 
 ASSERT_TRUE(+, "true literal should be true")
 ASSERT_TRUE(SIZE(ITEMS) = 3, "array size should be 3")
+ASSERT_TRUE(+)
+ASSERT_FALSE(-, "false literal should be false")
+ASSERT_FALSE(SIZE(ITEMS) = 4, "array size should not be 4")
+ASSERT_FALSE(-)
 
 ASSERT_EQUAL(1 + 2, 3, "number equality should work")
+ASSERT_EQUAL(1 + 2, 3)
+ASSERT_EQUAL(+10, 10, "unary plus should preserve positive numbers")
+ASSERT_EQUAL(-10, 0 - 10, "unary minus should negate numbers")
+
+amount : 10
+
+ASSERT_EQUAL(+amount, 10, "unary plus should preserve number bindings")
+ASSERT_EQUAL(-amount, 0 - 10, "unary minus should negate number bindings")
 ASSERT_EQUAL("Stult", "Stult", "string equality should work")
 ASSERT_EQUAL(+, +, "boolean equality should work")
 ASSERT_EQUAL(_, _, "void equality should work")
 ASSERT_EQUAL(ITEMS, ITEMS_ALIAS, "array identity equality should work")
+ASSERT_EQUAL(ASSERT_FALSE(-), _, "ASSERT.FALSE should return void")
 
 ASSERT_EQUAL(
 	ASSERT_TRUE(SIZE(ITEMS_ALIAS) = 3, "nested assertion should succeed"),
 	_,
 	"ASSERT.TRUE should return void"
 )
+
+true_failure : ""
+'{
+	ASSERT_TRUE(-)
+},{ (error)
+	@true_failure : error
+}
+ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be true", true_failure), "ASSERT.TRUE should use a default message")
+
+false_failure : ""
+'{
+	ASSERT_FALSE(+)
+},{ (error)
+	@false_failure : error
+}
+ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be false", false_failure), "ASSERT.FALSE should use a default message")
+
+equal_failure : ""
+'{
+	ASSERT_EQUAL(1, 2)
+},{ (error)
+	@equal_failure : error
+}
+ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected values to be equal", equal_failure), "ASSERT.EQUAL should use a default message")
 
 WRITE_LINE("assertion checks passed")
