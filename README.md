@@ -458,7 +458,9 @@ Booleans use symbolic literals:
 -  # false
 ```
 
-When written as standalone expressions, `+` and `-` are the boolean literals for true and false. However, when `+` or `-` is followed by an expression, it is a numeric sign operator, so `+10` is positive ten and `-10` is negative ten.
+When written as standalone expressions, `+` and `-` are the boolean literals for true and false.
+
+However, when `+` or `-` is followed by an expression, it is a numeric sign operator, so `+10` is positive ten and `-10` is negative ten.
 
 ### Strings
 
