@@ -1,3 +1,16 @@
+##
+
+EXAMPLE: tests/string_chars.stult
+
+This example checks the standard string character helper.
+
+STRING.CHARS splits a string into an array containing one string per Unicode
+character.
+
+The legacy STRING.CHARACTERS name is intentionally no longer available.
+
+##
+
 ASSERT : STD.ASSERT
 STRING : STD.TYPE.STRING
 SIZE : STD.TYPE.COLLECTION.SIZE

@@ -1,3 +1,17 @@
+##
+
+EXAMPLE: tests/string_repeat.stult
+
+This example checks the standard string repeat helper.
+
+STRING.REPEAT returns a new string made by repeating the input text the
+requested number of times.
+
+The repeat count must be a non-negative whole number, and Unicode text should
+be preserved when repeated.
+
+##
+
 ASSERT : STD.ASSERT
 STRING : STD.TYPE.STRING
 IS_FOUND_IN : STRING.IS_FOUND_IN
