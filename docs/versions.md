@@ -17,6 +17,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 #### Standard library
 
 * Added `STD.TYPE.NUMBER.IS_WHOLE` and `STD.TYPE.NUMBER.CLAMP` for whole-number checks and inclusive range clamping.
+* Added `STD.TYPE.ARRAY.REVERSE` for returning a reversed copy of an array.
 
 ### v0.8.1
 

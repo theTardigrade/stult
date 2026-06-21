@@ -121,3 +121,6 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [String repeat](../examples/tests/string_repeat.stult)  
   Checks that `STD.TYPE.STRING.REPEAT` repeats text, handles zero counts and Unicode text, and rejects invalid repeat counts.
+
+- [Array reverse](../examples/tests/array_reverse.stult)  
+  Checks that `STD.TYPE.ARRAY.REVERSE` returns a reversed mutable array without modifying the input array, including frozen input arrays and reused element values.

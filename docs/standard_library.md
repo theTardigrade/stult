@@ -157,6 +157,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["STRING"]["JOIN"](array, separator)`](#stdtypestringjoinarray-separator)
   - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
     - [`STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`](#stdtypearrayappendarray-values)
+    - [`STD["TYPE"]["ARRAY"]["REVERSE"](array)`](#stdtypearrayreversearray)
   - [`STD["TYPE"]["MAP"]`](#stdtypemap)
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
     - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
@@ -1414,6 +1415,23 @@ Returns `_`.
 The first argument must be an array.
 
 Raises a runtime error if the array is frozen.
+
+### `STD["TYPE"]["ARRAY"]["REVERSE"](array)`
+
+Returns a new unfrozen array containing the input array's elements in reverse order.
+
+```stult
+values : {1, 2, 3}
+reversed : STD.TYPE.ARRAY.REVERSE(values)
+```
+
+The original array is not modified.
+
+Element values are reused rather than deep-cloned.
+
+Frozen input arrays are accepted.
+
+Raises a runtime error if the value is not an array.
 
 ## `STD["TYPE"]["MAP"]`
 
