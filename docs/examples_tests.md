@@ -78,6 +78,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Dot access](../examples/tests/dot_access_for_maps.stult)  
   Checks that `object.key` behaves like `object["key"]` for map string keys, including chained access, assignment, compound assignment and standard-library paths.
 
+- [Leading dot access](../examples/tests/leading_dot_access.stult)  
+  Checks that `.field` map keys create string-key entries, that functions written inside maps can use `.field` to read and update the nearest surrounding map, and that captured functions keep their original map receiver when called through another binding.
+
 ## Functions
 
 - [Optional parameters](../examples/tests/optional_parameters.stult)  

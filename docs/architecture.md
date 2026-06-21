@@ -282,10 +282,15 @@ map literals
 range segments
 index expressions
 dot access
+leading-dot receiver expressions
 outer-name expressions
 ```
 
 Dot access is parsed as syntax sugar for string-key indexing. The parser lowers `object.key` to the same AST shape as `object["key"]`, preserving the identifier spelling as the string key. This keeps interpreter and bytecode behaviour aligned with ordinary map indexing.
+
+Leading-dot field access, such as `.name`, is also lowered to an index expression, but its object is a `LeadingDotReceiverExpression`. At runtime that receiver resolves to the nearest active or captured map literal. This means leading-dot access can be used while evaluating map entry values, and functions created inside maps capture that map for later leading-dot access. If no such map exists, or if the nearest map does not contain the requested key, evaluation raises a runtime error.
+
+Map literals accept ordinary string keys and leading-dot map keys. A leading-dot map key, such as `.name : value`, is parsed as the string key `"name"` while preserving the usual map-entry mutability rules derived from the resulting key string. Bare identifier-shaped map keys remain invalid.
 
 Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a touching `?` branch list, such as `(condition)?(when_true, when_false)`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
@@ -959,7 +964,7 @@ docs
 tests
 ```
 
-Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth.
+Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth. Leading-dot field access also reuses index-expression assignment behaviour, but its receiver is runtime-resolved from the nearest captured map, so interpreter and bytecode map-capture handling must stay aligned.
 
 Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition)?(when_true, when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
 

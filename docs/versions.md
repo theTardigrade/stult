@@ -10,6 +10,8 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ### Future release
 
+* Added leading-dot map keys such as `.name : value` as shorthand for identifier-shaped string keys inside map literals.
+* Added leading-dot field access for functions written inside maps, allowing `.name` reads and assignments to resolve against the nearest captured surrounding map.
 * Split `STD.IO` into `STD.IO.INPUT` and `STD.IO.OUTPUT`, moving input helpers under `INPUT` and output helpers under `OUTPUT`.
 * `STD.IO.OUTPUT.PRINT` was removed; use `WRITE_LINE` instead. Standard-error output now has both `WRITE_ERROR` and `WRITE_ERROR_LINE`.
 
