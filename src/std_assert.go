@@ -5,6 +5,7 @@ import "fmt"
 func NewStdAssertMap() Value {
 	entries := map[string]Binding{
 		"EQUAL": NewImmutableBinding(NewBuiltinFunctionValue(StdAssertEqual)),
+		"FALSE": NewImmutableBinding(NewBuiltinFunctionValue(StdAssertFalse)),
 		"TRUE":  NewImmutableBinding(NewBuiltinFunctionValue(StdAssertTrue)),
 	}
 
@@ -12,8 +13,8 @@ func NewStdAssertMap() Value {
 }
 
 func StdAssertTrue(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) != 2 {
-		return Value{}, fmt.Errorf("ASSERT.TRUE expected 2 arguments, got %d", len(args))
+	if len(args) < 1 || len(args) > 2 {
+		return Value{}, fmt.Errorf("ASSERT.TRUE expected 1 or 2 arguments, got %d", len(args))
 	}
 
 	condition := resolveSpecializedValue(args[0])
@@ -21,7 +22,7 @@ func StdAssertTrue(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("ASSERT.TRUE argument 1 expected a boolean")
 	}
 
-	message, err := stdAssertMessageArg("ASSERT.TRUE", args[1], 2)
+	message, err := stdAssertOptionalMessageArg("ASSERT.TRUE", args, 2, "expected condition to be true")
 	if err != nil {
 		return Value{}, err
 	}
@@ -33,15 +34,37 @@ func StdAssertTrue(_ *RuntimeContext, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
+func StdAssertFalse(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) < 1 || len(args) > 2 {
+		return Value{}, fmt.Errorf("ASSERT.FALSE expected 1 or 2 arguments, got %d", len(args))
+	}
+
+	condition := resolveSpecializedValue(args[0])
+	if condition.Kind != ValueBool {
+		return Value{}, fmt.Errorf("ASSERT.FALSE argument 1 expected a boolean")
+	}
+
+	message, err := stdAssertOptionalMessageArg("ASSERT.FALSE", args, 2, "expected condition to be false")
+	if err != nil {
+		return Value{}, err
+	}
+
+	if condition.Bool {
+		return Value{}, fmt.Errorf("assertion failed: %s", message)
+	}
+
+	return NewVoidValue(), nil
+}
+
 func StdAssertEqual(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) != 3 {
-		return Value{}, fmt.Errorf("ASSERT.EQUAL expected 3 arguments, got %d", len(args))
+	if len(args) < 2 || len(args) > 3 {
+		return Value{}, fmt.Errorf("ASSERT.EQUAL expected 2 or 3 arguments, got %d", len(args))
 	}
 
 	actual := resolveSpecializedValue(args[0])
 	expected := resolveSpecializedValue(args[1])
 
-	message, err := stdAssertMessageArg("ASSERT.EQUAL", args[2], 3)
+	message, err := stdAssertOptionalMessageArg("ASSERT.EQUAL", args, 3, "expected values to be equal")
 	if err != nil {
 		return Value{}, err
 	}
@@ -63,8 +86,12 @@ func StdAssertEqual(_ *RuntimeContext, args []Value) (Value, error) {
 	return NewVoidValue(), nil
 }
 
-func stdAssertMessageArg(name string, arg Value, position int) (string, error) {
-	value := resolveSpecializedValue(arg)
+func stdAssertOptionalMessageArg(name string, args []Value, position int, defaultMessage string) (string, error) {
+	if len(args) < position {
+		return defaultMessage, nil
+	}
+
+	value := resolveSpecializedValue(args[position-1])
 
 	if value.Kind != ValueString {
 		return "", fmt.Errorf("%s argument %d expected a string message", name, position)
