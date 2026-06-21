@@ -1,0 +1,40 @@
+ASSERT : STD.ASSERT
+ARRAY : STD.TYPE.ARRAY
+COLLECTION : STD.TYPE.COLLECTION
+SIZE : COLLECTION.SIZE
+FREEZE : COLLECTION.FREEZE
+
+values : {1, 2, 3}
+reversed : ARRAY.REVERSE(values)
+
+ASSERT.EQUAL(SIZE(reversed), 3, "REVERSE should return an array with the same size")
+ASSERT.EQUAL(reversed[0], 3, "REVERSE should put the last value first")
+ASSERT.EQUAL(reversed[1], 2, "REVERSE should keep the middle value in place")
+ASSERT.EQUAL(reversed[2], 1, "REVERSE should put the first value last")
+
+ASSERT.EQUAL(values[0], 1, "REVERSE should not modify the original first value")
+ASSERT.EQUAL(values[1], 2, "REVERSE should not modify the original middle value")
+ASSERT.EQUAL(values[2], 3, "REVERSE should not modify the original last value")
+
+ASSERT.EQUAL(SIZE(ARRAY.REVERSE({})), 0, "REVERSE should support empty arrays")
+ASSERT.EQUAL(ARRAY.REVERSE({"only"})[0], "only", "REVERSE should support single-element arrays")
+
+shared : {"name": "Ada"}
+reference_reversed : ARRAY.REVERSE({shared, "tail"})
+ASSERT.EQUAL(reference_reversed[1], shared, "REVERSE should reuse element values rather than deep-cloning them")
+
+frozen_values : FREEZE({"a", "b"})
+reversed_frozen : ARRAY.REVERSE(frozen_values)
+ASSERT.EQUAL(reversed_frozen[0], "b", "REVERSE should support frozen input arrays")
+ARRAY.APPEND(reversed_frozen, "c")
+ASSERT.EQUAL(SIZE(reversed_frozen), 3, "REVERSE should return a mutable array")
+
+non_array_error : -
+
+'{
+	ARRAY.REVERSE("abc")
+},{ (error)
+	@non_array_error : STD.TYPE.STRING.IS_FOUND_IN("argument 1 expected an array", error)
+}
+
+ASSERT.TRUE(non_array_error, "REVERSE should require an array")
