@@ -12,6 +12,7 @@ func NewStdFileMap() Value {
 		"COPY":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileCopy)),
 		"DELETE": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileDelete)),
 		"EXISTS": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileExists)),
+		"PATH":   NewImmutableBinding(NewStdFilePathMap()),
 		"READ":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileRead)),
 		"RENAME": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileRename)),
 		"SIZE":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileSize)),
