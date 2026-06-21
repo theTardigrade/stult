@@ -48,6 +48,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
     - [Dot access for maps](#dot-access-for-maps)
+    - [Cloning collections](#cloning-collections)
     - [Freezing collections](#freezing-collections)
     - [Ranges](#ranges)
   - [Functions](#functions)
@@ -458,9 +459,7 @@ Booleans use symbolic literals:
 -  # false
 ```
 
-When written as standalone expressions, `+` and `-` are the boolean literals for true and false.
-
-However, when `+` or `-` is followed by an expression, it is a numeric sign operator, so `+10` is positive ten and `-10` is negative ten.
+When written alone, `+` and `-` are the boolean literals for true and false. When followed by an expression, they are numeric sign operators, so `+10` is positive ten and `-10` is negative ten.
 
 ### Strings
 
@@ -668,11 +667,11 @@ Arrays, maps and strings can be indexed. For this reason, we call them collectio
 
 Arrays are ordered lists of values. You can read or replace an item by index, and assigning to the next index appends a new item.
 
-Strings are ordered sequences of characters. Strings are generally used to store text. They can be indexed and updated in much the same way as arrays (although extremely large strings are limited by the host system, ).
+Strings are ordered sequences of characters. Strings are generally used to store text. They can be indexed and updated in much the same way as arrays.
 
 Maps store values under string keys. Map entries can be mutable or immutable, depending on the same capitalization rules that apply to ordinary bindings.
 
-Arrays and maps can grow as your program runs, subject to available memory and processing time. Strings can also grow when you append characters, but extremely large strings are still limited by the host system. Most programs will never come close to those limits.
+Arrays and maps can grow dynamically as your program runs, subject to available memory and processing time. Strings can also grow when you append characters, but extremely large strings are still limited by the host system. Most programs will never come close to those limits.
 
 Arrays use `{}`:
 
@@ -793,7 +792,7 @@ Here, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.ag
 
 A leading dot used in this way only looks within the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
 
-#### Cloning and freezing collections
+#### Cloning collections
 
 Collection values can be deeply cloned with `STD.TYPE.COLLECTION.CLONE`.
 
@@ -812,6 +811,8 @@ copy.nested.value : 2
 WRITE_LINE(original.nested.value) # 1
 WRITE_LINE(copy.nested.value)     # 2
 ```
+
+#### Freezing collections
 
 Collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`.
 
@@ -890,7 +891,7 @@ WRITE_LINE("hello")
 WRITE_LINE(SUBTRACT(10, 2))
 ```
 
-This means `WRITE_LINE ("hello")` or `WRITE_LINE( SUBTRACT (10, 2))` are not a valid function calls.
+This means that neither `WRITE_LINE ("hello")` nor `WRITE_LINE( SUBTRACT (10, 2))` is a valid function call.
 
 Functions can be stored in maps and arrays:
 
@@ -1155,19 +1156,7 @@ RESULT : (TEXT)?{
 
 `RESULT` is `"confirmed"`, because explicit arms are checked before the default arm, even when `_` appears first.
 
-The current version of match expressions supports scalar literal arms:
-
-```stult
-VALUE : 2
-
-TEXT : (VALUE)?{
-	1: "one"
-	2: "two"
-	+: "true"
-	-: "false"
-	_: "other"
-}
-```
+The current version of match expressions supports only simple literal patterns.
 
 Supported match patterns are:
 
