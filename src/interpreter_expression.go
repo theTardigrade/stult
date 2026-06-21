@@ -44,9 +44,6 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 
 		return binding.Value, nil
 
-	case *LeadingDotMapExpression:
-		return i.evalLeadingDotMapExpression(e)
-
 	case *PrefixExpression:
 		value, err := i.evalExpression(e.Right)
 		if err != nil {
@@ -87,6 +84,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *IndexExpression:
 		return i.evalIndexExpression(e)
 
+	case *LeadingDotReceiverExpression:
+		return i.evalLeadingDotReceiverExpression(e)
+
 	case *FunctionLiteral:
 		return NewFunctionValue(&Function{
 			Parameters:        e.Parameters,
@@ -94,7 +94,7 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 			Body:              e.Body,
 			Returns:           e.Returns,
 			Env:               i.Env,
-			DotMap:            i.currentDotMap(),
+			DotMap:            i.currentDotMap,
 		}), nil
 
 	case *CallExpression:
@@ -228,42 +228,22 @@ func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value
 	}
 }
 
-func (i *Interpreter) evalLeadingDotMapExpression(expr *LeadingDotMapExpression) (Value, error) {
-	currentMap := i.currentDotMap()
-	if currentMap == nil {
-		return Value{}, fmt.Errorf(
-			"line %d, column %d: leading dot access has no surrounding map",
-			expr.Token.StartOfLine,
-			expr.Token.StartOfColumn,
-		)
-	}
-
-	return Value{Kind: ValueMap, Map: currentMap}, nil
-}
-
-func (i *Interpreter) currentDotMap() *Map {
-	if len(i.dotMaps) == 0 {
-		return nil
-	}
-
-	return i.dotMaps[len(i.dotMaps)-1]
-}
-
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
-	value := NewMapValue(map[string]Binding{}, false)
-	if value.Map == nil {
-		return Value{}, fmt.Errorf("invalid map")
+	m := &Map{
+		Entries:  make(map[string]Binding, len(lit.Entries)),
+		IsFrozen: false,
 	}
 
-	i.dotMaps = append(i.dotMaps, value.Map)
+	previousDotMap := i.currentDotMap
+	i.currentDotMap = m
 	defer func() {
-		i.dotMaps = i.dotMaps[:len(i.dotMaps)-1]
+		i.currentDotMap = previousDotMap
 	}()
 
 	for _, entry := range lit.Entries {
 		key := entry.Key.Literal
 
-		if _, exists := value.Map.Entries[key]; exists {
+		if _, exists := m.Entries[key]; exists {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: duplicate map key %q",
 				entry.Key.StartOfLine,
@@ -272,18 +252,30 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 			)
 		}
 
-		entryValue, err := i.evalExpression(entry.Value)
+		value, err := i.evalExpression(entry.Value)
 		if err != nil {
 			return Value{}, err
 		}
 
-		value.Map.Entries[key] = Binding{
-			Value:       entryValue,
+		m.Entries[key] = Binding{
+			Value:       value,
 			IsImmutable: isImmutableIdentifier(key),
 		}
 	}
 
-	return value, nil
+	return Value{Kind: ValueMap, Map: m}, nil
+}
+
+func (i *Interpreter) evalLeadingDotReceiverExpression(expr *LeadingDotReceiverExpression) (Value, error) {
+	if i.currentDotMap == nil {
+		return Value{}, fmt.Errorf(
+			"line %d, column %d: leading dot access has no surrounding map",
+			expr.Token.StartOfLine,
+			expr.Token.StartOfColumn,
+		)
+	}
+
+	return Value{Kind: ValueMap, Map: i.currentDotMap}, nil
 }
 
 func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {

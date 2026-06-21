@@ -114,17 +114,12 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 	}
 
 	previousEnv := i.Env
-	previousDotMaps := i.dotMaps
-
+	previousDotMap := i.currentDotMap
 	i.Env = callEnv
-	i.dotMaps = nil
-	if fn.DotMap != nil {
-		i.dotMaps = append(i.dotMaps, fn.DotMap)
-	}
-
+	i.currentDotMap = fn.DotMap
 	defer func() {
 		i.Env = previousEnv
-		i.dotMaps = previousDotMaps
+		i.currentDotMap = previousDotMap
 	}()
 
 	for _, stmt := range fn.Body {

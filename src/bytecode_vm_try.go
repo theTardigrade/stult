@@ -3,9 +3,11 @@ package main
 import "fmt"
 
 type bytecodeVMErrorHandler struct {
-	CatchIP       int
-	StackSize     int
-	IteratorCount int
+	CatchIP        int
+	StackSize      int
+	IteratorCount  int
+	CurrentDotMap  *Map
+	DotMapStackLen int
 }
 
 func (vm *BytecodeVM) tryStart(catchIP int) error {
@@ -18,9 +20,11 @@ func (vm *BytecodeVM) tryStart(catchIP int) error {
 	}
 
 	vm.errorHandlers = append(vm.errorHandlers, bytecodeVMErrorHandler{
-		CatchIP:       catchIP,
-		StackSize:     len(vm.stack),
-		IteratorCount: len(vm.iterators),
+		CatchIP:        catchIP,
+		StackSize:      len(vm.stack),
+		IteratorCount:  len(vm.iterators),
+		CurrentDotMap:  vm.currentDotMap,
+		DotMapStackLen: len(vm.dotMapStack),
 	})
 
 	return nil
@@ -52,8 +56,14 @@ func (vm *BytecodeVM) handleRuntimeError(err error) bool {
 		handler.IteratorCount = 0
 	}
 
+	if handler.DotMapStackLen < 0 || handler.DotMapStackLen > len(vm.dotMapStack) {
+		handler.DotMapStackLen = 0
+	}
+
 	vm.stack = vm.stack[:handler.StackSize]
 	vm.iterators = vm.iterators[:handler.IteratorCount]
+	vm.currentDotMap = handler.CurrentDotMap
+	vm.dotMapStack = vm.dotMapStack[:handler.DotMapStackLen]
 	vm.pushValue(NewStringValue(err.Error()))
 	vm.ip = handler.CatchIP
 

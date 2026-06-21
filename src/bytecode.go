@@ -25,8 +25,13 @@ const (
 
 	BytecodeOpBuildArray
 	BytecodeOpBuildMap
+	BytecodeOpBeginMap
+	BytecodeOpCheckMapEntry
+	BytecodeOpAddMapEntry
+	BytecodeOpEndMap
 	BytecodeOpBuildRange
 	BytecodeOpMakeFunction
+	BytecodeOpLoadDotMap
 	BytecodeOpIndex
 	BytecodeOpCall
 
@@ -281,11 +286,26 @@ func (opcode BytecodeOpcode) String() string {
 	case BytecodeOpBuildMap:
 		return "BUILD_MAP"
 
+	case BytecodeOpBeginMap:
+		return "BEGIN_MAP"
+
+	case BytecodeOpCheckMapEntry:
+		return "CHECK_MAP_ENTRY"
+
+	case BytecodeOpAddMapEntry:
+		return "ADD_MAP_ENTRY"
+
+	case BytecodeOpEndMap:
+		return "END_MAP"
+
 	case BytecodeOpBuildRange:
 		return "BUILD_RANGE"
 
 	case BytecodeOpMakeFunction:
 		return "MAKE_FUNCTION"
+
+	case BytecodeOpLoadDotMap:
+		return "LOAD_DOT_MAP"
 
 	case BytecodeOpIndex:
 		return "INDEX"

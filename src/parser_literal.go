@@ -36,7 +36,7 @@ func (p *Parser) parseBraceLiteral() Expression {
 		}
 	}
 
-	if p.isMapEntryStart() {
+	if p.isMapLiteralEntryStart() {
 		return p.parseMapLiteral(openBrace)
 	}
 
@@ -142,22 +142,37 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 	}
 }
 
-func (p *Parser) isMapEntryStart() bool {
-	return (p.current.Type == TokenString || p.current.Type == TokenIdentifier) &&
-		p.peek.Type == TokenColon
+func (p *Parser) isMapLiteralEntryStart() bool {
+	return (p.current.Type == TokenString && p.peek.Type == TokenColon) ||
+		p.isLeadingDotMapKeyStart()
+}
+
+func (p *Parser) isLeadingDotMapKeyStart() bool {
+	if p.current.Type != TokenDot || p.peek.Type != TokenIdentifier {
+		return false
+	}
+
+	checkpoint := p.checkpoint()
+	dot := p.current
+	p.advance()
+
+	touchesIdentifier := tokensTouch(dot, p.current)
+	p.advance()
+
+	isMapKey := touchesIdentifier && p.current.Type == TokenColon
+	p.restore(checkpoint)
+
+	return isMapKey
 }
 
 func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	entries := []MapEntry{}
 
 	for {
-		if p.current.Type != TokenString && p.current.Type != TokenIdentifier {
-			p.errorAtCurrent("expected map key")
+		key, isDotKey, ok := p.parseMapEntryKey()
+		if !ok {
 			return nil
 		}
-
-		key := p.current
-		p.advance()
 
 		if !p.expectCurrent(TokenColon, "expected ':' after map key") {
 			return nil
@@ -172,8 +187,9 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 		}
 
 		entries = append(entries, MapEntry{
-			Key:   key,
-			Value: value,
+			Key:      key,
+			Value:    value,
+			IsDotKey: isDotKey,
 		})
 
 		if p.current.Type == TokenRBrace {
@@ -200,6 +216,37 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	}
 
 	return &MapLiteral{Token: openBrace, Entries: entries}
+}
+
+func (p *Parser) parseMapEntryKey() (Token, bool, bool) {
+	if p.current.Type == TokenString {
+		key := p.current
+		p.advance()
+		return key, false, true
+	}
+
+	if p.current.Type != TokenDot {
+		p.errorAtCurrent("expected string map key or leading-dot map key")
+		return Token{}, false, false
+	}
+
+	dot := p.current
+	p.advance() // consume "."
+
+	if p.current.Type != TokenIdentifier {
+		p.errorAtToken(dot, "expected identifier after leading-dot map key")
+		return Token{}, false, false
+	}
+
+	if !tokensTouch(dot, p.current) {
+		p.errorAtToken(p.current, "expected leading-dot map key identifier to touch '.'")
+		return Token{}, false, false
+	}
+
+	key := p.current
+	p.advance()
+
+	return key, true, true
 }
 
 func (p *Parser) parseArrayLiteral(openBrace Token) Expression {

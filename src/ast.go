@@ -107,15 +107,6 @@ type IdentifierExpression struct {
 
 func (e *IdentifierExpression) expressionNode() {}
 
-// LeadingDotMapExpression represents the implicit map receiver for a leading
-// dot field access such as .NAME. It is normally wrapped in an IndexExpression
-// whose index is the field name.
-type LeadingDotMapExpression struct {
-	Token Token
-}
-
-func (e *LeadingDotMapExpression) expressionNode() {}
-
 type PrefixExpression struct {
 	Token    Token
 	Operator string
@@ -183,8 +174,9 @@ type MapLiteral struct {
 func (*MapLiteral) expressionNode() {}
 
 type MapEntry struct {
-	Key   Token
-	Value Expression
+	Key      Token
+	Value    Expression
+	IsDotKey bool
 }
 
 type ArrayLiteral struct {
@@ -219,6 +211,12 @@ type IndexExpression struct {
 }
 
 func (*IndexExpression) expressionNode() {}
+
+type LeadingDotReceiverExpression struct {
+	Token Token
+}
+
+func (*LeadingDotReceiverExpression) expressionNode() {}
 
 type IndexAssignmentStatement struct {
 	Target *IndexExpression

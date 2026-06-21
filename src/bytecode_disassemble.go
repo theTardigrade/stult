@@ -245,6 +245,8 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 	switch instruction.Opcode {
 	case BytecodeOpLoadConst,
 		BytecodeOpLoadGlobal,
+		BytecodeOpCheckMapEntry,
+		BytecodeOpAddMapEntry,
 		BytecodeOpStoreGlobalMutable,
 		BytecodeOpStoreGlobalImmutable,
 		BytecodeOpStoreExistingGlobal:
@@ -327,6 +329,9 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpLoadTrue,
 		BytecodeOpLoadFalse,
 		BytecodeOpStoreIndex,
+		BytecodeOpBeginMap,
+		BytecodeOpEndMap,
+		BytecodeOpLoadDotMap,
 		BytecodeOpIndex,
 		BytecodeOpIteratorEnd,
 		BytecodeOpTryEnd,

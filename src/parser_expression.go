@@ -89,7 +89,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		left = outer
 
 	case TokenDot:
-		leadingDot, ok := p.parseLeadingDotAccessExpression()
+		leadingDot, ok := p.parseLeadingDotExpression()
 		if !ok {
 			return nil
 		}
@@ -141,6 +141,32 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 	}
 
 	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeTouchingIndex)
+}
+
+func (p *Parser) parseLeadingDotExpression() (Expression, bool) {
+	dot := p.current
+	p.advance() // consume "."
+
+	if p.current.Type != TokenIdentifier {
+		p.errorAtToken(dot, "expected identifier after leading '.'")
+		return nil, false
+	}
+
+	if !tokensTouch(dot, p.current) {
+		p.errorAtToken(p.current, "expected leading-dot identifier to touch '.'")
+		return nil, false
+	}
+
+	identifier := p.current
+	p.advance()
+
+	return &IndexExpression{
+		Object: &LeadingDotReceiverExpression{Token: dot},
+		Index: &StringLiteral{
+			Token: identifier,
+			Value: identifier.Literal,
+		},
+	}, true
 }
 
 func (p *Parser) parseOuterIdentifierExpression() (Expression, bool) {
@@ -245,32 +271,6 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 	}
 
 	return left
-}
-
-func (p *Parser) parseLeadingDotAccessExpression() (Expression, bool) {
-	dot := p.current
-	p.advance() // consume "."
-
-	if p.current.Type != TokenIdentifier {
-		p.errorAtCurrent("expected identifier after '.'")
-		return nil, false
-	}
-
-	if !tokensTouch(dot, p.current) {
-		p.errorAtCurrent("expected dot-access identifier to touch '.'")
-		return nil, false
-	}
-
-	identifier := p.current
-	p.advance()
-
-	return &IndexExpression{
-		Object: &LeadingDotMapExpression{Token: dot},
-		Index: &StringLiteral{
-			Token: identifier,
-			Value: identifier.Literal,
-		},
-	}, true
 }
 
 func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) {

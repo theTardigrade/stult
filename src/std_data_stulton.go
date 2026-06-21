@@ -136,9 +136,9 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		entries := make(map[string]Binding)
 
 		for _, entry := range e.Entries {
-			if entry.Key.Type != TokenString {
+			if entry.IsDotKey {
 				return Value{}, fmt.Errorf(
-					"line %d, column %d: DATA.STULTON.PARSE only allows string map keys",
+					"line %d, column %d: DATA.STULTON.PARSE does not allow leading-dot map keys",
 					entry.Key.StartOfLine,
 					entry.Key.StartOfColumn,
 				)
@@ -185,6 +185,9 @@ func stdDataStultonExpressionName(expr Expression) string {
 	switch expr.(type) {
 	case *IdentifierExpression:
 		return "identifiers"
+
+	case *LeadingDotReceiverExpression:
+		return "leading dot access"
 
 	case *BinaryExpression:
 		return "operators"

@@ -11,6 +11,8 @@ type BytecodeVM struct {
 	upvalues                 []*bytecodeVMCell
 	iterators                []bytecodeVMIterator
 	errorHandlers            []bytecodeVMErrorHandler
+	currentDotMap            *Map
+	dotMapStack              []*Map
 	runtime                  *RuntimeContext
 	args                     []string
 	localIndexCache          map[*BytecodeChunk]map[string]int
@@ -36,6 +38,8 @@ type bytecodeVMExecutionState struct {
 	Upvalues      []*bytecodeVMCell
 	Iterators     []bytecodeVMIterator
 	ErrorHandlers []bytecodeVMErrorHandler
+	CurrentDotMap *Map
+	DotMapStack   []*Map
 }
 
 func RunBytecode(chunk *BytecodeChunk) (Value, error) {
@@ -64,6 +68,7 @@ func NewBytecodeVMWithRuntime(runtime *RuntimeContext) *BytecodeVM {
 		upvalues:                 []*bytecodeVMCell{},
 		iterators:                []bytecodeVMIterator{},
 		errorHandlers:            []bytecodeVMErrorHandler{},
+		dotMapStack:              []*Map{},
 		runtime:                  runtime,
 		args:                     append([]string{}, runtime.Args...),
 		localIndexCache:          map[*BytecodeChunk]map[string]int{},
@@ -91,6 +96,8 @@ func (vm *BytecodeVM) runChunk(chunk *BytecodeChunk, initializeLocals bool) (Val
 	vm.stack = vm.stack[:0]
 	vm.iterators = vm.iterators[:0]
 	vm.errorHandlers = vm.errorHandlers[:0]
+	vm.currentDotMap = nil
+	vm.dotMapStack = vm.dotMapStack[:0]
 
 	if initializeLocals {
 		vm.initializeLocals(chunk)
@@ -245,6 +252,31 @@ func (vm *BytecodeVM) executeInstruction(
 
 		return Value{}, false, nil
 
+	case BytecodeOpBeginMap:
+		vm.beginMapLiteral()
+		return Value{}, false, nil
+
+	case BytecodeOpCheckMapEntry:
+		if err := vm.checkMapEntry(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpAddMapEntry:
+		if err := vm.addMapEntry(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpEndMap:
+		if err := vm.endMapLiteral(); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
 	case BytecodeOpBuildRange:
 		if err := vm.buildRange(instruction.Operand == 1); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
@@ -255,6 +287,13 @@ func (vm *BytecodeVM) executeInstruction(
 	case BytecodeOpMakeFunction:
 		if err := vm.makeFunction(instruction.Operand); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpLoadDotMap:
+		if err := vm.loadDotMap(instructionIndex); err != nil {
+			return Value{}, false, err
 		}
 
 		return Value{}, false, nil

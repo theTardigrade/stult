@@ -400,6 +400,82 @@ func (vm *BytecodeVM) buildMap(entryCount int) error {
 	return nil
 }
 
+func (vm *BytecodeVM) beginMapLiteral() {
+	m := &Map{
+		Entries:  map[string]Binding{},
+		IsFrozen: false,
+	}
+
+	vm.dotMapStack = append(vm.dotMapStack, vm.currentDotMap)
+	vm.currentDotMap = m
+	vm.pushValue(Value{Kind: ValueMap, Map: m})
+}
+
+func (vm *BytecodeVM) checkMapEntry(nameConstant int) error {
+	if vm.currentDotMap == nil {
+		return fmt.Errorf("no active map literal")
+	}
+
+	key, err := vm.constantName(nameConstant)
+	if err != nil {
+		return err
+	}
+
+	if _, exists := vm.currentDotMap.Entries[key]; exists {
+		return fmt.Errorf("duplicate map key %q", key)
+	}
+
+	return nil
+}
+
+func (vm *BytecodeVM) addMapEntry(nameConstant int) error {
+	if vm.currentDotMap == nil {
+		return fmt.Errorf("no active map literal")
+	}
+
+	key, err := vm.constantName(nameConstant)
+	if err != nil {
+		return err
+	}
+
+	value, err := vm.popValue()
+	if err != nil {
+		return err
+	}
+
+	if _, exists := vm.currentDotMap.Entries[key]; exists {
+		return fmt.Errorf("duplicate map key %q", key)
+	}
+
+	vm.currentDotMap.Entries[key] = Binding{
+		Value:       value,
+		IsImmutable: isImmutableIdentifier(key),
+	}
+
+	return nil
+}
+
+func (vm *BytecodeVM) endMapLiteral() error {
+	if len(vm.dotMapStack) == 0 {
+		return fmt.Errorf("no active map literal")
+	}
+
+	last := len(vm.dotMapStack) - 1
+	vm.currentDotMap = vm.dotMapStack[last]
+	vm.dotMapStack = vm.dotMapStack[:last]
+
+	return nil
+}
+
+func (vm *BytecodeVM) loadDotMap(instructionIndex int) error {
+	if vm.currentDotMap == nil {
+		return vm.runtimeError(instructionIndex, "leading dot access has no surrounding map")
+	}
+
+	vm.pushValue(Value{Kind: ValueMap, Map: vm.currentDotMap})
+	return nil
+}
+
 func (vm *BytecodeVM) buildRange(isInclusive bool) error {
 	step, err := vm.popValue()
 	if err != nil {

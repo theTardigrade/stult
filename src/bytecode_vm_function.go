@@ -20,6 +20,7 @@ func (vm *BytecodeVM) makeFunction(index int) error {
 	value := NewFunctionValue(&Function{
 		BytecodeFunction: function,
 		BytecodeUpvalues: upvalues,
+		DotMap:           vm.currentDotMap,
 	})
 
 	vm.pushValue(value)
@@ -55,6 +56,7 @@ func (vm *BytecodeVM) captureUpvalueCells(upvalues []BytecodeUpvalue) ([]*byteco
 func (vm *BytecodeVM) runFunction(
 	function BytecodeFunction,
 	upvalues []*bytecodeVMCell,
+	dotMap *Map,
 	args []Value,
 ) (Value, error) {
 	if function.Chunk == nil {
@@ -69,6 +71,8 @@ func (vm *BytecodeVM) runFunction(
 	vm.upvalues = upvalues
 	vm.iterators = []bytecodeVMIterator{}
 	vm.errorHandlers = []bytecodeVMErrorHandler{}
+	vm.currentDotMap = dotMap
+	vm.dotMapStack = []*Map{}
 
 	vm.initializeLocals(function.Chunk)
 
@@ -93,6 +97,8 @@ func (vm *BytecodeVM) saveExecutionState() bytecodeVMExecutionState {
 		Upvalues:      vm.upvalues,
 		Iterators:     vm.iterators,
 		ErrorHandlers: vm.errorHandlers,
+		CurrentDotMap: vm.currentDotMap,
+		DotMapStack:   vm.dotMapStack,
 	}
 }
 
@@ -104,6 +110,8 @@ func (vm *BytecodeVM) restoreExecutionState(state bytecodeVMExecutionState) {
 	vm.upvalues = state.Upvalues
 	vm.iterators = state.Iterators
 	vm.errorHandlers = state.ErrorHandlers
+	vm.currentDotMap = state.CurrentDotMap
+	vm.dotMapStack = state.DotMapStack
 }
 
 func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Value) error {
@@ -305,5 +313,5 @@ func (vm *BytecodeVM) callFunction(fn *Function, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("bytecode VM cannot call an interpreter function")
 	}
 
-	return vm.runFunction(*fn.BytecodeFunction, fn.BytecodeUpvalues, args)
+	return vm.runFunction(*fn.BytecodeFunction, fn.BytecodeUpvalues, fn.DotMap, args)
 }

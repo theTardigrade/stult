@@ -1,9 +1,9 @@
 package main
 
 type Interpreter struct {
-	Env     *Environment
-	Runtime *RuntimeContext
-	dotMaps []*Map
+	Env           *Environment
+	Runtime       *RuntimeContext
+	currentDotMap *Map
 }
 
 func NewInterpreter() *Interpreter {
