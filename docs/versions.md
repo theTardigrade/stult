@@ -8,6 +8,16 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+#### Project
+
+* Added the Apache License 2.0 as the project license and clarified that it applies to earlier repository versions unless otherwise stated.
+
+#### Standard library
+
+* Added `STD.TYPE.STRING.REPEAT` for repeating text a non-negative whole number of times.
+
 ### v0.8.0
 
 #### Language

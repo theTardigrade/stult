@@ -1,0 +1,41 @@
+ASSERT : STD.ASSERT
+STRING : STD.TYPE.STRING
+IS_FOUND_IN : STRING.IS_FOUND_IN
+
+ASSERT.EQUAL(STRING.REPEAT("ha", 3), "hahaha", "REPEAT should repeat ordinary text the requested number of times")
+ASSERT.EQUAL(STRING.REPEAT("ha", 0), "", "REPEAT count zero should return an empty string")
+ASSERT.EQUAL(STRING.REPEAT("", 5), "", "REPEAT should keep empty text empty")
+ASSERT.EQUAL(STRING.REPEAT("é", 3), "ééé", "REPEAT should preserve Unicode text")
+ASSERT.EQUAL(STRING.REPEAT("ab", +3), "ababab", "REPEAT should accept explicitly positive whole-number counts")
+
+non_string_error : -
+'{
+	STRING.REPEAT(123, 2)
+},{ (error)
+	@non_string_error : IS_FOUND_IN("expected a string", error)
+}
+ASSERT.TRUE(non_string_error, "REPEAT text argument should require a string")
+
+non_number_error : -
+'{
+	STRING.REPEAT("x", "3")
+},{ (error)
+	@non_number_error : IS_FOUND_IN("non-negative whole number", error)
+}
+ASSERT.TRUE(non_number_error, "REPEAT count argument should require a number")
+
+negative_count_error : -
+'{
+	STRING.REPEAT("x", -1)
+},{ (error)
+	@negative_count_error : IS_FOUND_IN("non-negative whole number", error)
+}
+ASSERT.TRUE(negative_count_error, "REPEAT count should reject negative numbers")
+
+decimal_count_error : -
+'{
+	STRING.REPEAT("x", 1.5)
+},{ (error)
+	@decimal_count_error : IS_FOUND_IN("non-negative whole number", error)
+}
+ASSERT.TRUE(decimal_count_error, "REPEAT count should reject decimal numbers")

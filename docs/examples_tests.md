@@ -115,3 +115,6 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [File directory helpers](../examples/tests/file_directory_helpers.stult)  
   Checks `STD.FILE.LIST`, `STD.FILE.IS_FILE`, `STD.FILE.IS_DIR`, `STD.FILE.MAKE_DIR`, append-mode `STD.FILE.WRITE`, ranged text `STD.FILE.READ` and byte-array file I/O, including optional boolean arguments.
+
+- [String repeat](../examples/tests/string_repeat.stult)  
+  Checks that `STD.TYPE.STRING.REPEAT` repeats text, handles zero counts and Unicode text, and rejects invalid repeat counts.

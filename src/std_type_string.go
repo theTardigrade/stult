@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 )
+
+const stdTypeStringMaxInt = int(^uint(0) >> 1)
 
 func NewStdTypeStringMap() Value {
 	entries := map[string]Binding{
@@ -14,6 +17,7 @@ func NewStdTypeStringMap() Value {
 		"JOIN":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringJoin)),
 		"NEW":               NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringNew)),
 		"REPLACE":           NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringReplace)),
+		"REPEAT":            NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringRepeat)),
 		"SPLIT":             NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringSplit)),
 		"TO_LOWER":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToLower)),
 		"TO_UPPER":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToUpper)),
@@ -204,6 +208,28 @@ func StdTypeStringReplace(_ *RuntimeContext, args []Value) (Value, error) {
 	return NewStringValue(strings.ReplaceAll(text, oldText, newText)), nil
 }
 
+func StdTypeStringRepeat(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Value{}, fmt.Errorf("TYPE.STRING.REPEAT expected 2 arguments, got %d", len(args))
+	}
+
+	text, err := StdTypeStringArg("TYPE.STRING.REPEAT", args[0], 1)
+	if err != nil {
+		return Value{}, err
+	}
+
+	count, err := StdTypeStringRepeatCountArg("TYPE.STRING.REPEAT", args[1], 2)
+	if err != nil {
+		return Value{}, err
+	}
+
+	if len(text) != 0 && count > stdTypeStringMaxInt/len(text) {
+		return Value{}, fmt.Errorf("TYPE.STRING.REPEAT result is too large for this runtime")
+	}
+
+	return NewStringValue(strings.Repeat(text, count)), nil
+}
+
 func StdTypeStringSplit(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Value{}, fmt.Errorf("TYPE.STRING.SPLIT expected 2 arguments, got %d", len(args))
@@ -290,4 +316,23 @@ func StdTypeStringSearchArgs(name string, args []Value) (string, string, error) 
 	}
 
 	return search, text, nil
+}
+
+func StdTypeStringRepeatCountArg(name string, arg Value, position int) (int, error) {
+	value := resolveSpecializedValue(arg)
+
+	if value.Kind != ValueNumber || value.Number == nil {
+		return 0, fmt.Errorf("%s argument %d expected a non-negative whole number", name, position)
+	}
+
+	integer, accuracy := value.Number.Int(nil)
+	if accuracy != big.Exact || integer.Sign() < 0 {
+		return 0, fmt.Errorf("%s argument %d expected a non-negative whole number", name, position)
+	}
+
+	if !integer.IsInt64() || integer.Cmp(big.NewInt(int64(stdTypeStringMaxInt))) > 0 {
+		return 0, fmt.Errorf("%s argument %d is too large for this runtime", name, position)
+	}
+
+	return int(integer.Int64()), nil
 }

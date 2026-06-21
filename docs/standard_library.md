@@ -1332,6 +1332,17 @@ Replaces every occurrence of `old` with `new`.
 STD.TYPE.STRING.REPLACE("one two one", "one", "three")
 ```
 
+### `STD["TYPE"]["STRING"]["REPEAT"](text, count)`
+
+Repeats `text` `count` times.
+
+```stult
+STD.TYPE.STRING.REPEAT("-", 40)
+STD.TYPE.STRING.REPEAT("ha", 3)
+```
+
+`count` must be a non-negative whole number. A count of `0` returns an empty string.
+
 ### `STD["TYPE"]["STRING"]["SPLIT"](text, separator)`
 
 Splits text into an array of strings.
