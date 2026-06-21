@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"io"
+	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
+	"unicode/utf8"
 )
 
 func NewStdFileMap() Value {
@@ -28,8 +30,8 @@ func NewStdFileMap() Value {
 }
 
 func builtinStdFileRead(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) != 1 {
-		return Value{}, fmt.Errorf("FILE.READ expected 1 argument, got %d", len(args))
+	if len(args) < 1 || len(args) > 4 {
+		return Value{}, fmt.Errorf("FILE.READ expected 1 to 4 arguments, got %d", len(args))
 	}
 
 	path, err := stdFilePathArg("FILE.READ", args[0], 1)
@@ -37,12 +39,39 @@ func builtinStdFileRead(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
+	useBytes, err := stdFileOptionalBoolArg("FILE.READ", args, 2, false)
+	if err != nil {
+		return Value{}, err
+	}
+
+	var offset *big.Int
+	if len(args) >= 3 {
+		offset, err = stdFileNonNegativeWholeNumberArg("FILE.READ", args[2], 3)
+		if err != nil {
+			return Value{}, err
+		}
+	} else {
+		offset = new(big.Int)
+	}
+
+	var length *big.Int
+	if len(args) >= 4 {
+		length, err = stdFileNonNegativeWholeNumberArg("FILE.READ", args[3], 4)
+		if err != nil {
+			return Value{}, err
+		}
+	}
+
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Value{}, err
 	}
 
-	return NewStringValue(string(data)), nil
+	if useBytes {
+		return stdFileReadBytes(data, offset, length), nil
+	}
+
+	return stdFileReadText(data, offset, length)
 }
 
 func builtinStdFileWrite(_ *RuntimeContext, args []Value) (Value, error) {
@@ -55,7 +84,7 @@ func builtinStdFileWrite(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	content, err := stdFileContentArg("FILE.WRITE", args[1], 2)
+	content, err := stdFileContentBytesArg("FILE.WRITE", args[1], 2)
 	if err != nil {
 		return Value{}, err
 	}
@@ -72,14 +101,14 @@ func builtinStdFileWrite(_ *RuntimeContext, args []Value) (Value, error) {
 		}
 		defer file.Close()
 
-		if _, err := file.WriteString(content); err != nil {
+		if _, err := file.Write(content); err != nil {
 			return Value{}, err
 		}
 
 		return NewVoidValue(), nil
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(path, content, 0644); err != nil {
 		return Value{}, err
 	}
 
@@ -357,27 +386,111 @@ func stdFileOptionalBoolArg(name string, args []Value, position int, defaultValu
 	return value.Bool, nil
 }
 
-func stdFileContentArg(name string, arg Value, position int) (string, error) {
+func stdFileNonNegativeWholeNumberArg(name string, arg Value, position int) (*big.Int, error) {
+	value := resolveSpecializedValue(arg)
+	if value.Kind != ValueNumber || value.Number == nil {
+		return nil, fmt.Errorf("%s argument %d expected a non-negative whole number", name, position)
+	}
+
+	integer, accuracy := value.Number.Int(nil)
+	if accuracy != big.Exact || integer.Sign() < 0 {
+		return nil, fmt.Errorf("%s argument %d expected a non-negative whole number", name, position)
+	}
+
+	return integer, nil
+}
+
+func stdFileReadText(data []byte, offset *big.Int, length *big.Int) (Value, error) {
+	if !utf8.Valid(data) {
+		return Value{}, fmt.Errorf("FILE.READ text mode expected valid UTF-8")
+	}
+
+	runes := []rune(string(data))
+	start, end := stdFileSliceRange(len(runes), offset, length)
+	return NewStringValue(string(runes[start:end])), nil
+}
+
+func stdFileReadBytes(data []byte, offset *big.Int, length *big.Int) Value {
+	start, end := stdFileSliceRange(len(data), offset, length)
+	values := make([]Value, 0, end-start)
+	for _, b := range data[start:end] {
+		values = append(values, NewNumberValueFromInt64(int64(b)))
+	}
+
+	return NewArrayValue(values, false)
+}
+
+func stdFileSliceRange(total int, offset *big.Int, length *big.Int) (int, int) {
+	if offset == nil {
+		offset = new(big.Int)
+	}
+
+	totalBig := big.NewInt(int64(total))
+	if offset.Cmp(totalBig) >= 0 {
+		return total, total
+	}
+
+	start := int(offset.Int64())
+	if length == nil {
+		return start, total
+	}
+
+	if length.Sign() == 0 {
+		return start, start
+	}
+
+	remaining := total - start
+	remainingBig := big.NewInt(int64(remaining))
+	if length.Cmp(remainingBig) >= 0 {
+		return start, total
+	}
+
+	end := start + int(length.Int64())
+	return start, end
+}
+
+func stdFileContentBytesArg(name string, arg Value, position int) ([]byte, error) {
 	value := resolveSpecializedValue(arg)
 
 	switch value.Kind {
 	case ValueString:
 		if value.Text == nil {
-			return "", fmt.Errorf("%s argument %d expected valid content", name, position)
+			return nil, fmt.Errorf("%s argument %d expected valid content", name, position)
 		}
 
-		return value.Text.String(), nil
+		return []byte(value.Text.String()), nil
 
-	case ValueVoid,
-		ValueNumber,
-		ValueBool,
-		ValueMap,
-		ValueArray,
-		ValueFunction,
-		ValueBuiltinFunction:
-		return value.PrintString(), nil
+	case ValueArray:
+		return stdFileByteArrayArg(name, value, position)
 
 	default:
-		return "", fmt.Errorf("%s argument %d has unsupported content type", name, position)
+		return nil, fmt.Errorf("%s argument %d has unsupported content type", name, position)
 	}
+}
+
+func stdFileByteArrayArg(name string, value Value, position int) ([]byte, error) {
+	if value.Array == nil {
+		return nil, fmt.Errorf("%s argument %d expected a valid byte array", name, position)
+	}
+
+	bytes := make([]byte, 0)
+	err := value.Array.ForEach(func(index *Number, item Value) error {
+		item = resolveSpecializedValue(item)
+		if item.Kind != ValueNumber || item.Number == nil {
+			return fmt.Errorf("%s argument %d byte array item at index %s expected a number from 0 to 255", name, position, index.String())
+		}
+
+		integer, accuracy := item.Number.Int64()
+		if accuracy != big.Exact || integer < 0 || integer > 255 {
+			return fmt.Errorf("%s argument %d byte array item at index %s expected a whole number from 0 to 255", name, position, index.String())
+		}
+
+		bytes = append(bytes, byte(integer))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
