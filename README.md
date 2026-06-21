@@ -37,6 +37,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Language overview](#language-overview)
   - [Comments](#comments)
   - [Values](#values)
+  - [Boolean](#booleans)
+  - [Strings](#strings)
   - [Numbers](#numbers)
     - [Percentage literals](#percentage-literals)
   - [Bindings](#bindings)
@@ -447,17 +449,31 @@ builtin functions
 
 The void value is written as `_`.
 
+### Booleans
+
 Booleans use symbolic literals:
 
 ```stult
-\/  # true
-/\  # false
++  # true
+-  # false
 ```
+
+When written as standalone expressions, `+` and `-` are the boolean literals for true and false. However, when `+` or `-` is followed by an expression, it is a numeric sign operator, so `+10` is positive ten and `-10` is negative ten.
+
+### Strings
+
+A string is an ordered sequence of characters. It is generally used to store text.
 
 Strings use double quotes (*not* single quotes):
 
 ```stult
 "hello"
+```
+
+There is no separate type for a single character in Stult, so a single character would simply be stored in its own short string:
+
+```stult
+"h"
 ```
 
 ### Numbers
@@ -538,18 +554,11 @@ This is useful when an inner scope has a binding with the same name as an outer 
 
 #### Boolean bindings
 
-If you prefer word-based boolean names to symbolic boolean literals, you can create immutable bindings for them:
+If you prefer word-based boolean names to symbolic boolean literals, you can create immutable bindings for them and use those bindings like so:
 
 ```stult
-TRUE : \/
-FALSE : /\
-```
-
-Then use those bindings like so:
-
-```stult
-TRUE : \/
-FALSE : /\
+TRUE : +
+FALSE : -
 
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
@@ -603,8 +612,8 @@ c >= d  # c is greater than or equal to d is false
 Logical operators:
 
 ```stult
-e : \/  # true
-f : /\  # false
+e : +  # true
+f : -  # false
 
 e & f   # e and f is false
 e | f   # e or f is true
@@ -1049,7 +1058,7 @@ score : 10
 A conditional with a true condition can also be used as an idiomatic way to create a temporary local scope:
 
 ```stult
-(\/) {
+(+) {
 	message : "inside local scope"
 	STD.IO.OUTPUT.WRITE_LINE(message)
 }
@@ -1152,8 +1161,8 @@ VALUE : 2
 TEXT : (VALUE)?{
 	1: "one"
 	2: "two"
-	\/: "true"
-	/\: "false"
+	+: "true"
+	-: "false"
 	_: "other"
 }
 ```
@@ -1255,7 +1264,7 @@ count : 3
 An infinite loop uses the true literal:
 
 ```stult
-((\/)) {
+((+)) {
 	STD.IO.OUTPUT.WRITE_LINE("forever")
 }
 ```
@@ -1267,7 +1276,7 @@ A bare `^` breaks the nearest loop:
 ```stult
 count : 0
 
-((\/)) {
+((+)) {
 	@count :+ 1
 
 	(count = 3) {
@@ -1413,7 +1422,7 @@ ADD : { (left, right)
 
 STD.IO.OUTPUT.WRITE_LINE("sum: ", ADD(2, 3))
 
-CONFIG : {"name": "demo", "enabled": \/}
+CONFIG : {"name": "demo", "enabled": +}
 ```
 
 Newlines may be used in the same places, which is usually clearer for longer code:
@@ -1427,7 +1436,7 @@ VALUES : {
 
 CONFIG : {
 	"name": "demo"
-	"enabled": \/
+	"enabled": +
 }
 ```
 
@@ -1508,7 +1517,7 @@ STULTON is Stult’s native data notation. It is used for manifests, config file
 ```stulton
 {
 	"NAME": "example"
-	"is_active": \/
+	"is_active": +
 	"empty_array": {}
 	"empty_map": {:}
 	"items": {
