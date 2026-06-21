@@ -986,7 +986,7 @@ Each predicate accepts one value and returns a boolean.
 
 ```stult
 STD.TYPE.IS_VOID(_)
-STD.TYPE.IS_BOOL(\/)
+STD.TYPE.IS_BOOL(+)
 STD.TYPE.IS_NUMBER(123)
 STD.TYPE.IS_STRING("hello")
 STD.TYPE.IS_ARRAY({})
@@ -1010,7 +1010,7 @@ The standard-library boolean true constant.
 STD.TYPE.BOOL.TRUE
 ```
 
-This value is equivalent to the boolean literal `\/`.
+This value is equivalent to the boolean literal `+`.
 
 ### `STD["TYPE"]["BOOL"]["FALSE"]`
 
@@ -1020,7 +1020,7 @@ The standard-library boolean false constant.
 STD.TYPE.BOOL.FALSE
 ```
 
-This value is equivalent to the boolean literal `/\`.
+This value is equivalent to the boolean literal `-`.
 
 ### `STD["TYPE"]["BOOL"]["NEW"](value)`
 
@@ -1040,6 +1040,8 @@ bool      returns itself
 number    false if zero, true otherwise
 string    "T", "TRUE" and "1" become true
 string    "F", "FALSE" and "0" become false
+string    "+" becomes true
+string    "-" becomes false
 other     returns _
 ```
 
@@ -1109,8 +1111,8 @@ Converts a value to a number when possible.
 ```stult
 STD.TYPE.NUMBER.NEW("123.45")
 STD.TYPE.NUMBER.NEW("75%")
-STD.TYPE.NUMBER.NEW("\/")  # not useful; booleans are values, so use \/ directly
-STD.TYPE.NUMBER.NEW(\/)
+STD.TYPE.NUMBER.NEW("+")  # returns _; boolean text is not a number
+STD.TYPE.NUMBER.NEW(+)    # returns 1
 ```
 
 Conversion rules:
@@ -1134,7 +1136,7 @@ Converts a value to a string.
 
 ```stult
 STD.TYPE.STRING.NEW(123)
-STD.TYPE.STRING.NEW(\/)
+STD.TYPE.STRING.NEW(+)
 STD.TYPE.STRING.NEW({"a", "b"})
 ```
 
@@ -1494,11 +1496,11 @@ STD.TYPE.COLLECTION.IS_FROZEN(items)
 STD.TYPE.COLLECTION.IS_FROZEN(items[0])
 ```
 
-Returns `\/` for frozen arrays, maps and strings.
+Returns `+` for frozen arrays, maps and strings.
 
-Returns `/\` for non-frozen arrays, maps and strings.
+Returns `-` for non-frozen arrays, maps and strings.
 
-Returns `/\` for non-collections.
+Returns `-` for non-collections.
 
 ## `STD["DATA"]`
 
@@ -1559,7 +1561,7 @@ Encodes a Stult value as JSON text.
 ```stult
 text : STD.DATA.JSON.NEW({
 	"name": "example"
-	"active": \/
+	"active": +
 })
 ```
 
@@ -1619,7 +1621,7 @@ Encodes a Stult value as STULTON text.
 ```stult
 text : STD.DATA.STULTON.NEW({
 	"NAME": "example"
-	"active": \/
+	"active": +
 	"items": {
 		"one"
 		"two"
@@ -1631,7 +1633,7 @@ Conversion rules:
 
 ```text
 _         _
-bool      \/ or /\
+bool      + or -
 number    number
 string    quoted string
 array     STULTON array
@@ -1648,7 +1650,7 @@ Returns a string.
 Parses STULTON text into a Stult value.
 
 ```stult
-value : STD.DATA.STULTON.PARSE("{\"active\": \\/}")
+value : STD.DATA.STULTON.PARSE("{\"active\": +}")
 ```
 
 STULTON parsing only allows data expressions.
@@ -1675,7 +1677,7 @@ Exponential number notation is not allowed in STULTON. Percentage-suffixed numbe
 Checks whether text is valid STULTON data.
 
 ```stult
-STD.DATA.STULTON.IS_VALID("{\"active\": \\/}")
+STD.DATA.STULTON.IS_VALID("{\"active\": +}")
 ```
 
 Returns a boolean.
