@@ -12,7 +12,6 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 #### Project
 
-* Added the Apache License 2.0 as the project license.
 * Added a security policy and enabled private vulnerability reporting for responsible disclosure.
 
 #### Standard library
