@@ -336,6 +336,7 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpIteratorEnd,
 		BytecodeOpTryEnd,
 		BytecodeOpDuplicateTopTwo,
+		BytecodeOpPositive,
 		BytecodeOpNegate,
 		BytecodeOpNot,
 		BytecodeOpAdd,

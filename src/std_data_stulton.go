@@ -102,13 +102,13 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		return NewStringValue(e.Value), nil
 
 	case *PrefixExpression:
-		if e.Operator == "-" {
+		if e.Operator == "+" || e.Operator == "-" {
 			number, ok := e.Right.(*NumberLiteral)
 			if !ok {
-				return Value{}, fmt.Errorf("DATA.STULTON.PARSE only allows unary '-' before plain numbers")
+				return Value{}, fmt.Errorf("DATA.STULTON.PARSE only allows unary '+' or '-' before plain numbers")
 			}
 
-			return stdDataStultonNumberValue("-" + number.Value)
+			return stdDataStultonNumberValue(e.Operator + number.Value)
 		}
 
 		return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow prefix operator %q", e.Operator)

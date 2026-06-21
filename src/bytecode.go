@@ -75,6 +75,7 @@ const (
 	BytecodeOpReturn
 
 	BytecodeOpStoreExistingGlobal
+	BytecodeOpPositive
 )
 
 type BytecodeInstruction struct {
@@ -363,6 +364,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpNegate:
 		return "NEGATE"
+
+	case BytecodeOpPositive:
+		return "POSITIVE"
 
 	case BytecodeOpNot:
 		return "NOT"

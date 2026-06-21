@@ -459,6 +459,9 @@ func (vm *BytecodeVM) executeInstruction(
 		vm.stack = append(vm.stack, left, right)
 		return Value{}, false, nil
 
+	case BytecodeOpPositive:
+		return Value{}, false, vm.applyPositive(instructionIndex)
+
 	case BytecodeOpNegate:
 		return Value{}, false, vm.applyNegate(instructionIndex)
 

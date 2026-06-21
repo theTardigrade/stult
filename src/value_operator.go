@@ -6,6 +6,13 @@ func evalPrefix(operator string, right Value) (Value, error) {
 	right = resolveSpecializedValue(right)
 
 	switch operator {
+	case "+":
+		if right.Kind != ValueNumber {
+			return Value{}, fmt.Errorf("unary '+' requires a number")
+		}
+
+		return right, nil
+
 	case "-":
 		if right.Kind != ValueNumber {
 			return Value{}, fmt.Errorf("unary '-' requires a number")

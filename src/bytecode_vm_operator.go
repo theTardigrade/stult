@@ -23,6 +23,21 @@ func (vm *BytecodeVM) popResolvedBinaryValues(instructionIndex int) (Value, Valu
 	return left, right, nil
 }
 
+func (vm *BytecodeVM) applyPositive(instructionIndex int) error {
+	right, err := vm.popResolvedValue(instructionIndex)
+	if err != nil {
+		return err
+	}
+
+	if right.Kind != ValueNumber {
+		return vm.runtimeError(instructionIndex, "unary '+' requires a number")
+	}
+
+	vm.pushValue(right)
+
+	return nil
+}
+
 func (vm *BytecodeVM) applyNegate(instructionIndex int) error {
 	right, err := vm.popResolvedValue(instructionIndex)
 	if err != nil {

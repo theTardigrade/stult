@@ -243,6 +243,9 @@ func (compiler *BytecodeCompiler) upvalueIndex(name string) (int, bool) {
 
 func bytecodeOpcodeForPrefixOperator(operator string) (BytecodeOpcode, bool) {
 	switch operator {
+	case "+":
+		return BytecodeOpPositive, true
+
 	case "-":
 		return BytecodeOpNegate, true
 

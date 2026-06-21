@@ -44,18 +44,11 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 	var left Expression
 
 	switch p.current.Type {
-	case TokenPlus:
-		left = &BoolLiteral{
-			Token: p.current,
-			Value: true,
-		}
-		p.advance()
-
-	case TokenMinus:
+	case TokenPlus, TokenMinus:
 		if !tokenCanStartExpression(p.peek.Type) {
 			left = &BoolLiteral{
 				Token: p.current,
-				Value: false,
+				Value: p.current.Type == TokenPlus,
 			}
 			p.advance()
 			break
