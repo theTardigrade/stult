@@ -15,6 +15,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Added the Apache License 2.0 as the project license.
 * Added a security policy and enabled private vulnerability reporting for responsible disclosure.
 
+#### Standard library
+
+* Added `STD.TYPE.NUMBER.IS_WHOLE` and `STD.TYPE.NUMBER.CLAMP` for whole-number checks and inclusive range clamping.
+
 ### v0.8.1
 
 #### Project

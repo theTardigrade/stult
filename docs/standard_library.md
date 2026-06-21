@@ -135,6 +135,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
     - [`STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`](#stdtypenumberdefault_decimal_places)
     - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["IS_WHOLE"](value)`](#stdtypenumberis_wholevalue)
+    - [`STD["TYPE"]["NUMBER"]["CLAMP"](number, minimum, maximum)`](#stdtypenumberclampnumber-minimum-maximum)
     - [`STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`](#stdtypenumberformatnumber-decimal_places)
     - [`STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"](number, significant_digits)`](#stdtypenumberformat_scientificnumber-significant_digits)
     - [`STD["TYPE"]["NUMBER"]["NEW"](value)`](#stdtypenumbernewvalue)
@@ -1177,6 +1179,35 @@ STD.TYPE.NUMBER.MAX_DECIMAL_PLACES
 ```
 
 This limit applies to the decimal part of a number, not to the whole-number part. Whole-number values are theoretically unbounded, subject to available memory and processing time.
+
+### `STD["TYPE"]["NUMBER"]["IS_WHOLE"](value)`
+
+Returns true when `value` is a number with no fractional part.
+
+```stult
+NUMBER : STD.TYPE.NUMBER
+
+NUMBER.IS_WHOLE(3)    # +
+NUMBER.IS_WHOLE(3.5)  # -
+NUMBER.IS_WHOLE(-2)   # +
+NUMBER.IS_WHOLE("3")  # -
+```
+
+Negative whole-valued numbers return true. Non-number values return false.
+
+### `STD["TYPE"]["NUMBER"]["CLAMP"](number, minimum, maximum)`
+
+Restricts `number` to the inclusive range from `minimum` to `maximum`.
+
+```stult
+NUMBER : STD.TYPE.NUMBER
+
+NUMBER.CLAMP(5, 1, 10)   # 5
+NUMBER.CLAMP(-2, 0, 10)  # 0
+NUMBER.CLAMP(12, 0, 10)  # 10
+```
+
+All three arguments must be numbers. `minimum` must not be greater than `maximum`.
 
 ### `STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`
 
