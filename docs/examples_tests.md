@@ -108,4 +108,4 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 ## Standard library
 
 - [Assertions](../examples/tests/assertions.stult)  
-  Checks that `STD["ASSERT"]["TRUE"]` and `STD["ASSERT"]["EQUAL"]` succeed for valid assertions and return void where appropriate.
+  Checks that `STD["ASSERT"]["TRUE"]`, `STD["ASSERT"]["FALSE"]` and `STD["ASSERT"]["EQUAL"]` succeed for valid assertions, accept optional messages and return void where appropriate.

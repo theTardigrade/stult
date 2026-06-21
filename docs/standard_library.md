@@ -53,8 +53,9 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 ## Contents
 
 - [STD["ASSERT"]](#stdassert)
-  - [`STD["ASSERT"]["TRUE"](condition, message)`](#stdasserttruecondition-message)
-  - [`STD["ASSERT"]["EQUAL"](actual, expected, message)`](#stdassertequalactual-expected-message)
+  - [`STD["ASSERT"]["TRUE"](condition, message?)`](#stdasserttruecondition-message)
+  - [`STD["ASSERT"]["FALSE"](condition, message?)`](#stdassertfalsecondition-message)
+  - [`STD["ASSERT"]["EQUAL"](actual, expected, message?)`](#stdassertequalactual-expected-message)
 - [`STD["IO"]`](#stdio)
   - [`STD["IO"]["INPUT"]`](#stdioinput)
     - [`STD["IO"]["INPUT"]["READ_LINE"]()`](#stdioinputread_line)
@@ -184,27 +185,45 @@ These helpers are useful for self-checking scripts, examples and test programs.
 
 Failed assertions raise runtime errors.
 
-### `STD["ASSERT"]["TRUE"](condition, message)`
+### `STD["ASSERT"]["TRUE"](condition, message?)`
 
 Checks that `condition` is true.
 
 `condition` must be a boolean.
 
-`message` must be a string.
+`message`, if supplied, must be a string.
 
 Returns `_` if `condition` is true.
 
 Raises a runtime error if `condition` is false.
 
 ```stult
+STD.ASSERT.TRUE(1 + 1 = 2)
 STD.ASSERT.TRUE(1 + 1 = 2, "arithmetic should work")
 ```
 
-### `STD["ASSERT"]["EQUAL"](actual, expected, message)`
+### `STD["ASSERT"]["FALSE"](condition, message?)`
+
+Checks that `condition` is false.
+
+`condition` must be a boolean.
+
+`message`, if supplied, must be a string.
+
+Returns `_` if `condition` is false.
+
+Raises a runtime error if `condition` is true.
+
+```stult
+STD.ASSERT.FALSE(10 < 5)
+STD.ASSERT.FALSE(10 < 5, "10 should not be less than 5")
+```
+
+### `STD["ASSERT"]["EQUAL"](actual, expected, message?)`
 
 Checks that `actual` and `expected` are equal.
 
-`message` must be a string.
+`message`, if supplied, must be a string.
 
 Comparison uses normal Stult equality semantics.
 
@@ -213,7 +232,7 @@ Returns `_` if `actual` and `expected` are equal.
 Raises a runtime error if they are not equal.
 
 ```stult
-STD.ASSERT.EQUAL("Stult", "Stult", "strings should match")
+STD.ASSERT.EQUAL("Stult", "Stult")
 STD.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
 ```
 

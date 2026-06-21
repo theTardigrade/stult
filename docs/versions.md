@@ -10,9 +10,19 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ### Future release
 
+#### Language
+
+* Changed boolean literals from `\/` and `/\` to `+` and `-`.
+
+#### Collections
+
 * Added leading-dot map keys such as `.name : value` as shorthand for identifier-shaped string keys inside map literals.
 * Added leading-dot field access for functions written inside maps, allowing `.name` reads and assignments to resolve against the nearest captured surrounding map.
-* Changed boolean literals from `\/` and `/\` to `+` and `-`.
+
+#### Standard library
+
+* Added `STD.ASSERT.FALSE`.
+* Made assertion messages optional for `STD.ASSERT.TRUE`, `STD.ASSERT.FALSE` and `STD.ASSERT.EQUAL`.
 * Split `STD.IO` into `STD.IO.INPUT` and `STD.IO.OUTPUT`, moving input helpers under `INPUT` and output helpers under `OUTPUT`.
 * `STD.IO.OUTPUT.PRINT` was removed; use `WRITE_LINE` instead. Standard-error output now has both `WRITE_ERROR` and `WRITE_ERROR_LINE`.
 
@@ -261,4 +271,3 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
-
