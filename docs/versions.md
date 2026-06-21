@@ -23,6 +23,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Added `STD.ASSERT.FALSE`.
 * Made assertion messages optional for `STD.ASSERT.TRUE`, `STD.ASSERT.FALSE` and `STD.ASSERT.EQUAL`.
+* Moved file-path helpers from `STD.PATH` to `STD.FILE.PATH`.
 * Split `STD.IO` into `STD.IO.INPUT` and `STD.IO.OUTPUT`, moving input helpers under `INPUT` and output helpers under `OUTPUT`.
 * `STD.IO.OUTPUT.PRINT` was removed; use `WRITE_LINE` instead. Standard-error output now has both `WRITE_ERROR` and `WRITE_ERROR_LINE`.
 

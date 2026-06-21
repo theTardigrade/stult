@@ -109,3 +109,6 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Assertions](../examples/tests/assertions.stult)  
   Checks that `STD["ASSERT"]["TRUE"]`, `STD["ASSERT"]["FALSE"]` and `STD["ASSERT"]["EQUAL"]` succeed for valid assertions, accept optional messages and return void where appropriate.
+
+- [File path namespace](../examples/tests/file_path_namespace.stult)  
+  Checks that file-path helpers live under `STD.FILE.PATH` and that the old top-level `STD.PATH` map is no longer present.

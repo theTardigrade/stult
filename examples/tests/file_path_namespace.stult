@@ -1,0 +1,22 @@
+ASSERT : STD.ASSERT
+PATH : STD.FILE.PATH
+
+joined : PATH.JOIN("data", "input.csv")
+cleaned : PATH.CLEAN(PATH.JOIN("data", "..", "data", "input.csv"))
+nested : PATH.JOIN("data", "nested", "input.csv")
+
+ASSERT.EQUAL(cleaned, joined)
+ASSERT.EQUAL(PATH.BASE(joined), "input.csv")
+ASSERT.EQUAL(PATH.BASE(PATH.DIR(nested)), "nested")
+ASSERT.EQUAL(PATH.EXT(joined), ".csv")
+ASSERT.TRUE(STD.TYPE.IS_STRING(PATH.ABS("input.csv")))
+
+legacy_path_missing : -
+
+'{
+	STD.PATH
+},{
+	@legacy_path_missing : +
+}
+
+ASSERT.TRUE(legacy_path_missing)

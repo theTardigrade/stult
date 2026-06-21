@@ -9,7 +9,6 @@ STD.ASSERT
 STD.IO
 STD.SYSTEM
 STD.FILE
-STD.PATH
 STD.TIME
 STD.MATH
 STD.TYPE
@@ -23,14 +22,13 @@ STD["ASSERT"]
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]
-STD["PATH"]
 STD["TIME"]
 STD["MATH"]
 STD["TYPE"]
 STD["DATA"]
 ```
 
-Dot access is syntax sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
+Dot access is syntactic sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
 
 Standard-library functions are ordinary callable values stored inside maps.
 
@@ -79,13 +77,13 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["FILE"]["RENAME"](old_path, new_path)`](#stdfilerenameold_path-new_path)
   - [`STD["FILE"]["COPY"](source_path, destination_path)`](#stdfilecopysource_path-destination_path)
   - [`STD["FILE"]["SIZE"](path)`](#stdfilesizepath)
-- [`STD["PATH"]`](#stdpath)
-  - [`STD["PATH"]["JOIN"](...parts)`](#stdpathjoinparts)
-  - [`STD["PATH"]["ABS"](path)`](#stdpathabspath)
-  - [`STD["PATH"]["BASE"](path)`](#stdpathbasepath)
-  - [`STD["PATH"]["CLEAN"](path)`](#stdpathcleanpath)
-  - [`STD["PATH"]["DIR"](path)`](#stdpathdirpath)
-  - [`STD["PATH"]["EXT"](path)`](#stdpathextpath)
+  - [`STD["FILE"]["PATH"]`](#stdfilepath)
+    - [`STD["FILE"]["PATH"]["JOIN"](...parts)`](#stdfilepathjoinparts)
+    - [`STD["FILE"]["PATH"]["ABS"](path)`](#stdfilepathabspath)
+    - [`STD["FILE"]["PATH"]["BASE"](path)`](#stdfilepathbasepath)
+    - [`STD["FILE"]["PATH"]["CLEAN"](path)`](#stdfilepathcleanpath)
+    - [`STD["FILE"]["PATH"]["DIR"](path)`](#stdfilepathdirpath)
+    - [`STD["FILE"]["PATH"]["EXT"](path)`](#stdfilepathextpath)
 - [`STD["TIME"]`](#stdtime)
   - [`STD["TIME"]["MILLI_TIMESTAMP"]()`](#stdtimemilli_timestamp)
   - [`STD["TIME"]["NANO_TIMESTAMP"]()`](#stdtimenano_timestamp)
@@ -492,16 +490,16 @@ size : STD.FILE.SIZE("notes.txt")
 
 Returns a number.
 
-## `STD["PATH"]`
+### `STD["FILE"]["PATH"]`
 
-Path manipulation helpers.
+File-path manipulation helpers.
 
-### `STD["PATH"]["JOIN"](...parts)`
+#### `STD["FILE"]["PATH"]["JOIN"](...parts)`
 
 Joins path parts into one path.
 
 ```stult
-path : STD.PATH.JOIN("data", "input.csv")
+path : STD.FILE.PATH.JOIN("data", "input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(path)
 ```
@@ -512,12 +510,12 @@ Each argument must be a string.
 
 Returns a string.
 
-### `STD["PATH"]["ABS"](path)`
+#### `STD["FILE"]["PATH"]["ABS"](path)`
 
 Returns an absolute version of a path.
 
 ```stult
-absolute_path : STD.PATH.ABS("input.csv")
+absolute_path : STD.FILE.PATH.ABS("input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(absolute_path)
 ```
@@ -526,12 +524,12 @@ The argument must be a string.
 
 Returns a string.
 
-### `STD["PATH"]["BASE"](path)`
+#### `STD["FILE"]["PATH"]["BASE"](path)`
 
 Returns the final element of a path.
 
 ```stult
-name : STD.PATH.BASE("data/input.csv")
+name : STD.FILE.PATH.BASE("data/input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(name)
 ```
@@ -540,12 +538,12 @@ The argument must be a string.
 
 Returns a string.
 
-### `STD["PATH"]["CLEAN"](path)`
+#### `STD["FILE"]["PATH"]["CLEAN"](path)`
 
 Cleans a path by removing redundant path elements.
 
 ```stult
-clean_path : STD.PATH.CLEAN("./data/../data/input.csv")
+clean_path : STD.FILE.PATH.CLEAN("./data/../data/input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(clean_path)
 ```
@@ -554,12 +552,12 @@ The argument must be a string.
 
 Returns a string.
 
-### `STD["PATH"]["DIR"](path)`
+#### `STD["FILE"]["PATH"]["DIR"](path)`
 
 Returns the directory part of a path.
 
 ```stult
-dir : STD.PATH.DIR("data/input.csv")
+dir : STD.FILE.PATH.DIR("data/input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(dir)
 ```
@@ -568,12 +566,12 @@ The argument must be a string.
 
 Returns a string.
 
-### `STD["PATH"]["EXT"](path)`
+#### `STD["FILE"]["PATH"]["EXT"](path)`
 
 Returns the file extension of a path.
 
 ```stult
-extension : STD.PATH.EXT("data/input.csv")
+extension : STD.FILE.PATH.EXT("data/input.csv")
 
 STD.IO.OUTPUT.WRITE_LINE(extension)
 ```

@@ -17,7 +17,7 @@ stult examples/csv_to_json_converter.stult input.csv output.json
 
 IO : STD["IO"]
 FILE : STD["FILE"]
-PATH : STD["PATH"]
+PATH : STD["FILE"]["PATH"]
 SYSTEM : STD["SYSTEM"]
 
 CSV : STD["DATA"]["CSV"]
@@ -106,3 +106,4 @@ json_text : JSON["NEW"](records)
 },{
 	WRITE_LINE(json_text)
 }
+
