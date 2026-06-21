@@ -37,7 +37,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Language overview](#language-overview)
   - [Comments](#comments)
   - [Values](#values)
-  - [Boolean](#booleans)
+  - [Booleans](#booleans)
   - [Strings](#strings)
   - [Numbers](#numbers)
     - [Percentage literals](#percentage-literals)
