@@ -7,7 +7,7 @@ It is designed as a terse but readable scripting language with:
 - uppercase immutable bindings and lowercase mutable bindings,
 - explicit outer-scope writes using `@`,
 - one high-precision number type with an unbounded whole-number component and bounded decimal places,
-- finite, dense, resource-bounded arrays whose indices and lengths use Stult numbers,
+- dense arrays of unbounded length that can grow dynamically,
 - maps, strings, functions, conditionals, loops and ranges,
 - try-catch blocks, conditional expressions and match expressions,
 - concise literals for booleans, arrays, maps and void,
