@@ -167,7 +167,7 @@ func matchPatternValue(pattern MatchPattern) (Value, error) {
 		return NewNumberValueFromString(pattern.Token.Literal)
 
 	case MatchPatternBool:
-		return NewBoolValue(pattern.Token.Literal == "\\/"), nil
+		return NewBoolValue(pattern.Token.Type == TokenPlus), nil
 
 	default:
 		return Value{}, fmt.Errorf("unknown match pattern kind %d", pattern.Kind)

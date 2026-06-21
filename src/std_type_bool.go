@@ -38,10 +38,10 @@ func StdTypeBoolNew(_ *RuntimeContext, args []Value) (Value, error) {
 		text := strings.ToUpper(strings.TrimSpace(value.Text.String()))
 
 		switch text {
-		case "T", "TRUE", "1":
+		case "T", "TRUE", "1", "+":
 			return NewBoolValue(true), nil
 
-		case "F", "FALSE", "0":
+		case "F", "FALSE", "0", "-":
 			return NewBoolValue(false), nil
 
 		default:

@@ -215,10 +215,10 @@ func stdDataStultonFormatValue(value Value, indent int) (string, error) {
 
 	case ValueBool:
 		if value.Bool {
-			return "\\/", nil
+			return "+", nil
 		}
 
-		return "/\\", nil
+		return "-", nil
 
 	case ValueNumber:
 		if value.Number == nil {

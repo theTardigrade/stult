@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -191,22 +190,10 @@ func (l *Lexer) NextToken() Token {
 		return l.makeToken(TokenStar, "*", line, col)
 
 	case '/':
-		if l.peekChar() == '\\' {
-			l.readChar()
-			l.readChar()
-			return l.makeToken(TokenBool, "/\\", line, col)
-		}
-
 		l.readChar()
 		return l.makeToken(TokenSlash, "/", line, col)
 
 	case '\\':
-		if l.peekChar() == '/' {
-			l.readChar()
-			l.readChar()
-			return l.makeToken(TokenBool, "\\/", line, col)
-		}
-
 		l.readChar()
 		return l.makeToken(TokenIllegal, "\\", line, col)
 
@@ -549,4 +536,3 @@ func isImmutableIdentifier(name string) bool {
 
 	return hasUpper
 }
-

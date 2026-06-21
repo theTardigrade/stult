@@ -53,9 +53,9 @@ func (state *valueFormatState) formatValue(v Value) string {
 
 	case ValueBool:
 		if v.Bool {
-			return "true"
+			return "+"
 		}
-		return "false"
+		return "-"
 
 	case ValueString:
 		return strconv.Quote(v.Text.String())

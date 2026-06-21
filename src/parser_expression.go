@@ -44,12 +44,37 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 	var left Expression
 
 	switch p.current.Type {
-	case TokenBool:
+	case TokenPlus:
 		left = &BoolLiteral{
 			Token: p.current,
-			Value: p.current.Literal == "\\/",
+			Value: true,
 		}
 		p.advance()
+
+	case TokenMinus:
+		if !tokenCanStartExpression(p.peek.Type) {
+			left = &BoolLiteral{
+				Token: p.current,
+				Value: false,
+			}
+			p.advance()
+			break
+		}
+
+		operator := p.current
+		p.advance()
+
+		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
+		if right == nil {
+			p.errorAtToken(operator, "expected expression after unary "+strconv.Quote(operator.Literal))
+			return nil
+		}
+
+		left = &PrefixExpression{
+			Token:    operator,
+			Operator: operator.Literal,
+			Right:    right,
+		}
 
 	case TokenNumber:
 		left = &NumberLiteral{
@@ -96,7 +121,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		left = leadingDot
 
-	case TokenMinus, TokenNotEqual:
+	case TokenNotEqual:
 		operator := p.current
 		p.advance()
 
@@ -141,6 +166,24 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 	}
 
 	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeTouchingIndex)
+}
+
+func tokenCanStartExpression(tokenType TokenType) bool {
+	switch tokenType {
+	case TokenPlus,
+		TokenMinus,
+		TokenNotEqual,
+		TokenNumber,
+		TokenString,
+		TokenIdentifier,
+		TokenAt,
+		TokenDot,
+		TokenLParen,
+		TokenLBrace:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *Parser) parseLeadingDotExpression() (Expression, bool) {
@@ -516,13 +559,14 @@ func (p *Parser) parseMatchPattern(
 			Kind:  MatchPatternNumber,
 		}, true
 
-	case TokenBool:
-		if _, ok := seenBoolPatterns[token.Literal]; ok {
+	case TokenPlus, TokenMinus:
+		key := boolPatternKey(token)
+		if _, ok := seenBoolPatterns[key]; ok {
 			p.errorAtToken(token, "duplicate boolean match pattern "+strconv.Quote(token.Literal))
 			return MatchPattern{}, false
 		}
 
-		seenBoolPatterns[token.Literal] = token
+		seenBoolPatterns[key] = token
 		p.advance()
 
 		return MatchPattern{
@@ -534,6 +578,14 @@ func (p *Parser) parseMatchPattern(
 		p.errorAtCurrent("expected string, number, boolean, or '_' match pattern")
 		return MatchPattern{}, false
 	}
+}
+
+func boolPatternKey(token Token) string {
+	if token.Type == TokenPlus {
+		return "true"
+	}
+
+	return "false"
 }
 
 func (p *Parser) parseParenthesizedExpression(emptyMessage string) (Expression, Token, bool) {

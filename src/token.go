@@ -10,7 +10,6 @@ const (
 	TokenIdentifier TokenType = "ID"
 	TokenNumber     TokenType = "NUM"
 	TokenString     TokenType = "STR"
-	TokenBool       TokenType = "BOOL"
 
 	TokenPlusAssign  TokenType = ":+"
 	TokenMinusAssign TokenType = ":-"

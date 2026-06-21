@@ -578,7 +578,7 @@ func (compiler *BytecodeCompiler) compileMatchPattern(pattern MatchPattern) erro
 		return nil
 
 	case MatchPatternBool:
-		if pattern.Token.Literal == "\\/" {
+		if pattern.Token.Type == TokenPlus {
 			compiler.chunk.EmitAt(BytecodeOpLoadTrue, compiler.sourceSpanFromToken(pattern.Token))
 		} else {
 			compiler.chunk.EmitAt(BytecodeOpLoadFalse, compiler.sourceSpanFromToken(pattern.Token))

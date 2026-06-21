@@ -111,9 +111,6 @@ func (p *Parser) describeToken(tok Token) string {
 	case TokenString:
 		return fmt.Sprintf("string %q", tok.Literal)
 
-	case TokenBool:
-		return fmt.Sprintf("boolean %q", tok.Literal)
-
 	default:
 		if tok.Literal != "" {
 			return fmt.Sprintf("%q", tok.Literal)
