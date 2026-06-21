@@ -72,6 +72,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
 - [Architecture](#architecture)
+- [License](#license)
 
 ## Status
 
