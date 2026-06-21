@@ -2,9 +2,96 @@
 
 EXAMPLE: tests/leading_dot_access.stult
 
-This example checks leading-dot access inside functions stored in maps.
+This example checks leading-dot map keys and leading-dot access from functions
+written inside maps.
 
-A leading dot should read and update fields from the nearest surrounding map,
-allowing map-owned functions to work naturally with that map's state.
+When used inside a function, a leading dot should read and update fields from
+the nearest surrounding map, allowing map-owned functions to work naturally
+with that map's state.
 
 ##
+
+ASSERT : STD.ASSERT
+STRING : STD.TYPE.STRING
+
+person : {
+	.NAME : "Celia"
+	.age : 36
+
+	.handle_birthday : { ()
+		BIRTHDAY_GREETING : "Happy birthday, " + .NAME + "."
+
+		.age :+ 1
+
+		(BIRTHDAY_GREETING)
+	}
+}
+
+ASSERT.EQUAL(
+	person["NAME"],
+	"Celia",
+	"leading-dot map keys should create string keys"
+)
+
+ASSERT.EQUAL(
+	person.handle_birthday(),
+	"Happy birthday, Celia.",
+	"map functions should read from the surrounding map using leading-dot access"
+)
+
+ASSERT.EQUAL(
+	person.age,
+	37,
+	"map functions should update the surrounding map using leading-dot assignment"
+)
+
+handler : person.handle_birthday
+
+ASSERT.EQUAL(
+	handler(),
+	"Happy birthday, Celia.",
+	"captured leading-dot access should keep working when the function is called through another binding"
+)
+
+ASSERT.EQUAL(
+	person.age,
+	38,
+	"captured leading-dot assignment should still update the original map"
+)
+
+outer : {
+	.NAME : "outer"
+	.age : 10
+
+	.inner : {
+		.NAME : "inner"
+
+		.show_name : { ()
+			(.NAME)
+		}
+
+		.try_outer_age : { ()
+			(.age)
+		}
+	}
+}
+
+ASSERT.EQUAL(
+	outer.inner.show_name(),
+	"inner",
+	"leading-dot access should use the nearest surrounding map"
+)
+
+caught : ""
+
+'{
+	outer.inner.try_outer_age()
+},{
+	(error)
+	@caught : error
+}
+
+ASSERT.TRUE(
+	STRING.IS_FOUND_IN("map has no key", caught),
+	"leading-dot access should not search past the nearest surrounding map"
+)
