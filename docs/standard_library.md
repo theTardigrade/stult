@@ -28,7 +28,9 @@ STD["TYPE"]
 STD["DATA"]
 ```
 
-Dot access is syntactic sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
+File-path helpers live under `STD.FILE.PATH`.
+
+Dot access is syntax sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
 
 Standard-library functions are ordinary callable values stored inside maps.
 
@@ -69,7 +71,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["SYSTEM"]["ENV"](name)`](#stdsystemenvname)
   - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
 - [`STD["FILE"]`](#stdfile)
-  - [`STD["FILE"]["READ"](path)`](#stdfilereadpath)
+  - [`STD["FILE"]["READ"](path, useBytes?, offset?, length?)`](#stdfilereadpath-usebytes-offset-length)
   - [`STD["FILE"]["WRITE"](path, content, append?)`](#stdfilewritepath-content-append)
   - [`STD["FILE"]["EXISTS"](path)`](#stdfileexistspath)
   - [`STD["FILE"]["LIST"](path, absolute?)`](#stdfilelistpath-absolute)
@@ -403,15 +405,31 @@ This function does not return, because it terminates the process.
 
 File-system helpers.
 
-### `STD["FILE"]["READ"](path)`
+### `STD["FILE"]["READ"](path, useBytes?, offset?, length?)`
 
-Reads a file as text.
+Reads file contents as text or raw bytes.
 
 ```stult
 text : STD.FILE.READ("notes.txt")
+part : STD.FILE.READ("notes.txt", -, 3, 4)
+bytes : STD.FILE.READ("image.bin", +, 0, 8)
 ```
 
-Returns a string.
+The path must be a string.
+
+The optional `useBytes` argument must be a boolean and defaults to `-`.
+
+When `useBytes` is `-`, `READ` returns a string. The file contents must be valid UTF-8. The optional `offset` and `length` arguments count Unicode code points.
+
+When `useBytes` is `+`, `READ` returns an array of numbers from `0` to `255`. The optional `offset` and `length` arguments count bytes. The file contents do not need to be valid UTF-8.
+
+The optional `offset` and `length` arguments must be non-negative whole numbers.
+
+When `offset` is omitted, reading starts from the beginning of the file.
+
+When `length` is omitted, reading continues to the end of the file.
+
+When `offset` is beyond the end of the selected text or byte sequence, `READ` returns an empty string in text mode or an empty array in byte mode.
 
 ### `STD["FILE"]["WRITE"](path, content, append?)`
 
@@ -420,11 +438,16 @@ Writes content to a file.
 ```stult
 STD.FILE.WRITE("notes.txt", "Hello")
 STD.FILE.WRITE("notes.txt", "\nAnother line", +)
+STD.FILE.WRITE("image.bin", {137, 80, 78, 71})
 ```
 
 The path must be a string.
 
-The content may be a string or another Stult value. Non-string values are converted with their printed representation.
+String content is written as UTF-8 text.
+
+Array content is written as raw bytes. Every array item must be a whole number from `0` to `255` inclusive.
+
+Other non-array Stult values are converted with their printed representation.
 
 The optional `append` argument must be a boolean and defaults to `-`.
 
