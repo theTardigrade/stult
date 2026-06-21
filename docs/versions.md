@@ -8,7 +8,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
-### v0.8.2
+### Future release
 
 #### Project
 
