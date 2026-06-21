@@ -10,7 +10,7 @@ const stdTypeStringMaxInt = int(^uint(0) >> 1)
 
 func NewStdTypeStringMap() Value {
 	entries := map[string]Binding{
-		"CHARACTERS":        NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringCharacters)),
+		"CHARS":             NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringChars)),
 		"IS_FOUND_AT_END":   NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringIsFoundAtEnd)),
 		"IS_FOUND_AT_START": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringIsFoundAtStart)),
 		"IS_FOUND_IN":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringIsFoundIn)),
@@ -58,12 +58,12 @@ func StdTypeStringNew(_ *RuntimeContext, args []Value) (Value, error) {
 	}
 }
 
-func StdTypeStringCharacters(_ *RuntimeContext, args []Value) (Value, error) {
+func StdTypeStringChars(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPE.STRING.CHARACTERS expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.STRING.CHARS expected 1 argument, got %d", len(args))
 	}
 
-	text, err := StdTypeStringArg("TYPE.STRING.CHARACTERS", args[0], 1)
+	text, err := StdTypeStringArg("TYPE.STRING.CHARS", args[0], 1)
 	if err != nil {
 		return NewVoidValue(), nil
 	}
@@ -224,7 +224,7 @@ func StdTypeStringRepeat(_ *RuntimeContext, args []Value) (Value, error) {
 	}
 
 	if len(text) != 0 && count > stdTypeStringMaxInt/len(text) {
-		return Value{}, fmt.Errorf("TYPE.STRING.REPEAT result is too large for this runtime")
+		return Value{}, fmt.Errorf("TYPE.STRING.REPEAT result is too large")
 	}
 
 	return NewStringValue(strings.Repeat(text, count)), nil

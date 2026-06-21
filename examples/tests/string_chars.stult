@@ -1,0 +1,23 @@
+ASSERT : STD.ASSERT
+STRING : STD.TYPE.STRING
+SIZE : STD.TYPE.COLLECTION.SIZE
+
+chars : STRING.CHARS("café")
+
+ASSERT.EQUAL(SIZE(chars), 4, "CHARS should return one element per Unicode character")
+ASSERT.EQUAL(chars[0], "c", "CHARS should return the first character")
+ASSERT.EQUAL(chars[1], "a", "CHARS should return the second character")
+ASSERT.EQUAL(chars[2], "f", "CHARS should return the third character")
+ASSERT.EQUAL(chars[3], "é", "CHARS should preserve Unicode characters")
+
+ASSERT.EQUAL(SIZE(STRING.CHARS("")), 0, "CHARS should return an empty array for empty text")
+
+legacy_characters_missing : -
+
+'{
+	STRING.CHARACTERS("cat")
+},{
+	@legacy_characters_missing : +
+}
+
+ASSERT.TRUE(legacy_characters_missing, "CHARACTERS should no longer be available")

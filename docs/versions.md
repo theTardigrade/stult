@@ -17,6 +17,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 #### Standard library
 
 * Added `STD.TYPE.STRING.REPEAT` for repeating text a non-negative whole number of times.
+* Renamed `STD.TYPE.STRING.CHARACTERS` to `STD.TYPE.STRING.CHARS`.
 
 ### v0.8.0
 

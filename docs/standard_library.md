@@ -140,7 +140,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["NUMBER"]["NEW"](value)`](#stdtypenumbernewvalue)
   - [`STD["TYPE"]["STRING"]`](#stdtypestring)
     - [`STD["TYPE"]["STRING"]["NEW"](value)`](#stdtypestringnewvalue)
-    - [`STD["TYPE"]["STRING"]["CHARACTERS"](text)`](#stdtypestringcharacterstext)
+    - [`STD["TYPE"]["STRING"]["CHARS"](text)`](#stdtypestringcharstext)
     - [`STD["TYPE"]["STRING"]["TRIM"](text)`](#stdtypestringtrimtext)
     - [`STD["TYPE"]["STRING"]["TRIM_START"](text)`](#stdtypestringtrim_starttext)
     - [`STD["TYPE"]["STRING"]["TRIM_END"](text)`](#stdtypestringtrim_endtext)
@@ -150,6 +150,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["STRING"]["IS_FOUND_AT_START"](search, text)`](#stdtypestringis_found_at_startsearch-text)
     - [`STD["TYPE"]["STRING"]["IS_FOUND_AT_END"](search, text)`](#stdtypestringis_found_at_endsearch-text)
     - [`STD["TYPE"]["STRING"]["REPLACE"](text, old, new)`](#stdtypestringreplacetext-old-new)
+    - [`STD["TYPE"]["STRING"]["REPEAT"](text, count)`](#stdtypestringrepeattext-count)
     - [`STD["TYPE"]["STRING"]["SPLIT"](text, separator)`](#stdtypestringsplittext-separator)
     - [`STD["TYPE"]["STRING"]["JOIN"](array, separator)`](#stdtypestringjoinarray-separator)
   - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
@@ -1246,12 +1247,12 @@ STD.TYPE.STRING.NEW(+)
 STD.TYPE.STRING.NEW({"a", "b"})
 ```
 
-### `STD["TYPE"]["STRING"]["CHARACTERS"](text)`
+### `STD["TYPE"]["STRING"]["CHARS"](text)`
 
 Returns an array of one-character strings.
 
 ```stult
-STD.TYPE.STRING.CHARACTERS("cat")
+STD.TYPE.STRING.CHARS("cat")
 ```
 
 Result:
