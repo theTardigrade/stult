@@ -1570,7 +1570,7 @@ For the formal language definition, see [docs/specification.md](docs/specificati
 
 ## License
 
-Stult is licensed under the Apache License 2.0. See [`LICENSE.txt`](LICENSE.txt) for the full license text.
+Stult is licensed under the Apache License 2.0. See [LICENSE.txt](LICENSE.txt) for the full license text.
 
 Unless otherwise stated, all versions of Stult in this repository, including versions released before the addition of this license file, are licensed under the Apache License 2.0.
 
