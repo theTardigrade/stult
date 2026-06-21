@@ -22,12 +22,12 @@ SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 ITEMS : {"a", "b", "c"}
 ITEMS_ALIAS : ITEMS
 
-ASSERT_TRUE(\/, "true literal should be true")
+ASSERT_TRUE(+, "true literal should be true")
 ASSERT_TRUE(SIZE(ITEMS) = 3, "array size should be 3")
 
 ASSERT_EQUAL(1 + 2, 3, "number equality should work")
 ASSERT_EQUAL("Stult", "Stult", "string equality should work")
-ASSERT_EQUAL(\/, \/, "boolean equality should work")
+ASSERT_EQUAL(+, +, "boolean equality should work")
 ASSERT_EQUAL(_, _, "void equality should work")
 ASSERT_EQUAL(ITEMS, ITEMS_ALIAS, "array identity equality should work")
 

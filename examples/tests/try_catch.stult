@@ -12,12 +12,12 @@ block may ignore the error message or bind it with one catch parameter.
 ASSERT : STD.ASSERT
 SIZE : STD.TYPE.COLLECTION.SIZE
 
-caught_without_parameter : /\
+caught_without_parameter : -
 
 '{
 	ASSERT.EQUAL(1, 2, "failed assertion should be caught")
 },{
-	@caught_without_parameter : \/
+	@caught_without_parameter : +
 }
 
 ASSERT.TRUE(caught_without_parameter, "catch block without a parameter should run")
@@ -33,27 +33,27 @@ message : ""
 
 ASSERT.TRUE(SIZE(message) > 0, "catch parameter should receive an error message")
 
-catch_was_skipped : /\
+catch_was_skipped : -
 
 '{
 	value : 10
 },{
-	@catch_was_skipped : \/
+	@catch_was_skipped : +
 }
 
 ASSERT.TRUE(!catch_was_skipped, "catch block should be skipped when try block succeeds")
 
-discard_caught : /\
+discard_caught : -
 
 '{
 	1()
 },{ (_)
-	@discard_caught : \/
+	@discard_caught : +
 }
 
 ASSERT.TRUE(discard_caught, "discard catch parameter should be accepted")
 
-outer_caught : /\
+outer_caught : -
 
 '{
 	'{
@@ -63,13 +63,13 @@ outer_caught : /\
 		missing.key
 	}
 },{ (error)
-	@outer_caught : \/
+	@outer_caught : +
 }
 
 ASSERT.TRUE(outer_caught, "errors from a catch block should still escape to an outer try")
 
 nearest_handler : ""
-outer_handler_ran : /\
+outer_handler_ran : -
 
 '{
 	'{
@@ -78,7 +78,7 @@ outer_handler_ran : /\
 		@nearest_handler : "inner"
 	}
 },{ (error)
-	@outer_handler_ran : \/
+	@outer_handler_ran : +
 }
 
 ASSERT.EQUAL(nearest_handler, "inner", "nearest catch block should handle the error")
@@ -111,3 +111,4 @@ RETURN_THROUGH_TRY : { ()
 }
 
 ASSERT.EQUAL(RETURN_THROUGH_TRY(), "done", "early return inside try should still return")
+

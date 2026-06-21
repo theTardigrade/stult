@@ -44,12 +44,12 @@ ASSERT["EQUAL"](
 	"match expression should match a number literal"
 )
 
-flag : \/
+flag : +
 
 ASSERT["EQUAL"](
 	(flag)?{
-		\/: "true"
-		/\: "false"
+		+: "true"
+		-: "false"
 		_: "other"
 	},
 	"true",

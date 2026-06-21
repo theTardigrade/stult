@@ -15,7 +15,7 @@ START_MS : NOW()
 next_frame_ms : START_MS
 frames_drawn : 0
 
-((\/)) {
+((+)) {
 	now_ms : NOW()
 	wait_ms : next_frame_ms - now_ms
 

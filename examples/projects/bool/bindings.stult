@@ -13,5 +13,5 @@ listed in the manifest.
 
 ##
 
-T : \/
-F : /\
+T : +
+F : -

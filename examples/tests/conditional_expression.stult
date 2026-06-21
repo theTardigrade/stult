@@ -11,8 +11,8 @@ its two branch expressions.
 
 ASSERT_EQUAL : STD["ASSERT"]["EQUAL"]
 
-ASSERT_EQUAL((\/)?("yes", "no"), "yes", "conditional expression should return the true branch")
-ASSERT_EQUAL((/\)?("yes", "no"), "no", "conditional expression should return the false branch")
+ASSERT_EQUAL((+)?("yes", "no"), "yes", "conditional expression should return the true branch")
+ASSERT_EQUAL((-)?("yes", "no"), "no", "conditional expression should return the false branch")
 
 value : 10
 

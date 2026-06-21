@@ -20,10 +20,10 @@ A loop using the same grouped condition would need another pair of parentheses:
 
 WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
-A : \/
-B : /\
-C : \/
-D : \/
+A : +
+B : -
+C : +
+D : +
 
 ((A & B) | (C & D)) {
 	WRITE_LINE("grouped conditional")

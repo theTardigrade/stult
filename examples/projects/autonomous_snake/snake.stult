@@ -26,11 +26,11 @@ INITIAL_DIRECTION : RIGHT
 CONTAINS_POINT : { (POINTS, TARGET)
 	((POINTS)) { (P)
 		(SAME_POINT(P, TARGET)) {
-			^(\/)
+			^(+)
 		}
 	}
 
-	(/\)
+	(-)
 }
 
 CANDIDATE_FOOD_AT : { (SEED)
@@ -67,12 +67,12 @@ WOULD_HIT_BODY_AFTER_MOVE : { (SNAKE, NEXT, WILL_EAT)
 			IGNORE_TAIL : !WILL_EAT & POSITION = LAST_POSITION
 
 			(!IGNORE_TAIL & SAME_POINT(SEGMENT, NEXT)) {
-				^(\/)
+				^(+)
 			}
 		}
 	}
 
-	(/\)
+	(-)
 }
 
 SAFE_NEXT_POINT : { (SNAKE, NEXT, WILL_EAT)
@@ -191,14 +191,14 @@ SNAKE_COLLIDED : { (SNAKE)
 	HEAD : SNAKE[0]
 
 	(!IN_BOUNDS(HEAD)) {
-		^(\/)
+		^(+)
 	}
 
 	((SNAKE)) { (SEGMENT, _, _, POSITION)
 		(POSITION > 0 & SAME_POINT(HEAD, SEGMENT)) {
-			^(\/)
+			^(+)
 		}
 	}
 
-	(/\)
+	(-)
 }
