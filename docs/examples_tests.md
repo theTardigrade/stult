@@ -112,3 +112,6 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [File path namespace](../examples/tests/file_path_namespace.stult)  
   Checks that file-path helpers live under `STD.FILE.PATH` and that the old top-level `STD.PATH` map is no longer present.
+
+- [File directory helpers](../examples/tests/file_directory_helpers.stult)  
+  Checks `STD.FILE.LIST`, `STD.FILE.IS_FILE`, `STD.FILE.IS_DIR`, `STD.FILE.MAKE_DIR` and append-mode `STD.FILE.WRITE`, including optional boolean arguments.

@@ -70,9 +70,12 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
 - [`STD["FILE"]`](#stdfile)
   - [`STD["FILE"]["READ"](path)`](#stdfilereadpath)
-  - [`STD["FILE"]["WRITE"](path, content)`](#stdfilewritepath-content)
-  - [`STD["FILE"]["APPEND"](path, content)`](#stdfileappendpath-content)
+  - [`STD["FILE"]["WRITE"](path, content, append?)`](#stdfilewritepath-content-append)
   - [`STD["FILE"]["EXISTS"](path)`](#stdfileexistspath)
+  - [`STD["FILE"]["LIST"](path, absolute?)`](#stdfilelistpath-absolute)
+  - [`STD["FILE"]["IS_FILE"](path)`](#stdfileis_filepath)
+  - [`STD["FILE"]["IS_DIR"](path)`](#stdfileis_dirpath)
+  - [`STD["FILE"]["MAKE_DIR"](path, recursive?)`](#stdfilemake_dirpath-recursive)
   - [`STD["FILE"]["DELETE"](path)`](#stdfiledeletepath)
   - [`STD["FILE"]["RENAME"](old_path, new_path)`](#stdfilerenameold_path-new_path)
   - [`STD["FILE"]["COPY"](source_path, destination_path)`](#stdfilecopysource_path-destination_path)
@@ -410,29 +413,24 @@ text : STD.FILE.READ("notes.txt")
 
 Returns a string.
 
-### `STD["FILE"]["WRITE"](path, content)`
+### `STD["FILE"]["WRITE"](path, content, append?)`
 
-Writes content to a file, replacing existing contents.
+Writes content to a file.
 
 ```stult
 STD.FILE.WRITE("notes.txt", "Hello")
+STD.FILE.WRITE("notes.txt", "\nAnother line", +)
 ```
 
 The path must be a string.
 
 The content may be a string or another Stult value. Non-string values are converted with their printed representation.
 
-Returns `_`.
+The optional `append` argument must be a boolean and defaults to `-`.
 
-### `STD["FILE"]["APPEND"](path, content)`
+When `append` is `-`, replaces existing file contents.
 
-Appends content to a file.
-
-```stult
-STD.FILE.APPEND("notes.txt", "\nAnother line")
-```
-
-Creates the file if it does not exist.
+When `append` is `+`, appends to the file and creates the file if it does not exist.
 
 Returns `_`.
 
@@ -447,6 +445,74 @@ Checks whether a file-system path exists.
 ```
 
 Returns a boolean.
+
+### `STD["FILE"]["LIST"](path, absolute?)`
+
+Lists the direct entries inside a directory.
+
+```stult
+names : STD.FILE.LIST("docs")
+absolute_paths : STD.FILE.LIST("docs", +)
+```
+
+The path must be a string.
+
+The optional `absolute` argument must be a boolean and defaults to `-`.
+
+When `absolute` is `-`, returns sorted entry names.
+
+When `absolute` is `+`, returns sorted absolute paths for the same entries.
+
+This function is non-recursive.
+
+Returns an array of strings.
+
+### `STD["FILE"]["IS_FILE"](path)`
+
+Checks whether a path exists and is a regular file.
+
+```stult
+STD.FILE.IS_FILE("notes.txt")
+```
+
+The path must be a string.
+
+Returns a boolean.
+
+Returns `-` when the path does not exist or exists but is not a regular file.
+
+### `STD["FILE"]["IS_DIR"](path)`
+
+Checks whether a path exists and is a directory.
+
+```stult
+STD.FILE.IS_DIR("docs")
+```
+
+The path must be a string.
+
+Returns a boolean.
+
+Returns `-` when the path does not exist or exists but is not a directory.
+
+### `STD["FILE"]["MAKE_DIR"](path, recursive?)`
+
+Creates a directory.
+
+```stult
+STD.FILE.MAKE_DIR("out")
+STD.FILE.MAKE_DIR("out/reports/2026", +)
+```
+
+The path must be a string.
+
+The optional `recursive` argument must be a boolean and defaults to `-`.
+
+When `recursive` is `-`, creates exactly one directory. The parent directory must already exist, and it is an error if the path already exists.
+
+When `recursive` is `+`, creates the directory and any missing parent directories. It succeeds if the directory already exists, and errors if the path exists but is not a directory.
+
+Returns `_`.
 
 ### `STD["FILE"]["DELETE"](path)`
 

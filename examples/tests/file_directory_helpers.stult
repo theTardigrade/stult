@@ -1,0 +1,123 @@
+ASSERT : STD.ASSERT
+FILE : STD.FILE
+PATH : FILE.PATH
+SIZE : STD.TYPE.COLLECTION.SIZE
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
+
+ROOT : "__test_file_directory_helpers_tmp__"
+CHILD : PATH.JOIN(ROOT, "a.txt")
+DEEP_PARENT : PATH.JOIN(ROOT, "deep")
+DEEP_CHILD : PATH.JOIN(DEEP_PARENT, "leaf")
+
+'{
+	FILE.DELETE(DEEP_CHILD)
+},{ (_)
+	_
+}
+
+'{
+	FILE.DELETE(DEEP_PARENT)
+},{ (_)
+	_
+}
+
+'{
+	FILE.DELETE(CHILD)
+},{ (_)
+	_
+}
+
+'{
+	FILE.DELETE(ROOT)
+},{ (_)
+	_
+}
+
+ASSERT.FALSE(FILE.EXISTS(ROOT), "temporary root should not exist before setup")
+ASSERT.FALSE(FILE.IS_FILE(ROOT), "missing root should not be reported as a file")
+ASSERT.FALSE(FILE.IS_DIR(ROOT), "missing root should not be reported as a directory")
+
+ASSERT.EQUAL(FILE.MAKE_DIR(ROOT), _, "MAKE_DIR should return void when creating one directory")
+ASSERT.TRUE(FILE.EXISTS(ROOT), "created root directory should exist")
+ASSERT.TRUE(FILE.IS_DIR(ROOT), "created root should be reported as a directory")
+ASSERT.FALSE(FILE.IS_FILE(ROOT), "created root directory should not be reported as a file")
+
+FILE.WRITE(CHILD, "hello")
+ASSERT.EQUAL(FILE.READ(CHILD), "hello", "WRITE without append flag should create and write file contents")
+FILE.WRITE(CHILD, " world", +)
+ASSERT.EQUAL(FILE.READ(CHILD), "hello world", "WRITE with append flag true should append contents")
+FILE.WRITE(CHILD, "reset", -)
+ASSERT.EQUAL(FILE.READ(CHILD), "reset", "WRITE with append flag false should overwrite contents")
+FILE.WRITE(CHILD, "!", +)
+ASSERT.EQUAL(FILE.READ(CHILD), "reset!", "WRITE with append flag true should append after overwrite")
+ASSERT.TRUE(FILE.IS_FILE(CHILD), "written child path should be reported as a file")
+ASSERT.FALSE(FILE.IS_DIR(CHILD), "written child path should not be reported as a directory")
+
+names : FILE.LIST(ROOT)
+ASSERT.EQUAL(SIZE(names), 1, "LIST should return one entry name")
+ASSERT.EQUAL(names[0], "a.txt", "LIST without absolute flag should return the entry name")
+
+names_with_flag : FILE.LIST(ROOT, -)
+ASSERT.EQUAL(SIZE(names_with_flag), 1, "LIST with absolute flag false should return one entry name")
+ASSERT.EQUAL(names_with_flag[0], "a.txt", "LIST with absolute flag false should return the entry name")
+
+absolute_paths : FILE.LIST(ROOT, +)
+ASSERT.EQUAL(SIZE(absolute_paths), 1, "LIST with absolute flag true should return one entry path")
+ASSERT.EQUAL(absolute_paths[0], PATH.ABS(CHILD), "LIST with absolute flag true should return the absolute child path")
+
+strict_nested_error : -
+'{
+	FILE.MAKE_DIR(DEEP_CHILD)
+},{ (_)
+	@strict_nested_error : +
+}
+ASSERT.TRUE(strict_nested_error, "MAKE_DIR without recursive flag should fail when parent is missing")
+
+ASSERT.EQUAL(FILE.MAKE_DIR(DEEP_CHILD, +), _, "MAKE_DIR with recursive flag true should create missing parents")
+ASSERT.TRUE(FILE.IS_DIR(DEEP_CHILD), "recursive MAKE_DIR target should be reported as a directory")
+ASSERT.EQUAL(FILE.MAKE_DIR(DEEP_CHILD, +), _, "recursive MAKE_DIR should succeed when the directory already exists")
+
+strict_existing_error : -
+'{
+	FILE.MAKE_DIR(ROOT)
+},{ (_)
+	@strict_existing_error : +
+}
+ASSERT.TRUE(strict_existing_error, "MAKE_DIR without recursive flag should fail when the directory already exists")
+
+list_type_error : -
+'{
+	FILE.LIST(ROOT, "yes")
+},{ (error)
+	@list_type_error : IS_FOUND_IN("expected a boolean", error)
+}
+ASSERT.TRUE(list_type_error, "LIST absolute flag should require a boolean")
+
+make_dir_type_error : -
+'{
+	FILE.MAKE_DIR(ROOT, "yes")
+},{ (error)
+	@make_dir_type_error : IS_FOUND_IN("expected a boolean", error)
+}
+ASSERT.TRUE(make_dir_type_error, "MAKE_DIR recursive flag should require a boolean")
+
+write_append_type_error : -
+'{
+	FILE.WRITE(CHILD, "no", "yes")
+},{ (error)
+	@write_append_type_error : IS_FOUND_IN("expected a boolean", error)
+}
+ASSERT.TRUE(write_append_type_error, "WRITE append flag should require a boolean")
+
+append_removed_error : -
+'{
+	FILE.APPEND(CHILD, "no")
+},{ (_)
+	@append_removed_error : +
+}
+ASSERT.TRUE(append_removed_error, "STD.FILE.APPEND should no longer be available")
+
+FILE.DELETE(DEEP_CHILD)
+FILE.DELETE(DEEP_PARENT)
+FILE.DELETE(CHILD)
+FILE.DELETE(ROOT)

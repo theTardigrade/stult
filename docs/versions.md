@@ -19,10 +19,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Added leading-dot map keys such as `.name : value` as shorthand for identifier-shaped string keys inside map literals.
 * Added leading-dot field access for functions written inside maps, allowing `.name` reads and assignments to resolve against the nearest captured surrounding map.
 
-#### Standard library
+#### Standard Library
 
 * Added `STD.ASSERT.FALSE`.
 * Made assertion messages optional for `STD.ASSERT.TRUE`, `STD.ASSERT.FALSE` and `STD.ASSERT.EQUAL`.
+* Added directory helpers `STD.FILE.LIST`, `STD.FILE.IS_FILE`, `STD.FILE.IS_DIR` and `STD.FILE.MAKE_DIR`, with optional boolean arguments for absolute list paths and recursive directory creation.
+* Changed `STD.FILE.WRITE` to accept an optional append-mode boolean argument and removed `STD.FILE.APPEND`.
 * Moved file-path helpers from `STD.PATH` to `STD.FILE.PATH`.
 * Split `STD.IO` into `STD.IO.INPUT` and `STD.IO.OUTPUT`, moving input helpers under `INPUT` and output helpers under `OUTPUT`.
 * `STD.IO.OUTPUT.PRINT` was removed; use `WRITE_LINE` instead. Standard-error output now has both `WRITE_ERROR` and `WRITE_ERROR_LINE`.
