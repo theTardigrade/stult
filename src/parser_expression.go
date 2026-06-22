@@ -138,20 +138,16 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		switch p.current.Type {
 		case TokenColon:
-			conditionalExpression, ok := p.parseConditionalExpressionAfterColon(inner, closeParen)
+			colonExpression, ok := p.parseColonExpressionAfterParenthesized(inner, closeParen)
 			if !ok {
 				return nil
 			}
 
-			left = conditionalExpression
+			left = colonExpression
 
 		case TokenQuestion:
-			questionExpression, ok := p.parseQuestionExpression(inner, closeParen)
-			if !ok {
-				return nil
-			}
-
-			left = questionExpression
+			p.errorAtCurrent("expected ':' after parenthesized expression")
+			return nil
 
 		default:
 			left = inner
@@ -345,41 +341,30 @@ func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) 
 	}, true
 }
 
-func (p *Parser) parseQuestionExpression(target Expression, closeParen Token) (Expression, bool) {
-	question := p.current
-
-	if !tokensTouch(closeParen, question) {
-		p.errorAtToken(question, "expected '?' to touch parenthesized expression")
-		return nil, false
-	}
-
-	p.advance() // consume "?"
-
-	switch p.current.Type {
-	case TokenLBrace:
-		return p.parseMatchExpressionAfterQuestion(target, question)
-
-	default:
-		p.errorAtCurrent("expected '{' after '?' in match expression")
-		return nil, false
-	}
-}
-
-func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, closeParen Token) (Expression, bool) {
+func (p *Parser) parseColonExpressionAfterParenthesized(target Expression, closeParen Token) (Expression, bool) {
 	colon := p.current
 
 	if !tokensTouch(closeParen, colon) {
-		p.errorAtToken(colon, "expected ':' to touch parenthesized expression in conditional expression")
+		p.errorAtToken(colon, "expected ':' to touch parenthesized expression")
 		return nil, false
 	}
 
 	p.advance() // consume ":"
 
-	if p.current.Type != TokenLParen {
-		p.errorAtCurrent("expected '(' after ':' in conditional expression")
+	switch p.current.Type {
+	case TokenLParen:
+		return p.parseConditionalExpressionAfterColon(target, colon)
+
+	case TokenLBrace:
+		return p.parseMatchExpressionAfterColon(target, colon)
+
+	default:
+		p.errorAtCurrent("expected '(' for conditional expression or '{' for match expression after ':'")
 		return nil, false
 	}
+}
 
+func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, colon Token) (Expression, bool) {
 	if !tokensTouch(colon, p.current) {
 		p.errorAtCurrent("expected '(' to touch ':' in conditional expression")
 		return nil, false
@@ -436,9 +421,9 @@ func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, clos
 	}, true
 }
 
-func (p *Parser) parseMatchExpressionAfterQuestion(target Expression, question Token) (Expression, bool) {
-	if !tokensTouch(question, p.current) {
-		p.errorAtCurrent("expected '{' to touch '?' in match expression")
+func (p *Parser) parseMatchExpressionAfterColon(target Expression, colon Token) (Expression, bool) {
+	if !tokensTouch(colon, p.current) {
+		p.errorAtCurrent("expected '{' to touch ':' in match expression")
 		return nil, false
 	}
 
@@ -509,7 +494,7 @@ func (p *Parser) parseMatchExpressionAfterQuestion(target Expression, question T
 		}
 
 		if p.current.Type == TokenEOF {
-			p.errorAtToken(question, "unterminated match expression")
+			p.errorAtToken(colon, "unterminated match expression")
 			return nil, false
 		}
 
@@ -528,7 +513,7 @@ func (p *Parser) parseMatchExpressionAfterQuestion(target Expression, question T
 	p.advance() // consume "}"
 
 	return &MatchExpression{
-		Token:   question,
+		Token:   colon,
 		Target:  target,
 		Arms:    arms,
 		Default: defaultExpression,

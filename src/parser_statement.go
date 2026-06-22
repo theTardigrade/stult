@@ -32,20 +32,16 @@ func (p *Parser) parseStatement() Statement {
 
 		switch p.current.Type {
 		case TokenColon:
-			conditionalExpression, ok := p.parseConditionalExpressionAfterColon(expr, closeParen)
+			colonExpression, ok := p.parseColonExpressionAfterParenthesized(expr, closeParen)
 			if !ok {
 				return nil
 			}
 
-			target = conditionalExpression
+			target = colonExpression
 
 		case TokenQuestion:
-			questionExpression, ok := p.parseQuestionExpression(expr, closeParen)
-			if !ok {
-				return nil
-			}
-
-			target = questionExpression
+			p.errorAtCurrent("expected ':' after parenthesized expression")
+			return nil
 		}
 
 		target = p.parseExpressionTail(target, precLowest)
