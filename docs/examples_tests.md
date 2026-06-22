@@ -66,6 +66,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Match expression](../examples/tests/match_expression.stult)  
   Checks that `(SUBJECT):{ ... }` matches explicit scalar-literal arms before falling back to `_`, including same-line horizontal spacing around the colon marker.
 
+- [Expression continuation](../examples/tests/expression_continuation.stult)  
+  Checks that trailing arithmetic, comparison, equality, logical and conditional-expression branch operators continue expressions onto the next line.
+
 ## Error handling
 
 - [Try-catch](../examples/tests/try_catch.stult)  

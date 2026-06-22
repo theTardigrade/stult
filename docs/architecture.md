@@ -292,9 +292,11 @@ Leading-dot field access, such as `.name`, is also lowered to an index expressio
 
 Map literals accept ordinary string keys and leading-dot map keys. A leading-dot map key, such as `.name : value`, is parsed as the string key `"name"` while preserving the usual map-entry mutability rules derived from the resulting key string. Bare identifier-shaped map keys remain invalid.
 
-Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a same-line `:` branch list, written idiomatically as `(condition):(when_true|when_false)`. Horizontal whitespace may appear around the `:`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
+Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a same-line `:` branch list, written idiomatically as `(condition):(when_true|when_false)`. Horizontal whitespace may appear around the `:`. In multiline branch lists, the `|` branch separator must appear at the end of the true-branch line. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
 Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a same-line `:` arm list, written idiomatically as `(subject):{ "case": result _: fallback }`. Horizontal whitespace may appear around the `:`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
+
+The expression parser treats a trailing binary operator as an explicit line-continuation marker. This applies to arithmetic, comparison, equality and logical operators. A newline before a binary operator does not continue the previous expression; in delimited expression contexts it is rejected, and in list-like contexts it starts a new item or statement according to the surrounding grammar.
 
 Function literal parameters are represented with parameter metadata rather than plain identifier tokens. Ordinary parameters can be required or optional. Optional parameters are written with `?` in source and receive void when omitted at call time.
 
