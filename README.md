@@ -1113,7 +1113,7 @@ A match expression chooses a value by comparing one expression with a list of ca
 ```stult
 TEXT : "yes"
 
-NUMBER : (TEXT)?{
+NUMBER : (TEXT):{
 	"yes": 50
 	"no": 0
 	"maybe": 2.5
@@ -1125,20 +1125,20 @@ Here, `NUMBER` becomes `50` because `TEXT` is `"yes"`.
 
 The subject expression must be parenthesised.
 
-The `?` must touch the closing parenthesis of the subject, and the opening `{` must touch the `?`.
+The `:` must touch the closing parenthesis of the subject, and the opening `{` must touch the `:`.
 
 ```stult
-(TEXT)?{
+(TEXT):{
 	"yes": 1
 	_: 0
 }   # valid
 
-(TEXT) ?{
+(TEXT) :{
 	"yes": 1
 	_: 0
 }   # invalid
 
-(TEXT)? {
+(TEXT): {
 	"yes": 1
 	_: 0
 }   # invalid
@@ -1149,7 +1149,7 @@ Match expressions evaluate the subject once, then check explicit arms before usi
 ```stult
 TEXT : "yes"
 
-RESULT : (TEXT)?{
+RESULT : (TEXT):{
 	_: "unknown"
 	"yes": "confirmed"
 }
@@ -1175,7 +1175,7 @@ Only the selected result expression is evaluated.
 ```stult
 denominator : 0
 
-RESULT : ("safe")?{
+RESULT : ("safe"):{
 	"safe": "ok"
 	"divide": 10 / denominator
 	_: "fallback"
