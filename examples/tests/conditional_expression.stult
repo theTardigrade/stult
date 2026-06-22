@@ -1,4 +1,5 @@
 
+
 ##
 
 EXAMPLE: tests/conditional_expression.stult
@@ -13,6 +14,7 @@ its two branch expressions.
 ASSERT_EQUAL : STD["ASSERT"]["EQUAL"]
 
 ASSERT_EQUAL((+):("yes"|"no"), "yes", "conditional expression should return the true branch")
+ASSERT_EQUAL((+) : ("yes"|"no"), "yes", "conditional expression should allow horizontal whitespace around the colon")
 ASSERT_EQUAL((-):("yes"|"no"), "no", "conditional expression should return the false branch")
 
 value : 10
@@ -36,4 +38,5 @@ ASSERT_EQUAL(
 	"ten"
 	"conditional expression should allow multiline branch lists"
 )
+
 
