@@ -1023,7 +1023,7 @@ score : 95
 }
 ```
 
-An alternative block, which runs when the condition is false, follows `},{`:
+An alternative block, which runs when the condition is false, follows `}|{`:
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
@@ -1032,7 +1032,7 @@ score : 80
 
 (score >= 90) {
 	WRITE_LINE("excellent")
-},{
+}|{
 	WRITE_LINE("keep going")
 }
 ```
@@ -1046,13 +1046,13 @@ score : 10
 
 (score >= 90) {
 	WRITE_LINE("excellent")
-},(score >= 70) {
+}|(score >= 70) {
 	WRITE_LINE("good")
-},(score >= 50) {
+}|(score >= 50) {
 	WRITE_LINE("keep going")
-},(score >= 20) {
+}|(score >= 20) {
 	WRITE_LINE("bad")
-},{
+}|{
 	WRITE_LINE("terrible")
 }
 ```
@@ -1075,7 +1075,7 @@ Bindings created inside that block do not leak into the surrounding scope.
 A conditional expression chooses between two branch expressions and returns the selected branch value.
 
 ```stult
-marker : (CONDITION)?("*", " ")
+marker : (CONDITION)?("*"|" ")
 ```
 
 The condition must be parenthesised.
@@ -1083,15 +1083,15 @@ The condition must be parenthesised.
 ```stult
 count : 1
 
-label : (count = 1)?("item", "items")
+label : (count = 1)?("item"|"items")
 ```
 
-The `?` must touch the closing parenthesis of the condition, and the branch list must touch the `?`.
+The `?` must touch the closing parenthesis of the condition, and the branch list must touch the `?`. The two branch expressions are separated with `|`.
 
 ```stult
-(count = 1)?("item", "items")   # valid
-(count = 1) ?("item", "items")  # invalid
-(count = 1)? ("item", "items")  # invalid
+(count = 1)?("item"|"items")   # valid
+(count = 1) ?("item"|"items")  # invalid
+(count = 1)? ("item"|"items")  # invalid
 ```
 
 Only the selected branch is evaluated.
@@ -1099,7 +1099,7 @@ Only the selected branch is evaluated.
 ```stult
 denominator : 0
 
-safe : (denominator = 0)?(0, 10 / denominator)
+safe : (denominator = 0)?(0|10 / denominator)
 ```
 
 In this example, the division branch is not evaluated because the condition is true.
@@ -1193,7 +1193,7 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 ```stult
 '{
 	STD.ASSERT.EQUAL(1, 2, "these values should match")
-},{
+}|{
 	STD.IO.OUTPUT.WRITE_LINE("Recovered from the error")
 }
 ```
@@ -1204,7 +1204,7 @@ The catch block may also receive the error message:
 '{
 	items : {:}
 	items.missing
-},{ (error_message)
+}|{ (error_message)
 	STD.IO.OUTPUT.WRITE_LINE("Error: ", error_message)
 }
 ```
@@ -1214,7 +1214,7 @@ The catch parameter is optional. You may use `_` when you want to show that the 
 ```stult
 '{
 	1()
-},{ (_)
+}|{ (_)
 	STD.IO.OUTPUT.WRITE_LINE("Something went wrong")
 }
 ```
@@ -1246,7 +1246,7 @@ count : 3
 ((count > 0)) {
 	WRITE_LINE(count)
 	@count :- 1
-},{
+}|{
 	WRITE_LINE("done")
 }
 ```
@@ -1442,7 +1442,7 @@ VALUES : {
 }
 ```
 
-Some control-flow syntax also uses commas as part of a tightly written separator. Else branches and after-loop blocks use `},{`, while else-if branches use `},(`.
+Control-flow alternatives use tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`.
 
 ## Standard library
 
