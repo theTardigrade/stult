@@ -1,3 +1,15 @@
+##
+
+EXAMPLE: tests/file_path_namespace.stult
+
+This example checks the standard file path namespace.
+
+Path helpers live under STD.FILE.PATH rather than the old top-level STD.PATH
+namespace.
+
+The old STD.PATH namespace is intentionally no longer available.
+
+##
 
 ASSERT : STD.ASSERT
 PATH : STD.FILE.PATH
@@ -21,4 +33,3 @@ legacy_path_missing : -
 }
 
 ASSERT.TRUE(legacy_path_missing)
-

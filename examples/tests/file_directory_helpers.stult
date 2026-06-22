@@ -1,3 +1,16 @@
+##
+
+EXAMPLE: tests/file_directory_helpers.stult
+
+This example checks the standard file directory helpers.
+
+FILE.LIST lists directory entries, FILE.IS_FILE and FILE.IS_DIR inspect paths,
+and FILE.MAKE_DIR creates directories with optional recursive parent creation.
+
+The test also checks text and byte file reading and writing behaviour.
+
+##
+
 ASSERT : STD.ASSERT
 FILE : STD.FILE
 PATH : FILE.PATH

@@ -1,3 +1,16 @@
+##
+
+EXAMPLE: tests/array_reverse.stult
+
+This example checks the standard array reverse helper.
+
+ARRAY.REVERSE returns a new unfrozen array containing the input array's
+elements in reverse order.
+
+The original array is not modified, and the returned array reuses the original
+element values rather than deep-cloning them.
+
+##
 
 ASSERT : STD.ASSERT
 ARRAY : STD.TYPE.ARRAY
