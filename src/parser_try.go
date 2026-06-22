@@ -18,8 +18,15 @@ func (p *Parser) parseTryCatchStatement() Statement {
 		return nil
 	}
 
-	if p.current.Type != TokenOr || p.peek.Type != TokenLBrace {
-		p.errorAtCurrent("expected catch separator as '}|{'")
+	if p.current.Type != TokenOr {
+		return &TryCatchStatement{
+			Token:   tryToken,
+			TryBody: tryBody,
+		}
+	}
+
+	if p.peek.Type != TokenLBrace {
+		p.errorAtCurrent("expected catch block after try separator as '}|{'")
 		return nil
 	}
 
