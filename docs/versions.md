@@ -12,7 +12,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 #### Language
 
-* Changed try-catch statements from the apostrophe opener to `?{ ... }|{ ... }`, while allowing horizontal spacing after `?`.
+* Changed try-catch statements from the apostrophe opener to `?{ ... }`, with optional `}|{ ... }` catch blocks and horizontal spacing after `?`.
 
 ### v0.9.2
 

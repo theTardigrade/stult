@@ -302,6 +302,8 @@ Function literal parameters are represented with parameter metadata rather than 
 
 Variadic parameters are still represented separately because they have different semantics: they receive an array of remaining arguments, or an empty array when no remaining arguments exist.
 
+Try-catch statements are represented as `TryCatchStatement` AST nodes. The parser accepts `?{ ... }` as an error-suppression try block and `?{ ... }|{ ... }` as a try block with a catch block. Horizontal whitespace may appear between `?` and `{`, and around the block separator `|`, as long as the tokens stay on the same line.
+
 Because the bytecode compiler and interpreter share the AST, language syntax changes must usually be handled in both runtime paths.
 
 ## Bytecode compiler
