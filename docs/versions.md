@@ -15,6 +15,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Allowed trailing binary operators to continue expressions onto the next line, including arithmetic, comparison, equality and logical operators.
 * Required multiline conditional-expression branch separators to appear at the end of the true-branch line rather than at the start of the false-branch line.
 
+#### Project
+
+* Updated the GitHub release workflow so release notes are extracted from `docs/versions.md` and included in each GitHub Release.
+
 ### v0.9.1
 
 #### Language
