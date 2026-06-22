@@ -14,6 +14,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Changed conditional expressions from `?`-based branch lists to colon-based branch lists, as in `(CONDITION):(WHEN_TRUE|WHEN_FALSE)`.
 * Changed match expressions from `?`-based arm lists to colon-based arm lists, as in `(SUBJECT):{ ... }`.
+* Allowed horizontal whitespace around colon-based conditional and match expression markers while keeping newline-separated forms invalid.
 
 ### v0.9.0
 
