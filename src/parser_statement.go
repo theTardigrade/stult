@@ -9,7 +9,7 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLoopStatement()
 	}
 
-	if p.current.Type == TokenTry {
+	if p.current.Type == TokenQuestion {
 		return p.parseTryCatchStatement()
 	}
 

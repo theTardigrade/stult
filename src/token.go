@@ -20,7 +20,6 @@ const (
 	TokenColon    TokenType = ":"
 	TokenDot      TokenType = "."
 	TokenQuestion TokenType = "?"
-	TokenTry      TokenType = "'"
 	TokenAt       TokenType = "@"
 	TokenCaret    TokenType = "^"
 

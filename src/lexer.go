@@ -125,7 +125,7 @@ func (l *Lexer) NextToken() Token {
 
 	case '\'':
 		l.readChar()
-		return l.makeToken(TokenTry, "'", line, col)
+		return l.makeToken(TokenIllegal, "'", line, col)
 
 	case '@':
 		l.readChar()

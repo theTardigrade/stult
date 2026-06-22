@@ -2,14 +2,14 @@ package main
 
 func (p *Parser) parseTryCatchStatement() Statement {
 	tryToken := p.current
-	p.advance() // consume "'"
+	p.advance() // consume "?"
 
 	if !p.expectCurrent(TokenLBrace, "expected '{' after try marker") {
 		return nil
 	}
 
-	if !tokensTouch(tryToken, p.current) {
-		p.errorAtCurrent("expected try marker and try block to be written without whitespace as \"'{\"")
+	if !tokensOnSameLine(tryToken, p.current) {
+		p.errorAtCurrent("expected try marker and try block to stay on one line as '?{'")
 		return nil
 	}
 
