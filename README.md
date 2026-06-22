@@ -1,3 +1,4 @@
+
 # Stult
 
 Stult is a small programming language and runtime written in Go.
@@ -1167,10 +1168,10 @@ In this example, the division arm is not evaluated.
 
 #### Try-catch statements
 
-A try-catch statement lets a program recover from runtime errors. The try block is introduced with an `'`, as shown below:
+A try-catch statement lets a program recover from runtime errors. The try block is introduced with `?`, as shown below:
 
 ```stult
-'{
+?{
 	STD.ASSERT.EQUAL(1, 2, "these values should match")
 }|{
 	STD.IO.OUTPUT.WRITE_LINE("Recovered from the error")
@@ -1180,7 +1181,7 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 The catch block may also receive the error message:
 
 ```stult
-'{
+?{
 	items : {:}
 	items.missing
 }|{ (error_message)
@@ -1188,10 +1189,12 @@ The catch block may also receive the error message:
 }
 ```
 
-The catch parameter is optional. You may use `_` when you want to show that the error message is intentionally ignored:
+The catch parameter is optional.
+
+You may use `_` when you want to show that the error message is intentionally ignored:
 
 ```stult
-'{
+?{
 	1()
 }|{ (_)
 	STD.IO.OUTPUT.WRITE_LINE("Something went wrong")
