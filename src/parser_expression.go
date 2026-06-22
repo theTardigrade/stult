@@ -1,3 +1,4 @@
+
 package main
 
 import "strconv"
@@ -344,8 +345,8 @@ func (p *Parser) parseDotAccessExpression(object Expression) (Expression, bool) 
 func (p *Parser) parseColonExpressionAfterParenthesized(target Expression, closeParen Token) (Expression, bool) {
 	colon := p.current
 
-	if !tokensTouch(closeParen, colon) {
-		p.errorAtToken(colon, "expected ':' to touch parenthesized expression")
+	if !tokensOnSameLine(closeParen, colon) {
+		p.errorAtToken(colon, "expected ':' to stay on the same line as the parenthesized expression")
 		return nil, false
 	}
 
@@ -365,8 +366,8 @@ func (p *Parser) parseColonExpressionAfterParenthesized(target Expression, close
 }
 
 func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, colon Token) (Expression, bool) {
-	if !tokensTouch(colon, p.current) {
-		p.errorAtCurrent("expected '(' to touch ':' in conditional expression")
+	if !tokensOnSameLine(colon, p.current) {
+		p.errorAtCurrent("expected '(' to stay on the same line as ':' in conditional expression")
 		return nil, false
 	}
 
@@ -422,8 +423,8 @@ func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, colo
 }
 
 func (p *Parser) parseMatchExpressionAfterColon(target Expression, colon Token) (Expression, bool) {
-	if !tokensTouch(colon, p.current) {
-		p.errorAtCurrent("expected '{' to touch ':' in match expression")
+	if !tokensOnSameLine(colon, p.current) {
+		p.errorAtCurrent("expected '{' to stay on the same line as ':' in match expression")
 		return nil, false
 	}
 
@@ -617,3 +618,4 @@ func (p *Parser) parseParenthesizedExpression(emptyMessage string) (Expression, 
 
 	return expr, closeParen, true
 }
+
