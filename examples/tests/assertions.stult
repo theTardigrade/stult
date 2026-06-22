@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/assertions.stult
@@ -54,7 +55,7 @@ ASSERT_EQUAL(
 )
 
 true_failure : ""
-'{
+?{
 	ASSERT_TRUE(-)
 }|{ (error)
 	@true_failure : error
@@ -62,7 +63,7 @@ true_failure : ""
 ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be true", true_failure), "ASSERT.TRUE should use a default message")
 
 false_failure : ""
-'{
+?{
 	ASSERT_FALSE(+)
 }|{ (error)
 	@false_failure : error
@@ -70,7 +71,7 @@ false_failure : ""
 ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be false", false_failure), "ASSERT.FALSE should use a default message")
 
 equal_failure : ""
-'{
+?{
 	ASSERT_EQUAL(1, 2)
 }|{ (error)
 	@equal_failure : error

@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/string_chars.stult
@@ -27,7 +28,7 @@ ASSERT.EQUAL(SIZE(STRING.CHARS("")), 0, "CHARS should return an empty array for 
 
 legacy_characters_missing : -
 
-'{
+?{
 	STRING.CHARACTERS("cat")
 }|{
 	@legacy_characters_missing : +

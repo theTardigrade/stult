@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/array_reverse.stult
@@ -45,7 +46,7 @@ ASSERT.EQUAL(SIZE(reversed_frozen), 3, "REVERSE should return a mutable array")
 
 non_array_error : -
 
-'{
+?{
 	ARRAY.REVERSE("abc")
 }|{ (error)
 	@non_array_error : STD.TYPE.STRING.IS_FOUND_IN("argument 1 expected an array", error)

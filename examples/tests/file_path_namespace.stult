@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/file_path_namespace.stult
@@ -26,7 +27,7 @@ ASSERT.TRUE(STD.TYPE.IS_STRING(PATH.ABS("input.csv")))
 
 legacy_path_missing : -
 
-'{
+?{
 	STD.PATH
 }|{
 	@legacy_path_missing : +

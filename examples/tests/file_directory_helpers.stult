@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/file_directory_helpers.stult
@@ -24,37 +25,37 @@ BINARY_CHILD : PATH.JOIN(ROOT, "bytes.bin")
 DEEP_PARENT : PATH.JOIN(ROOT, "deep")
 DEEP_CHILD : PATH.JOIN(DEEP_PARENT, "leaf")
 
-'{
+?{
 	FILE.DELETE(DEEP_CHILD)
 }|{ (_)
 	_
 }
 
-'{
+?{
 	FILE.DELETE(DEEP_PARENT)
 }|{ (_)
 	_
 }
 
-'{
+?{
 	FILE.DELETE(CHILD)
 }|{ (_)
 	_
 }
 
-'{
+?{
 	FILE.DELETE(TEXT_CHILD)
 }|{ (_)
 	_
 }
 
-'{
+?{
 	FILE.DELETE(BINARY_CHILD)
 }|{ (_)
 	_
 }
 
-'{
+?{
 	FILE.DELETE(ROOT)
 }|{ (_)
 	_
@@ -104,7 +105,7 @@ empty_byte_range : FILE.READ(BINARY_CHILD, +, 99)
 ASSERT.EQUAL(SIZE(empty_byte_range), 0, "READ byte mode offset beyond end should return an empty array")
 
 invalid_utf8_text_error : -
-'{
+?{
 	FILE.READ(BINARY_CHILD, -)
 }|{ (error)
 	@invalid_utf8_text_error : IS_FOUND_IN("valid UTF-8", error)
@@ -128,7 +129,7 @@ ASSERT.EQUAL(absolute_paths[1], PATH.ABS(BINARY_CHILD), "LIST with absolute flag
 ASSERT.EQUAL(absolute_paths[2], PATH.ABS(TEXT_CHILD), "LIST with absolute flag true should return the absolute unicode file path")
 
 strict_nested_error : -
-'{
+?{
 	FILE.MAKE_DIR(DEEP_CHILD)
 }|{ (_)
 	@strict_nested_error : +
@@ -140,7 +141,7 @@ ASSERT.TRUE(FILE.IS_DIR(DEEP_CHILD), "recursive MAKE_DIR target should be report
 ASSERT.EQUAL(FILE.MAKE_DIR(DEEP_CHILD, +), _, "recursive MAKE_DIR should succeed when the directory already exists")
 
 strict_existing_error : -
-'{
+?{
 	FILE.MAKE_DIR(ROOT)
 }|{ (_)
 	@strict_existing_error : +
@@ -148,7 +149,7 @@ strict_existing_error : -
 ASSERT.TRUE(strict_existing_error, "MAKE_DIR without recursive flag should fail when the directory already exists")
 
 list_type_error : -
-'{
+?{
 	FILE.LIST(ROOT, "yes")
 }|{ (error)
 	@list_type_error : IS_FOUND_IN("expected a boolean", error)
@@ -156,7 +157,7 @@ list_type_error : -
 ASSERT.TRUE(list_type_error, "LIST absolute flag should require a boolean")
 
 make_dir_type_error : -
-'{
+?{
 	FILE.MAKE_DIR(ROOT, "yes")
 }|{ (error)
 	@make_dir_type_error : IS_FOUND_IN("expected a boolean", error)
@@ -164,7 +165,7 @@ make_dir_type_error : -
 ASSERT.TRUE(make_dir_type_error, "MAKE_DIR recursive flag should require a boolean")
 
 write_append_type_error : -
-'{
+?{
 	FILE.WRITE(CHILD, "no", "yes")
 }|{ (error)
 	@write_append_type_error : IS_FOUND_IN("expected a boolean", error)
@@ -172,7 +173,7 @@ write_append_type_error : -
 ASSERT.TRUE(write_append_type_error, "WRITE append flag should require a boolean")
 
 write_byte_range_error : -
-'{
+?{
 	FILE.WRITE(BINARY_CHILD, {256})
 }|{ (error)
 	@write_byte_range_error : IS_FOUND_IN("0 to 255", error)
@@ -180,7 +181,7 @@ write_byte_range_error : -
 ASSERT.TRUE(write_byte_range_error, "WRITE byte-array content should reject values above 255")
 
 write_byte_decimal_error : -
-'{
+?{
 	FILE.WRITE(BINARY_CHILD, {1.5})
 }|{ (error)
 	@write_byte_decimal_error : IS_FOUND_IN("whole number", error)
@@ -188,7 +189,7 @@ write_byte_decimal_error : -
 ASSERT.TRUE(write_byte_decimal_error, "WRITE byte-array content should reject decimal byte values")
 
 read_mode_type_error : -
-'{
+?{
 	FILE.READ(CHILD, "bytes")
 }|{ (error)
 	@read_mode_type_error : IS_FOUND_IN("expected a boolean", error)
@@ -196,7 +197,7 @@ read_mode_type_error : -
 ASSERT.TRUE(read_mode_type_error, "READ useBytes flag should require a boolean")
 
 read_offset_type_error : -
-'{
+?{
 	FILE.READ(CHILD, -, "one")
 }|{ (error)
 	@read_offset_type_error : IS_FOUND_IN("non-negative whole number", error)
@@ -204,7 +205,7 @@ read_offset_type_error : -
 ASSERT.TRUE(read_offset_type_error, "READ offset should require a non-negative whole number")
 
 append_removed_error : -
-'{
+?{
 	FILE.APPEND(CHILD, "no")
 }|{ (_)
 	@append_removed_error : +

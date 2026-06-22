@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/leading_dot_access.stult
@@ -84,7 +85,7 @@ ASSERT.EQUAL(
 
 caught : ""
 
-'{
+?{
 	outer.inner.try_outer_age()
 }|{
 	(error)

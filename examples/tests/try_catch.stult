@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/try_catch.stult
@@ -14,7 +15,7 @@ SIZE : STD.TYPE.COLLECTION.SIZE
 
 caught_without_parameter : -
 
-'{
+?{
 	ASSERT.EQUAL(1, 2, "failed assertion should be caught")
 }|{
 	@caught_without_parameter : +
@@ -24,7 +25,7 @@ ASSERT.TRUE(caught_without_parameter, "catch block without a parameter should ru
 
 message : ""
 
-'{
+?{
 	items : {:}
 	items.missing
 }|{ (error)
@@ -35,7 +36,7 @@ ASSERT.TRUE(SIZE(message) > 0, "catch parameter should receive an error message"
 
 catch_was_skipped : -
 
-'{
+?{
 	value : 10
 }|{
 	@catch_was_skipped : +
@@ -45,7 +46,7 @@ ASSERT.TRUE(!catch_was_skipped, "catch block should be skipped when try block su
 
 discard_caught : -
 
-'{
+?{
 	1()
 }|{ (_)
 	@discard_caught : +
@@ -55,8 +56,8 @@ ASSERT.TRUE(discard_caught, "discard catch parameter should be accepted")
 
 outer_caught : -
 
-'{
-	'{
+?{
+	?{
 		1()
 	}|{
 		missing : {:}
@@ -71,8 +72,8 @@ ASSERT.TRUE(outer_caught, "errors from a catch block should still escape to an o
 nearest_handler : ""
 outer_handler_ran : -
 
-'{
-	'{
+?{
+	?{
 		1()
 	}|{ (error)
 		@nearest_handler : "inner"
@@ -87,7 +88,7 @@ ASSERT.TRUE(!outer_handler_ran, "outer catch block should not run after inner ca
 break_count : 0
 
 (({1..5})) { (value)
-	'{
+	?{
 		@break_count :+ 1
 
 		(value = 3) {
@@ -101,7 +102,7 @@ break_count : 0
 ASSERT.EQUAL(break_count, 3, "break inside try should still break the loop")
 
 RETURN_THROUGH_TRY : { ()
-	'{
+	?{
 		^("done")
 	}|{ (_)
 		("caught")

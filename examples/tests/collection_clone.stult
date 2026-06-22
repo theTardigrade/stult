@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/collection_clone.stult
@@ -75,7 +76,7 @@ immutable_entry_source : {"LOCKED": 1}
 immutable_entry_copy : CLONE(immutable_entry_source)
 immutable_entry_error : ""
 
-'{
+?{
 	immutable_entry_copy.LOCKED : 2
 }|{
 	(error)

@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/block_separator_spacing.stult
@@ -37,13 +38,13 @@ ASSERT.EQUAL(else_if_result, "else-if", "conditional else-if separator should al
 
 caught : -
 
-'{
+? {
 	ASSERT.EQUAL(1, 2, "try block should fail")
 } | {
 	@caught : +
 }
 
-ASSERT.TRUE(caught, "try-catch separator should allow horizontal spaces")
+ASSERT.TRUE(caught, "try-catch opener and separator should allow horizontal spaces")
 
 count : 0
 after_loop_ran : -

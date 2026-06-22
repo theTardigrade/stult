@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/string_repeat.stult
@@ -23,7 +24,7 @@ ASSERT.EQUAL(STRING.REPEAT("é", 3), "ééé", "REPEAT should preserve Unicode t
 ASSERT.EQUAL(STRING.REPEAT("ab", +3), "ababab", "REPEAT should accept explicitly positive whole-number counts")
 
 non_string_error : -
-'{
+?{
 	STRING.REPEAT(123, 2)
 }|{ (error)
 	@non_string_error : IS_FOUND_IN("expected a string", error)
@@ -31,7 +32,7 @@ non_string_error : -
 ASSERT.TRUE(non_string_error, "REPEAT text argument should require a string")
 
 non_number_error : -
-'{
+?{
 	STRING.REPEAT("x", "3")
 }|{ (error)
 	@non_number_error : IS_FOUND_IN("non-negative whole number", error)
@@ -39,7 +40,7 @@ non_number_error : -
 ASSERT.TRUE(non_number_error, "REPEAT count argument should require a number")
 
 negative_count_error : -
-'{
+?{
 	STRING.REPEAT("x", -1)
 }|{ (error)
 	@negative_count_error : IS_FOUND_IN("non-negative whole number", error)
@@ -47,7 +48,7 @@ negative_count_error : -
 ASSERT.TRUE(negative_count_error, "REPEAT count should reject negative numbers")
 
 decimal_count_error : -
-'{
+?{
 	STRING.REPEAT("x", 1.5)
 }|{ (error)
 	@decimal_count_error : IS_FOUND_IN("non-negative whole number", error)
