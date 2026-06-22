@@ -1,4 +1,3 @@
-
 # Standard library
 
 The Stult standard library is available through the immutable binding `STD`.
