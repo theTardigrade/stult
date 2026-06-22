@@ -1,5 +1,3 @@
-
-
 ##
 
 EXAMPLE: tests/conditional_expression.stult
@@ -32,11 +30,9 @@ ASSERT_EQUAL((number ! 0):(10 / number|"zero"), 2, "conditional expression shoul
 
 ASSERT_EQUAL(
 	(value = 10):(
-		"ten"
-	|	"not ten"
+		"ten" |
+		"not ten"
 	)
 	"ten"
-	"conditional expression should allow multiline branch lists"
+	"conditional expression should allow multiline branch lists with trailing branch separators"
 )
-
-

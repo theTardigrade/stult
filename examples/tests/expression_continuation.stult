@@ -1,0 +1,43 @@
+##
+
+EXAMPLE: tests/expression_continuation.stult
+
+This example checks expression line-continuation syntax.
+
+A trailing binary operator continues an expression onto the next line. The same
+rule applies to arithmetic, comparison, equality and logical operators.
+
+A trailing conditional-expression branch separator also continues onto the next
+line.
+
+##
+
+ASSERT : STD.ASSERT
+
+total : 1 +
+	2 *
+	3 -
+	4 /
+	2
+
+ASSERT.EQUAL(total, 5, "trailing arithmetic operators should continue expressions")
+
+is_total_five : total =
+	5
+
+ASSERT.TRUE(is_total_five, "trailing equality operators should continue expressions")
+
+allowed : (
+	total >= 5 &
+	total <= 5 |
+	total > 100
+)
+
+ASSERT.TRUE(allowed, "trailing logical operators should continue grouped expressions")
+
+label : (allowed) : (
+	"allowed" |
+	"blocked"
+)
+
+ASSERT.EQUAL(label, "allowed", "trailing branch separators should continue conditional expressions")
