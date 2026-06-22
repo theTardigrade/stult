@@ -1,3 +1,4 @@
+
 # Architecture
 
 This document describes how Stult is implemented.
@@ -292,7 +293,7 @@ Leading-dot field access, such as `.name`, is also lowered to an index expressio
 
 Map literals accept ordinary string keys and leading-dot map keys. A leading-dot map key, such as `.name : value`, is parsed as the string key `"name"` while preserving the usual map-entry mutability rules derived from the resulting key string. Bare identifier-shaped map keys remain invalid.
 
-Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a touching `?` branch list, such as `(condition)?(when_true, when_false)`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
+Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a touching `?` branch list, such as `(condition)?(when_true|when_false)`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
 Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a touching `?` arm list, such as `(subject)?{ "case": result _: fallback }`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
 
@@ -965,11 +966,11 @@ tests
 
 Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth. Leading-dot field access also reuses index-expression assignment behaviour, but its receiver is runtime-resolved from the nearest captured map, so interpreter and bytecode map-capture handling must stay aligned.
 
-Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition)?(when_true, when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
+Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition)?(when_true|when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
 
 Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
-Try-catch has both syntax and runtime implications. Parser changes should preserve the touching `'{` opener and the touching `},{` separator. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
+Try-catch has both syntax and runtime implications. Parser changes should preserve the touching `'{` opener and the touching `}|{` separator. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
 
 Function loops are different: they deliberately reuse the existing `LoopStatement` AST shape. The parser does not need a new syntax node because `((source)) { ... }` is already parsed as a loop. The interpreter and VM decide at runtime whether the source is a boolean, a collection or a user-defined function.
 
@@ -1003,3 +1004,4 @@ stult build --interpreter ...
 and run the generated executables directly.
 
 When changing the bytecode format or disassembler, update `stult dump` output expectations accordingly.
+

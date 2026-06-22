@@ -8,6 +8,13 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.9.0
+
+#### Language
+
+* Changed conditional expressions to use `|` between branches, as in `(CONDITION)?(WHEN_TRUE|WHEN_FALSE)`.
+* Changed conditional, try-catch and loop after-block separators from comma-based forms such as `},{` to pipe-based forms such as `}|{`.
+
 ### v0.8.2
 
 #### Project
