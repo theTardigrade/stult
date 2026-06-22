@@ -1,0 +1,54 @@
+##
+
+EXAMPLE: tests/map_entries.stult
+
+This example checks the standard map entries helper.
+
+MAP.ENTRIES returns a new array of key-value pairs for the map's immediate
+entries, sorted by key.
+
+Nested maps and arrays are returned as values. They are not expanded
+recursively.
+
+##
+
+ASSERT : STD.ASSERT
+ARRAY : STD.TYPE.ARRAY
+COLLECTION : STD.TYPE.COLLECTION
+MAP : STD.TYPE.MAP
+TYPE : STD.TYPE
+SIZE : COLLECTION.SIZE
+
+address : {
+	.city: "London"
+	.postcode: "SW1A"
+}
+
+person : {
+	.name: "Ada"
+	.address: address
+	.tags: {"math", "computing"}
+}
+
+entries : MAP.ENTRIES(person)
+
+ASSERT.EQUAL(SIZE(entries), 3, "ENTRIES should return one pair per map entry")
+
+ASSERT.EQUAL(entries[0][0], "address", "ENTRIES should sort pairs by key")
+ASSERT.EQUAL(entries[0][1], address, "ENTRIES should reuse nested map values without expanding them")
+ASSERT.TRUE(TYPE.IS_MAP(entries[0][1]), "ENTRIES should keep nested maps as values")
+
+ASSERT.EQUAL(entries[1][0], "name", "ENTRIES should include the second sorted key")
+ASSERT.EQUAL(entries[1][1], "Ada", "ENTRIES should include the value beside its key")
+
+ASSERT.EQUAL(entries[2][0], "tags", "ENTRIES should include the third sorted key")
+ASSERT.TRUE(TYPE.IS_ARRAY(entries[2][1]), "ENTRIES should keep nested arrays as values")
+
+ARRAY.APPEND(entries[0], "extra")
+ASSERT.EQUAL(SIZE(entries[0]), 3, "ENTRIES should return mutable pair arrays")
+
+ARRAY.APPEND(entries, {"extra", 1})
+ASSERT.EQUAL(SIZE(entries), 4, "ENTRIES should return a mutable outer array")
+
+ASSERT.EQUAL(SIZE(MAP.ENTRIES({:})), 0, "ENTRIES should support empty maps")
+ASSERT.TRUE(TYPE.IS_VOID(MAP.ENTRIES("not a map")), "ENTRIES should return void when the value is not a map")
