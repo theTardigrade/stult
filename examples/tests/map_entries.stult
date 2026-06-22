@@ -21,13 +21,13 @@ SIZE : COLLECTION.SIZE
 
 address : {
 	.city: "London"
-	.postcode: "SW1A"
+	.borough: "Greenwich"
 }
 
 person : {
-	.name: "Ada"
+	.name: "Alex"
 	.address: address
-	.tags: {"math", "computing"}
+	.numbers: {68, 95}
 }
 
 entries : MAP.ENTRIES(person)
@@ -39,9 +39,9 @@ ASSERT.EQUAL(entries[0][1], address, "ENTRIES should reuse nested map values wit
 ASSERT.TRUE(TYPE.IS_MAP(entries[0][1]), "ENTRIES should keep nested maps as values")
 
 ASSERT.EQUAL(entries[1][0], "name", "ENTRIES should include the second sorted key")
-ASSERT.EQUAL(entries[1][1], "Ada", "ENTRIES should include the value beside its key")
+ASSERT.EQUAL(entries[1][1], "Alex", "ENTRIES should include the value beside its key")
 
-ASSERT.EQUAL(entries[2][0], "tags", "ENTRIES should include the third sorted key")
+ASSERT.EQUAL(entries[2][0], "numbers", "ENTRIES should include the third sorted key")
 ASSERT.TRUE(TYPE.IS_ARRAY(entries[2][1]), "ENTRIES should keep nested arrays as values")
 
 ARRAY.APPEND(entries[0], "extra")

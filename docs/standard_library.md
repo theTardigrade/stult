@@ -1,3 +1,4 @@
+
 # Standard library
 
 The Stult standard library is available through the immutable binding `STD`.
@@ -161,6 +162,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["TYPE"]["MAP"]`](#stdtypemap)
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
     - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
+    - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
   - [`STD["TYPE"]["COLLECTION"]`](#stdtypecollection)
     - [`STD["TYPE"]["COLLECTION"]["SIZE"](collection)`](#stdtypecollectionsizecollection)
     - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
@@ -1454,6 +1456,21 @@ Returns an array of map values sorted by key order.
 ```stult
 values : STD.TYPE.MAP.VALUES({"b": 2, "a": 1})
 ```
+
+Returns `_` when the value is not a map.
+
+### `STD["TYPE"]["MAP"]["ENTRIES"](map)`
+
+Returns a new array of key-value pairs for the map's immediate entries, sorted by key.
+
+Each pair is a two-item array containing the string key followed by the entry value.
+Nested maps and arrays are returned as values; they are not expanded recursively.
+
+```stult
+entries : STD.TYPE.MAP.ENTRIES({"b": 2, "a": 1})
+```
+
+The returned outer array and pair arrays are mutable. Entry values are reused rather than deep-cloned.
 
 Returns `_` when the value is not a map.
 
