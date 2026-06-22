@@ -24,22 +24,22 @@ func (p *Parser) finishConditionalStatement(firstCondition Expression, firstClos
 
 	var elseBody []Statement
 
-	for p.current.Type == TokenComma {
-		comma := p.current
+	for p.current.Type == TokenOr {
+		separator := p.current
 
 		switch p.peek.Type {
 		case TokenLParen:
 			if elseBody != nil {
-				p.errorAtToken(comma, "else-if cannot appear after else")
+				p.errorAtToken(separator, "else-if cannot appear after else")
 				return nil, false
 			}
 
-			if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
-				p.errorAtToken(comma, "expected else-if separator to be written without whitespace as '},('")
+			if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
+				p.errorAtToken(separator, "expected else-if separator to be written without whitespace as '}|('")
 				return nil, false
 			}
 
-			p.advance() // consume "," and move to "("
+			p.advance() // consume "|" and move to "("
 
 			condition, conditionCloseParen, ok := p.parseParenthesizedExpression("else-if expression cannot be empty")
 			if !ok {
@@ -68,12 +68,12 @@ func (p *Parser) finishConditionalStatement(firstCondition Expression, firstClos
 			closeBrace = nextCloseBrace
 
 		case TokenLBrace:
-			if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
-				p.errorAtToken(comma, "expected else separator to be written without whitespace as '},{'")
+			if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
+				p.errorAtToken(separator, "expected else separator to be written without whitespace as '}|{'")
 				return nil, false
 			}
 
-			p.advance() // consume "," and move to "{"
+			p.advance() // consume "|" and move to "{"
 
 			body, _, ok := p.parseStatementBlock("else block")
 			if !ok {

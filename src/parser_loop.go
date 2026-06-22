@@ -118,15 +118,15 @@ func (p *Parser) parseLoopStatement() Statement {
 
 	var afterLoopBody []Statement
 
-	if p.current.Type == TokenComma && p.peek.Type == TokenLBrace {
-		comma := p.current
+	if p.current.Type == TokenOr && p.peek.Type == TokenLBrace {
+		separator := p.current
 
-		if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
-			p.errorAtToken(comma, "expected after-loop separator to be written without whitespace as '},{'")
+		if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
+			p.errorAtToken(separator, "expected after-loop separator to be written without whitespace as '}|{'")
 			return nil
 		}
 
-		p.advance() // consume "," and move to "{"
+		p.advance() // consume "|" and move to "{"
 
 		afterLoopBody, _, ok = p.parseStatementBlock("after-loop block")
 		if !ok {

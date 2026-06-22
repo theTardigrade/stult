@@ -18,18 +18,18 @@ func (p *Parser) parseTryCatchStatement() Statement {
 		return nil
 	}
 
-	if p.current.Type != TokenComma || p.peek.Type != TokenLBrace {
-		p.errorAtCurrent("expected catch separator written without whitespace as '},{'")
+	if p.current.Type != TokenOr || p.peek.Type != TokenLBrace {
+		p.errorAtCurrent("expected catch separator written without whitespace as '}|{'")
 		return nil
 	}
 
-	comma := p.current
-	if !tokensTouch(closeBrace, comma) || !tokensTouch(comma, p.peek) {
-		p.errorAtToken(comma, "expected catch separator to be written without whitespace as '},{'")
+	separator := p.current
+	if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
+		p.errorAtToken(separator, "expected catch separator to be written without whitespace as '}|{'")
 		return nil
 	}
 
-	p.advance() // consume "," and move to "{"
+	p.advance() // consume "|" and move to "{"
 
 	catchParameter, catchBody, ok := p.parseCatchBlock()
 	if !ok {
@@ -99,6 +99,10 @@ func (p *Parser) parseCatchBlock() (*Token, []Statement, bool) {
 		body = append(body, stmt)
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			if !p.rejectOldCommaBlockSeparator() {
+				return nil, nil, false
+			}
+
 			p.skipSeparators()
 			continue
 		}

@@ -372,18 +372,21 @@ func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, q
 		return nil, false
 	}
 
-	whenTrue := p.parseExpression(precLowest)
+	whenTrue := p.parseExpression(precLogicalOr)
 	if whenTrue == nil {
 		p.errorAtToken(question, "expected true branch expression in conditional expression")
 		return nil, false
 	}
 
-	if p.current.Type != TokenComma && p.current.Type != TokenNewline {
-		p.errorAtCurrent("expected comma or newline after true branch expression")
+	p.skipNewlines()
+
+	if p.current.Type != TokenOr {
+		p.errorAtCurrent("expected '|' between conditional expression branches")
 		return nil, false
 	}
 
-	p.skipSeparators()
+	p.advance() // consume "|"
+	p.skipNewlines()
 
 	if p.current.Type == TokenRParen {
 		p.errorAtToken(question, "conditional expression expected false branch expression")
@@ -397,11 +400,6 @@ func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, q
 	}
 
 	p.skipNewlines()
-
-	if p.current.Type == TokenComma {
-		p.advance()
-		p.skipNewlines()
-	}
 
 	if !p.expectCurrent(TokenRParen, "expected ')' after conditional expression branches") {
 		return nil, false

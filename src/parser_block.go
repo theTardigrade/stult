@@ -35,6 +35,10 @@ func (p *Parser) parseStatementBlock(name string) ([]Statement, Token, bool) {
 		body = append(body, stmt)
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			if !p.rejectOldCommaBlockSeparator() {
+				return nil, Token{}, false
+			}
+
 			p.skipSeparators()
 			continue
 		}
@@ -94,6 +98,10 @@ func (p *Parser) parseLoopBodyBlock(name string) ([]Token, []Statement, Token, b
 		body = append(body, stmt)
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			if !p.rejectOldCommaBlockSeparator() {
+				return nil, nil, Token{}, false
+			}
+
 			p.skipSeparators()
 			continue
 		}
@@ -129,6 +137,10 @@ func (p *Parser) parseOptionalLoopRangeParameters() ([]Token, bool) {
 
 func (p *Parser) finishFunctionBodyStatement(stmt Statement) bool {
 	if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+		if !p.rejectOldCommaBlockSeparator() {
+			return false
+		}
+
 		p.skipSeparators()
 		return true
 	}

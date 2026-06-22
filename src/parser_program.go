@@ -21,6 +21,10 @@ func (p *Parser) ParseProgram() *Program {
 		program.Statements = append(program.Statements, stmt)
 
 		if p.current.Type == TokenComma || p.current.Type == TokenNewline {
+			if !p.rejectOldCommaBlockSeparator() {
+				return program
+			}
+
 			p.skipSeparators()
 		} else if p.current.Type == TokenEOF {
 			break

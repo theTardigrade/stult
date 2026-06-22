@@ -31,6 +31,28 @@ func (p *Parser) skipSeparators() {
 	}
 }
 
+func (p *Parser) rejectOldCommaBlockSeparator() bool {
+	if p.current.Type != TokenComma || p.previous.Type != TokenRBrace {
+		return true
+	}
+
+	if p.peek.Type != TokenLBrace && p.peek.Type != TokenLParen {
+		return true
+	}
+
+	if !tokensTouch(p.previous, p.current) || !tokensTouch(p.current, p.peek) {
+		return true
+	}
+
+	if p.peek.Type == TokenLParen {
+		p.errorAtCurrent("comma-based else-if separators are no longer valid; use '}|('")
+	} else {
+		p.errorAtCurrent("comma-based block separators are no longer valid; use '}|{'")
+	}
+
+	return false
+}
+
 func (p *Parser) skipNewlines() {
 	for p.current.Type == TokenNewline {
 		p.advance()
