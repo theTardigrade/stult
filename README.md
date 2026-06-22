@@ -1442,7 +1442,7 @@ VALUES : {
 }
 ```
 
-Control-flow alternatives use tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`.
+Control-flow alternatives are written idiomatically with tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`. Horizontal whitespace around the pipe is accepted on the same line, but newlines around the separator are not.
 
 ## Standard library
 

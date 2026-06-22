@@ -1,0 +1,57 @@
+##
+
+EXAMPLE: tests/block_separator_spacing.stult
+
+This example checks horizontal spacing around block alternative separators.
+
+Block alternatives are written idiomatically as touching separators such as `}|{`,
+but horizontal whitespace around the pipe is accepted on the same line.
+
+Newlines around the separator are intentionally not accepted.
+
+##
+
+ASSERT : STD.ASSERT
+
+conditional_result : ""
+
+(-) {
+	@conditional_result : "if"
+} | {
+	@conditional_result : "else"
+}
+
+ASSERT.EQUAL(conditional_result, "else", "conditional else separator should allow horizontal spaces")
+
+else_if_result : ""
+
+(-) {
+	@else_if_result : "if"
+} | (+) {
+	@else_if_result : "else-if"
+} | {
+	@else_if_result : "else"
+}
+
+ASSERT.EQUAL(else_if_result, "else-if", "conditional else-if separator should allow horizontal spaces")
+
+caught : -
+
+'{
+	ASSERT.EQUAL(1, 2, "try block should fail")
+} | {
+	@caught : +
+}
+
+ASSERT.TRUE(caught, "try-catch separator should allow horizontal spaces")
+
+count : 0
+after_loop_ran : -
+
+((count < 1)) {
+	@count :+ 1
+} | {
+	@after_loop_ran : +
+}
+
+ASSERT.TRUE(after_loop_ran, "after-loop separator should allow horizontal spaces")

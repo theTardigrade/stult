@@ -121,8 +121,8 @@ func (p *Parser) parseLoopStatement() Statement {
 	if p.current.Type == TokenOr && p.peek.Type == TokenLBrace {
 		separator := p.current
 
-		if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
-			p.errorAtToken(separator, "expected after-loop separator to be written without whitespace as '}|{'")
+		if !tokensOnSameLine(closeBrace, separator) || !tokensOnSameLine(separator, p.peek) {
+			p.errorAtToken(separator, "expected after-loop separator to stay on one line as '}|{'")
 			return nil
 		}
 

@@ -19,13 +19,13 @@ func (p *Parser) parseTryCatchStatement() Statement {
 	}
 
 	if p.current.Type != TokenOr || p.peek.Type != TokenLBrace {
-		p.errorAtCurrent("expected catch separator written without whitespace as '}|{'")
+		p.errorAtCurrent("expected catch separator as '}|{'")
 		return nil
 	}
 
 	separator := p.current
-	if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
-		p.errorAtToken(separator, "expected catch separator to be written without whitespace as '}|{'")
+	if !tokensOnSameLine(closeBrace, separator) || !tokensOnSameLine(separator, p.peek) {
+		p.errorAtToken(separator, "expected catch separator to stay on one line as '}|{'")
 		return nil
 	}
 

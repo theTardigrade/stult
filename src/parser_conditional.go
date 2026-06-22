@@ -34,8 +34,8 @@ func (p *Parser) finishConditionalStatement(firstCondition Expression, firstClos
 				return nil, false
 			}
 
-			if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
-				p.errorAtToken(separator, "expected else-if separator to be written without whitespace as '}|('")
+			if !tokensOnSameLine(closeBrace, separator) || !tokensOnSameLine(separator, p.peek) {
+				p.errorAtToken(separator, "expected else-if separator to stay on one line as '}|('")
 				return nil, false
 			}
 
@@ -68,8 +68,8 @@ func (p *Parser) finishConditionalStatement(firstCondition Expression, firstClos
 			closeBrace = nextCloseBrace
 
 		case TokenLBrace:
-			if !tokensTouch(closeBrace, separator) || !tokensTouch(separator, p.peek) {
-				p.errorAtToken(separator, "expected else separator to be written without whitespace as '}|{'")
+			if !tokensOnSameLine(closeBrace, separator) || !tokensOnSameLine(separator, p.peek) {
+				p.errorAtToken(separator, "expected else separator to stay on one line as '}|{'")
 				return nil, false
 			}
 
