@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.9.3 (Future release)
+
+#### Language
+
+* Changed try-catch statements from the apostrophe opener to `?{ ... }|{ ... }`, while allowing horizontal spacing after `?`.
+
 ### v0.9.2
 
 #### Language

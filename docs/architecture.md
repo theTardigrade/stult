@@ -971,7 +971,7 @@ Other syntax needs its own AST shape even when it looks compact. Conditional exp
 
 Match expressions are another example: `(subject):{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
-Try-catch has both syntax and runtime implications. Parser changes should preserve the touching `'{` opener and the touching `}|{` separator. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
+Try-catch has both syntax and runtime implications. Parser changes should preserve the same-line `?{` opener and the same-line `}|{` separator, while allowing horizontal spacing in both places. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
 
 Function loops are different: they deliberately reuse the existing `LoopStatement` AST shape. The parser does not need a new syntax node because `((source)) { ... }` is already parsed as a loop. The interpreter and VM decide at runtime whether the source is a boolean, a collection or a user-defined function.
 
