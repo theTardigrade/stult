@@ -1086,13 +1086,7 @@ count : 1
 label : (count = 1):("item"|"items")
 ```
 
-The `:` must touch the closing parenthesis of the condition, and the branch list must touch the `:`. The two branch expressions are separated with `|`.
-
-```stult
-(count = 1):("item"|"items")   # valid
-(count = 1) :("item"|"items")  # invalid
-(count = 1): ("item"|"items")  # invalid
-```
+The idiomatic form keeps the `:` touching the parentheses on both sides, but horizontal whitespace is accepted around it. (In other words, the `:` must stay on the same line as both the closing parenthesis of the condition and the opening parenthesis of the branch list.)
 
 Only the selected branch is evaluated.
 
@@ -1125,24 +1119,7 @@ Here, `NUMBER` becomes `50` because `TEXT` is `"yes"`.
 
 The subject expression must be parenthesised.
 
-The `:` must touch the closing parenthesis of the subject, and the opening `{` must touch the `:`.
-
-```stult
-(TEXT):{
-	"yes": 1
-	_: 0
-}   # valid
-
-(TEXT) :{
-	"yes": 1
-	_: 0
-}   # invalid
-
-(TEXT): {
-	"yes": 1
-	_: 0
-}   # invalid
-```
+The idiomatic form keeps the `:` touching the parentheses on both sides, but horizontal whitespace is accepted around it. (In other words, the `:` must stay on the same line as both the closing parenthesis of the subject and the opening parenthesis of the arm list.)
 
 Match expressions evaluate the subject once, then check explicit arms before using the `_` default arm.
 
