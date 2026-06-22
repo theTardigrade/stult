@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/try_catch.stult
@@ -22,6 +21,16 @@ caught_without_parameter : -
 }
 
 ASSERT.TRUE(caught_without_parameter, "catch block without a parameter should run")
+
+suppressed_without_catch : -
+
+?{
+	ASSERT.EQUAL(1, 2, "failed assertion should be suppressed when catch block is omitted")
+}
+
+suppressed_without_catch : +
+
+ASSERT.TRUE(suppressed_without_catch, "try block without catch block should suppress catchable errors")
 
 message : ""
 
@@ -105,7 +114,7 @@ RETURN_THROUGH_TRY : { ()
 	?{
 		^("done")
 	}|{ (_)
-		("caught")
+		STD.ASSERT.FALSE(+, "early return should not be caught")
 	}
 
 	("not done")
