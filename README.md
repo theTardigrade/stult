@@ -1178,7 +1178,15 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 }
 ```
 
-The catch block may also receive the error message:
+A try block may also be used without a catch block. In that form, catchable runtime errors are suppressed and the statement returns void:
+
+```stult
+?{
+	STD.FILE.DELETE("missing-file.txt")
+}
+```
+
+When a catch block is present, it may also receive the error message:
 
 ```stult
 ?{
@@ -1189,9 +1197,7 @@ The catch block may also receive the error message:
 }
 ```
 
-The catch parameter is optional.
-
-You may use `_` when you want to show that the error message is intentionally ignored:
+The catch parameter is also optional. You may use `_` when you want to show that the error message is intentionally ignored:
 
 ```stult
 ?{
