@@ -1075,7 +1075,7 @@ Bindings created inside that block do not leak into the surrounding scope.
 A conditional expression chooses between two branch expressions and returns the selected branch value.
 
 ```stult
-marker : (CONDITION)?("*"|" ")
+marker : (CONDITION):("*"|" ")
 ```
 
 The condition must be parenthesised.
@@ -1083,15 +1083,15 @@ The condition must be parenthesised.
 ```stult
 count : 1
 
-label : (count = 1)?("item"|"items")
+label : (count = 1):("item"|"items")
 ```
 
-The `?` must touch the closing parenthesis of the condition, and the branch list must touch the `?`. The two branch expressions are separated with `|`.
+The `:` must touch the closing parenthesis of the condition, and the branch list must touch the `:`. The two branch expressions are separated with `|`.
 
 ```stult
-(count = 1)?("item"|"items")   # valid
-(count = 1) ?("item"|"items")  # invalid
-(count = 1)? ("item"|"items")  # invalid
+(count = 1):("item"|"items")   # valid
+(count = 1) :("item"|"items")  # invalid
+(count = 1): ("item"|"items")  # invalid
 ```
 
 Only the selected branch is evaluated.
@@ -1099,7 +1099,7 @@ Only the selected branch is evaluated.
 ```stult
 denominator : 0
 
-safe : (denominator = 0)?(0|10 / denominator)
+safe : (denominator = 0):(0|10 / denominator)
 ```
 
 In this example, the division branch is not evaluated because the condition is true.
@@ -1442,7 +1442,7 @@ VALUES : {
 }
 ```
 
-Control-flow alternatives are written idiomatically with tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`. Horizontal whitespace around the pipe is accepted on the same line, but newlines around the separator are not.
+Control-flow alternatives use tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`.
 
 ## Standard library
 
