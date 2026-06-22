@@ -61,7 +61,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
   Checks that a function return expression may begin with a grouped expression using touching `((` without being mistaken for a loop.
 
 - [Conditional expression](../examples/tests/conditional_expression.stult)  
-  Checks that `(CONDITION)?(WHEN_TRUE|WHEN_FALSE)` evaluates exactly one selected branch and returns its value.
+  Checks that `(CONDITION):(WHEN_TRUE|WHEN_FALSE)` evaluates exactly one selected branch and returns its value.
 
 - [Match expression](../examples/tests/match_expression.stult)  
   Checks that `(SUBJECT)?{ ... }` matches explicit scalar-literal arms before falling back to `_`.

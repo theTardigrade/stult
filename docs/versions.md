@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+#### Language
+
+* Changed conditional expressions from `?`-based branch lists to colon-based branch lists, as in `(CONDITION):(WHEN_TRUE|WHEN_FALSE)`.
+
 ### v0.9.0
 
 #### Language
