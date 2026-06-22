@@ -1178,7 +1178,9 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 }
 ```
 
-A try block may also be used without a catch block. In that form, catchable runtime errors are suppressed and the statement returns void:
+The catch block is often used for performing cleanup operations.
+
+A try block may also be used without a catch block. In that form, catchable runtime errors are suppressed and execution continues after the try block:
 
 ```stult
 ?{
