@@ -64,7 +64,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
   Checks that `(CONDITION):(WHEN_TRUE|WHEN_FALSE)` evaluates exactly one selected branch and returns its value.
 
 - [Match expression](../examples/tests/match_expression.stult)  
-  Checks that `(SUBJECT)?{ ... }` matches explicit scalar-literal arms before falling back to `_`.
+  Checks that `(SUBJECT):{ ... }` matches explicit scalar-literal arms before falling back to `_`.
 
 ## Error handling
 

@@ -294,7 +294,7 @@ Map literals accept ordinary string keys and leading-dot map keys. A leading-dot
 
 Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a touching `:` branch list, such as `(condition):(when_true|when_false)`. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
-Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a touching `?` arm list, such as `(subject)?{ "case": result _: fallback }`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
+Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a touching `:` arm list, such as `(subject):{ "case": result _: fallback }`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
 
 Function literal parameters are represented with parameter metadata rather than plain identifier tokens. Ordinary parameters can be required or optional. Optional parameters are written with `?` in source and receive void when omitted at call time.
 
@@ -967,7 +967,7 @@ Some syntax can deliberately reuse existing AST and runtime paths. Dot access is
 
 Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition):(when_true|when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
 
-Match expressions are another example: `(subject)?{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
+Match expressions are another example: `(subject):{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
 Try-catch has both syntax and runtime implications. Parser changes should preserve the touching `'{` opener and the touching `}|{` separator. Runtime changes should keep break and early return separate from catchable errors. In bytecode, any control-flow path that leaves a protected try region must also emit matching `TRY_END` instructions.
 
