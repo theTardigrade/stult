@@ -14,7 +14,7 @@ ASSERT : STD["ASSERT"]
 text : "yes"
 
 ASSERT["EQUAL"](
-	(text)?{
+	(text):{
 		"yes": 50
 		"no": 0
 		_: -1
@@ -24,7 +24,7 @@ ASSERT["EQUAL"](
 )
 
 ASSERT["EQUAL"](
-	(text)?{
+	(text):{
 		_: -1
 		"yes": 50
 	},
@@ -35,7 +35,7 @@ ASSERT["EQUAL"](
 number : 2
 
 ASSERT["EQUAL"](
-	(number)?{
+	(number):{
 		1: "one"
 		2: "two"
 		_: "other"
@@ -47,7 +47,7 @@ ASSERT["EQUAL"](
 flag : +
 
 ASSERT["EQUAL"](
-	(flag)?{
+	(flag):{
 		+: "true"
 		-: "false"
 		_: "other"
@@ -59,7 +59,7 @@ ASSERT["EQUAL"](
 missing : "unknown"
 
 ASSERT["EQUAL"](
-	(missing)?{
+	(missing):{
 		"yes": 1
 		_: -1
 	},
@@ -68,7 +68,7 @@ ASSERT["EQUAL"](
 )
 
 ASSERT["EQUAL"](
-	(missing)?{
+	(missing):{
 		"yes": 1
 	},
 	_,
@@ -78,7 +78,7 @@ ASSERT["EQUAL"](
 denominator : 0
 
 ASSERT["EQUAL"](
-	("safe")?{
+	("safe"):{
 		"safe": "ok"
 		"divide": 10 / denominator
 		_: "fallback"
@@ -88,10 +88,11 @@ ASSERT["EQUAL"](
 )
 
 ASSERT["EQUAL"](
-	("fallback")?{
+	("fallback"):{
 		"safe": 10
 		_: "ok"
 	},
 	"ok",
 	"match expression should evaluate the default branch only after explicit arms fail"
 )
+
