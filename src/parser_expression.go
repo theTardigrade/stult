@@ -1,4 +1,3 @@
-
 package main
 
 import "strconv"
@@ -299,6 +298,7 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 
 		operator := p.current
 		p.advance()
+		p.skipNewlines()
 
 		right := p.parseExpressionWithOptions(currentPrec, stopBeforeTouchingIndex)
 		if right == nil {
@@ -385,10 +385,8 @@ func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, colo
 		return nil, false
 	}
 
-	p.skipNewlines()
-
 	if p.current.Type != TokenOr {
-		p.errorAtCurrent("expected '|' between conditional expression branches")
+		p.errorAtCurrent("expected '|' on the same line as the true branch in conditional expression")
 		return nil, false
 	}
 
@@ -618,4 +616,3 @@ func (p *Parser) parseParenthesizedExpression(emptyMessage string) (Expression, 
 
 	return expr, closeParen, true
 }
-
