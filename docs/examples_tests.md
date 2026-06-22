@@ -12,6 +12,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 * [Collection behaviour](#collection-behaviour)
 * [Loops](#loops)
+* [Block separators](#block-separators)
 * [Grouped expressions](#grouped-expressions)
 * [Error handling](#error-handling)
 * [Literal parsing](#literal-parsing)
@@ -42,6 +43,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Range loop optimisation](../examples/tests/range_loop_optimization.stult)  
   Checks that direct single-range loop sources can be streamed without changing observable behaviour, including very large integer bounds, descending ranges, stepped ranges and the collection-parameter fallback.
+
+## Block separators
+
+- [Block separator spacing](../examples/tests/block_separator_spacing.stult)  
+  Checks that block alternative separators may include horizontal whitespace around `|` on the same line, while newlines around the separator remain invalid.
 
 ## Grouped expressions
 
