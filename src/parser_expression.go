@@ -136,14 +136,24 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 			return nil
 		}
 
-		if p.current.Type == TokenQuestion {
+		switch p.current.Type {
+		case TokenColon:
+			conditionalExpression, ok := p.parseConditionalExpressionAfterColon(inner, closeParen)
+			if !ok {
+				return nil
+			}
+
+			left = conditionalExpression
+
+		case TokenQuestion:
 			questionExpression, ok := p.parseQuestionExpression(inner, closeParen)
 			if !ok {
 				return nil
 			}
 
 			left = questionExpression
-		} else {
+
+		default:
 			left = inner
 		}
 
@@ -346,21 +356,32 @@ func (p *Parser) parseQuestionExpression(target Expression, closeParen Token) (E
 	p.advance() // consume "?"
 
 	switch p.current.Type {
-	case TokenLParen:
-		return p.parseConditionalExpressionAfterQuestion(target, question)
-
 	case TokenLBrace:
 		return p.parseMatchExpressionAfterQuestion(target, question)
 
 	default:
-		p.errorAtCurrent("expected '(' or '{' after '?'")
+		p.errorAtCurrent("expected '{' after '?' in match expression")
 		return nil, false
 	}
 }
 
-func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, question Token) (Expression, bool) {
-	if !tokensTouch(question, p.current) {
-		p.errorAtCurrent("expected '(' to touch '?' in conditional expression")
+func (p *Parser) parseConditionalExpressionAfterColon(condition Expression, closeParen Token) (Expression, bool) {
+	colon := p.current
+
+	if !tokensTouch(closeParen, colon) {
+		p.errorAtToken(colon, "expected ':' to touch parenthesized expression in conditional expression")
+		return nil, false
+	}
+
+	p.advance() // consume ":"
+
+	if p.current.Type != TokenLParen {
+		p.errorAtCurrent("expected '(' after ':' in conditional expression")
+		return nil, false
+	}
+
+	if !tokensTouch(colon, p.current) {
+		p.errorAtCurrent("expected '(' to touch ':' in conditional expression")
 		return nil, false
 	}
 
@@ -368,13 +389,13 @@ func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, q
 	p.skipNewlines()
 
 	if p.current.Type == TokenRParen {
-		p.errorAtToken(question, "conditional expression expected true and false branch expressions")
+		p.errorAtToken(colon, "conditional expression expected true and false branch expressions")
 		return nil, false
 	}
 
 	whenTrue := p.parseExpression(precLogicalOr)
 	if whenTrue == nil {
-		p.errorAtToken(question, "expected true branch expression in conditional expression")
+		p.errorAtToken(colon, "expected true branch expression in conditional expression")
 		return nil, false
 	}
 
@@ -389,13 +410,13 @@ func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, q
 	p.skipNewlines()
 
 	if p.current.Type == TokenRParen {
-		p.errorAtToken(question, "conditional expression expected false branch expression")
+		p.errorAtToken(colon, "conditional expression expected false branch expression")
 		return nil, false
 	}
 
 	whenFalse := p.parseExpression(precLowest)
 	if whenFalse == nil {
-		p.errorAtToken(question, "expected false branch expression in conditional expression")
+		p.errorAtToken(colon, "expected false branch expression in conditional expression")
 		return nil, false
 	}
 
@@ -408,7 +429,7 @@ func (p *Parser) parseConditionalExpressionAfterQuestion(condition Expression, q
 	p.advance() // consume ")"
 
 	return &ConditionalExpression{
-		Token:     question,
+		Token:     colon,
 		Condition: condition,
 		WhenTrue:  whenTrue,
 		WhenFalse: whenFalse,

@@ -30,7 +30,16 @@ func (p *Parser) parseStatement() Statement {
 
 		target := expr
 
-		if p.current.Type == TokenQuestion {
+		switch p.current.Type {
+		case TokenColon:
+			conditionalExpression, ok := p.parseConditionalExpressionAfterColon(expr, closeParen)
+			if !ok {
+				return nil
+			}
+
+			target = conditionalExpression
+
+		case TokenQuestion:
 			questionExpression, ok := p.parseQuestionExpression(expr, closeParen)
 			if !ok {
 				return nil
