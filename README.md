@@ -68,6 +68,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Iterating over collections](#iterating-over-collections)
     - [Function loops](#function-loops)
   - [Commas and newlines](#commas-and-newlines)
+    - [Trailing commas](#trailing-commas)
+    - [Splitting expressions across lines](#splitting-expressions-across-lines)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
@@ -1409,6 +1411,8 @@ CONFIG : {
 }
 ```
 
+#### Trailing commas
+
 Trailing commas are allowed in list-like syntax:
 
 ```stult
@@ -1419,7 +1423,37 @@ VALUES : {
 }
 ```
 
-Control-flow alternatives use tightly written pipe-based separators. Else branches, catch blocks and after-loop blocks use `}|{`, while else-if branches use `}|(`.
+#### Splitting expressions across lines
+
+You can split an expression across several lines either by opening a bracketed section or by ending a line with an operator.
+
+For example, this works because the opening `(` tells Stult that the expression continues until the matching `)`:
+
+```stult
+allowed : (
+	user.active &
+	user.verified
+)
+```
+
+This also works because each `+` appears at the end of the line it continues:
+
+```stult
+total : 1 +
+	2 +
+	3
+```
+
+Conditional expressions use the same style. Put the branch separator `|` at the end of the first branch line:
+
+```stult
+label : (allowed) : (
+	"yes" |
+	"no"
+)
+```
+
+A newline normally ends the current statement or item. So if you want to continue an expression onto the next line, put the operator or branch separator at the end of the previous line, not at the start of the next one.
 
 ## Standard library
 
@@ -1554,3 +1588,4 @@ Unless otherwise stated, all versions of Stult in this repository, including ver
 You may use, copy, modify and distribute Stult, including for commercial purposes, subject to the terms of the Apache License 2.0.
 
 The name “Stult” refers to the official language and project maintained in this repository. Modified versions and forks should not present themselves as the official Stult project unless accepted by a project maintainer.
+
