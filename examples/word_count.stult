@@ -22,7 +22,7 @@ word_count : 0
 		WRITE_LINE(current_word)
 		@current_word : ""
 		@word_count :+ 1
-	},{
+	}|{
 		@current_word :+ CHAR
 	}
 }

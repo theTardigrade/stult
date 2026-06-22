@@ -19,7 +19,7 @@ C : T["COLLECTION"]
 PRINT_TITLE_BORDER : { ( length )
 	(( { 1..length } )) {
 		W("=")
-	},{
+	}|{
 		WL()
 	}
 
@@ -55,7 +55,7 @@ ITERATE_MAP_WITH_RECURSIVE_PRINTING : { ( MAP, MAP_NAME, seen_maps )
 	(( MAP )) { ( VALUE, KEY )
 		( T["IS_BUILTIN_FUNCTION"](VALUE) ) {
 			WL(KEY + " (function)")
-		},( T["IS_MAP"](VALUE) ) {
+		}|( T["IS_MAP"](VALUE) ) {
 			WL(KEY + " (collection)")
 
 			SUB_MAP_NAME_FORMATTED : (MAP_NAME + "[\"" + KEY + "\"]")

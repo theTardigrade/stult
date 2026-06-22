@@ -56,7 +56,7 @@ ASSERT_EQUAL(
 true_failure : ""
 '{
 	ASSERT_TRUE(-)
-},{ (error)
+}|{ (error)
 	@true_failure : error
 }
 ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be true", true_failure), "ASSERT.TRUE should use a default message")
@@ -64,7 +64,7 @@ ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be true", true_fa
 false_failure : ""
 '{
 	ASSERT_FALSE(+)
-},{ (error)
+}|{ (error)
 	@false_failure : error
 }
 ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be false", false_failure), "ASSERT.FALSE should use a default message")
@@ -72,7 +72,7 @@ ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected condition to be false", false_
 equal_failure : ""
 '{
 	ASSERT_EQUAL(1, 2)
-},{ (error)
+}|{ (error)
 	@equal_failure : error
 }
 ASSERT_TRUE(STD.TYPE.STRING.IS_FOUND_IN("expected values to be equal", equal_failure), "ASSERT.EQUAL should use a default message")

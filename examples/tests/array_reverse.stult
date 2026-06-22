@@ -1,3 +1,4 @@
+
 ASSERT : STD.ASSERT
 ARRAY : STD.TYPE.ARRAY
 COLLECTION : STD.TYPE.COLLECTION
@@ -33,7 +34,7 @@ non_array_error : -
 
 '{
 	ARRAY.REVERSE("abc")
-},{ (error)
+}|{ (error)
 	@non_array_error : STD.TYPE.STRING.IS_FOUND_IN("argument 1 expected an array", error)
 }
 

@@ -25,7 +25,7 @@ ASSERT.EQUAL(STRING.REPEAT("ab", +3), "ababab", "REPEAT should accept explicitly
 non_string_error : -
 '{
 	STRING.REPEAT(123, 2)
-},{ (error)
+}|{ (error)
 	@non_string_error : IS_FOUND_IN("expected a string", error)
 }
 ASSERT.TRUE(non_string_error, "REPEAT text argument should require a string")
@@ -33,7 +33,7 @@ ASSERT.TRUE(non_string_error, "REPEAT text argument should require a string")
 non_number_error : -
 '{
 	STRING.REPEAT("x", "3")
-},{ (error)
+}|{ (error)
 	@non_number_error : IS_FOUND_IN("non-negative whole number", error)
 }
 ASSERT.TRUE(non_number_error, "REPEAT count argument should require a number")
@@ -41,7 +41,7 @@ ASSERT.TRUE(non_number_error, "REPEAT count argument should require a number")
 negative_count_error : -
 '{
 	STRING.REPEAT("x", -1)
-},{ (error)
+}|{ (error)
 	@negative_count_error : IS_FOUND_IN("non-negative whole number", error)
 }
 ASSERT.TRUE(negative_count_error, "REPEAT count should reject negative numbers")
@@ -49,7 +49,7 @@ ASSERT.TRUE(negative_count_error, "REPEAT count should reject negative numbers")
 decimal_count_error : -
 '{
 	STRING.REPEAT("x", 1.5)
-},{ (error)
+}|{ (error)
 	@decimal_count_error : IS_FOUND_IN("non-negative whole number", error)
 }
 ASSERT.TRUE(decimal_count_error, "REPEAT count should reject decimal numbers")

@@ -34,7 +34,7 @@ frames_drawn : 0
 
 	@frames_drawn :+ 1
 	@next_frame_ms :+ FRAME_DELAY_MS
-},{
+}|{
 	final_ms : NOW()
 	elapsed_ms : final_ms - START_MS
 

@@ -88,7 +88,7 @@ BODY_DANGER_SCORE : { (SNAKE, NEXT)
 
 			(D = 1) {
 				@score :+ BODY_NEAR_PENALTY
-			},(D = 2) {
+			}|(D = 2) {
 				@score :+ BODY_CLOSE_PENALTY
 			}
 		}

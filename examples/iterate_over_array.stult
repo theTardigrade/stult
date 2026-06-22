@@ -21,6 +21,6 @@ DOG_NAMES : { "Rover", "Grover", "Groover", "Doofus" }
 	SIZE : @CS(COLLECTION)
 
 	@P("Dog ", INDEX + 1, " (of ", SIZE, ") is called ", NAME, ".")
-},{
+}|{
 	@P("And those are all the dogs I know.")
 }

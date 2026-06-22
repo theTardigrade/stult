@@ -85,7 +85,7 @@ average : { (total, count)
 
 		(score >= 70) {
 			summary["passing"] :+ 1
-		},{
+		}|{
 			summary["failing"] :+ 1
 		}
 	}

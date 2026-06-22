@@ -30,9 +30,9 @@ array_count : 0
 
 	(POSITION = 0) {
 		ASSERT_EQUAL(VALUE, "a", "array position 0 should be a")
-	},(POSITION = 1) {
+	}|(POSITION = 1) {
 		ASSERT_EQUAL(VALUE, "b", "array position 1 should be b")
-	},(POSITION = 2) {
+	}|(POSITION = 2) {
 		ASSERT_EQUAL(VALUE, "c", "array position 2 should be c")
 	}
 
@@ -55,7 +55,7 @@ map_count : 0
 	(POSITION = 0) {
 		ASSERT_EQUAL(KEY, "A", "map position 0 key should be A")
 		ASSERT_EQUAL(VALUE, "alpha", "map position 0 value should be alpha")
-	},(POSITION = 1) {
+	}|(POSITION = 1) {
 		ASSERT_EQUAL(KEY, "B", "map position 1 key should be B")
 		ASSERT_EQUAL(VALUE, "beta", "map position 1 value should be beta")
 	}
@@ -76,7 +76,7 @@ string_count : 0
 
 	(POSITION = 0) {
 		ASSERT_EQUAL(VALUE, "h", "string position 0 should be h")
-	},(POSITION = 1) {
+	}|(POSITION = 1) {
 		ASSERT_EQUAL(VALUE, "i", "string position 1 should be i")
 	}
 

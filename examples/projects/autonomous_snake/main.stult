@@ -69,6 +69,6 @@ status : "RUNNING"
 
 	@frames_drawn :+ 1
 	@next_frame_ms :+ FRAME_DELAY_MS
-},{
+}|{
 	WRITE("\n" + status + "\n\n")
 }

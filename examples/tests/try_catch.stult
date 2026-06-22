@@ -16,7 +16,7 @@ caught_without_parameter : -
 
 '{
 	ASSERT.EQUAL(1, 2, "failed assertion should be caught")
-},{
+}|{
 	@caught_without_parameter : +
 }
 
@@ -27,7 +27,7 @@ message : ""
 '{
 	items : {:}
 	items.missing
-},{ (error)
+}|{ (error)
 	@message : error
 }
 
@@ -37,7 +37,7 @@ catch_was_skipped : -
 
 '{
 	value : 10
-},{
+}|{
 	@catch_was_skipped : +
 }
 
@@ -47,7 +47,7 @@ discard_caught : -
 
 '{
 	1()
-},{ (_)
+}|{ (_)
 	@discard_caught : +
 }
 
@@ -58,11 +58,11 @@ outer_caught : -
 '{
 	'{
 		1()
-	},{
+	}|{
 		missing : {:}
 		missing.key
 	}
-},{ (error)
+}|{ (error)
 	@outer_caught : +
 }
 
@@ -74,10 +74,10 @@ outer_handler_ran : -
 '{
 	'{
 		1()
-	},{ (error)
+	}|{ (error)
 		@nearest_handler : "inner"
 	}
-},{ (error)
+}|{ (error)
 	@outer_handler_ran : +
 }
 
@@ -93,7 +93,7 @@ break_count : 0
 		(value = 3) {
 			^
 		}
-	},{
+	}|{
 		@break_count : 999
 	}
 }
@@ -103,7 +103,7 @@ ASSERT.EQUAL(break_count, 3, "break inside try should still break the loop")
 RETURN_THROUGH_TRY : { ()
 	'{
 		^("done")
-	},{ (_)
+	}|{ (_)
 		("caught")
 	}
 
@@ -111,4 +111,3 @@ RETURN_THROUGH_TRY : { ()
 }
 
 ASSERT.EQUAL(RETURN_THROUGH_TRY(), "done", "early return inside try should still return")
-

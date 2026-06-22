@@ -62,7 +62,7 @@ CSV_ROWS_TO_MAPS : { (rows)
 			((headers)) { (header, column)
 				(HAS(row, column)) {
 					record[header] : row[column]
-				},{
+				}|{
 					record[header] : ""
 				}
 			}
@@ -103,7 +103,6 @@ json_text : JSON["NEW"](records)
 
 	WRITE(output_path, json_text)
 	WRITE_LINE("Wrote JSON to ", output_path)
-},{
+}|{
 	WRITE_LINE(json_text)
 }
-

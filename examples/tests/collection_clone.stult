@@ -77,7 +77,7 @@ immutable_entry_error : ""
 
 '{
 	immutable_entry_copy.LOCKED : 2
-},{
+}|{
 	(error)
 	@immutable_entry_error : error
 }

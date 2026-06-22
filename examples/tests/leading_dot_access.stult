@@ -86,7 +86,7 @@ caught : ""
 
 '{
 	outer.inner.try_outer_age()
-},{
+}|{
 	(error)
 	@caught : error
 }

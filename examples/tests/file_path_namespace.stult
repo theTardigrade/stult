@@ -1,3 +1,4 @@
+
 ASSERT : STD.ASSERT
 PATH : STD.FILE.PATH
 
@@ -15,8 +16,9 @@ legacy_path_missing : -
 
 '{
 	STD.PATH
-},{
+}|{
 	@legacy_path_missing : +
 }
 
 ASSERT.TRUE(legacy_path_missing)
+

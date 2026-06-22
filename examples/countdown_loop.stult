@@ -23,7 +23,7 @@ i : ITERATIONS
     @WRITE_LINE(@i) 
 
     @i :- 1
-},{
+}|{
 	# Code within this block runs just once when the conditional no longer holds true.
 
     @WRITE_LINE("")

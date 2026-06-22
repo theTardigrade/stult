@@ -29,7 +29,7 @@ legacy_characters_missing : -
 
 '{
 	STRING.CHARACTERS("cat")
-},{
+}|{
 	@legacy_characters_missing : +
 }
 

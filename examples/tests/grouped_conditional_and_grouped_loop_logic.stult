@@ -38,6 +38,6 @@ loop_counter : 0
 	}
 
 	@loop_counter :+ 1
-},{
+}|{
 	WRITE_LINE("grouped loop")
 }
