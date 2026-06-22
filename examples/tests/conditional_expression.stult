@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/conditional_expression.stult
@@ -11,27 +12,28 @@ its two branch expressions.
 
 ASSERT_EQUAL : STD["ASSERT"]["EQUAL"]
 
-ASSERT_EQUAL((+)?("yes"|"no"), "yes", "conditional expression should return the true branch")
-ASSERT_EQUAL((-)?("yes"|"no"), "no", "conditional expression should return the false branch")
+ASSERT_EQUAL((+):("yes"|"no"), "yes", "conditional expression should return the true branch")
+ASSERT_EQUAL((-):("yes"|"no"), "no", "conditional expression should return the false branch")
 
 value : 10
 
-ASSERT_EQUAL((value > 5)?("large"|"small"), "large", "conditional expression should allow comparison conditions")
-ASSERT_EQUAL((value < 5)?("small"|"large"), "large", "conditional expression should allow false comparison conditions")
+ASSERT_EQUAL((value > 5):("large"|"small"), "large", "conditional expression should allow comparison conditions")
+ASSERT_EQUAL((value < 5):("small"|"large"), "large", "conditional expression should allow false comparison conditions")
 
 denominator : 0
 
-ASSERT_EQUAL((denominator = 0)?("safe"|10 / denominator), "safe", "conditional expression should not evaluate the unused false branch")
+ASSERT_EQUAL((denominator = 0):("safe"|10 / denominator), "safe", "conditional expression should not evaluate the unused false branch")
 
 number : 5
 
-ASSERT_EQUAL((number ! 0)?(10 / number|"zero"), 2, "conditional expression should evaluate the selected true branch")
+ASSERT_EQUAL((number ! 0):(10 / number|"zero"), 2, "conditional expression should evaluate the selected true branch")
 
 ASSERT_EQUAL(
-	(value = 10)?(
+	(value = 10):(
 		"ten"
 	|	"not ten"
 	)
 	"ten"
 	"conditional expression should allow multiline branch lists"
 )
+
