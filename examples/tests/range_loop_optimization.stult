@@ -43,7 +43,7 @@ ASSERT.EQUAL(descending[2], START, "direct descending big range should end at th
 
 stepped : {}
 
-(({START..(START + 10)[5]})) { (value, position)
+(({START..(START + 10):5})) { (value, position)
 	stepped[position] : value
 }
 
@@ -51,6 +51,17 @@ ASSERT.EQUAL(SIZE(stepped), 3, "direct big range loop should support big stepped
 ASSERT.EQUAL(stepped[0], START, "direct stepped big range should keep first value")
 ASSERT.EQUAL(stepped[1], START + 5, "direct stepped big range should step by five")
 ASSERT.EQUAL(stepped[2], START + 10, "direct stepped big range should keep final value")
+
+basic_stepped_inclusive : {2..10:2}
+basic_stepped_exclusive : {2...10 : 2}
+basic_stepped_descending : {10..2:2}
+
+ASSERT.EQUAL(SIZE(basic_stepped_inclusive), 5, "colon range step should support inclusive ranges")
+ASSERT.EQUAL(basic_stepped_inclusive[4], 10, "inclusive stepped range should include the end when aligned")
+ASSERT.EQUAL(SIZE(basic_stepped_exclusive), 4, "colon range step should support exclusive ranges")
+ASSERT.EQUAL(basic_stepped_exclusive[3], 8, "exclusive stepped range should stop before the end")
+ASSERT.EQUAL(SIZE(basic_stepped_descending), 5, "colon range step should support descending ranges")
+ASSERT.EQUAL(basic_stepped_descending[4], 2, "descending stepped range should include the end when aligned")
 
 collection_size : 0
 collection_first : 0
