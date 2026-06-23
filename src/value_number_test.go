@@ -140,3 +140,48 @@ func TestPercentageNumberLiteralScalesByHundred(t *testing.T) {
 		}
 	}
 }
+
+func TestApostropheNumberSeparators(t *testing.T) {
+	tests := []struct {
+		literal string
+		want    string
+	}{
+		{"1'000", "1000"},
+		{"1'000'000'000", "1000000000"},
+		{"123'456.789'123", "123456.789123"},
+		{".123'456", "0.123456"},
+		{"1'000%", "10"},
+		{"1e1'0", "10000000000"},
+	}
+
+	for _, tt := range tests {
+		number, err := NewNumberFromString(tt.literal)
+		if err != nil {
+			t.Fatalf("NewNumberFromString(%q) returned error: %v", tt.literal, err)
+		}
+
+		got := number.Format(MaxDecimalPlaces)
+		if got != tt.want {
+			t.Fatalf("NewNumberFromString(%q) = %q, want %q", tt.literal, got, tt.want)
+		}
+	}
+}
+
+func TestInvalidApostropheNumberSeparators(t *testing.T) {
+	invalid := []string{
+		"'1000",
+		"1000'",
+		"1''000",
+		"1'.5",
+		"1.'5",
+		"1e'3",
+		"1e3'",
+		"50'%",
+	}
+
+	for _, literal := range invalid {
+		if _, err := NewNumberFromString(literal); err == nil {
+			t.Fatalf("NewNumberFromString(%q) returned nil error", literal)
+		}
+	}
+}

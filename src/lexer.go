@@ -384,19 +384,19 @@ func (l *Lexer) readNumber() (string, bool) {
 			return string(l.input[start:l.literalEnd()]), false
 		}
 
-		for unicode.IsDigit(l.ch) {
-			l.readChar()
+		if !l.readNumberDigits() {
+			return string(l.input[start:l.literalEnd()]), false
 		}
 	} else {
-		for unicode.IsDigit(l.ch) {
-			l.readChar()
+		if !l.readNumberDigits() {
+			return string(l.input[start:l.literalEnd()]), false
 		}
 
 		if l.ch == '.' && unicode.IsDigit(l.peekChar()) {
 			l.readChar()
 
-			for unicode.IsDigit(l.ch) {
-				l.readChar()
+			if !l.readNumberDigits() {
+				return string(l.input[start:l.literalEnd()]), false
 			}
 		}
 	}
@@ -412,8 +412,8 @@ func (l *Lexer) readNumber() (string, bool) {
 			return string(l.input[start:l.literalEnd()]), false
 		}
 
-		for unicode.IsDigit(l.ch) {
-			l.readChar()
+		if !l.readNumberDigits() {
+			return string(l.input[start:l.literalEnd()]), false
 		}
 	}
 
@@ -422,6 +422,27 @@ func (l *Lexer) readNumber() (string, bool) {
 	}
 
 	return string(l.input[start:l.literalEnd()]), true
+}
+
+func (l *Lexer) readNumberDigits() bool {
+	for {
+		if unicode.IsDigit(l.ch) {
+			l.readChar()
+			continue
+		}
+
+		if l.ch == '\'' {
+			if !unicode.IsDigit(l.peekChar()) {
+				l.readChar()
+				return false
+			}
+
+			l.readChar()
+			continue
+		}
+
+		return true
+	}
 }
 
 func (l *Lexer) readString() (string, bool) {

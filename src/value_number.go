@@ -70,6 +70,12 @@ func NewNumberFromString(literal string) (*Number, error) {
 		return nil, fmt.Errorf("invalid number %q", literal)
 	}
 
+	normalized, ok := normalizeNumberSeparators(literal)
+	if !ok {
+		return nil, fmt.Errorf("invalid number %q", literal)
+	}
+	literal = normalized
+
 	if beforeSuffix, foundSuffix := strings.CutSuffix(literal, "%"); foundSuffix {
 		numberLiteral := beforeSuffix
 		if numberLiteral == "" {
@@ -86,6 +92,36 @@ func NewNumberFromString(literal string) (*Number, error) {
 	}
 
 	return newNumberFromPlainString(literal)
+}
+
+func normalizeNumberSeparators(literal string) (string, bool) {
+	if !strings.ContainsRune(literal, '\'') {
+		return literal, true
+	}
+
+	runes := []rune(literal)
+	out := make([]rune, 0, len(runes))
+
+	for index, ch := range runes {
+		if ch != '\'' {
+			out = append(out, ch)
+			continue
+		}
+
+		if index == 0 || index == len(runes)-1 {
+			return "", false
+		}
+
+		if !isAsciiDigit(runes[index-1]) || !isAsciiDigit(runes[index+1]) {
+			return "", false
+		}
+	}
+
+	return string(out), true
+}
+
+func isAsciiDigit(ch rune) bool {
+	return ch >= '0' && ch <= '9'
 }
 
 func newNumberFromPlainString(literal string) (*Number, error) {
