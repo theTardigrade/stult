@@ -777,14 +777,14 @@ The standard library is exposed through the immutable global binding `STD`.
 `STD` is a map of maps:
 
 ```text
-STD["ASSERT"]
-STD["IO"]
-STD["SYSTEM"]
-STD["FILE"]
-STD["TIME"]
-STD["MATH"]
-STD["TYPE"]
+STD["ERROR"]
 STD["DATA"]
+STD["FILE"]
+STD["IO"]
+STD["MATH"]
+STD["SYSTEM"]
+STD["TIME"]
+STD["TYPE"]
 ```
 
 Builtins are Go functions wrapped as Stult callable values.

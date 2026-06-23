@@ -5,7 +5,7 @@ The Stult standard library is available through the immutable binding `STD`.
 `STD` is a nested map. Its top-level entries can be accessed with dot access:
 
 ```stult
-STD.ASSERT
+STD.ERROR
 STD.IO
 STD.SYSTEM
 STD.FILE
@@ -18,7 +18,7 @@ STD.DATA
 Because `STD` is a nested map, the same paths can also be written with bracket indexing:
 
 ```stult
-STD["ASSERT"]
+STD["ERROR"]
 STD["IO"]
 STD["SYSTEM"]
 STD["FILE"]
@@ -52,10 +52,12 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 
 ## Contents
 
-- [STD["ASSERT"]](#stdassert)
-  - [`STD["ASSERT"]["TRUE"](condition, message?)`](#stdasserttruecondition-message)
-  - [`STD["ASSERT"]["FALSE"](condition, message?)`](#stdassertfalsecondition-message)
-  - [`STD["ASSERT"]["EQUAL"](actual, expected, message?)`](#stdassertequalactual-expected-message)
+- [`STD["ERROR"]`](#stderror)
+  - [`STD["ERROR"]["RAISE"](message?)`](#stderrorraisemessage)
+  - [`STD["ERROR"]["ASSERT"]`](#stderrorassert)
+    - [`STD["ERROR"]["ASSERT"]["TRUE"](condition, message?)`](#stderrorasserttruecondition-message)
+    - [`STD["ERROR"]["ASSERT"]["FALSE"](condition, message?)`](#stderrorassertfalsecondition-message)
+    - [`STD["ERROR"]["ASSERT"]["EQUAL"](actual, expected, message?)`](#stderrorassertequalactual-expected-message)
 - [`STD["IO"]`](#stdio)
   - [`STD["IO"]["INPUT"]`](#stdioinput)
     - [`STD["IO"]["INPUT"]["READ_LINE"]()`](#stdioinputread_line)
@@ -185,15 +187,45 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["DATA"]["STULTON"]["PARSE"](text)`](#stddatastultonparsetext)
     - [`STD["DATA"]["STULTON"]["IS_VALID"](text)`](#stddatastultonis_validtext)
 
-### `STD["ASSERT"]`
+## `STD["ERROR"]`
+
+Runtime error helpers.
+
+`STD["ERROR"]` contains helpers for raising catchable runtime errors and for assertion-based checks.
+
+### `STD["ERROR"]["RAISE"](message?)`
+
+Raises a catchable runtime error.
+
+`message`, if supplied, must be a string.
+
+If `message` is omitted, the default message is `"error raised"`.
+
+This function never returns normally.
+
+```stult
+STD.ERROR.RAISE("could not load configuration")
+```
+
+A raised error can be caught by a try-catch statement:
+
+```stult
+?{
+	STD.ERROR.RAISE("recoverable failure")
+}|{ (error)
+	STD.IO.OUTPUT.WRITE_LINE("caught: ", error)
+}
+```
+
+### `STD["ERROR"]["ASSERT"]`
 
 Runtime assertion helpers.
 
 These helpers are useful for self-checking scripts, examples and test programs.
 
-Failed assertions raise runtime errors.
+Failed assertions raise catchable runtime errors.
 
-### `STD["ASSERT"]["TRUE"](condition, message?)`
+### `STD["ERROR"]["ASSERT"]["TRUE"](condition, message?)`
 
 Checks that `condition` is true.
 
@@ -206,11 +238,11 @@ Returns `_` if `condition` is true.
 Raises a runtime error if `condition` is false.
 
 ```stult
-STD.ASSERT.TRUE(1 + 1 = 2)
-STD.ASSERT.TRUE(1 + 1 = 2, "arithmetic should work")
+STD.ERROR.ASSERT.TRUE(1 + 1 = 2)
+STD.ERROR.ASSERT.TRUE(1 + 1 = 2, "arithmetic should work")
 ```
 
-### `STD["ASSERT"]["FALSE"](condition, message?)`
+### `STD["ERROR"]["ASSERT"]["FALSE"](condition, message?)`
 
 Checks that `condition` is false.
 
@@ -223,11 +255,11 @@ Returns `_` if `condition` is false.
 Raises a runtime error if `condition` is true.
 
 ```stult
-STD.ASSERT.FALSE(10 < 5)
-STD.ASSERT.FALSE(10 < 5, "10 should not be less than 5")
+STD.ERROR.ASSERT.FALSE(10 < 5)
+STD.ERROR.ASSERT.FALSE(10 < 5, "10 should not be less than 5")
 ```
 
-### `STD["ASSERT"]["EQUAL"](actual, expected, message?)`
+### `STD["ERROR"]["ASSERT"]["EQUAL"](actual, expected, message?)`
 
 Checks that `actual` and `expected` are equal.
 
@@ -240,8 +272,8 @@ Returns `_` if `actual` and `expected` are equal.
 Raises a runtime error if they are not equal.
 
 ```stult
-STD.ASSERT.EQUAL("Stult", "Stult")
-STD.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
+STD.ERROR.ASSERT.EQUAL("Stult", "Stult")
+STD.ERROR.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
 ```
 
 ## `STD["IO"]`

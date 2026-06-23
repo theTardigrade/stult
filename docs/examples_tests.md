@@ -117,7 +117,10 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 ## Standard library
 
 - [Assertions](../examples/tests/assertions.stult)  
-  Checks that `STD["ASSERT"]["TRUE"]`, `STD["ASSERT"]["FALSE"]` and `STD["ASSERT"]["EQUAL"]` succeed for valid assertions, accept optional messages and return void where appropriate.
+  Checks that `STD["ERROR"]["ASSERT"]["TRUE"]`, `STD["ERROR"]["ASSERT"]["FALSE"]` and `STD["ERROR"]["ASSERT"]["EQUAL"]` succeed for valid assertions, accept optional messages and return void where appropriate.
+
+- [Error raise](../examples/tests/error_raise.stult)  
+  Checks that `STD.ERROR.RAISE` raises catchable runtime errors with optional messages and that the old top-level `STD.ASSERT` map is no longer present.
 
 - [File path namespace](../examples/tests/file_path_namespace.stult)  
   Checks that file-path helpers live under `STD.FILE.PATH` and that the old top-level `STD.PATH` map is no longer present.
