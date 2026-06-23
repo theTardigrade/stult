@@ -11,7 +11,8 @@ It is designed as a terse but readable scripting language with:
 - maps, strings, functions, conditionals, loops and ranges,
 - try-catch blocks, conditional expressions and match expressions,
 - concise literals for booleans, arrays, maps and void,
-- manifest-based projects, direct source-string evaluation and bundled executables *and*
+- source input from stdin and direct source-string evaluation,
+- manifest-based projects and bundled executables *and*
 - a map-shaped standard library available through `STD`.
 
 Idiomatic Stult code should be light on syntax, but never deliberately cryptic.
@@ -30,6 +31,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Development commands](#development-commands)
 - [Running programs](#running-programs)
   - [Runtime modes](#runtime-modes)
+  - [Reading source from standard input](#reading-source-from-standard-input)
   - [Evaluating source strings](#evaluating-source-strings)
   - [Dumping bytecode](#dumping-bytecode)
 - [Manifests](#manifests)
@@ -136,6 +138,12 @@ Run a manifest-based project:
 ./stult run examples/projects/animated_sine_wave
 ```
 
+Run source from standard input:
+
+```bash
+echo 'STD.IO.OUTPUT.WRITE_LINE("hello")' | ./stult run -
+```
+
 Evaluate a source string directly:
 
 ```bash
@@ -209,9 +217,9 @@ go build -o stult ./src
 The `stult` command uses explicit subcommands:
 
 ```text
-stult run [--bytecode|--interpreter] [file.stult|directory|manifest] [args...]
+stult run [--bytecode|--interpreter] [file.stult|directory|manifest|-] [args...]
 stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]
-stult dump [--bytecode] [file.stult|directory|manifest]
+stult dump [--bytecode] [file.stult|directory|manifest|-]
 stult dump [--bytecode] -e|--eval <source-string>
 stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>
 ```
@@ -225,6 +233,8 @@ With a `.stult` file target, `stult run` runs that file.
 With a directory target, `stult run` looks for a manifest in that directory.
 
 With a manifest target, `stult run` runs the files listed by that manifest.
+
+With `-` as the target, `stult run` reads source text from standard input and runs it as a single source file.
 
 Program arguments after the target are available to Stult code through `STD.SYSTEM.ARGS`.
 
@@ -264,6 +274,41 @@ The interpreter is useful as a reference implementation, debugging fallback and 
 
 The bytecode runtime is intended to have best performance.
 
+### Reading source from standard input
+
+Use `-` as the source target to read Stult source text from standard input.
+
+This is useful for shell pipelines and for command-line environments where quoting multiline source strings is awkward.
+
+For example:
+
+```bash
+printf 'STD.IO.OUTPUT.WRITE_LINE("hello")' | stult run -
+```
+
+In Windows PowerShell, multiline source can be piped into Stult like this:
+
+```powershell
+@'
+name : "Stult"
+STD.IO.OUTPUT.WRITE_LINE("hello from ", name)
+'@ | .\stult.exe run -
+```
+
+Program arguments still come after the `-` target:
+
+```bash
+printf 'STD.IO.OUTPUT.WRITE_LINE(STD.SYSTEM.ARGS[0])' | stult run - first
+```
+
+The source display name for errors and bytecode dumps is `<stdin>`. Relative file-system paths still resolve from the process current working directory.
+
+You can also dump bytecode for source read from standard input:
+
+```bash
+printf 'STD.IO.OUTPUT.WRITE_LINE("hello")' | stult dump -
+```
+
 ### Evaluating source strings
 
 Stult can run source code passed directly on the command line with `-e` or `--eval`.
@@ -282,11 +327,7 @@ Or explicitly through the interpreter:
 stult run --interpreter -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 ```
 
-On Windows PowerShell, quotes inside the evaluated source may need to be escaped:
-
-```powershell
-.\stult.exe run -e 'X : 10,STD.IO.OUTPUT.WRITE_LINE(X * 20)'
-```
+On Windows PowerShell, reading source from standard input with `stult run -` is usually easier than escaping a longer source string.
 
 The evaluated source runs with the standard library available as `STD`.
 
@@ -304,9 +345,10 @@ This is the same as:
 stult dump --bytecode examples/calculate_circle_area_from_map.stult
 ```
 
-You can also dump bytecode for an evaluated source string:
+You can also dump bytecode for source read from standard input or for an evaluated source string:
 
 ```bash
+printf 'STD.IO.OUTPUT.WRITE_LINE("hello")' | stult dump -
 stult dump -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 ```
 
