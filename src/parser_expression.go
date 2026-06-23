@@ -40,7 +40,7 @@ func (p *Parser) parseRangeEndExpression() Expression {
 	return p.parseExpressionWithOptions(precLowest, true)
 }
 
-func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIndex bool) Expression {
+func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeRangePostfix bool) Expression {
 	var left Expression
 
 	switch p.current.Type {
@@ -57,7 +57,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
+		right := p.parseExpressionWithOptions(precPrefix, stopBeforeRangePostfix)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after unary "+strconv.Quote(operator.Literal))
 			return nil
@@ -118,7 +118,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		operator := p.current
 		p.advance()
 
-		right := p.parseExpressionWithOptions(precPrefix, stopBeforeTouchingIndex)
+		right := p.parseExpressionWithOptions(precPrefix, stopBeforeRangePostfix)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after unary "+strconv.Quote(operator.Literal))
 			return nil
@@ -138,6 +138,11 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 
 		switch p.current.Type {
 		case TokenColon:
+			if stopBeforeRangePostfix && p.peek.Type != TokenLParen && p.peek.Type != TokenLBrace {
+				left = inner
+				break
+			}
+
 			colonExpression, ok := p.parseColonExpressionAfterParenthesized(inner, closeParen)
 			if !ok {
 				return nil
@@ -164,7 +169,7 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeTouchingIn
 		return nil
 	}
 
-	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeTouchingIndex)
+	return p.parseExpressionTailWithOptions(left, parentPrec, stopBeforeRangePostfix)
 }
 
 func tokenCanStartExpression(tokenType TokenType) bool {
@@ -245,10 +250,10 @@ func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression
 	return p.parseExpressionTailWithOptions(left, parentPrec, false)
 }
 
-func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeTouchingIndex bool) Expression {
+func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeRangePostfix bool) Expression {
 	for {
 		if p.current.Type == TokenLBracket {
-			if stopBeforeTouchingIndex && tokensTouch(p.previous, p.current) {
+			if stopBeforeRangePostfix && tokensTouch(p.previous, p.current) {
 				break
 			}
 
@@ -300,7 +305,7 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 		p.advance()
 		p.skipNewlines()
 
-		right := p.parseExpressionWithOptions(currentPrec, stopBeforeTouchingIndex)
+		right := p.parseExpressionWithOptions(currentPrec, stopBeforeRangePostfix)
 		if right == nil {
 			p.errorAtToken(operator, "expected expression after operator")
 			return nil

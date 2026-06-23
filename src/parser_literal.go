@@ -308,12 +308,7 @@ func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
 
 	var step Expression
 
-	if p.current.Type == TokenLBracket {
-		if !tokensTouch(p.previous, p.current) {
-			p.errorAtCurrent("expected '[' to touch range end expression")
-			return nil, false
-		}
-
+	if p.current.Type == TokenColon {
 		var ok bool
 		step, ok = p.parseRangeStepExpression()
 		if !ok {
@@ -330,23 +325,19 @@ func (p *Parser) parseArrayElement(openBrace Token) (ArrayElement, bool) {
 }
 
 func (p *Parser) parseRangeStepExpression() (Expression, bool) {
-	p.advance() // consume "["
+	colon := p.current
+	p.advance() // consume ":"
 
-	p.skipNewlines()
+	if p.current.Type == TokenNewline {
+		p.errorAtCurrent("expected range step expression on the same line as ':'")
+		return nil, false
+	}
 
 	step := p.parseExpression(precLowest)
 	if step == nil {
-		p.errorAtCurrent("expected range step expression")
+		p.errorAtToken(colon, "expected range step expression")
 		return nil, false
 	}
-
-	p.skipNewlines()
-
-	if !p.expectCurrent(TokenRBracket, "expected ']' after range step expression") {
-		return nil, false
-	}
-
-	p.advance()
 
 	return step, true
 }
