@@ -10,23 +10,77 @@ changing numeric values.
 
 ##
 
-ASSERT : STD["ERROR"]["ASSERT"]
-NUMBER : STD["TYPE"]["NUMBER"]
+ASSERT : STD.ERROR.ASSERT
+NUMBER : STD.TYPE.NUMBER
 
-ASSERT["EQUAL"](
-	NUMBER["FORMAT"](1 / 3, 32),
+ASSERT.EQUAL(
+	NUMBER.FORMAT(1 / 3, 32),
 	"0.33333333333333333333333333333333",
 	"FORMAT should display one third to 32 decimal places"
 )
 
-ASSERT["EQUAL"](
-	NUMBER["FORMAT"](10, 256),
+ASSERT.EQUAL(
+	NUMBER.FORMAT(1 / 3),
+	"0.33333333333333333333333333333333",
+	"FORMAT should default to DEFAULT_DECIMAL_PLACES"
+)
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT(10, 256),
 	"10",
 	"FORMAT should trim trailing zeroes when formatting an integer"
 )
 
-ASSERT["EQUAL"](
-	NUMBER["FORMAT_SCIENTIFIC"](12345, 3),
+ASSERT.EQUAL(
+	NUMBER.FORMAT(1000000, {.GROUP_DIGITS: +}),
+	"1'000'000",
+	"FORMAT should group digits when GROUP_DIGITS is true"
+)
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT(12345.6789, 2, {.GROUP_DIGITS: +}),
+	"12'345.68",
+	"FORMAT should group rounded fixed decimal output"
+)
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT(0.25, 0, {.PERCENT: +}),
+	"25%",
+	"FORMAT should display percentages"
+)
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT(0.12345, 2, {.PERCENT: +}),
+	"12.35%",
+	"FORMAT should round after converting to percentage display"
+)
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT(12.3456789, 2, {.PERCENT: +, .GROUP_DIGITS: +}),
+	"1'234.57%",
+	"FORMAT should combine PERCENT and GROUP_DIGITS"
+)
+
+caught_unknown_option : -
+?{
+	NUMBER.FORMAT(1, {.GROUP_DIGIT: +})
+}|{ (_)
+	@caught_unknown_option : +
+}
+
+ASSERT.TRUE(caught_unknown_option, "FORMAT should reject unknown option keys")
+
+caught_non_bool_option : -
+?{
+	NUMBER.FORMAT(1, {.GROUP_DIGITS: "yes"})
+}|{ (_)
+	@caught_non_bool_option : +
+}
+
+ASSERT.TRUE(caught_non_bool_option, "FORMAT should reject non-bool option values")
+
+ASSERT.EQUAL(
+	NUMBER.FORMAT_SCIENTIFIC(12345, 3),
 	"1.23e+4",
 	"FORMAT_SCIENTIFIC should round to the requested significant digits"
 )
