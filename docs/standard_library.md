@@ -1782,6 +1782,7 @@ Converts a value to a number when possible.
 ```stult
 STD.TYPE.NUMBER.NEW("123.45")
 STD.TYPE.NUMBER.NEW("75%")
+STD.TYPE.NUMBER.NEW("1'000")
 STD.TYPE.NUMBER.NEW("+")  # returns _; boolean text is not a number
 STD.TYPE.NUMBER.NEW(+)    # returns 1
 ```
@@ -1927,4 +1928,3 @@ STD.TYPE.STRING.JOIN({"a", "b", "c"}, ",")
 String elements are used directly.
 
 Non-string elements are converted with their printed representation.
-

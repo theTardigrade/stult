@@ -103,6 +103,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Percentages](../examples/tests/percentage_numbers.stult)  
   Checks that percentage-suffixed number literals divide their literal value by one hundred and work in ordinary arithmetic.
 
+- [Number separators](../examples/tests/number_separators.stult)  
+  Checks that apostrophes may be written between digits in number literals without changing the numeric value.
+
 - [Number formatting](../examples/tests/number_formatting.stult)  
   Checks fixed decimal formatting with requested decimal places and scientific-notation formatting with requested significant digits.
 

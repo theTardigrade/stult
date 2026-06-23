@@ -10,6 +10,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ### v0.9.5 (Future release)
 
+#### Language
+
+* Added apostrophe digit separators for number literals, so values such as `1'000'000` and `59'872` can be written more readably.
+
 #### Command line
 
 * Added `-` as a source target for `stult run` and `stult dump`, reading Stult source text from standard input.
