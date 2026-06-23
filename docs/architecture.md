@@ -1,3 +1,4 @@
+
 # Architecture
 
 This document describes how Stult is implemented.
@@ -57,7 +58,7 @@ Stult is implemented in Go.
 
 The user-facing runtime is bytecode-first:
 
-1. Source text is read from a file, manifest entry, eval string or embedded bundle.
+1. Source text is read from a file, standard input, manifest entry, eval string or embedded bundle.
 2. The lexer converts source text into tokens.
 3. The parser converts tokens into an AST.
 4. The bytecode compiler lowers the AST into a `BytecodeChunk`.
@@ -92,7 +93,7 @@ source
 
 For manifest projects, one VM instance is reused across the files listed by the manifest. This preserves shared global runtime state across files.
 
-For eval strings, the display name is `"<eval>"`.
+For standard-input source, the display name is `"<stdin>"`. For eval strings, the display name is `"<eval>"`.
 
 For bytecode dumping, the source is compiled and formatted, but not executed:
 
@@ -212,10 +213,11 @@ no target        search upward for a manifest
 file.stult       run one source file
 directory        find manifest from that directory
 manifest file    run that manifest directly
+-                read and run source from standard input
 -e / --eval      run a source string
 ```
 
-Program arguments after the source, manifest or directory target are stored in `RuntimeContext.Args` and exposed to Stult code as `STD["SYSTEM"]["ARGS"]`.
+Program arguments after the source, `-` stdin target, manifest or directory target are stored in `RuntimeContext.Args` and exposed to Stult code as `STD["SYSTEM"]["ARGS"]`.
 
 The `dump` command does not use runtime modes. It compiles to bytecode and prints a disassembly.
 
@@ -1007,3 +1009,4 @@ stult build --interpreter ...
 and run the generated executables directly.
 
 When changing the bytecode format or disassembler, update `stult dump` output expectations accordingly.
+

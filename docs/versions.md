@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.9.5 (Future release)
+
+#### Command line
+
+* Added `-` as a source target for `stult run` and `stult dump`, reading Stult source text from standard input.
+
 ### v0.9.4
 
 #### Language
