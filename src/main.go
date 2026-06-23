@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -10,6 +11,7 @@ import (
 )
 
 const expectedFileExtension = ".stult"
+const stdinDisplayName = "<stdin>"
 
 func main() {
 	if err := run(); err != nil {
@@ -72,6 +74,10 @@ func runCommandTargetWithMode(mode RuntimeMode, args []string) error {
 		target := args[0]
 		programArgs := args[1:]
 
+		if isStdinTarget(target) {
+			return runSourceStdinWithMode(mode, programArgs)
+		}
+
 		manifestPath, isManifest, err := manifestPathFromArgument(target)
 		if err != nil {
 			return err
@@ -94,6 +100,15 @@ func runEvalCommandWithMode(mode RuntimeMode, args []string) error {
 	programArgs := args[2:]
 
 	return runSourceStringWithMode(mode, source, "<eval>", programArgs)
+}
+
+func runSourceStdinWithMode(mode RuntimeMode, args []string) error {
+	source, err := readSourceFromStdin()
+	if err != nil {
+		return err
+	}
+
+	return runSourceStringWithMode(mode, source, stdinDisplayName, args)
 }
 
 func runSourceFileWithMode(mode RuntimeMode, filename string, args []string) error {
@@ -170,10 +185,14 @@ func runDumpCommand(args []string) error {
 		return dumpTargetBytecode(manifestPath)
 
 	case 1:
+		if isStdinTarget(dumpArgs[0]) {
+			return dumpSourceStdinBytecode()
+		}
+
 		return dumpTargetBytecode(dumpArgs[0])
 
 	default:
-		return fmt.Errorf("Usage: stult dump [--bytecode] [file.stult|directory|manifest]")
+		return fmt.Errorf("Usage: stult dump [--bytecode] [file.stult|directory|manifest|-]")
 	}
 }
 
@@ -188,6 +207,15 @@ func dumpTargetBytecode(target string) error {
 	}
 
 	return dumpSourceFileBytecode(target)
+}
+
+func dumpSourceStdinBytecode() error {
+	source, err := readSourceFromStdin()
+	if err != nil {
+		return err
+	}
+
+	return dumpSourceStringBytecode(source, stdinDisplayName)
 }
 
 func dumpSourceStringBytecode(source string, displayName string) error {
@@ -540,6 +568,15 @@ func runSourceFileFromFSWithBytecodeVM(
 	}
 
 	return runSourceStringWithBytecodeVM(vm, source, displayName)
+}
+
+func readSourceFromStdin() (string, error) {
+	sourceBytes, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		return "", fmt.Errorf("Could not read %s: %w", stdinDisplayName, err)
+	}
+
+	return string(sourceBytes), nil
 }
 
 func readSourceFromFS(files fs.FS, filename string, displayName string) (string, error) {
