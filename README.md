@@ -849,21 +849,25 @@ In practical terms, this means:
 Arrays can include ranges:
 
 ```stult
-numbers : {1..5}
+numbers : {1..100}
 ```
 
 Ranges may be inclusive or exclusive:
 
 ```stult
-inclusive : {1..5}
-exclusive : {1...5}
+inclusive : {1..5}       # {1, 2, 3, 4, 5}
+exclusive : {1...5}      # {1, 2, 3, 4}
 ```
 
 Ranges may also include a step:
 
 ```stult
-evens : {2..10[2]}
+evens : {2..10:2}        # {2, 4, 6, 8, 10}
 ```
+
+And they can descend:
+
+down : {10..2:2}         # {10, 8, 6, 4, 2}
 
 ### Functions
 
@@ -1598,4 +1602,3 @@ Unless otherwise stated, all versions of Stult in this repository, including ver
 You may use, copy, modify and distribute Stult, including for commercial purposes, subject to the terms of the Apache License 2.0.
 
 The name “Stult” refers to the official language and project maintained in this repository. Modified versions and forks should not present themselves as the official Stult project unless accepted by a project maintainer.
-
