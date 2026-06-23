@@ -5,27 +5,27 @@ The Stult standard library is available through the immutable binding `STD`.
 `STD` is a nested map. Its top-level entries can be accessed with dot access:
 
 ```stult
-STD.ERROR
-STD.IO
-STD.SYSTEM
-STD.FILE
-STD.TIME
-STD.MATH
-STD.TYPE
 STD.DATA
+STD.ERROR
+STD.FILE
+STD.IO
+STD.MATH
+STD.SYSTEM
+STD.TIME
+STD.TYPE
 ```
 
 Because `STD` is a nested map, the same paths can also be written with bracket indexing:
 
 ```stult
-STD["ERROR"]
-STD["IO"]
-STD["SYSTEM"]
-STD["FILE"]
-STD["TIME"]
-STD["MATH"]
-STD["TYPE"]
 STD["DATA"]
+STD["ERROR"]
+STD["FILE"]
+STD["IO"]
+STD["MATH"]
+STD["SYSTEM"]
+STD["TIME"]
+STD["TYPE"]
 ```
 
 File-path helpers live under `STD.FILE.PATH`.
@@ -52,26 +52,25 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 
 ## Contents
 
+- [`STD["DATA"]`](#stddata)
+  - [`STD["DATA"]["CSV"]`](#stddatacsv)
+    - [`STD["DATA"]["CSV"]["NEW"](rows)`](#stddatacsvnewrows)
+    - [`STD["DATA"]["CSV"]["PARSE"](text)`](#stddatacsvparsetext)
+    - [`STD["DATA"]["CSV"]["IS_VALID"](text)`](#stddatacsvis_validtext)
+  - [`STD["DATA"]["JSON"]`](#stddatajson)
+    - [`STD["DATA"]["JSON"]["NEW"](value)`](#stddatajsonnewvalue)
+    - [`STD["DATA"]["JSON"]["PARSE"](text)`](#stddatajsonparsetext)
+    - [`STD["DATA"]["JSON"]["IS_VALID"](text)`](#stddatajsonis_validtext)
+  - [`STD["DATA"]["STULTON"]`](#stddatastulton)
+    - [`STD["DATA"]["STULTON"]["NEW"](value)`](#stddatastultonnewvalue)
+    - [`STD["DATA"]["STULTON"]["PARSE"](text)`](#stddatastultonparsetext)
+    - [`STD["DATA"]["STULTON"]["IS_VALID"](text)`](#stddatastultonis_validtext)
 - [`STD["ERROR"]`](#stderror)
-  - [`STD["ERROR"]["RAISE"](message?)`](#stderrorraisemessage)
   - [`STD["ERROR"]["ASSERT"]`](#stderrorassert)
     - [`STD["ERROR"]["ASSERT"]["TRUE"](condition, message?)`](#stderrorasserttruecondition-message)
     - [`STD["ERROR"]["ASSERT"]["FALSE"](condition, message?)`](#stderrorassertfalsecondition-message)
     - [`STD["ERROR"]["ASSERT"]["EQUAL"](actual, expected, message?)`](#stderrorassertequalactual-expected-message)
-- [`STD["IO"]`](#stdio)
-  - [`STD["IO"]["INPUT"]`](#stdioinput)
-    - [`STD["IO"]["INPUT"]["READ_LINE"]()`](#stdioinputread_line)
-    - [`STD["IO"]["INPUT"]["PROMPT"](...values)`](#stdioinputpromptvalues)
-  - [`STD["IO"]["OUTPUT"]`](#stdiooutput)
-    - [`STD["IO"]["OUTPUT"]["WRITE"](...values)`](#stdiooutputwritevalues)
-    - [`STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`](#stdiooutputwrite_linevalues)
-    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`](#stdiooutputwrite_errorvalues)
-    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`](#stdiooutputwrite_error_linevalues)
-- [`STD["SYSTEM"]`](#stdsystem)
-  - [`STD["SYSTEM"]["ARGS"]`](#stdsystemargs)
-  - [`STD["SYSTEM"]["CWD"]()`](#stdsystemcwd)
-  - [`STD["SYSTEM"]["ENV"](name)`](#stdsystemenvname)
-  - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
+  - [`STD["ERROR"]["RAISE"](message?)`](#stderrorraisemessage)
 - [`STD["FILE"]`](#stdfile)
   - [`STD["FILE"]["READ"](path, useBytes?, offset?, length?)`](#stdfilereadpath-usebytes-offset-length)
   - [`STD["FILE"]["WRITE"](path, content, append?)`](#stdfilewritepath-content-append)
@@ -91,12 +90,15 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["FILE"]["PATH"]["CLEAN"](path)`](#stdfilepathcleanpath)
     - [`STD["FILE"]["PATH"]["DIR"](path)`](#stdfilepathdirpath)
     - [`STD["FILE"]["PATH"]["EXT"](path)`](#stdfilepathextpath)
-- [`STD["TIME"]`](#stdtime)
-  - [`STD["TIME"]["MILLI_TIMESTAMP"]()`](#stdtimemilli_timestamp)
-  - [`STD["TIME"]["NANO_TIMESTAMP"]()`](#stdtimenano_timestamp)
-  - [`STD["TIME"]["MILLI_SLEEP"](milliseconds)`](#stdtimemilli_sleepmilliseconds)
-  - [`STD["TIME"]["LOCAL_CALENDAR"]()`](#stdtimelocal_calendar)
-  - [`STD["TIME"]["UTC_CALENDAR"]()`](#stdtimeutc_calendar)
+- [`STD["IO"]`](#stdio)
+  - [`STD["IO"]["INPUT"]`](#stdioinput)
+    - [`STD["IO"]["INPUT"]["READ_LINE"]()`](#stdioinputread_line)
+    - [`STD["IO"]["INPUT"]["PROMPT"](...values)`](#stdioinputpromptvalues)
+  - [`STD["IO"]["OUTPUT"]`](#stdiooutput)
+    - [`STD["IO"]["OUTPUT"]["WRITE"](...values)`](#stdiooutputwritevalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`](#stdiooutputwrite_linevalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`](#stdiooutputwrite_errorvalues)
+    - [`STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`](#stdiooutputwrite_error_linevalues)
 - [`STD["MATH"]`](#stdmath)
   - [`STD["MATH"]["PI"]`](#stdmathpi)
   - [`STD["MATH"]["TAU"]`](#stdmathtau)
@@ -128,12 +130,39 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["MATH"]["TRIG"]["TAN"](radians)`](#stdmathtrigtanradians)
     - [`STD["MATH"]["TRIG"]["RADIANS"](degrees)`](#stdmathtrigradiansdegrees)
     - [`STD["MATH"]["TRIG"]["DEGREES"](radians)`](#stdmathtrigdegreesradians)
+- [`STD["SYSTEM"]`](#stdsystem)
+  - [`STD["SYSTEM"]["ARGS"]`](#stdsystemargs)
+  - [`STD["SYSTEM"]["CWD"]()`](#stdsystemcwd)
+  - [`STD["SYSTEM"]["ENV"](name)`](#stdsystemenvname)
+  - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
+- [`STD["TIME"]`](#stdtime)
+  - [`STD["TIME"]["MILLI_TIMESTAMP"]()`](#stdtimemilli_timestamp)
+  - [`STD["TIME"]["NANO_TIMESTAMP"]()`](#stdtimenano_timestamp)
+  - [`STD["TIME"]["MILLI_SLEEP"](milliseconds)`](#stdtimemilli_sleepmilliseconds)
+  - [`STD["TIME"]["LOCAL_CALENDAR"]()`](#stdtimelocal_calendar)
+  - [`STD["TIME"]["UTC_CALENDAR"]()`](#stdtimeutc_calendar)
 - [`STD["TYPE"]`](#stdtype)
   - [`STD["TYPE"]` predicates](#stdtype-predicates)
+  - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
+    - [`STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`](#stdtypearrayappendarray-values)
+    - [`STD["TYPE"]["ARRAY"]["REVERSE"](array)`](#stdtypearrayreversearray)
   - [`STD["TYPE"]["BOOL"]`](#stdtypebool)
     - [`STD["TYPE"]["BOOL"]["TRUE"]`](#stdtypebooltrue)
     - [`STD["TYPE"]["BOOL"]["FALSE"]`](#stdtypeboolfalse)
     - [`STD["TYPE"]["BOOL"]["NEW"](value)`](#stdtypeboolnewvalue)
+  - [`STD["TYPE"]["COLLECTION"]`](#stdtypecollection)
+    - [`STD["TYPE"]["COLLECTION"]["SIZE"](collection)`](#stdtypecollectionsizecollection)
+    - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
+    - [`STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`](#stdtypecollectionhascollection-key)
+    - [`STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`](#stdtypecollectiongetcollection-key_or_index-default)
+    - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
+    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
+    - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`](#stdtypecollectionfreezecollection)
+    - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
+  - [`STD["TYPE"]["MAP"]`](#stdtypemap)
+    - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
+    - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
+    - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
     - [`STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`](#stdtypenumberdefault_decimal_places)
     - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
@@ -157,65 +186,191 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["STRING"]["REPEAT"](text, count)`](#stdtypestringrepeattext-count)
     - [`STD["TYPE"]["STRING"]["SPLIT"](text, separator)`](#stdtypestringsplittext-separator)
     - [`STD["TYPE"]["STRING"]["JOIN"](array, separator)`](#stdtypestringjoinarray-separator)
-  - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
-    - [`STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`](#stdtypearrayappendarray-values)
-    - [`STD["TYPE"]["ARRAY"]["REVERSE"](array)`](#stdtypearrayreversearray)
-  - [`STD["TYPE"]["MAP"]`](#stdtypemap)
-    - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
-    - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
-    - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
-  - [`STD["TYPE"]["COLLECTION"]`](#stdtypecollection)
-    - [`STD["TYPE"]["COLLECTION"]["SIZE"](collection)`](#stdtypecollectionsizecollection)
-    - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
-    - [`STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`](#stdtypecollectionhascollection-key)
-    - [`STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`](#stdtypecollectiongetcollection-key_or_index-default)
-    - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
-    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
-    - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`](#stdtypecollectionfreezecollection)
-    - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
-- [`STD["DATA"]`](#stddata)
-  - [`STD["DATA"]["CSV"]`](#stddatacsv)
-    - [`STD["DATA"]["CSV"]["NEW"](rows)`](#stddatacsvnewrows)
-    - [`STD["DATA"]["CSV"]["PARSE"](text)`](#stddatacsvparsetext)
-    - [`STD["DATA"]["CSV"]["IS_VALID"](text)`](#stddatacsvis_validtext)
-  - [`STD["DATA"]["JSON"]`](#stddatajson)
-    - [`STD["DATA"]["JSON"]["NEW"](value)`](#stddatajsonnewvalue)
-    - [`STD["DATA"]["JSON"]["PARSE"](text)`](#stddatajsonparsetext)
-    - [`STD["DATA"]["JSON"]["IS_VALID"](text)`](#stddatajsonis_validtext)
-  - [`STD["DATA"]["STULTON"]`](#stddatastulton)
-    - [`STD["DATA"]["STULTON"]["NEW"](value)`](#stddatastultonnewvalue)
-    - [`STD["DATA"]["STULTON"]["PARSE"](text)`](#stddatastultonparsetext)
-    - [`STD["DATA"]["STULTON"]["IS_VALID"](text)`](#stddatastultonis_validtext)
 
+## `STD["DATA"]`
+
+Data encoding and decoding helpers.
+
+## `STD["DATA"]["CSV"]`
+
+CSV encoding, parsing and validation helpers.
+
+### `STD["DATA"]["CSV"]["NEW"](rows)`
+
+Encodes an array of row arrays as CSV text.
+
+```stult
+rows : {
+	{"name", "score"}
+	{"a", 10}
+	{"b", 20}
+}
+
+text : STD.DATA.CSV.NEW(rows)
+```
+
+Fields are converted to strings when possible.
+
+Returns a string.
+
+### `STD["DATA"]["CSV"]["PARSE"](text)`
+
+Parses CSV text into an array of row arrays.
+
+```stult
+rows : STD.DATA.CSV.PARSE("name,score\na,10\nb,20\n")
+```
+
+Returns an array of arrays of strings.
+
+### `STD["DATA"]["CSV"]["IS_VALID"](text)`
+
+Checks whether text is valid CSV.
+
+```stult
+STD.DATA.CSV.IS_VALID("name,score\na,10\n")
+```
+
+Returns a boolean.
+
+Rows may have different field counts.
+
+## `STD["DATA"]["JSON"]`
+
+JSON encoding, parsing and validation helpers.
+
+### `STD["DATA"]["JSON"]["NEW"](value)`
+
+Encodes a Stult value as JSON text.
+
+```stult
+text : STD.DATA.JSON.NEW({
+	"name": "example"
+	"active": +
+})
+```
+
+Conversion rules:
+
+```text
+_         null
+bool      boolean
+number    number
+string    string
+array     array
+map       object
+function  error
+```
+
+Returns a string.
+
+### `STD["DATA"]["JSON"]["PARSE"](text)`
+
+Parses JSON text into a Stult value.
+
+```stult
+value : STD.DATA.JSON.PARSE("{\"name\":\"example\",\"active\":true}")
+```
+
+Conversion rules:
+
+```text
+null      _
+boolean   bool
+number    number
+string    string
+array     array
+object    map
+```
+
+The input must contain exactly one JSON value.
+
+### `STD["DATA"]["JSON"]["IS_VALID"](text)`
+
+Checks whether text is valid JSON.
+
+```stult
+STD.DATA.JSON.IS_VALID("{\"ok\":true}")
+```
+
+Returns a boolean.
+
+## `STD["DATA"]["STULTON"]`
+
+STULTON encoding, parsing and validation helpers.
+
+### `STD["DATA"]["STULTON"]["NEW"](value)`
+
+Encodes a Stult value as STULTON text.
+
+```stult
+text : STD.DATA.STULTON.NEW({
+	"NAME": "example"
+	"active": +
+	"items": {
+		"one"
+		"two"
+	}
+})
+```
+
+Conversion rules:
+
+```text
+_         _
+bool      + or -
+number    number
+string    quoted string
+array     STULTON array
+map       STULTON map
+function  error
+```
+
+Map keys are written in sorted order.
+
+Returns a string.
+
+### `STD["DATA"]["STULTON"]["PARSE"](text)`
+
+Parses STULTON text into a Stult value.
+
+```stult
+value : STD.DATA.STULTON.PARSE("{\"active\": +}")
+```
+
+STULTON parsing only allows data expressions.
+
+It allows:
+
+```text
+_
+booleans
+numbers
+percentage-suffixed numbers
+negative numbers
+strings
+arrays
+maps
+```
+
+It does not allow executable syntax such as assignments, identifiers, function calls, function literals, index expressions, binary operators or ranges.
+
+Exponential number notation is not allowed in STULTON. Percentage-suffixed numbers are allowed when the underlying number does not use exponent notation.
+
+### `STD["DATA"]["STULTON"]["IS_VALID"](text)`
+
+Checks whether text is valid STULTON data.
+
+```stult
+STD.DATA.STULTON.IS_VALID("{\"active\": +}")
+```
+
+Returns a boolean.
 ## `STD["ERROR"]`
 
 Runtime error helpers.
 
 `STD["ERROR"]` contains helpers for raising catchable runtime errors and for assertion-based checks.
-
-### `STD["ERROR"]["RAISE"](message?)`
-
-Raises a catchable runtime error.
-
-`message`, if supplied, must be a string.
-
-If `message` is omitted, the default message is `"error raised"`.
-
-This function never returns normally.
-
-```stult
-STD.ERROR.RAISE("could not load configuration")
-```
-
-A raised error can be caught by a try-catch statement:
-
-```stult
-?{
-	STD.ERROR.RAISE("recoverable failure")
-}|{ (error)
-	STD.IO.OUTPUT.WRITE_LINE("caught: ", error)
-}
-```
 
 ### `STD["ERROR"]["ASSERT"]`
 
@@ -276,167 +431,29 @@ STD.ERROR.ASSERT.EQUAL("Stult", "Stult")
 STD.ERROR.ASSERT.EQUAL(1 + 2, 3, "numbers should match")
 ```
 
-## `STD["IO"]`
+### `STD["ERROR"]["RAISE"](message?)`
 
-Console input and output.
+Raises a catchable runtime error.
 
-`STD["IO"]` contains two submaps:
+`message`, if supplied, must be a string.
 
-```stult
-STD.IO.INPUT
-STD.IO.OUTPUT
-```
+If `message` is omitted, the default message is `"error raised"`.
 
-`STD.IO.INPUT` contains functions that read from standard input.
-
-`STD.IO.OUTPUT` contains functions that write to standard output or standard error.
-
-### `STD["IO"]["INPUT"]`
-
-Console input helpers.
-
-### `STD["IO"]["INPUT"]["READ_LINE"]()`
-
-Reads one line from standard input.
+This function never returns normally.
 
 ```stult
-line : STD.IO.INPUT.READ_LINE()
+STD.ERROR.RAISE("could not load configuration")
 ```
 
-Returns a string without the trailing newline.
-
-Returns `_` if input ends before any text is read.
-
-### `STD["IO"]["INPUT"]["PROMPT"](...values)`
-
-Writes prompt values to standard output, then reads a line from standard input.
+A raised error can be caught by a try-catch statement:
 
 ```stult
-name : STD.IO.INPUT.PROMPT("Name: ")
-STD.IO.OUTPUT.WRITE_LINE("Hello ", name)
+?{
+	STD.ERROR.RAISE("recoverable failure")
+}|{ (error)
+	STD.IO.OUTPUT.WRITE_LINE("caught: ", error)
+}
 ```
-
-Returns a string without the trailing newline.
-
-Returns `_` if input ends before any text is read.
-
-### `STD["IO"]["OUTPUT"]`
-
-Console output helpers.
-
-### `STD["IO"]["OUTPUT"]["WRITE"](...values)`
-
-Writes values to standard output without adding a newline.
-
-```stult
-STD.IO.OUTPUT.WRITE("Hello")
-STD.IO.OUTPUT.WRITE(" ")
-STD.IO.OUTPUT.WRITE("world")
-```
-
-Returns `_`.
-
-### `STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`
-
-Writes values to standard output and then writes a newline.
-
-```stult
-STD.IO.OUTPUT.WRITE_LINE("Hello world")
-STD.IO.OUTPUT.WRITE_LINE("Count: ", 3)
-```
-
-Returns `_`.
-
-### `STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`
-
-Writes values to standard error without adding a newline.
-
-```stult
-STD.IO.OUTPUT.WRITE_ERROR("Warning: ")
-STD.IO.OUTPUT.WRITE_ERROR("something changed")
-```
-
-Returns `_`.
-
-### `STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`
-
-Writes values to standard error and then writes a newline.
-
-```stult
-STD.IO.OUTPUT.WRITE_ERROR_LINE("Something went wrong")
-```
-
-Returns `_`.
-
-## `STD["SYSTEM"]`
-
-Runtime and process-context helpers.
-
-### `STD["SYSTEM"]["ARGS"]`
-
-Contains the arguments passed to the Stult program.
-
-```stult
-STD.IO.OUTPUT.WRITE_LINE(STD.SYSTEM.ARGS)
-```
-
-The array does not include the Stult executable path.
-
-The array also does not include the source file, manifest file or project directory used as the program target.
-
-For example:
-
-```bash
-stult run examples/csv_to_json_converter.stult input.csv output.json
-```
-
-makes this available to Stult code:
-
-```stult
-STD.SYSTEM.ARGS # {"input.csv", "output.json"}
-```
-
-`ARGS` is an immutable array of strings.
-
-### `STD["SYSTEM"]["CWD"]()`
-
-Returns the current working directory.
-
-```stult
-cwd : STD.SYSTEM.CWD()
-
-STD.IO.OUTPUT.WRITE_LINE(cwd)
-```
-
-Returns a string.
-
-### `STD["SYSTEM"]["ENV"](name)`
-
-Reads an environment variable.
-
-```stult
-home : STD.SYSTEM.ENV("HOME")
-
-STD.IO.OUTPUT.WRITE_LINE(home)
-```
-
-The argument must be a string.
-
-Returns a string when the environment variable is set.
-
-Returns `_` when the environment variable is not set.
-
-### `STD["SYSTEM"]["EXIT"](code)`
-
-Exits the current process with the given status code.
-
-```stult
-STD.SYSTEM.EXIT(0)
-```
-
-The exit code must be an integer number from `0` to `255`.
-
-This function does not return, because it terminates the process.
 
 ## `STD["FILE"]`
 
@@ -706,77 +723,97 @@ The argument must be a string.
 
 Returns a string.
 
-## `STD["TIME"]`
+## `STD["IO"]`
 
-Timestamps, sleep and calendar snapshots.
+Console input and output.
 
-### `STD["TIME"]["MILLI_TIMESTAMP"]()`
-
-Returns the current Unix timestamp in milliseconds.
+`STD["IO"]` contains two submaps:
 
 ```stult
-start : STD.TIME.MILLI_TIMESTAMP()
+STD.IO.INPUT
+STD.IO.OUTPUT
 ```
 
-Returns a number.
+`STD.IO.INPUT` contains functions that read from standard input.
 
-### `STD["TIME"]["NANO_TIMESTAMP"]()`
+`STD.IO.OUTPUT` contains functions that write to standard output or standard error.
 
-Returns the current Unix timestamp in nanoseconds.
+### `STD["IO"]["INPUT"]`
+
+Console input helpers.
+
+### `STD["IO"]["INPUT"]["READ_LINE"]()`
+
+Reads one line from standard input.
 
 ```stult
-start : STD.TIME.NANO_TIMESTAMP()
+line : STD.IO.INPUT.READ_LINE()
 ```
 
-Returns a number.
+Returns a string without the trailing newline.
 
-### `STD["TIME"]["MILLI_SLEEP"](milliseconds)`
+Returns `_` if input ends before any text is read.
 
-Sleeps for the given number of milliseconds.
+### `STD["IO"]["INPUT"]["PROMPT"](...values)`
+
+Writes prompt values to standard output, then reads a line from standard input.
 
 ```stult
-STD.TIME.MILLI_SLEEP(500)
+name : STD.IO.INPUT.PROMPT("Name: ")
+STD.IO.OUTPUT.WRITE_LINE("Hello ", name)
 ```
 
-The argument must be a non-negative integer number.
+Returns a string without the trailing newline.
+
+Returns `_` if input ends before any text is read.
+
+### `STD["IO"]["OUTPUT"]`
+
+Console output helpers.
+
+### `STD["IO"]["OUTPUT"]["WRITE"](...values)`
+
+Writes values to standard output without adding a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE("Hello")
+STD.IO.OUTPUT.WRITE(" ")
+STD.IO.OUTPUT.WRITE("world")
+```
 
 Returns `_`.
 
-### `STD["TIME"]["LOCAL_CALENDAR"]()`
+### `STD["IO"]["OUTPUT"]["WRITE_LINE"](...values)`
 
-Returns a map describing the current local time.
-
-```stult
-now : STD.TIME.LOCAL_CALENDAR()
-
-STD.IO.OUTPUT.WRITE_LINE(now.YEAR, "-", now.MONTH, "-", now.DAY)
-```
-
-The returned map contains:
-
-```text
-YEAR
-MONTH
-DAY
-HOUR
-MINUTE
-SECOND
-NANOSECOND
-WEEKDAY
-YEARDAY
-ZONE
-OFFSET
-```
-
-### `STD["TIME"]["UTC_CALENDAR"]()`
-
-Returns a map describing the current UTC time and date.
+Writes values to standard output and then writes a newline.
 
 ```stult
-utc : STD.TIME.UTC_CALENDAR()
+STD.IO.OUTPUT.WRITE_LINE("Hello world")
+STD.IO.OUTPUT.WRITE_LINE("Count: ", 3)
 ```
 
-The returned map has the same keys as `LOCAL_CALENDAR`.
+Returns `_`.
+
+### `STD["IO"]["OUTPUT"]["WRITE_ERROR"](...values)`
+
+Writes values to standard error without adding a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE_ERROR("Warning: ")
+STD.IO.OUTPUT.WRITE_ERROR("something changed")
+```
+
+Returns `_`.
+
+### `STD["IO"]["OUTPUT"]["WRITE_ERROR_LINE"](...values)`
+
+Writes values to standard error and then writes a newline.
+
+```stult
+STD.IO.OUTPUT.WRITE_ERROR_LINE("Something went wrong")
+```
+
+Returns `_`.
 
 ## `STD["MATH"]`
 
@@ -1119,6 +1156,148 @@ Converts radians to degrees.
 STD.MATH.TRIG.DEGREES(STD.MATH.PI)
 ```
 
+## `STD["SYSTEM"]`
+
+Runtime and process-context helpers.
+
+### `STD["SYSTEM"]["ARGS"]`
+
+Contains the arguments passed to the Stult program.
+
+```stult
+STD.IO.OUTPUT.WRITE_LINE(STD.SYSTEM.ARGS)
+```
+
+The array does not include the Stult executable path.
+
+The array also does not include the source file, manifest file or project directory used as the program target.
+
+For example:
+
+```bash
+stult run examples/csv_to_json_converter.stult input.csv output.json
+```
+
+makes this available to Stult code:
+
+```stult
+STD.SYSTEM.ARGS # {"input.csv", "output.json"}
+```
+
+`ARGS` is an immutable array of strings.
+
+### `STD["SYSTEM"]["CWD"]()`
+
+Returns the current working directory.
+
+```stult
+cwd : STD.SYSTEM.CWD()
+
+STD.IO.OUTPUT.WRITE_LINE(cwd)
+```
+
+Returns a string.
+
+### `STD["SYSTEM"]["ENV"](name)`
+
+Reads an environment variable.
+
+```stult
+home : STD.SYSTEM.ENV("HOME")
+
+STD.IO.OUTPUT.WRITE_LINE(home)
+```
+
+The argument must be a string.
+
+Returns a string when the environment variable is set.
+
+Returns `_` when the environment variable is not set.
+
+### `STD["SYSTEM"]["EXIT"](code)`
+
+Exits the current process with the given status code.
+
+```stult
+STD.SYSTEM.EXIT(0)
+```
+
+The exit code must be an integer number from `0` to `255`.
+
+This function does not return, because it terminates the process.
+
+## `STD["TIME"]`
+
+Timestamps, sleep and calendar snapshots.
+
+### `STD["TIME"]["MILLI_TIMESTAMP"]()`
+
+Returns the current Unix timestamp in milliseconds.
+
+```stult
+start : STD.TIME.MILLI_TIMESTAMP()
+```
+
+Returns a number.
+
+### `STD["TIME"]["NANO_TIMESTAMP"]()`
+
+Returns the current Unix timestamp in nanoseconds.
+
+```stult
+start : STD.TIME.NANO_TIMESTAMP()
+```
+
+Returns a number.
+
+### `STD["TIME"]["MILLI_SLEEP"](milliseconds)`
+
+Sleeps for the given number of milliseconds.
+
+```stult
+STD.TIME.MILLI_SLEEP(500)
+```
+
+The argument must be a non-negative integer number.
+
+Returns `_`.
+
+### `STD["TIME"]["LOCAL_CALENDAR"]()`
+
+Returns a map describing the current local time.
+
+```stult
+now : STD.TIME.LOCAL_CALENDAR()
+
+STD.IO.OUTPUT.WRITE_LINE(now.YEAR, "-", now.MONTH, "-", now.DAY)
+```
+
+The returned map contains:
+
+```text
+YEAR
+MONTH
+DAY
+HOUR
+MINUTE
+SECOND
+NANOSECOND
+WEEKDAY
+YEARDAY
+ZONE
+OFFSET
+```
+
+### `STD["TIME"]["UTC_CALENDAR"]()`
+
+Returns a map describing the current UTC time and date.
+
+```stult
+utc : STD.TIME.UTC_CALENDAR()
+```
+
+The returned map has the same keys as `LOCAL_CALENDAR`.
+
 ## `STD["TYPE"]`
 
 Type predicates, conversions and collection helpers.
@@ -1140,6 +1319,43 @@ STD.TYPE.IS_COLLECTION({"a", "b"})
 ```
 
 `STD["TYPE"]["IS_COLLECTION"]` returns true for arrays, maps and strings.
+
+## `STD["TYPE"]["ARRAY"]`
+
+Array-specific helpers.
+
+### `STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`
+
+Appends one or more values to an array.
+
+```stult
+items : {}
+
+STD.TYPE.ARRAY.APPEND(items, "a", "b", "c")
+```
+
+Returns `_`.
+
+The first argument must be an array.
+
+Raises a runtime error if the array is frozen.
+
+### `STD["TYPE"]["ARRAY"]["REVERSE"](array)`
+
+Returns a new unfrozen array containing the input array's elements in reverse order.
+
+```stult
+values : {1, 2, 3}
+reversed : STD.TYPE.ARRAY.REVERSE(values)
+```
+
+The original array is not modified.
+
+Element values are reused rather than deep-cloned.
+
+Frozen input arrays are accepted.
+
+Raises a runtime error if the value is not an array.
 
 ## `STD["TYPE"]["BOOL"]`
 
@@ -1189,6 +1405,257 @@ other     returns _
 ```
 
 String conversion ignores surrounding whitespace and case.
+
+## `STD["TYPE"]["COLLECTION"]`
+
+Helpers shared by arrays, maps and strings.
+
+### `STD["TYPE"]["COLLECTION"]["SIZE"](collection)`
+
+Returns the size of a collection.
+
+```stult
+STD.TYPE.COLLECTION.SIZE({"a", "b", "c"})
+STD.TYPE.COLLECTION.SIZE({"name": "example"})
+STD.TYPE.COLLECTION.SIZE("hello")
+```
+
+For arrays, size is the number of elements.
+
+For maps, size is the number of entries.
+
+For strings, size is the number of runes.
+
+Returns `_` for non-collections.
+
+### `STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`
+
+Checks whether a collection is empty.
+
+```stult
+STD.TYPE.COLLECTION.IS_EMPTY({})
+STD.TYPE.COLLECTION.IS_EMPTY("")
+```
+
+Returns `_` for non-collections.
+
+### `STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`
+
+Checks whether a collection contains a key or index.
+
+```stult
+STD.TYPE.COLLECTION.HAS({"name": "example"}, "name")
+STD.TYPE.COLLECTION.HAS({"a", "b"}, 1)
+STD.TYPE.COLLECTION.HAS("cat", 0)
+```
+
+For maps, the key must be a string.
+
+For arrays and strings, the key must be a valid numeric index.
+
+Returns `_` for non-collections.
+
+### `STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`
+
+Safely retrieves an item from a collection.
+
+```stult
+GET : STD.TYPE.COLLECTION.GET
+
+GET({"name": "example"}, "name")
+GET({"a", "b"}, 1)
+GET("cat", 0)
+```
+
+For maps, `key_or_index` must be a string key. If the key exists, `GET` returns the corresponding map entry value. If the key is missing, `GET` returns the optional default value, or `_` when no default value was supplied.
+
+```stult
+config : {"timeout": 1000}
+
+STD.TYPE.COLLECTION.GET(config, "timeout", 500) # 1000
+STD.TYPE.COLLECTION.GET(config, "retries", 3)   # 3
+STD.TYPE.COLLECTION.GET(config, "missing")      # _
+```
+
+For arrays, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns the array element. If the index is negative or out of bounds for the dense array, `GET` returns the optional default value, or `_` when no default value was supplied. Array indices are checked against the array's length.
+
+```stult
+items : {"a", "b"}
+
+STD.TYPE.COLLECTION.GET(items, 1, "missing")  # b
+STD.TYPE.COLLECTION.GET(items, 30, "missing") # missing
+STD.TYPE.COLLECTION.GET(items, -1)             # _
+```
+
+For strings, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns a new one-rune string. If the index is negative or out of bounds, `GET` returns the optional default value, or `_` when no default value was supplied. String indices are checked against the string's code-point length.
+
+```stult
+STD.TYPE.COLLECTION.GET("cat", 1, "missing")  # a
+STD.TYPE.COLLECTION.GET("cat", 10, "missing") # missing
+```
+
+`GET` raises a runtime error when the first argument is not a collection, when a map key is not a string, or when an array/string index is not an exact integer number.
+
+The optional default is an ordinary argument, so it is evaluated before `GET` is called.
+
+### `STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`
+
+Removes all contents from a non-frozen collection.
+
+```stult
+items : {"a", "b"}
+STD.TYPE.COLLECTION.CLEAR(items)
+```
+
+For arrays, this removes all elements.
+
+For maps, this removes all entries.
+
+For strings, this removes all characters.
+
+Returns `_`.
+
+Raises a runtime error if the collection is frozen.
+
+
+### `STD["TYPE"]["COLLECTION"]["CLONE"](value)`
+
+Deeply clones a value.
+
+```stult
+original : {
+	"nested": {"value": 1}
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original)
+copy.nested.value : 2
+
+STD.IO.OUTPUT.WRITE_LINE(original.nested.value) # 1
+STD.IO.OUTPUT.WRITE_LINE(copy.nested.value)     # 2
+```
+
+For arrays, maps and strings, `CLONE` returns new mutable collection values. Nested arrays, maps and strings are cloned recursively.
+
+Internal aliases are preserved inside the cloned graph.
+
+```stult
+shared : {"value": 1}
+original : {
+	"a": shared
+	"b": shared
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original)
+copy.a.value : 9
+
+STD.IO.OUTPUT.WRITE_LINE(original.a.value) # 1
+STD.IO.OUTPUT.WRITE_LINE(copy.b.value)     # 9
+```
+
+Cyclical collection graphs are preserved.
+
+```stult
+array : {}
+array[0] : array
+
+copy : STD.TYPE.COLLECTION.CLONE(array)
+copy[1] : "copy only"
+
+STD.IO.OUTPUT.WRITE_LINE(array) # {<cyclical array>}
+STD.IO.OUTPUT.WRITE_LINE(copy)  # {<cyclical array>, "copy only"}
+```
+
+`CLONE` returns mutable collections even when the original collections are frozen. Map-entry mutability is preserved: entries whose keys are immutable-form in the source map remain immutable entries in the clone.
+
+Numbers are copied defensively. Booleans, void, functions and builtin functions are reused. Reusing function values means cloned collections containing closures still refer to the same closure state.
+
+### `STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`
+
+Deeply freezes a collection.
+
+```stult
+CONFIG : STD.TYPE.COLLECTION.FREEZE({
+	"name": "demo"
+	"values": {1, 2, 3}
+})
+```
+
+`FREEZE` accepts arrays, maps and strings.
+
+A frozen array cannot have elements replaced or appended.
+
+A frozen map cannot have entries replaced or added.
+
+A frozen string cannot have characters replaced or appended.
+
+The freeze is deep. Nested arrays, maps and strings inside the collection are frozen too.
+
+`FREEZE` modifies the collection in place and returns the same collection value. This means it can be used either as a statement or inside an assignment.
+
+```stult
+items : {1, 2, 3}
+STD.TYPE.COLLECTION.FREEZE(items)
+
+other_items : STD.TYPE.COLLECTION.FREEZE({4, 5, 6})
+```
+
+Returns `_` for non-collections.
+
+### `STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`
+
+Checks whether a value is a frozen collection.
+
+```stult
+items : STD.TYPE.COLLECTION.FREEZE({1, 2, 3})
+
+STD.TYPE.COLLECTION.IS_FROZEN(items)
+STD.TYPE.COLLECTION.IS_FROZEN(items[0])
+```
+
+Returns `+` for frozen arrays, maps and strings.
+
+Returns `-` for non-frozen arrays, maps and strings.
+
+Returns `-` for non-collections.
+
+## `STD["TYPE"]["MAP"]`
+
+Map-specific helpers.
+
+### `STD["TYPE"]["MAP"]["KEYS"](map)`
+
+Returns an array of map keys sorted lexicographically.
+
+```stult
+keys : STD.TYPE.MAP.KEYS({"b": 2, "a": 1})
+```
+
+Returns `_` when the value is not a map.
+
+### `STD["TYPE"]["MAP"]["VALUES"](map)`
+
+Returns an array of map values sorted by key order.
+
+```stult
+values : STD.TYPE.MAP.VALUES({"b": 2, "a": 1})
+```
+
+Returns `_` when the value is not a map.
+
+### `STD["TYPE"]["MAP"]["ENTRIES"](map)`
+
+Returns a new array of key-value pairs for the map's immediate entries, sorted by key.
+
+Each pair is a two-item array containing the string key followed by the entry value.
+Nested maps and arrays are returned as values; they are not expanded recursively.
+
+```stult
+entries : STD.TYPE.MAP.ENTRIES({"b": 2, "a": 1})
+```
+
+The returned outer array and pair arrays are mutable. Entry values are reused rather than deep-cloned.
+
+Returns `_` when the value is not a map.
 
 ## `STD["TYPE"]["NUMBER"]`
 
@@ -1428,471 +1895,3 @@ STD.TYPE.STRING.JOIN({"a", "b", "c"}, ",")
 String elements are used directly.
 
 Non-string elements are converted with their printed representation.
-
-## `STD["TYPE"]["ARRAY"]`
-
-Array-specific helpers.
-
-### `STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`
-
-Appends one or more values to an array.
-
-```stult
-items : {}
-
-STD.TYPE.ARRAY.APPEND(items, "a", "b", "c")
-```
-
-Returns `_`.
-
-The first argument must be an array.
-
-Raises a runtime error if the array is frozen.
-
-### `STD["TYPE"]["ARRAY"]["REVERSE"](array)`
-
-Returns a new unfrozen array containing the input array's elements in reverse order.
-
-```stult
-values : {1, 2, 3}
-reversed : STD.TYPE.ARRAY.REVERSE(values)
-```
-
-The original array is not modified.
-
-Element values are reused rather than deep-cloned.
-
-Frozen input arrays are accepted.
-
-Raises a runtime error if the value is not an array.
-
-## `STD["TYPE"]["MAP"]`
-
-Map-specific helpers.
-
-### `STD["TYPE"]["MAP"]["KEYS"](map)`
-
-Returns an array of map keys sorted lexicographically.
-
-```stult
-keys : STD.TYPE.MAP.KEYS({"b": 2, "a": 1})
-```
-
-Returns `_` when the value is not a map.
-
-### `STD["TYPE"]["MAP"]["VALUES"](map)`
-
-Returns an array of map values sorted by key order.
-
-```stult
-values : STD.TYPE.MAP.VALUES({"b": 2, "a": 1})
-```
-
-Returns `_` when the value is not a map.
-
-### `STD["TYPE"]["MAP"]["ENTRIES"](map)`
-
-Returns a new array of key-value pairs for the map's immediate entries, sorted by key.
-
-Each pair is a two-item array containing the string key followed by the entry value.
-Nested maps and arrays are returned as values; they are not expanded recursively.
-
-```stult
-entries : STD.TYPE.MAP.ENTRIES({"b": 2, "a": 1})
-```
-
-The returned outer array and pair arrays are mutable. Entry values are reused rather than deep-cloned.
-
-Returns `_` when the value is not a map.
-
-## `STD["TYPE"]["COLLECTION"]`
-
-Helpers shared by arrays, maps and strings.
-
-### `STD["TYPE"]["COLLECTION"]["SIZE"](collection)`
-
-Returns the size of a collection.
-
-```stult
-STD.TYPE.COLLECTION.SIZE({"a", "b", "c"})
-STD.TYPE.COLLECTION.SIZE({"name": "example"})
-STD.TYPE.COLLECTION.SIZE("hello")
-```
-
-For arrays, size is the number of elements.
-
-For maps, size is the number of entries.
-
-For strings, size is the number of runes.
-
-Returns `_` for non-collections.
-
-### `STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`
-
-Checks whether a collection is empty.
-
-```stult
-STD.TYPE.COLLECTION.IS_EMPTY({})
-STD.TYPE.COLLECTION.IS_EMPTY("")
-```
-
-Returns `_` for non-collections.
-
-### `STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`
-
-Checks whether a collection contains a key or index.
-
-```stult
-STD.TYPE.COLLECTION.HAS({"name": "example"}, "name")
-STD.TYPE.COLLECTION.HAS({"a", "b"}, 1)
-STD.TYPE.COLLECTION.HAS("cat", 0)
-```
-
-For maps, the key must be a string.
-
-For arrays and strings, the key must be a valid numeric index.
-
-Returns `_` for non-collections.
-
-### `STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`
-
-Safely retrieves an item from a collection.
-
-```stult
-GET : STD.TYPE.COLLECTION.GET
-
-GET({"name": "example"}, "name")
-GET({"a", "b"}, 1)
-GET("cat", 0)
-```
-
-For maps, `key_or_index` must be a string key. If the key exists, `GET` returns the corresponding map entry value. If the key is missing, `GET` returns the optional default value, or `_` when no default value was supplied.
-
-```stult
-config : {"timeout": 1000}
-
-STD.TYPE.COLLECTION.GET(config, "timeout", 500) # 1000
-STD.TYPE.COLLECTION.GET(config, "retries", 3)   # 3
-STD.TYPE.COLLECTION.GET(config, "missing")      # _
-```
-
-For arrays, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns the array element. If the index is negative or out of bounds for the dense array, `GET` returns the optional default value, or `_` when no default value was supplied. Array indices are checked against the array's length.
-
-```stult
-items : {"a", "b"}
-
-STD.TYPE.COLLECTION.GET(items, 1, "missing")  # b
-STD.TYPE.COLLECTION.GET(items, 30, "missing") # missing
-STD.TYPE.COLLECTION.GET(items, -1)             # _
-```
-
-For strings, `key_or_index` must be an exact integer number. If the index is in bounds, `GET` returns a new one-rune string. If the index is negative or out of bounds, `GET` returns the optional default value, or `_` when no default value was supplied. String indices are checked against the string's code-point length.
-
-```stult
-STD.TYPE.COLLECTION.GET("cat", 1, "missing")  # a
-STD.TYPE.COLLECTION.GET("cat", 10, "missing") # missing
-```
-
-`GET` raises a runtime error when the first argument is not a collection, when a map key is not a string, or when an array/string index is not an exact integer number.
-
-The optional default is an ordinary argument, so it is evaluated before `GET` is called.
-
-### `STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`
-
-Removes all contents from a non-frozen collection.
-
-```stult
-items : {"a", "b"}
-STD.TYPE.COLLECTION.CLEAR(items)
-```
-
-For arrays, this removes all elements.
-
-For maps, this removes all entries.
-
-For strings, this removes all characters.
-
-Returns `_`.
-
-Raises a runtime error if the collection is frozen.
-
-
-### `STD["TYPE"]["COLLECTION"]["CLONE"](value)`
-
-Deeply clones a value.
-
-```stult
-original : {
-	"nested": {"value": 1}
-}
-
-copy : STD.TYPE.COLLECTION.CLONE(original)
-copy.nested.value : 2
-
-STD.IO.OUTPUT.WRITE_LINE(original.nested.value) # 1
-STD.IO.OUTPUT.WRITE_LINE(copy.nested.value)     # 2
-```
-
-For arrays, maps and strings, `CLONE` returns new mutable collection values. Nested arrays, maps and strings are cloned recursively.
-
-Internal aliases are preserved inside the cloned graph.
-
-```stult
-shared : {"value": 1}
-original : {
-	"a": shared
-	"b": shared
-}
-
-copy : STD.TYPE.COLLECTION.CLONE(original)
-copy.a.value : 9
-
-STD.IO.OUTPUT.WRITE_LINE(original.a.value) # 1
-STD.IO.OUTPUT.WRITE_LINE(copy.b.value)     # 9
-```
-
-Cyclical collection graphs are preserved.
-
-```stult
-array : {}
-array[0] : array
-
-copy : STD.TYPE.COLLECTION.CLONE(array)
-copy[1] : "copy only"
-
-STD.IO.OUTPUT.WRITE_LINE(array) # {<cyclical array>}
-STD.IO.OUTPUT.WRITE_LINE(copy)  # {<cyclical array>, "copy only"}
-```
-
-`CLONE` returns mutable collections even when the original collections are frozen. Map-entry mutability is preserved: entries whose keys are immutable-form in the source map remain immutable entries in the clone.
-
-Numbers are copied defensively. Booleans, void, functions and builtin functions are reused. Reusing function values means cloned collections containing closures still refer to the same closure state.
-
-### `STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`
-
-Deeply freezes a collection.
-
-```stult
-CONFIG : STD.TYPE.COLLECTION.FREEZE({
-	"name": "demo"
-	"values": {1, 2, 3}
-})
-```
-
-`FREEZE` accepts arrays, maps and strings.
-
-A frozen array cannot have elements replaced or appended.
-
-A frozen map cannot have entries replaced or added.
-
-A frozen string cannot have characters replaced or appended.
-
-The freeze is deep. Nested arrays, maps and strings inside the collection are frozen too.
-
-`FREEZE` modifies the collection in place and returns the same collection value. This means it can be used either as a statement or inside an assignment.
-
-```stult
-items : {1, 2, 3}
-STD.TYPE.COLLECTION.FREEZE(items)
-
-other_items : STD.TYPE.COLLECTION.FREEZE({4, 5, 6})
-```
-
-Returns `_` for non-collections.
-
-### `STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`
-
-Checks whether a value is a frozen collection.
-
-```stult
-items : STD.TYPE.COLLECTION.FREEZE({1, 2, 3})
-
-STD.TYPE.COLLECTION.IS_FROZEN(items)
-STD.TYPE.COLLECTION.IS_FROZEN(items[0])
-```
-
-Returns `+` for frozen arrays, maps and strings.
-
-Returns `-` for non-frozen arrays, maps and strings.
-
-Returns `-` for non-collections.
-
-## `STD["DATA"]`
-
-Data encoding and decoding helpers.
-
-## `STD["DATA"]["CSV"]`
-
-CSV encoding, parsing and validation helpers.
-
-### `STD["DATA"]["CSV"]["NEW"](rows)`
-
-Encodes an array of row arrays as CSV text.
-
-```stult
-rows : {
-	{"name", "score"}
-	{"a", 10}
-	{"b", 20}
-}
-
-text : STD.DATA.CSV.NEW(rows)
-```
-
-Fields are converted to strings when possible.
-
-Returns a string.
-
-### `STD["DATA"]["CSV"]["PARSE"](text)`
-
-Parses CSV text into an array of row arrays.
-
-```stult
-rows : STD.DATA.CSV.PARSE("name,score\na,10\nb,20\n")
-```
-
-Returns an array of arrays of strings.
-
-### `STD["DATA"]["CSV"]["IS_VALID"](text)`
-
-Checks whether text is valid CSV.
-
-```stult
-STD.DATA.CSV.IS_VALID("name,score\na,10\n")
-```
-
-Returns a boolean.
-
-Rows may have different field counts.
-
-## `STD["DATA"]["JSON"]`
-
-JSON encoding, parsing and validation helpers.
-
-### `STD["DATA"]["JSON"]["NEW"](value)`
-
-Encodes a Stult value as JSON text.
-
-```stult
-text : STD.DATA.JSON.NEW({
-	"name": "example"
-	"active": +
-})
-```
-
-Conversion rules:
-
-```text
-_         null
-bool      boolean
-number    number
-string    string
-array     array
-map       object
-function  error
-```
-
-Returns a string.
-
-### `STD["DATA"]["JSON"]["PARSE"](text)`
-
-Parses JSON text into a Stult value.
-
-```stult
-value : STD.DATA.JSON.PARSE("{\"name\":\"example\",\"active\":true}")
-```
-
-Conversion rules:
-
-```text
-null      _
-boolean   bool
-number    number
-string    string
-array     array
-object    map
-```
-
-The input must contain exactly one JSON value.
-
-### `STD["DATA"]["JSON"]["IS_VALID"](text)`
-
-Checks whether text is valid JSON.
-
-```stult
-STD.DATA.JSON.IS_VALID("{\"ok\":true}")
-```
-
-Returns a boolean.
-
-## `STD["DATA"]["STULTON"]`
-
-STULTON encoding, parsing and validation helpers.
-
-### `STD["DATA"]["STULTON"]["NEW"](value)`
-
-Encodes a Stult value as STULTON text.
-
-```stult
-text : STD.DATA.STULTON.NEW({
-	"NAME": "example"
-	"active": +
-	"items": {
-		"one"
-		"two"
-	}
-})
-```
-
-Conversion rules:
-
-```text
-_         _
-bool      + or -
-number    number
-string    quoted string
-array     STULTON array
-map       STULTON map
-function  error
-```
-
-Map keys are written in sorted order.
-
-Returns a string.
-
-### `STD["DATA"]["STULTON"]["PARSE"](text)`
-
-Parses STULTON text into a Stult value.
-
-```stult
-value : STD.DATA.STULTON.PARSE("{\"active\": +}")
-```
-
-STULTON parsing only allows data expressions.
-
-It allows:
-
-```text
-_
-booleans
-numbers
-percentage-suffixed numbers
-negative numbers
-strings
-arrays
-maps
-```
-
-It does not allow executable syntax such as assignments, identifiers, function calls, function literals, index expressions, binary operators or ranges.
-
-Exponential number notation is not allowed in STULTON. Percentage-suffixed numbers are allowed when the underlying number does not use exponent notation.
-
-### `STD["DATA"]["STULTON"]["IS_VALID"](text)`
-
-Checks whether text is valid STULTON data.
-
-```stult
-STD.DATA.STULTON.IS_VALID("{\"active\": +}")
-```
-
-Returns a boolean.
