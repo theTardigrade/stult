@@ -1,4 +1,3 @@
-
 # Stult
 
 Stult is a small programming language and runtime written in Go.
@@ -1172,13 +1171,13 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 
 ```stult
 ?{
-	STD.ASSERT.EQUAL(1, 2, "these values should match")
+	STD.ERROR.RAISE("could not load configuration")
 }|{
 	STD.IO.OUTPUT.WRITE_LINE("Recovered from the error")
 }
 ```
 
-The catch block is often used for performing cleanup operations.
+`STD.ERROR.RAISE(message?)` raises a catchable runtime error directly. The catch block is often used for recovery or cleanup.
 
 A try block may also be used without a catch block. In that form, catchable runtime errors are suppressed and execution continues after the try block:
 
@@ -1473,21 +1472,21 @@ The standard library is available as the immutable binding `STD`.
 It is a map containing other maps that, in turn, contain functions.
 
 ```stult
-STD["ASSERT"]
-STD["IO"]
-STD["SYSTEM"]
-STD["FILE"]
-STD["TIME"]
-STD["MATH"]
-STD["TYPE"]
 STD["DATA"]
+STD["ERROR"]
+STD["FILE"]
+STD["IO"]
+STD["MATH"]
+STD["SYSTEM"]
+STD["TIME"]
+STD["TYPE"]
 ```
 
 Here is some example code using functions from the standard library:
 
 ```stult
 WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 COLLECTION_SIZE : STD["TYPE"]["COLLECTION"]["SIZE"]
 MATH : STD["MATH"]
 
