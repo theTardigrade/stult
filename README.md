@@ -39,10 +39,10 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
 - [Language overview](#language-overview)
   - [Comments](#comments)
   - [Values](#values)
-  - [Booleans](#booleans)
-  - [Strings](#strings)
   - [Numbers](#numbers)
     - [Percentage literals](#percentage-literals)
+  - [Booleans](#booleans)
+  - [Strings](#strings)
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
     - [Boolean bindings](#boolean-bindings)
@@ -495,33 +495,6 @@ builtin functions
 
 The void value is written as `_`.
 
-### Booleans
-
-Booleans use symbolic literals:
-
-```stult
-+  # true
--  # false
-```
-
-When written alone, `+` and `-` are the boolean literals for true and false. When followed by an expression, they are numeric sign operators, so `+10` is positive ten and `-10` is negative ten.
-
-### Strings
-
-A string is an ordered sequence of characters. It is generally used to store text.
-
-Strings use double quotes (*not* single quotes):
-
-```stult
-"hello"
-```
-
-There is no separate type for a single character in Stult, so a single character would simply be stored in its own short string:
-
-```stult
-"h"
-```
-
 ### Numbers
 
 Stult has one numeric type.
@@ -551,6 +524,33 @@ A number literal may end with `%`.
 The suffix is part of the literal and divides that literal by one hundred, so `50%` is `0.5` and `99.9%` is `0.999`. It follows that `128 * 50%` is `64`.
 
 The `%` must touch the number. `50%` is a percentage literal, but `50 %` is not.
+
+### Booleans
+
+Booleans use symbolic literals:
+
+```stult
++  # true
+-  # false
+```
+
+When written alone, `+` and `-` are the boolean literals for true and false. When followed by an expression, they are numeric sign operators, so `+10` is positive ten and `-10` is negative ten.
+
+### Strings
+
+A string is an ordered sequence of characters. It is generally used to store text.
+
+Strings use double quotes (*not* single quotes):
+
+```stult
+"hello"
+```
+
+There is no separate type for a single character in Stult, so a single character would simply be stored in its own short string:
+
+```stult
+"h"
+```
 
 ### Bindings
 
