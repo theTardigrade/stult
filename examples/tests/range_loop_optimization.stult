@@ -10,7 +10,7 @@ one or two loop parameters without changing observable behaviour.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 SIZE : STD.TYPE.COLLECTION.SIZE
 
 START : 100000000000000000000

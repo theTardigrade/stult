@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/file_path_namespace.stult
@@ -12,7 +11,7 @@ The old STD.PATH namespace is intentionally no longer available.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 PATH : STD.FILE.PATH
 
 joined : PATH.JOIN("data", "input.csv")

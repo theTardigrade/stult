@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/block_separator_spacing.stult
@@ -12,7 +11,7 @@ Newlines around the separator are intentionally not accepted.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 
 conditional_result : ""
 

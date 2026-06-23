@@ -8,7 +8,7 @@ Dot access should behave like bracket indexing with a string key.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 
 record : {
 	"title": "Example"

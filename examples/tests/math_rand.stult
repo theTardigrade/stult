@@ -9,7 +9,7 @@ collection sizes and map-key preservation.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 RAND : STD["MATH"]["RAND"]
 TYPE : STD["TYPE"]
 COLLECTION : STD["TYPE"]["COLLECTION"]

@@ -9,7 +9,7 @@ block may ignore the error message or bind it with one catch parameter.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 SIZE : STD.TYPE.COLLECTION.SIZE
 
 caught_without_parameter : -
@@ -114,7 +114,7 @@ RETURN_THROUGH_TRY : { ()
 	?{
 		^("done")
 	}|{ (_)
-		STD.ASSERT.FALSE(+, "early return should not be caught")
+		STD.ERROR.ASSERT.FALSE(+, "early return should not be caught")
 	}
 
 	("not done")

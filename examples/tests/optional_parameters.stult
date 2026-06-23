@@ -9,7 +9,7 @@ still receive an empty array when no remaining arguments are supplied.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 COLLECTION : STD["TYPE"]["COLLECTION"]
 
 JOIN : { (left, right?)

@@ -1,0 +1,67 @@
+##
+
+EXAMPLE: tests/error_raise.stult
+
+This example checks explicit runtime error raising.
+
+ERROR.RAISE raises a catchable runtime error directly. It accepts an optional
+string message, and the old top-level STD.ASSERT map is intentionally no longer
+available.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+ERROR : STD.ERROR
+FIND : STD.TYPE.STRING.IS_FOUND_IN
+
+custom_message : ""
+
+?{
+	ERROR.RAISE("custom failure")
+}|{ (error)
+	@custom_message : error
+}
+
+ASSERT.TRUE(FIND("custom failure", custom_message), "RAISE should pass the supplied message to the catch block")
+
+default_message : ""
+
+?{
+	ERROR.RAISE()
+}|{ (error)
+	@default_message : error
+}
+
+ASSERT.TRUE(FIND("error raised", default_message), "RAISE without a message should use a default message")
+
+suppressed_without_catch : -
+
+?{
+	ERROR.RAISE("suppressed failure")
+}
+
+suppressed_without_catch : +
+
+ASSERT.TRUE(suppressed_without_catch, "RAISE should be suppressible by a try block without a catch block")
+
+non_string_error : -
+
+?{
+	ERROR.RAISE(123)
+}|{ (_)
+	@non_string_error : +
+}
+
+ASSERT.TRUE(non_string_error, "RAISE message should require a string")
+
+legacy_assert_missing : -
+
+?{
+	STD.ASSERT
+}|{ (_)
+	@legacy_assert_missing : +
+}
+
+ASSERT.TRUE(legacy_assert_missing, "top-level STD.ASSERT should no longer be available")
+
+STD.IO.OUTPUT.WRITE_LINE("error raise checks passed")

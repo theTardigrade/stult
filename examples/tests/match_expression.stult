@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/match_expression.stult
@@ -10,7 +9,7 @@ then falls back to the default arm when no explicit arm matches.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 
 text : "yes"
 

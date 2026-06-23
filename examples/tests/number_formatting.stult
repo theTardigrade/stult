@@ -10,7 +10,7 @@ changing numeric values.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 NUMBER : STD["TYPE"]["NUMBER"]
 
 ASSERT["EQUAL"](

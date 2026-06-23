@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/collection_clone.stult
@@ -11,7 +10,7 @@ function values.
 
 WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
 ASSERT_EQUAL : ASSERT["EQUAL"]
 

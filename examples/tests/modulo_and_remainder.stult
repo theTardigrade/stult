@@ -9,7 +9,7 @@ MOD follows the divisor's sign, while REM follows the dividend's sign.
 
 ##
 
-ASSERT : STD["ASSERT"]
+ASSERT : STD["ERROR"]["ASSERT"]
 MATH : STD["MATH"]
 
 ASSERT["EQUAL"](

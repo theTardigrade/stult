@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/file_directory_helpers.stult
@@ -12,7 +11,7 @@ The test also checks text and byte file reading and writing behaviour.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 FILE : STD.FILE
 PATH : FILE.PATH
 SIZE : STD.TYPE.COLLECTION.SIZE

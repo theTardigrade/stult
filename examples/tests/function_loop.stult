@@ -10,7 +10,7 @@ when the function returns void.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 SIZE : STD.TYPE.COLLECTION.SIZE
 
 COUNTDOWN : { (index)

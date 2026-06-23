@@ -12,7 +12,7 @@ line.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 
 total : 1 +
 	2 *

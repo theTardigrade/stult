@@ -1,4 +1,3 @@
-
 ##
 
 EXAMPLE: tests/leading_dot_access.stult
@@ -12,7 +11,7 @@ with that map's state.
 
 ##
 
-ASSERT : STD.ASSERT
+ASSERT : STD.ERROR.ASSERT
 STRING : STD.TYPE.STRING
 
 person : {
