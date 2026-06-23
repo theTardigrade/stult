@@ -168,7 +168,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
     - [`STD["TYPE"]["NUMBER"]["IS_WHOLE"](value)`](#stdtypenumberis_wholevalue)
     - [`STD["TYPE"]["NUMBER"]["CLAMP"](number, minimum, maximum)`](#stdtypenumberclampnumber-minimum-maximum)
-    - [`STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`](#stdtypenumberformatnumber-decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places?, options?)`](#stdtypenumberformatnumber-decimal_places-options)
     - [`STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"](number, significant_digits)`](#stdtypenumberformat_scientificnumber-significant_digits)
     - [`STD["TYPE"]["NUMBER"]["NEW"](value)`](#stdtypenumbernewvalue)
   - [`STD["TYPE"]["STRING"]`](#stdtypestring)
@@ -1710,23 +1710,55 @@ NUMBER.CLAMP(12, 0, 10)  # 10
 
 All three arguments must be numbers. `minimum` must not be greater than `maximum`.
 
-### `STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places)`
+### `STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places?, options?)`
 
 Formats `number` as a fixed decimal string.
 
 ```stult
 NUMBER : STD.TYPE.NUMBER
 
-NUMBER.FORMAT(1 / 3, 32)
+NUMBER.FORMAT(1 / 3)
 # "0.33333333333333333333333333333333"
+
+NUMBER.FORMAT(1 / 3, 4)
+# "0.3333"
 
 NUMBER.FORMAT(10, 256)
 # "10"
 ```
 
-`decimal_places` must be an integer from `0` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+`decimal_places`, if supplied, must be an integer from `0` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+
+If `decimal_places` is omitted, `STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]` is used.
 
 The result uses up to the requested number of decimal places and trims trailing zeroes.
+
+An optional `options` map may be supplied as the second or third argument:
+
+```stult
+NUMBER.FORMAT(1000000, {.GROUP_DIGITS: +})
+# "1'000'000"
+
+NUMBER.FORMAT(12345.6789, 2, {.GROUP_DIGITS: +})
+# "12'345.68"
+
+NUMBER.FORMAT(0.25, 0, {.PERCENT: +})
+# "25%"
+
+NUMBER.FORMAT(12.3456789, 2, {.PERCENT: +, .GROUP_DIGITS: +})
+# "1'234.57%"
+```
+
+Supported options are:
+
+| Option | Type | Default | Meaning |
+| --- | --- | --- | --- |
+| `"PERCENT"` | boolean | `-` | Multiply the number by `100` before formatting and append `%`. |
+| `"GROUP_DIGITS"` | boolean | `-` | Group whole-number digits in threes using apostrophes. |
+
+Unknown option keys raise a runtime error.
+
+Option values must be booleans.
 
 ### `STD["TYPE"]["NUMBER"]["FORMAT_SCIENTIFIC"](number, significant_digits)`
 
@@ -1895,3 +1927,4 @@ STD.TYPE.STRING.JOIN({"a", "b", "c"}, ",")
 String elements are used directly.
 
 Non-string elements are converted with their printed representation.
+

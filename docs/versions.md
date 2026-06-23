@@ -14,6 +14,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Added `-` as a source target for `stult run` and `stult dump`, reading Stult source text from standard input.
 
+#### Standard library
+
+* Updated `STD.TYPE.NUMBER.FORMAT` so decimal places are optional and an options map can request percentage output or apostrophe digit grouping.
+
 ### v0.9.4
 
 #### Language
