@@ -8,6 +8,13 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.9.4 (Future release)
+
+#### Standard library
+
+* Added `STD.ERROR.RAISE` for raising catchable runtime errors directly.
+* Moved assertion helpers from `STD.ASSERT` to `STD.ERROR.ASSERT`.
+
 ### v0.9.3
 
 #### Language
