@@ -1,0 +1,22 @@
+##
+
+EXAMPLE: tests/number_separators.stult
+
+This test checks apostrophe separators in number literals.
+
+Apostrophes may be written between digits to make large numbers easier to
+read. They do not change the numeric value.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+NUMBER : STD.TYPE.NUMBER
+
+ASSERT.EQUAL(1'000, 1000, "apostrophes should be accepted in whole-number literals")
+ASSERT.EQUAL(1'000'000'000, 1000000000, "multiple apostrophe groups should be accepted")
+ASSERT.EQUAL(123'456.789'123, 123456.789123, "apostrophes should be accepted around decimal digits")
+ASSERT.EQUAL(.123'456, 0.123456, "apostrophes should be accepted in dot-prefixed decimal literals")
+ASSERT.EQUAL(1'000%, 10, "apostrophe separators should work before percentage suffixes")
+ASSERT.EQUAL(1e1'0, 10000000000, "apostrophe separators should work in exponent digits")
+ASSERT.EQUAL(NUMBER.NEW("59'872"), 59872, "NUMBER.NEW should parse apostrophe-separated number strings")
+ASSERT.EQUAL(NUMBER.FORMAT(1'000'000, 0, {.GROUP_DIGITS: +}), "1'000'000", "FORMAT should accept separated number literals")
