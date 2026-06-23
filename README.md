@@ -505,6 +505,7 @@ There are no separate integer and floating-point types.
 1
 3.14
 -20
+1'000'000
 ```
 
 Stult stores numbers internally as a whole-number component plus a decimal component.
@@ -516,6 +517,8 @@ More precisely, whole-number values are theoretically unbounded, subject to avai
 Although Stult keeps more decimal places internally, numbers are ordinarily displayed with fewer decimal places (currently 32).
 
 The number-formatting helpers in `STD.TYPE.NUMBER` can request more decimal places when needed.
+
+Apostrophes may be written between digits to make large number literals easier to read. They do not change the numeric value, so `1'000'000` is the same number as `1000000`.
 
 #### Percentage literals
 
