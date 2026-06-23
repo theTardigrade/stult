@@ -912,7 +912,9 @@ evens : {2..10:2}        # {2, 4, 6, 8, 10}
 
 And they can descend:
 
+```stult
 down : {10..2:2}         # {10, 8, 6, 4, 2}
+```
 
 ### Functions
 
