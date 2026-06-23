@@ -10,6 +10,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ### v0.9.4 (Future release)
 
+#### Language
+
+* Changed range steps from square-bracket syntax such as `{2..10[2]}` to colon syntax such as `{2..10:2}`.
+
 #### Standard library
 
 * Added `STD.ERROR.RAISE` for raising catchable runtime errors directly.
