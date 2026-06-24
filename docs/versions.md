@@ -17,6 +17,8 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 #### Standard library
 
 * Added `STD.TYPE.ARRAY.SORT` for returning a stable sorted copy of an array.
+* Moved random `CHOICE` and `SHUFFLE` helpers from `STD.MATH.RAND` to `STD.TYPE.COLLECTION`.
+* Renamed `STD.MATH.RAND.INTEGER` to `STD.MATH.RAND.WHOLE_NUMBER`.
 
 ### v0.9.6
 

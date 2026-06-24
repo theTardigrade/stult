@@ -121,9 +121,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["MATH"]["REM"](left, right)`](#stdmathremleft-right)
   - [`STD["MATH"]["RAND"]`](#stdmathrand)
     - [`STD["MATH"]["RAND"]["NUMBER"](inclusive_lower_bound, exclusive_upper_bound)`](#stdmathrandnumberinclusive_lower_bound-exclusive_upper_bound)
-    - [`STD["MATH"]["RAND"]["INTEGER"](minimum, maximum)`](#stdmathrandintegerminimum-maximum)
-    - [`STD["MATH"]["RAND"]["CHOICE"](collection)`](#stdmathrandchoicecollection)
-    - [`STD["MATH"]["RAND"]["SHUFFLE"](collection)`](#stdmathrandshufflecollection)
+    - [`STD["MATH"]["RAND"]["WHOLE_NUMBER"](minimum, maximum)`](#stdmathrandwhole_numberminimum-maximum)
   - [`STD["MATH"]["TRIG"]`](#stdmathtrig)
     - [`STD["MATH"]["TRIG"]["SIN"](radians)`](#stdmathtrigsinradians)
     - [`STD["MATH"]["TRIG"]["COS"](radians)`](#stdmathtrigcosradians)
@@ -155,6 +153,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["IS_EMPTY"](collection)`](#stdtypecollectionis_emptycollection)
     - [`STD["TYPE"]["COLLECTION"]["HAS"](collection, key)`](#stdtypecollectionhascollection-key)
     - [`STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`](#stdtypecollectiongetcollection-key_or_index-default)
+    - [`STD["TYPE"]["COLLECTION"]["CHOICE"](collection)`](#stdtypecollectionchoicecollection)
+    - [`STD["TYPE"]["COLLECTION"]["SHUFFLE"](collection)`](#stdtypecollectionshufflecollection)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
     - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
     - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection, deep?)`](#stdtypecollectionfreezecollection-deep)
@@ -1037,13 +1037,13 @@ The inclusive lower bound must be less than the exclusive upper bound.
 
 The returned number may include a decimal part. Stult may generate decimal places up to the implementation's maximum decimal-place limit.
 
-### `STD["MATH"]["RAND"]["INTEGER"](minimum, maximum)`
+### `STD["MATH"]["RAND"]["WHOLE_NUMBER"](minimum, maximum)`
 
-Returns a random integer.
+Returns a random whole number.
 
 ```stult
-STD.MATH.RAND.INTEGER(1, 6)
-STD.MATH.RAND.INTEGER(-10, 10)
+STD.MATH.RAND.WHOLE_NUMBER(1, 6)
+STD.MATH.RAND.WHOLE_NUMBER(-10, 10)
 ```
 
 The result is greater than or equal to `minimum` and less than or equal to `maximum`.
@@ -1052,63 +1052,11 @@ The result is greater than or equal to `minimum` and less than or equal to `maxi
 minimum <= result <= maximum
 ```
 
-Both arguments must be integer numbers.
+Both arguments must be whole numbers.
 
 The minimum must be less than or equal to the maximum.
 
-Large integer bounds are supported, subject to available memory and processing time.
-
-### `STD["MATH"]["RAND"]["CHOICE"](collection)`
-
-Returns one randomly chosen value from a collection.
-
-```stult
-STD.MATH.RAND.CHOICE({"red", "green", "blue"})
-STD.MATH.RAND.CHOICE("abc")
-STD.MATH.RAND.CHOICE({"dog": 50, "cat": 80})
-```
-
-For arrays, the result is one array element.
-
-For strings, the result is a one-character string.
-
-For maps, the result is one map value.
-
-The collection must not be empty.
-
-### `STD["MATH"]["RAND"]["SHUFFLE"](collection)`
-
-Returns a shuffled copy of a collection.
-
-```stult
-STD.MATH.RAND.SHUFFLE({1, 2, 3})
-STD.MATH.RAND.SHUFFLE("abc")
-STD.MATH.RAND.SHUFFLE({"dog": 50, "cat": 80, "chicken": 90})
-```
-
-For arrays, the result is a new array containing the same values in random order.
-
-For strings, the result is a new string containing the same characters in random order.
-
-For maps, the result is a new map with the same keys and entry mutability, but with the existing values randomly reassigned among those keys.
-
-```stult
-scores : {
-	"dog": 50
-	"cat": 80
-	"chicken": 90
-}
-
-STD.MATH.RAND.SHUFFLE(scores)
-# might return:
-# {
-#     "dog": 90
-#     "cat": 50
-#     "chicken": 80
-# }
-```
-
-The original collection is not modified.
+Large whole-number bounds are supported, subject to available memory and processing time.
 
 ## `STD["MATH"]["TRIG"]`
 
@@ -1530,6 +1478,58 @@ STD.TYPE.COLLECTION.GET("cat", 10, "missing") # missing
 `GET` raises a runtime error when the first argument is not a collection, when a map key is not a string, or when an array/string index is not an exact integer number.
 
 The optional default is an ordinary argument, so it is evaluated before `GET` is called.
+
+### `STD["TYPE"]["COLLECTION"]["CHOICE"](collection)`
+
+Returns one randomly chosen value from a collection.
+
+```stult
+STD.TYPE.COLLECTION.CHOICE({"red", "green", "blue"})
+STD.TYPE.COLLECTION.CHOICE("abc")
+STD.TYPE.COLLECTION.CHOICE({"dog": 50, "cat": 80})
+```
+
+For arrays, the result is one array element.
+
+For strings, the result is a one-character string.
+
+For maps, the result is one map value.
+
+The collection must not be empty.
+
+### `STD["TYPE"]["COLLECTION"]["SHUFFLE"](collection)`
+
+Returns a shuffled copy of a collection.
+
+```stult
+STD.TYPE.COLLECTION.SHUFFLE({1, 2, 3})
+STD.TYPE.COLLECTION.SHUFFLE("abc")
+STD.TYPE.COLLECTION.SHUFFLE({"dog": 50, "cat": 80, "chicken": 90})
+```
+
+For arrays, the result is a new array containing the same values in random order.
+
+For strings, the result is a new string containing the same characters in random order.
+
+For maps, the result is a new map with the same keys and entry mutability, but with the existing values randomly reassigned among those keys.
+
+```stult
+scores : {
+	"dog": 50
+	"cat": 80
+	"chicken": 90
+}
+
+STD.TYPE.COLLECTION.SHUFFLE(scores)
+# might return:
+# {
+#     "dog": 90
+#     "cat": 50
+#     "chicken": 80
+# }
+```
+
+The original collection is not modified.
 
 ### `STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`
 

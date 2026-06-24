@@ -127,7 +127,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
   Checks the difference between mathematical modulo and truncating remainder, including negative operands.
 
 - [Random-number generation](../examples/tests/math_rand.stult)  
-  Checks random number, integer, choice and shuffle helpers under `STD["MATH"]["RAND"]`.
+  Checks random number helpers under `STD["MATH"]["RAND"]` and random collection helpers under `STD["TYPE"]["COLLECTION"]`.
 
 ## Standard library
 
