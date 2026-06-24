@@ -348,11 +348,21 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 }
 
 func StdTypeCollectionFreeze(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE expected 1 argument, got %d", len(args))
+	if len(args) < 1 || len(args) > 2 {
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE expected 1 or 2 arguments, got %d", len(args))
 	}
 
 	value := resolveSpecializedValue(args[0])
+
+	deep := false
+	if len(args) == 2 {
+		deepArgument := resolveSpecializedValue(args[1])
+		if deepArgument.Kind != ValueBool {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE argument 2 expected a boolean")
+		}
+
+		deep = deepArgument.Bool
+	}
 
 	switch value.Kind {
 	case ValueMap:
@@ -379,6 +389,10 @@ func StdTypeCollectionFreeze(_ *RuntimeContext, args []Value) (Value, error) {
 
 	default:
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze unknown value kind")
+	}
+
+	if deep {
+		return deepFreezeCollectionValue(value)
 	}
 
 	return freezeCollectionValue(value)

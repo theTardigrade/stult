@@ -2,12 +2,12 @@
 
 EXAMPLE: tests/deep_frozen_aliases.stult
 
-This example checks that FREEZE deeply freezes nested collections and preserves
-aliases.
+This example checks that FREEZE with the deep flag freezes nested collections and
+preserves aliases.
 
-The nested collections are created unfrozen first. Freezing ROOT should also
-freeze the nested array, map and string values that are still held by separate
-bindings.
+The nested collections are created unfrozen first. Deep-freezing ROOT should
+also freeze the nested array, map and string values that are still held by
+separate bindings.
 
 ##
 
@@ -35,7 +35,7 @@ ROOT : {
 	INNER_TEXT
 }
 
-FROZEN_ROOT : FREEZE(ROOT)
+FROZEN_ROOT : FREEZE(ROOT, +)
 
 ASSERT_TRUE(IS_FROZEN(FROZEN_ROOT), "root should be frozen")
 ASSERT_TRUE(IS_FROZEN(INNER_ARRAY), "inner array alias should be frozen")

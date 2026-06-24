@@ -1,0 +1,84 @@
+##
+
+EXAMPLE: tests/frozen_literals.stult
+
+This example checks frozen collection literal syntax.
+
+It verifies that ~ before array, map and string literals freezes only that
+literal, and that frozen collection formatting uses a leading tilde.
+
+##
+
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+
+ASSERT : STD.ERROR.ASSERT
+ASSERT_TRUE : ASSERT.TRUE
+ASSERT_FALSE : ASSERT.FALSE
+ASSERT_EQUAL : ASSERT.EQUAL
+
+COLLECTION : STD.TYPE.COLLECTION
+IS_FROZEN : COLLECTION.IS_FROZEN
+STRING : STD.TYPE.STRING.NEW
+STULTON : STD.DATA.STULTON
+
+ARRAY_VALUE : ~{1, {2, 3}, "nested"}
+MAP_VALUE : ~{
+	.cat : 99
+	.dog : 100
+	.names : {"Fido"}
+}
+STRING_VALUE : ~"dog face"
+EXPLICIT_NESTED : ~{
+	.values : ~{1, 2, 3}
+}
+
+ASSERT_TRUE(IS_FROZEN(ARRAY_VALUE), "frozen array literal should be frozen")
+ASSERT_FALSE(IS_FROZEN(ARRAY_VALUE [1]), "nested array in frozen array literal should stay mutable")
+ASSERT_FALSE(IS_FROZEN(ARRAY_VALUE [2]), "nested string in frozen array literal should stay mutable")
+
+ASSERT_TRUE(IS_FROZEN(MAP_VALUE), "frozen map literal should be frozen")
+ASSERT_FALSE(IS_FROZEN(MAP_VALUE.names), "nested array in frozen map literal should stay mutable")
+ASSERT_FALSE(IS_FROZEN(MAP_VALUE.names [0]), "nested string in frozen map literal should stay mutable")
+ASSERT_TRUE(IS_FROZEN(EXPLICIT_NESTED.values), "nested literal with its own tilde should be frozen")
+
+ASSERT_TRUE(IS_FROZEN(STRING_VALUE), "frozen string literal should be frozen")
+
+array_mutation_failed : -
+?{
+	ARRAY_VALUE [0] : 10
+}|{
+	@array_mutation_failed : +
+}
+ASSERT_TRUE(array_mutation_failed, "frozen array literal should reject mutation")
+
+nested_array_mutation_failed : -
+?{
+	ARRAY_VALUE [1] [0] : 10
+}|{
+	@nested_array_mutation_failed : +
+}
+ASSERT_FALSE(nested_array_mutation_failed, "nested mutable array should allow mutation")
+ASSERT_EQUAL(ARRAY_VALUE [1] [0], 10, "nested mutable array should be changed")
+
+map_mutation_failed : -
+?{
+	MAP_VALUE.cat : 1
+}|{
+	@map_mutation_failed : +
+}
+ASSERT_TRUE(map_mutation_failed, "frozen map literal should reject mutation")
+
+string_mutation_failed : -
+?{
+	STRING_VALUE [0] : "D"
+}|{
+	@string_mutation_failed : +
+}
+ASSERT_TRUE(string_mutation_failed, "frozen string literal should reject mutation")
+
+ASSERT_EQUAL(STRING(ARRAY_VALUE), "~{1, {10, 3}, \"nested\"}", "frozen array display should use leading tilde only where frozen")
+ASSERT_EQUAL(STRING(MAP_VALUE), "~{\"cat\": 99, \"dog\": 100, \"names\": {\"Fido\"}}", "frozen map display should use leading tilde only where frozen")
+ASSERT_EQUAL(STRING(EXPLICIT_NESTED), "~{\"values\": ~{1, 2, 3}}", "explicitly frozen nested literals should display their own tilde")
+ASSERT_FALSE(STULTON.IS_VALID("~{1}"), "STULTON should not accept frozen literal syntax")
+
+WRITE_LINE("frozen literal checks passed")

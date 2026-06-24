@@ -4,8 +4,9 @@ EXAMPLE: tests/frozen_collections.stult
 
 This example checks ordinary frozen collection behaviour.
 
-It verifies that arrays, maps and strings can be frozen and that IS_FROZEN
-reports their frozen state.
+It verifies that arrays, maps and strings can be frozen, that IS_FROZEN reports
+their frozen state, and that FREEZE only deep-freezes when its optional deep flag
+is true.
 
 ##
 
@@ -13,6 +14,7 @@ WRITE_LINE : STD["IO"]["OUTPUT"]["WRITE_LINE"]
 
 ASSERT : STD["ERROR"]["ASSERT"]
 ASSERT_TRUE : ASSERT["TRUE"]
+ASSERT_FALSE : ASSERT["FALSE"]
 ASSERT_EQUAL : ASSERT["EQUAL"]
 
 COLLECTION : STD["TYPE"]["COLLECTION"]
@@ -49,6 +51,26 @@ ASSERT_EQUAL(MAP_VALUE["TYPE"], "language", "map TYPE should be language")
 ASSERT_EQUAL(STRING_VALUE[0], "a", "string index 0 should be a")
 ASSERT_EQUAL(STRING_VALUE[1], "b", "string index 1 should be b")
 ASSERT_EQUAL(STRING_VALUE[2], "c", "string index 2 should be c")
+
+SHALLOW_NESTED : {"inner"}
+SHALLOW_ROOT : FREEZE({SHALLOW_NESTED})
+ASSERT_TRUE(IS_FROZEN(SHALLOW_ROOT), "shallow root should be frozen")
+ASSERT_FALSE(IS_FROZEN(SHALLOW_NESTED), "shallow nested array should stay mutable")
+SHALLOW_NESTED[0] : "changed"
+ASSERT_EQUAL(SHALLOW_ROOT[0][0], "changed", "shallow nested array should remain mutable")
+
+DEEP_NESTED : {"inner"}
+DEEP_ROOT : FREEZE({DEEP_NESTED}, +)
+ASSERT_TRUE(IS_FROZEN(DEEP_ROOT), "deep root should be frozen")
+ASSERT_TRUE(IS_FROZEN(DEEP_NESTED), "deep nested array should be frozen")
+
+deep_nested_mutation_failed : -
+?{
+	DEEP_NESTED[0] : "changed"
+}|{
+	@deep_nested_mutation_failed : +
+}
+ASSERT_TRUE(deep_nested_mutation_failed, "deep nested array should reject mutation")
 
 ASSERT_EQUAL(FREEZE(ARRAY_VALUE), ARRAY_VALUE, "freezing a frozen array should return the same array")
 ASSERT_EQUAL(FREEZE(MAP_VALUE), MAP_VALUE, "freezing a frozen map should return the same map")
