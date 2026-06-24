@@ -252,14 +252,9 @@ func (p *Parser) parseExpressionTail(left Expression, parentPrec int) Expression
 
 func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int, stopBeforeRangePostfix bool) Expression {
 	for {
-		if p.current.Type == TokenLBracket {
-			if stopBeforeRangePostfix && tokensTouch(p.previous, p.current) {
+		if p.current.Type == TokenLBracket && tokensOnSameLine(p.previous, p.current) {
+			if stopBeforeRangePostfix {
 				break
-			}
-
-			if !tokensTouch(p.previous, p.current) {
-				p.errorAtCurrent("expected '[' to touch indexed expression")
-				return nil
 			}
 
 			index, ok := p.parseIndexExpression(left)
