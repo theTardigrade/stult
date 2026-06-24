@@ -1,4 +1,3 @@
-
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
