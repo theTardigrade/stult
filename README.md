@@ -52,7 +52,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Dot access for maps](#dot-access-for-maps)
     - [Cloning collections](#cloning-collections)
     - [Freezing collections](#freezing-collections)
-    - [Ranges](#ranges)
+    - [Using ranges to create arrays](#using-ranges-to-create-arrays)
+	- [Range indexing](#range-indexing)
   - [Functions](#functions)
     - [Calling functions](#calling-functions)
 	- [Storing functions](#storing-functions)
@@ -916,7 +917,7 @@ In practical terms, this means:
 - frozen maps cannot have entries added or changed *and*
 - frozen strings cannot have characters replaced or appended.
 
-#### Ranges
+#### Using ranges to create arrays
 
 Arrays can include ranges:
 
@@ -942,6 +943,23 @@ And they can descend:
 ```stult
 down : {10..2:2}         # {10, 8, 6, 4, 2}
 ```
+
+#### Range indexing
+
+Arrays and strings also support range indexing. Range indexing returns a new mutable array or string:
+
+```stult
+text : "this is a test"
+text[2..10:2]   # "i sat"
+
+values : {1, 2, 3, 4, 5}
+values[0...3]   # {1, 2, 3}
+values[4..2]    # {5, 4, 3}
+```
+
+Range indexing uses the same range syntax as array ranges: `..` includes the end, `...` excludes the end, and `:step` can be used to skip through the range.
+
+Maps do not support range indexing.
 
 ### Functions
 
