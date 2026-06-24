@@ -1,0 +1,28 @@
+ASSERT : STD.ERROR.ASSERT
+
+values : {"red", "green", "blue"}
+
+ASSERT.EQUAL(values[0], "red")
+ASSERT.EQUAL(values [1], "green")
+ASSERT.EQUAL(values [
+	2
+], "blue")
+
+values [3] : "yellow"
+ASSERT.EQUAL(values[3], "yellow")
+
+text : "abc"
+ASSERT.EQUAL(text [1], "b")
+
+matrix : {
+	{1, 2}
+	{3, 4}
+}
+
+ASSERT.EQUAL(matrix [1] [0], 3)
+
+record : {
+	"items": values
+}
+
+ASSERT.EQUAL(record["items"] [3], "yellow")
