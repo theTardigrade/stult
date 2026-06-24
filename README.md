@@ -760,6 +760,23 @@ values[0]
 person["NAME"]
 ```
 
+The usual style is to write the index with no space before `[`. Horizontal whitespace before `[` is also accepted, so long as the `[` stays on the same line as the value being indexed:
+
+```stult
+values[0]   # idiomatic
+values [0]  # valid, but not idiomatic
+```
+
+Once the opening `[` has started the index, the index expression can go on separate lines:
+
+```stult
+values [
+	0
+]
+```
+
+However, a newline before the opening `[` does not start an index expression.
+
 #### Dot access for maps
 
 Map entries with identifier-shaped string keys can also be accessed with dot access.
