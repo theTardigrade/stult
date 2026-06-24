@@ -2,7 +2,8 @@
 
 EXAMPLE: tests/math_rand.stult
 
-This example checks random helpers under STD["MATH"]["RAND"].
+This example checks random number helpers under STD["MATH"]["RAND"] and
+random collection helpers under STD["TYPE"]["COLLECTION"].
 
 The exact random values are not tested. Instead, this checks type, bounds,
 collection sizes and map-key preservation.
@@ -14,6 +15,21 @@ RAND : STD["MATH"]["RAND"]
 TYPE : STD["TYPE"]
 COLLECTION : STD["TYPE"]["COLLECTION"]
 MAP : STD["TYPE"]["MAP"]
+
+ASSERT["FALSE"](
+	COLLECTION["HAS"](RAND, "INTEGER"),
+	"RAND.INTEGER should no longer exist"
+)
+
+ASSERT["FALSE"](
+	COLLECTION["HAS"](RAND, "CHOICE"),
+	"RAND.CHOICE should no longer exist"
+)
+
+ASSERT["FALSE"](
+	COLLECTION["HAS"](RAND, "SHUFFLE"),
+	"RAND.SHUFFLE should no longer exist"
+)
 
 number : RAND["NUMBER"](0, 1)
 
@@ -44,51 +60,51 @@ ASSERT["TRUE"](
 	"RAND.NUMBER should support positive exclusive upper bounds"
 )
 
-integer : RAND["INTEGER"](1, 6)
+whole_number : RAND["WHOLE_NUMBER"](1, 6)
 
 ASSERT["TRUE"](
-	TYPE["IS_NUMBER"](integer),
-	"RAND.INTEGER should return a number"
+	TYPE["IS_NUMBER"](whole_number),
+	"RAND.WHOLE_NUMBER should return a number"
 )
 
 ASSERT["TRUE"](
-	integer >= 1,
-	"RAND.INTEGER should include the minimum"
+	whole_number >= 1,
+	"RAND.WHOLE_NUMBER should include the minimum"
 )
 
 ASSERT["TRUE"](
-	integer <= 6,
-	"RAND.INTEGER should include the maximum"
+	whole_number <= 6,
+	"RAND.WHOLE_NUMBER should include the maximum"
 )
 
-huge_integer : RAND["INTEGER"](
+huge_whole_number : RAND["WHOLE_NUMBER"](
 	999999999999999999999999999999999999990,
 	999999999999999999999999999999999999999
 )
 
 ASSERT["TRUE"](
-	huge_integer >= 999999999999999999999999999999999999990,
-	"RAND.INTEGER should support huge integer lower bounds"
+	huge_whole_number >= 999999999999999999999999999999999999990,
+	"RAND.WHOLE_NUMBER should support huge whole-number lower bounds"
 )
 
 ASSERT["TRUE"](
-	huge_integer <= 999999999999999999999999999999999999999,
-	"RAND.INTEGER should support huge integer upper bounds"
+	huge_whole_number <= 999999999999999999999999999999999999999,
+	"RAND.WHOLE_NUMBER should support huge whole-number upper bounds"
 )
 
 items : {"red", "green", "blue"}
-choice : RAND["CHOICE"](items)
+choice : COLLECTION["CHOICE"](items)
 
 ASSERT["TRUE"](
 	choice = "red" | choice = "green" | choice = "blue",
-	"RAND.CHOICE should choose an array element"
+	"TYPE.COLLECTION.CHOICE should choose an array element"
 )
 
-letter : RAND["CHOICE"]("abc")
+letter : COLLECTION["CHOICE"]("abc")
 
 ASSERT["TRUE"](
 	letter = "a" | letter = "b" | letter = "c",
-	"RAND.CHOICE should choose one string character"
+	"TYPE.COLLECTION.CHOICE should choose one string character"
 )
 
 scores : {
@@ -97,79 +113,79 @@ scores : {
 	"chicken": 90
 }
 
-score_choice : RAND["CHOICE"](scores)
+score_choice : COLLECTION["CHOICE"](scores)
 
 ASSERT["TRUE"](
 	score_choice = 50 | score_choice = 80 | score_choice = 90,
-	"RAND.CHOICE should choose a map value"
+	"TYPE.COLLECTION.CHOICE should choose a map value"
 )
 
-shuffled_items : RAND["SHUFFLE"](items)
+shuffled_items : COLLECTION["SHUFFLE"](items)
 
 ASSERT["EQUAL"](
 	COLLECTION["SIZE"](shuffled_items),
 	COLLECTION["SIZE"](items),
-	"RAND.SHUFFLE should preserve array size"
+	"TYPE.COLLECTION.SHUFFLE should preserve array size"
 )
 
 ASSERT["TRUE"](
 	shuffled_items[0] = "red" | shuffled_items[0] = "green" | shuffled_items[0] = "blue",
-	"RAND.SHUFFLE should keep an existing value at array position 0"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing value at array position 0"
 )
 
 ASSERT["TRUE"](
 	shuffled_items[1] = "red" | shuffled_items[1] = "green" | shuffled_items[1] = "blue",
-	"RAND.SHUFFLE should keep an existing value at array position 1"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing value at array position 1"
 )
 
 ASSERT["TRUE"](
 	shuffled_items[2] = "red" | shuffled_items[2] = "green" | shuffled_items[2] = "blue",
-	"RAND.SHUFFLE should keep an existing value at array position 2"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing value at array position 2"
 )
 
-shuffled_text : RAND["SHUFFLE"]("abc")
+shuffled_text : COLLECTION["SHUFFLE"]("abc")
 
 ASSERT["EQUAL"](
 	COLLECTION["SIZE"](shuffled_text),
 	3,
-	"RAND.SHUFFLE should preserve string length"
+	"TYPE.COLLECTION.SHUFFLE should preserve string length"
 )
 
-shuffled_scores : RAND["SHUFFLE"](scores)
+shuffled_scores : COLLECTION["SHUFFLE"](scores)
 shuffled_keys : MAP["KEYS"](shuffled_scores)
 
 ASSERT["EQUAL"](
 	COLLECTION["SIZE"](shuffled_scores),
 	3,
-	"RAND.SHUFFLE should preserve map size"
+	"TYPE.COLLECTION.SHUFFLE should preserve map size"
 )
 
 ASSERT["TRUE"](
 	COLLECTION["HAS"](shuffled_scores, "dog"),
-	"RAND.SHUFFLE should preserve map key dog"
+	"TYPE.COLLECTION.SHUFFLE should preserve map key dog"
 )
 
 ASSERT["TRUE"](
 	COLLECTION["HAS"](shuffled_scores, "cat"),
-	"RAND.SHUFFLE should preserve map key cat"
+	"TYPE.COLLECTION.SHUFFLE should preserve map key cat"
 )
 
 ASSERT["TRUE"](
 	COLLECTION["HAS"](shuffled_scores, "chicken"),
-	"RAND.SHUFFLE should preserve map key chicken"
+	"TYPE.COLLECTION.SHUFFLE should preserve map key chicken"
 )
 
 ASSERT["TRUE"](
 	shuffled_scores["dog"] = 50 | shuffled_scores["dog"] = 80 | shuffled_scores["dog"] = 90,
-	"RAND.SHUFFLE should keep an existing map value under dog"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing map value under dog"
 )
 
 ASSERT["TRUE"](
 	shuffled_scores["cat"] = 50 | shuffled_scores["cat"] = 80 | shuffled_scores["cat"] = 90,
-	"RAND.SHUFFLE should keep an existing map value under cat"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing map value under cat"
 )
 
 ASSERT["TRUE"](
 	shuffled_scores["chicken"] = 50 | shuffled_scores["chicken"] = 80 | shuffled_scores["chicken"] = 90,
-	"RAND.SHUFFLE should keep an existing map value under chicken"
+	"TYPE.COLLECTION.SHUFFLE should keep an existing map value under chicken"
 )
