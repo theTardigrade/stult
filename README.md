@@ -898,14 +898,11 @@ CONFIG : ~{
 
 WRITE_LINE(IS_FROZEN(CONFIG))         # +
 WRITE_LINE(IS_FROZEN(CONFIG.values))  # -
+
+WRITE_LINE(CONFIG.locked_values)      # ~{4, 5, 6}
 ```
 
-Frozen collections are displayed with a leading `~`:
-
-```stult
-WRITE_LINE(~{1, 2, 3})
-WRITE_LINE(~"example text")
-```
+As seen above, frozen collections are displayed with a leading `~`.
 
 Existing collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`. By default this is shallow. Pass `+` as the second argument to freeze nested collections too.
 
