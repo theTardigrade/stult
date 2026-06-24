@@ -775,7 +775,7 @@ values [
 ]
 ```
 
-However, placing a newline before the opening `[` would not start an index expression.
+However, a newline before the opening `[` does not start an index expression.
 
 #### Dot access for maps
 
@@ -881,32 +881,24 @@ WRITE_LINE(copy.nested.value)     # 2
 
 #### Freezing collections
 
-Arrays, maps and strings can be created frozen by putting `~` before the literal.
+Collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`.
 
-This freezes the literal itself. Nested collections are frozen only when they have their own `~`.
+Freezing is deep, so nested arrays, maps and strings are frozen too.
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+
+FREEZE : STD.TYPE.COLLECTION.FREEZE
 IS_FROZEN : STD.TYPE.COLLECTION.IS_FROZEN
 
-CONFIG : ~{
-	.name : "demo"
-	.values : {1, 2, 3}
-	.locked_values : ~{4, 5, 6}
-}
+CONFIG : FREEZE({
+	"name": "demo"
+	"values": {1, 2, 3}
+})
 
-WRITE_LINE(IS_FROZEN(CONFIG))         # +
-WRITE_LINE(IS_FROZEN(CONFIG.values))  # -
+WRITE_LINE(IS_FROZEN(CONFIG))
+WRITE_LINE(IS_FROZEN(CONFIG["values"]))
 ```
-
-Frozen collections are displayed with a leading `~`:
-
-```stult
-WRITE_LINE(~{1, 2, 3})
-WRITE_LINE(~"example text")
-```
-
-Existing collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`. By default this is shallow. Pass `+` as the second argument to freeze nested collections too.
 
 A frozen collection cannot be internally modified, even when it is held by a mutable binding.
 
