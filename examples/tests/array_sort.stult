@@ -1,0 +1,65 @@
+##
+
+EXAMPLE: tests/array_sort.stult
+
+This example checks STD.TYPE.ARRAY.SORT.
+
+SORT returns a new mutable array and leaves the input alone. It sorts values by
+type rank first, then uses natural order for booleans, numbers and strings.
+Arrays, maps, functions and builtin functions compare equal within their own
+kind, so stable sorting preserves their original order inside each kind.
+
+##
+
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+
+ASSERT : STD.ERROR.ASSERT
+ASSERT_TRUE : ASSERT.TRUE
+ASSERT_FALSE : ASSERT.FALSE
+ASSERT_EQUAL : ASSERT.EQUAL
+
+ARRAY : STD.TYPE.ARRAY
+COLLECTION : STD.TYPE.COLLECTION
+SORT : ARRAY.SORT
+STRING : STD.TYPE.STRING.NEW
+IS_FROZEN : COLLECTION.IS_FROZEN
+
+numbers : {3, 10, 2, 1}
+ASSERT_EQUAL(STRING(SORT(numbers)), "{1, 2, 3, 10}", "numbers should sort numerically")
+ASSERT_EQUAL(STRING(numbers), "{3, 10, 2, 1}", "sort should not mutate the input array")
+
+strings : {"banana", "apple", "cat"}
+ASSERT_EQUAL(STRING(SORT(strings)), "{\"apple\", \"banana\", \"cat\"}", "strings should sort lexicographically")
+
+mixed : {"b", 10, _, "a", 2, -, +}
+ASSERT_EQUAL(STRING(SORT(mixed)), "{_, -, +, 2, 10, \"a\", \"b\"}", "mixed values should sort by type rank")
+
+nested_a : {2}
+nested_b : {1}
+map_a : {.name : "a"}
+map_b : {.name : "b"}
+structures : {map_a, nested_a, map_b, nested_b}
+ASSERT_EQUAL(STRING(SORT(structures)), "{{2}, {1}, {\"name\": \"a\"}, {\"name\": \"b\"}}", "arrays and maps should keep stable order within kind")
+
+function_value : { ()
+	(_)
+}
+callables : {STD.IO.OUTPUT.WRITE_LINE, function_value}
+ASSERT_EQUAL(STRING(SORT(callables)), "{<function>, <builtin function>}", "functions should sort before builtin functions")
+
+frozen_values : ~{3, 2, 1}
+sorted_frozen_values : SORT(frozen_values)
+ASSERT_EQUAL(STRING(sorted_frozen_values), "{1, 2, 3}", "sort should accept frozen arrays")
+ASSERT_FALSE(IS_FROZEN(sorted_frozen_values), "sort should return a mutable array")
+sorted_frozen_values[0] : 99
+ASSERT_EQUAL(STRING(sorted_frozen_values), "{99, 2, 3}", "sort result should be mutable")
+
+not_array_failed : -
+?{
+	SORT("abc")
+}|{
+	@not_array_failed : +
+}
+ASSERT_TRUE(not_array_failed, "sort should reject non-arrays")
+
+WRITE_LINE("array sort checks passed")
