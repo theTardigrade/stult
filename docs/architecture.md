@@ -766,6 +766,8 @@ Overflow chunks are keyed by decimal string chunk indices. This keeps ordinary a
 
 Array helper methods such as `Len`, `Get`, `Set`, `Append`, `Clear` and `ForEach` are the source of truth for whole-array behaviour. Code that intentionally works only with the ordinary segment may use the ordinary slice directly, but formatting, cloning, freezing, iteration, standard-library traversal and serialisation should use the method layer so overflow elements are preserved.
 
+`STD["TYPE"]["ARRAY"]["SORT"]` also uses the array method layer to copy elements before sorting. The sort returns a new mutable array and is stable; values that do not have a natural same-kind ordering, such as arrays, maps and functions, compare equal within their kind so their relative order is preserved.
+
 Strings remain contiguous Unicode code-point slices in the reference implementation. They are mutable unless frozen, but unlike arrays they are still bounded by the host representation and by operations that convert to or from Go strings. Making strings chunked or streaming would require a larger representation and standard-library refactor.
 
 ### Immutability versus freezing

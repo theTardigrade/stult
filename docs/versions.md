@@ -14,6 +14,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Added range indexing for arrays and strings, such as `items[0...3]` and `text[2..10:2]`.
 
+#### Standard library
+
+* Added `STD.TYPE.ARRAY.SORT` for returning a stable sorted copy of an array.
+
 ### v0.9.6
 
 #### Language

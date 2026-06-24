@@ -152,5 +152,8 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Array reverse](../examples/tests/array_reverse.stult)  
   Checks that `STD.TYPE.ARRAY.REVERSE` returns a reversed mutable array without modifying the input array, including frozen input arrays and reused element values.
 
+- [Array sort](../examples/tests/array_sort.stult)  
+  Checks that `STD.TYPE.ARRAY.SORT` returns a stable sorted mutable array without modifying the input array, including mixed value kinds and frozen input arrays.
+
 - [Map entries](../examples/tests/map_entries.stult)  
   Checks that `STD.TYPE.MAP.ENTRIES` returns sorted shallow key-value pairs, keeps nested maps and arrays as values, returns mutable arrays and returns void for non-map values.

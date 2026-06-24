@@ -1357,6 +1357,39 @@ Frozen input arrays are accepted.
 
 Raises a runtime error if the value is not an array.
 
+### `STD["TYPE"]["ARRAY"]["SORT"](array)`
+
+Returns a new unfrozen array containing the input array's elements in ascending sorted order.
+
+```stult
+values : {3, 10, 2}
+sorted : STD.TYPE.ARRAY.SORT(values) # {2, 3, 10}
+```
+
+The original array is not modified.
+
+Element values are reused rather than deep-cloned.
+
+Frozen input arrays are accepted.
+
+The sort is stable. Values are ordered by kind first:
+
+```text
+void, boolean, number, string, array, map, function, builtin function
+```
+
+Values of the same kind are compared as follows:
+
+- void values compare equal,
+- booleans sort false before true,
+- numbers sort by numeric value,
+- strings sort lexicographically by their text contents and
+- arrays, maps, functions and builtin functions compare equal within their own kind.
+
+Because the sort is stable, arrays, maps, functions and builtin functions keep their original relative order within each kind.
+
+Raises a runtime error if the value is not an array.
+
 ## `STD["TYPE"]["BOOL"]`
 
 Boolean constants and conversion helpers.
