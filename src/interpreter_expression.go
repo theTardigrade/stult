@@ -84,6 +84,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *IndexExpression:
 		return i.evalIndexExpression(e)
 
+	case *RangeIndexExpression:
+		return i.evalRangeIndexExpression(e)
+
 	case *LeadingDotReceiverExpression:
 		return i.evalLeadingDotReceiverExpression(e)
 
@@ -341,6 +344,33 @@ func (i *Interpreter) evalRangeArrayElement(element *RangeArrayElement) ([]Value
 	}
 
 	return stultRangeValues(startValue, endValue, stepValue, element.IsInclusive)
+}
+
+func (i *Interpreter) evalRangeIndexExpression(expr *RangeIndexExpression) (Value, error) {
+	object, err := i.evalExpression(expr.Object)
+	if err != nil {
+		return Value{}, err
+	}
+
+	start, err := i.evalExpression(expr.Start)
+	if err != nil {
+		return Value{}, err
+	}
+
+	end, err := i.evalExpression(expr.End)
+	if err != nil {
+		return Value{}, err
+	}
+
+	step := NewVoidValue()
+	if expr.Step != nil {
+		step, err = i.evalExpression(expr.Step)
+		if err != nil {
+			return Value{}, err
+		}
+	}
+
+	return rangeIndexValue(object, start, end, step, expr.IsInclusive)
 }
 
 func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) {

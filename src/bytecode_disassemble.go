@@ -293,7 +293,7 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 			builder.WriteString(", exclusive")
 		}
 
-	case BytecodeOpBuildRange:
+	case BytecodeOpBuildRange, BytecodeOpRangeIndex:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 
 		if instruction.Operand == 1 {

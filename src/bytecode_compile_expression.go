@@ -68,6 +68,42 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 		compiler.chunk.EmitAt(BytecodeOpIndex, compiler.sourceSpanForExpression(expression))
 		return nil
 
+	case *RangeIndexExpression:
+		if err := compiler.compileExpression(expression.Object); err != nil {
+			return err
+		}
+
+		if err := compiler.compileExpression(expression.Start); err != nil {
+			return err
+		}
+
+		if err := compiler.compileExpression(expression.End); err != nil {
+			return err
+		}
+
+		if expression.Step == nil {
+			compiler.chunk.EmitAt(
+				BytecodeOpLoadVoid,
+				compiler.sourceSpanForExpression(expression.End),
+			)
+		} else {
+			if err := compiler.compileExpression(expression.Step); err != nil {
+				return err
+			}
+		}
+
+		operand := 0
+		if expression.IsInclusive {
+			operand = 1
+		}
+
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpRangeIndex,
+			operand,
+			compiler.sourceSpanForExpression(expression),
+		)
+		return nil
+
 	case *CallExpression:
 		if err := compiler.compileExpression(expression.Callee); err != nil {
 			return err

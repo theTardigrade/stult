@@ -204,7 +204,7 @@ func stdDataStultonExpressionName(expr Expression) string {
 	case *BinaryExpression:
 		return "operators"
 
-	case *IndexExpression:
+	case *IndexExpression, *RangeIndexExpression:
 		return "index expressions"
 
 	case *FunctionLiteral:

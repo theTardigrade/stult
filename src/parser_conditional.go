@@ -102,6 +102,7 @@ func (p *Parser) finishConditionalStatement(firstCondition Expression, firstClos
 }
 
 func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
+	openBracket := p.current
 	p.advance() // consume "["
 
 	p.skipNewlines()
@@ -112,9 +113,46 @@ func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
 		return nil, false
 	}
 
+	if p.current.Type == TokenRangeInclusive || p.current.Type == TokenRangeExclusive {
+		rangeToken := p.current
+		p.advance()
+
+		end := p.parseRangeEndExpression()
+		if end == nil {
+			p.errorAtToken(rangeToken, "expected range index end expression")
+			return nil, false
+		}
+
+		var step Expression
+		if p.current.Type == TokenColon {
+			var ok bool
+			step, ok = p.parseRangeStepExpression()
+			if !ok {
+				return nil, false
+			}
+		}
+
+		p.skipNewlines()
+
+		if !p.expectCurrent(TokenRBracket, "expected ']' after range index expression") {
+			return nil, false
+		}
+
+		p.advance()
+
+		return &RangeIndexExpression{
+			Object:      object,
+			Start:       index,
+			End:         end,
+			Step:        step,
+			IsInclusive: rangeToken.Type == TokenRangeInclusive,
+		}, true
+	}
+
 	p.skipNewlines()
 
 	if !p.expectCurrent(TokenRBracket, "expected ']' after index expression") {
+		p.errorAtToken(openBracket, "unterminated index expression")
 		return nil, false
 	}
 

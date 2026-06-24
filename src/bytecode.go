@@ -34,6 +34,7 @@ const (
 	BytecodeOpMakeFunction
 	BytecodeOpLoadDotMap
 	BytecodeOpIndex
+	BytecodeOpRangeIndex
 	BytecodeOpCall
 
 	BytecodeOpIteratorInit
@@ -314,6 +315,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpIndex:
 		return "INDEX"
+
+	case BytecodeOpRangeIndex:
+		return "RANGE_INDEX"
 
 	case BytecodeOpCall:
 		return "CALL"

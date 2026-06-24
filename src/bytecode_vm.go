@@ -324,6 +324,35 @@ func (vm *BytecodeVM) executeInstruction(
 		vm.pushValue(value)
 		return Value{}, false, nil
 
+	case BytecodeOpRangeIndex:
+		step, err := vm.popValue()
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		end, err := vm.popValue()
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		start, err := vm.popValue()
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		object, err := vm.popValue()
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		value, err := rangeIndexValue(object, start, end, step, instruction.Operand == 1)
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		vm.pushValue(value)
+		return Value{}, false, nil
+
 	case BytecodeOpCall:
 		if err := vm.callValue(instruction.Operand); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())

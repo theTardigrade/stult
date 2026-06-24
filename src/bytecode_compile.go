@@ -402,6 +402,9 @@ func (compiler *BytecodeCompiler) sourceSpanForExpression(expression Expression)
 	case *IndexExpression:
 		return compiler.sourceSpanForExpression(expression.Object)
 
+	case *RangeIndexExpression:
+		return compiler.sourceSpanForExpression(expression.Object)
+
 	case *FunctionLiteral:
 		return compiler.sourceSpanFromToken(expression.Token)
 

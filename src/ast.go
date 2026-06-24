@@ -215,6 +215,16 @@ type IndexExpression struct {
 
 func (*IndexExpression) expressionNode() {}
 
+type RangeIndexExpression struct {
+	Object      Expression
+	Start       Expression
+	End         Expression
+	Step        Expression
+	IsInclusive bool
+}
+
+func (*RangeIndexExpression) expressionNode() {}
+
 type LeadingDotReceiverExpression struct {
 	Token Token
 }
