@@ -1,0 +1,30 @@
+ASSERT : STD.ERROR.ASSERT
+
+ADD : { (A, B)
+	(A + B)
+}
+
+MAKE_ADDER : { (amount)
+	({ (value)
+		(value + amount)
+	})
+}
+
+TOOLS : {
+	.ADD : ADD
+}
+
+ASSERT.EQUAL(ADD (2, 3), 5)
+
+ASSERT.EQUAL(
+	ADD (
+		4
+		5
+	)
+	9
+)
+
+ASSERT.EQUAL(TOOLS.ADD (6, 7), 13)
+ASSERT.EQUAL(TOOLS["ADD"] (8, 9), 17)
+ASSERT.EQUAL(MAKE_ADDER(10) (5), 15)
+ASSERT.EQUAL(MAKE_ADDER (20) (5), 25)
