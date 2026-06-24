@@ -13,6 +13,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 #### Language
 
 * Allowed same-line horizontal whitespace between a function callee and its opening call parenthesis, while keeping newline-separated forms invalid.
+* Allowed same-line horizontal whitespace between an indexed expression and its opening square bracket, while keeping newline-separated forms invalid.
 
 ### v0.9.5
 

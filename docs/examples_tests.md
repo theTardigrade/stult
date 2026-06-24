@@ -36,6 +36,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Collection loop parameters](../examples/tests/collection_loop_parameters.stult)  
   Checks that collection loops provide value, key, collection and position parameters correctly.
 
+- [Index spacing](../examples/tests/index_spacing.stult)  
+  Checks that index expressions may use same-line horizontal whitespace before the opening square bracket, including multiline index expressions and chained indexes.
+
 ## Loops
 
 - [Looping over functions](../examples/tests/function_loop.stult)  
