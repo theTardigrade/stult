@@ -4,7 +4,7 @@ import "fmt"
 
 func NewStdErrorMap() Value {
 	entries := map[string]Binding{
-		"ASSERT": NewImmutableBinding(NewStdAssertMap()),
+		"ASSERT": NewImmutableBinding(NewStdErrorAssertMap()),
 		"RAISE":  NewImmutableBinding(NewBuiltinFunctionValue(StdErrorRaise)),
 	}
 

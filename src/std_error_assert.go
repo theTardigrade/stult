@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func NewStdAssertMap() Value {
+func NewStdErrorAssertMap() Value {
 	entries := map[string]Binding{
 		"EQUAL": NewImmutableBinding(NewBuiltinFunctionValue(StdAssertEqual)),
 		"FALSE": NewImmutableBinding(NewBuiltinFunctionValue(StdAssertFalse)),
