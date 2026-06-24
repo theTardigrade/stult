@@ -95,6 +95,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Optional parameters](../examples/tests/optional_parameters.stult)  
   Checks that optional user-function parameters receive void when omitted and that variadic parameters still receive an empty array when no remaining arguments are supplied.
 
+- [Function call spacing](../examples/tests/function_call_spacing.stult)  
+  Checks that function calls may use same-line horizontal whitespace before the opening parenthesis, including multiline argument lists and chained calls.
+
 ## Numbers
 
 - [Huge numbers](../examples/tests/huge_numbers.stult)  
