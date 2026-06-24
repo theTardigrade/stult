@@ -286,7 +286,7 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 			continue
 		}
 
-		if p.current.Type == TokenLParen && tokensTouch(p.previous, p.current) {
+		if p.current.Type == TokenLParen && tokensOnSameLine(p.previous, p.current) {
 			call, ok := p.parseCallExpression(left)
 			if !ok {
 				return nil
