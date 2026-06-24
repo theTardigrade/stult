@@ -11,6 +11,14 @@ func (v Value) PrintString() string {
 
 	switch v.Kind {
 	case ValueString:
+		if v.Text == nil {
+			return ""
+		}
+
+		if v.Text.IsFrozen {
+			return v.String()
+		}
+
 		return v.Text.String()
 	default:
 		return v.String()
@@ -58,7 +66,16 @@ func (state *valueFormatState) formatValue(v Value) string {
 		return "-"
 
 	case ValueString:
-		return strconv.Quote(v.Text.String())
+		if v.Text == nil {
+			return "\"\""
+		}
+
+		text := strconv.Quote(v.Text.String())
+		if v.Text.IsFrozen {
+			return "~" + text
+		}
+
+		return text
 
 	case ValueMap:
 		return state.formatMap(v.Map)

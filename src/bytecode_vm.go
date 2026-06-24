@@ -284,6 +284,13 @@ func (vm *BytecodeVM) executeInstruction(
 
 		return Value{}, false, nil
 
+	case BytecodeOpFreezeCollection:
+		if err := vm.freezeCollectionFromStack(); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
 	case BytecodeOpMakeFunction:
 		if err := vm.makeFunction(instruction.Operand); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())

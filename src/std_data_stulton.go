@@ -99,6 +99,10 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		return stdDataStultonNumberValue(e.Value)
 
 	case *StringLiteral:
+		if e.Frozen {
+			return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow frozen string literals")
+		}
+
 		return NewStringValue(e.Value), nil
 
 	case *PrefixExpression:
@@ -114,6 +118,10 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow prefix operator %q", e.Operator)
 
 	case *ArrayLiteral:
+		if e.Frozen {
+			return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow frozen array literals")
+		}
+
 		elements := make([]Value, 0, len(e.Elements))
 
 		for _, element := range e.Elements {
@@ -133,6 +141,10 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 		return NewArrayValue(elements, false), nil
 
 	case *MapLiteral:
+		if e.Frozen {
+			return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow frozen map literals")
+		}
+
 		entries := make(map[string]Binding)
 
 		for _, entry := range e.Entries {

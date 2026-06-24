@@ -83,6 +83,12 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeRangePostf
 		}
 		p.advance()
 
+	case TokenTilde:
+		left = p.parseFrozenCollectionLiteral()
+		if left == nil {
+			return nil
+		}
+
 	case TokenIdentifier:
 		if p.current.Literal == "_" {
 			left = &VoidLiteral{
@@ -181,6 +187,7 @@ func tokenCanStartExpression(tokenType TokenType) bool {
 		TokenString,
 		TokenIdentifier,
 		TokenAt,
+		TokenTilde,
 		TokenDot,
 		TokenLParen,
 		TokenLBrace:

@@ -5,12 +5,6 @@ import (
 	"math/big"
 )
 
-type collectionFreezeState struct {
-	maps    map[*Map]bool
-	arrays  map[*Array]bool
-	strings map[*String]bool
-}
-
 type collectionCloneState struct {
 	maps    map[*Map]*Map
 	arrays  map[*Array]*Array
@@ -387,7 +381,7 @@ func StdTypeCollectionFreeze(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze unknown value kind")
 	}
 
-	return deepFreezeCollectionValue(value, newCollectionFreezeState())
+	return freezeCollectionValue(value)
 }
 
 func StdTypeCollectionIsFrozen(_ *RuntimeContext, args []Value) (Value, error) {
@@ -428,107 +422,6 @@ func StdTypeCollectionIsFrozen(_ *RuntimeContext, args []Value) (Value, error) {
 
 	default:
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_FROZEN cannot inspect unknown value kind")
-	}
-}
-
-func newCollectionFreezeState() *collectionFreezeState {
-	return &collectionFreezeState{
-		maps:    make(map[*Map]bool),
-		arrays:  make(map[*Array]bool),
-		strings: make(map[*String]bool),
-	}
-}
-
-func deepFreezeCollectionValue(value Value, state *collectionFreezeState) (Value, error) {
-	value = resolveSpecializedValue(value)
-
-	switch value.Kind {
-	case ValueMap:
-		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze invalid map")
-		}
-
-		if state.maps[value.Map] {
-			return value, nil
-		}
-
-		state.maps[value.Map] = true
-		value.Map.IsFrozen = true
-
-		for key, binding := range value.Map.Entries {
-			frozenValue, err := deepFreezeNestedCollectionValue(binding.Value, state)
-			if err != nil {
-				return Value{}, err
-			}
-
-			binding.Value = frozenValue
-			value.Map.Entries[key] = binding
-		}
-
-		return value, nil
-
-	case ValueArray:
-		if value.Array == nil {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze invalid array")
-		}
-
-		if state.arrays[value.Array] || value.Array.IsFrozen {
-			return value, nil
-		}
-
-		state.arrays[value.Array] = true
-
-		if err := value.Array.ForEach(func(index *Number, element Value) error {
-			frozenValue, err := deepFreezeNestedCollectionValue(element, state)
-			if err != nil {
-				return err
-			}
-
-			return value.Array.Set(index, frozenValue)
-		}); err != nil {
-			return Value{}, err
-		}
-
-		value.Array.IsFrozen = true
-		return value, nil
-
-	case ValueString:
-		if value.Text == nil {
-			return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze invalid string")
-		}
-
-		if state.strings[value.Text] {
-			return value, nil
-		}
-
-		state.strings[value.Text] = true
-		value.Text.IsFrozen = true
-
-		return value, nil
-
-	default:
-		return value, nil
-	}
-}
-
-func deepFreezeNestedCollectionValue(value Value, state *collectionFreezeState) (Value, error) {
-	value = resolveSpecializedValue(value)
-
-	switch value.Kind {
-	case ValueMap,
-		ValueArray,
-		ValueString:
-		return deepFreezeCollectionValue(value, state)
-
-	case ValueVoid,
-		ValueNumber,
-		ValueBool,
-		ValueFunction,
-		ValueBuiltinFunction:
-		return value, nil
-
-	default:
-		return Value{}, fmt.Errorf("TYPE.COLLECTION.FREEZE cannot freeze unknown value kind")
 	}
 }
 

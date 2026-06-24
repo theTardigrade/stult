@@ -14,7 +14,7 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 		return NewNumberValueFromString(e.Value)
 
 	case *StringLiteral:
-		return NewStringValue(e.Value), nil
+		return NewStringValueWithFrozen(e.Value, e.Frozen), nil
 
 	case *IdentifierExpression:
 		var binding Binding
@@ -263,7 +263,12 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 		}
 	}
 
-	return Value{Kind: ValueMap, Map: m}, nil
+	value := Value{Kind: ValueMap, Map: m}
+	if lit.Frozen {
+		return freezeCollectionValue(value)
+	}
+
+	return value, nil
 }
 
 func (i *Interpreter) evalLeadingDotReceiverExpression(expr *LeadingDotReceiverExpression) (Value, error) {
@@ -290,7 +295,12 @@ func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
 		elements = append(elements, values...)
 	}
 
-	return NewArrayValue(elements, false), nil
+	value := NewArrayValue(elements, false)
+	if lit.Frozen {
+		return freezeCollectionValue(value)
+	}
+
+	return value, nil
 }
 
 func (i *Interpreter) evalArrayElement(element ArrayElement) ([]Value, error) {

@@ -160,8 +160,9 @@ type MatchPattern struct {
 }
 
 type StringLiteral struct {
-	Token Token
-	Value string
+	Token  Token
+	Value  string
+	Frozen bool
 }
 
 func (*StringLiteral) expressionNode() {}
@@ -169,6 +170,7 @@ func (*StringLiteral) expressionNode() {}
 type MapLiteral struct {
 	Token   Token
 	Entries []MapEntry
+	Frozen  bool
 }
 
 func (*MapLiteral) expressionNode() {}
@@ -182,6 +184,7 @@ type MapEntry struct {
 type ArrayLiteral struct {
 	Token    Token
 	Elements []ArrayElement
+	Frozen   bool
 }
 
 func (*ArrayLiteral) expressionNode() {}

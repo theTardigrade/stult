@@ -22,6 +22,7 @@ const (
 	TokenQuestion TokenType = "?"
 	TokenAt       TokenType = "@"
 	TokenCaret    TokenType = "^"
+	TokenTilde    TokenType = "~"
 
 	TokenRangeInclusive TokenType = ".."
 	TokenRangeExclusive TokenType = "..."

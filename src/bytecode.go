@@ -30,6 +30,7 @@ const (
 	BytecodeOpAddMapEntry
 	BytecodeOpEndMap
 	BytecodeOpBuildRange
+	BytecodeOpFreezeCollection
 	BytecodeOpMakeFunction
 	BytecodeOpLoadDotMap
 	BytecodeOpIndex
@@ -301,6 +302,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpBuildRange:
 		return "BUILD_RANGE"
+
+	case BytecodeOpFreezeCollection:
+		return "FREEZE_COLLECTION"
 
 	case BytecodeOpMakeFunction:
 		return "MAKE_FUNCTION"

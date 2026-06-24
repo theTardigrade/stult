@@ -1,5 +1,44 @@
 package main
 
+func (p *Parser) parseFrozenCollectionLiteral() Expression {
+	tilde := p.current
+	p.advance() // consume "~"
+
+	switch p.current.Type {
+	case TokenString:
+		literal := &StringLiteral{
+			Token:  p.current,
+			Value:  p.current.Literal,
+			Frozen: true,
+		}
+		p.advance()
+		return literal
+
+	case TokenLBrace:
+		literal := p.parseBraceLiteral()
+		switch literal := literal.(type) {
+		case *ArrayLiteral:
+			literal.Frozen = true
+			return literal
+
+		case *MapLiteral:
+			literal.Frozen = true
+			return literal
+
+		case nil:
+			return nil
+
+		default:
+			p.errorAtToken(tilde, "'~' can only freeze array, map, or string literals")
+			return nil
+		}
+
+	default:
+		p.errorAtToken(tilde, "expected array, map, or string literal after '~'")
+		return nil
+	}
+}
+
 func (p *Parser) parseBraceLiteral() Expression {
 	openBrace := p.current
 	p.advance() // consume "{"

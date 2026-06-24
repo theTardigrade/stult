@@ -22,12 +22,21 @@ func NewMapValue(entries map[string]Binding, isFrozen bool) Value {
 }
 
 func (state *valueFormatState) formatMap(m *Map) string {
-	if m == nil || len(m.Entries) == 0 {
+	if m == nil {
 		return "{:}"
 	}
 
+	prefix := ""
+	if m.IsFrozen {
+		prefix = "~"
+	}
+
+	if len(m.Entries) == 0 {
+		return prefix + "{:}"
+	}
+
 	if state.maps[m] {
-		return "<cyclical map>"
+		return prefix + "<cyclical map>"
 	}
 
 	state.maps[m] = true
@@ -42,7 +51,7 @@ func (state *valueFormatState) formatMap(m *Map) string {
 		parts = append(parts, strconv.Quote(key)+": "+state.formatValue(binding.Value))
 	}
 
-	return "{" + strings.Join(parts, ", ") + "}"
+	return prefix + "{" + strings.Join(parts, ", ") + "}"
 }
 
 func sortedMapKeys(m *Map) []string {

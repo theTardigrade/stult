@@ -366,8 +366,13 @@ func (state *valueFormatState) formatArray(a *Array) string {
 		return "{}"
 	}
 
+	prefix := ""
+	if a.IsFrozen {
+		prefix = "~"
+	}
+
 	if state.arrays[a] {
-		return "<cyclical array>"
+		return prefix + "<cyclical array>"
 	}
 
 	state.arrays[a] = true
@@ -382,5 +387,5 @@ func (state *valueFormatState) formatArray(a *Array) string {
 		return "<invalid array>"
 	}
 
-	return "{" + strings.Join(parts, ", ") + "}"
+	return prefix + "{" + strings.Join(parts, ", ") + "}"
 }

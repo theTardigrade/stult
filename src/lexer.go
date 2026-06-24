@@ -135,6 +135,10 @@ func (l *Lexer) NextToken() Token {
 		l.readChar()
 		return l.makeToken(TokenCaret, "^", line, col)
 
+	case '~':
+		l.readChar()
+		return l.makeToken(TokenTilde, "~", line, col)
+
 	case '.':
 		if l.peekChar() == '.' {
 			if l.peekAhead(2) == '.' {

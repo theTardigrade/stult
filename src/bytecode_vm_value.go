@@ -476,6 +476,21 @@ func (vm *BytecodeVM) loadDotMap(instructionIndex int) error {
 	return nil
 }
 
+func (vm *BytecodeVM) freezeCollectionFromStack() error {
+	value, err := vm.popValue()
+	if err != nil {
+		return err
+	}
+
+	frozenValue, err := freezeCollectionValue(value)
+	if err != nil {
+		return err
+	}
+
+	vm.pushValue(frozenValue)
+	return nil
+}
+
 func (vm *BytecodeVM) buildRange(isInclusive bool) error {
 	step, err := vm.popValue()
 	if err != nil {

@@ -331,6 +331,7 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpStoreIndex,
 		BytecodeOpBeginMap,
 		BytecodeOpEndMap,
+		BytecodeOpFreezeCollection,
 		BytecodeOpLoadDotMap,
 		BytecodeOpIndex,
 		BytecodeOpIteratorEnd,

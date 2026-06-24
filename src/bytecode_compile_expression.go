@@ -32,7 +32,7 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 		return nil
 
 	case *StringLiteral:
-		constant := compiler.chunk.AddConstant(NewStringValue(expression.Value))
+		constant := compiler.chunk.AddConstant(NewStringValueWithFrozen(expression.Value, expression.Frozen))
 		compiler.chunk.EmitOperandAt(
 			BytecodeOpLoadConst,
 			constant,
@@ -338,6 +338,13 @@ func (compiler *BytecodeCompiler) compileArrayLiteral(expression *ArrayLiteral) 
 		compiler.sourceSpanFromToken(expression.Token),
 	)
 
+	if expression.Frozen {
+		compiler.chunk.EmitAt(
+			BytecodeOpFreezeCollection,
+			compiler.sourceSpanFromToken(expression.Token),
+		)
+	}
+
 	return nil
 }
 
@@ -404,6 +411,13 @@ func (compiler *BytecodeCompiler) compileMapLiteral(expression *MapLiteral) erro
 		BytecodeOpEndMap,
 		compiler.sourceSpanFromToken(expression.Token),
 	)
+
+	if expression.Frozen {
+		compiler.chunk.EmitAt(
+			BytecodeOpFreezeCollection,
+			compiler.sourceSpanFromToken(expression.Token),
+		)
+	}
 
 	return nil
 }
