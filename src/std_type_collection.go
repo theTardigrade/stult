@@ -13,6 +13,7 @@ type collectionCloneState struct {
 
 func NewStdTypeCollectionMap() Value {
 	entries := map[string]Binding{
+		"CHOICE":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionChoice)),
 		"CLEAR":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClear)),
 		"CLONE":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionClone)),
 		"FREEZE":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionFreeze)),
@@ -20,6 +21,7 @@ func NewStdTypeCollectionMap() Value {
 		"HAS":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionHas)),
 		"IS_EMPTY":  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsEmpty)),
 		"IS_FROZEN": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionIsFrozen)),
+		"SHUFFLE":   NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionShuffle)),
 		"SIZE":      NewImmutableBinding(NewBuiltinFunctionValue(StdTypeCollectionSize)),
 	}
 
