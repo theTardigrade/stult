@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v0.9.7 (Future release)
+
+#### Language
+
+* Added range indexing for arrays and strings, such as `items[0...3]` and `text[2..10:2]`.
+
 ### v0.9.6
 
 #### Language

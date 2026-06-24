@@ -1,3 +1,4 @@
+
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -41,6 +42,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Index spacing](../examples/tests/index_spacing.stult)  
   Checks that index expressions may use same-line horizontal whitespace before the opening square bracket, including multiline index expressions and chained indexes.
+
+- [Range indexing](../examples/tests/range_indexing.stult)  
+  Checks that range indexing creates array and string slices using inclusive, exclusive, stepped, descending and empty ranges, and that maps reject range indexing.
 
 ## Loops
 

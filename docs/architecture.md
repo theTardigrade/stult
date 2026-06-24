@@ -292,6 +292,8 @@ Function calls are parsed as postfix expressions when an opening parenthesis app
 
 Index expressions are parsed as postfix expressions when an opening square bracket appears on the same line as the indexed expression. The idiomatic form keeps the indexed expression and `[` touching, but horizontal whitespace before the `[` is accepted. A newline before the `[` keeps its normal statement-separating meaning and does not start an index expression.
 
+Range indexing reuses the range-segment grammar inside an index expression. The parser represents `object[start..end:step]` separately from ordinary indexing so interpreter and bytecode paths can return new array or string slice values while keeping map indexing unchanged. Range index expressions are expressions only; they are not valid assignment targets.
+
 Dot access is parsed as syntax sugar for string-key indexing. The parser lowers `object.key` to the same AST shape as `object["key"]`, preserving the identifier spelling as the string key. This keeps interpreter and bytecode behaviour aligned with ordinary map indexing.
 
 Leading-dot field access, such as `.name`, is also lowered to an index expression, but its object is a `LeadingDotReceiverExpression`. At runtime that receiver resolves to the nearest active or captured map literal. This means leading-dot access can be used while evaluating map entry values, and functions created inside maps capture that map for later leading-dot access. If no such map exists, or if the nearest map does not contain the requested key, evaluation raises a runtime error.
