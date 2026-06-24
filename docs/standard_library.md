@@ -157,7 +157,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["GET"](collection, key_or_index, default?)`](#stdtypecollectiongetcollection-key_or_index-default)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
     - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
-    - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`](#stdtypecollectionfreezecollection)
+    - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection, deep?)`](#stdtypecollectionfreezecollection-deep)
     - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
   - [`STD["TYPE"]["MAP"]`](#stdtypemap)
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
@@ -353,7 +353,7 @@ arrays
 maps
 ```
 
-It does not allow executable syntax such as assignments, identifiers, function calls, function literals, index expressions, binary operators or ranges.
+It does not allow executable syntax such as assignments, identifiers, function calls, function literals, frozen collection literals, index expressions, binary operators or ranges.
 
 Exponential number notation is not allowed in STULTON. Percentage-suffixed numbers are allowed when the underlying number does not use exponent notation.
 
@@ -1569,9 +1569,9 @@ STD.IO.OUTPUT.WRITE_LINE(copy)  # {<cyclical array>, "copy only"}
 
 Numbers are copied defensively. Booleans, void, functions and builtin functions are reused. Reusing function values means cloned collections containing closures still refer to the same closure state.
 
-### `STD["TYPE"]["COLLECTION"]["FREEZE"](collection)`
+### `STD["TYPE"]["COLLECTION"]["FREEZE"](collection, deep?)`
 
-Deeply freezes a collection.
+Freezes a collection.
 
 ```stult
 CONFIG : STD.TYPE.COLLECTION.FREEZE({
@@ -1580,7 +1580,7 @@ CONFIG : STD.TYPE.COLLECTION.FREEZE({
 })
 ```
 
-`FREEZE` accepts arrays, maps and strings.
+`FREEZE` accepts arrays, maps and strings. New array, map and string literals can also be created frozen with leading `~` syntax, such as `~{1, 2, 3}`, `~{.name : "demo"}` and `~"text"`.
 
 A frozen array cannot have elements replaced or appended.
 
@@ -1588,7 +1588,29 @@ A frozen map cannot have entries replaced or added.
 
 A frozen string cannot have characters replaced or appended.
 
-The freeze is deep. Nested arrays, maps and strings inside the collection are frozen too.
+By default, `FREEZE` is shallow. It freezes only the collection passed as the first argument.
+
+```stult
+values : {1, 2, 3}
+config : STD.TYPE.COLLECTION.FREEZE({
+	"values": values
+})
+
+STD.TYPE.COLLECTION.IS_FROZEN(config) # +
+STD.TYPE.COLLECTION.IS_FROZEN(values) # -
+```
+
+Pass `+` as the optional second argument to deep-freeze the collection graph. Deep freezing recursively freezes nested arrays, maps and strings reachable from the collection.
+
+```stult
+values : {1, 2, 3}
+config : STD.TYPE.COLLECTION.FREEZE({
+	"values": values
+}, +)
+
+STD.TYPE.COLLECTION.IS_FROZEN(config) # +
+STD.TYPE.COLLECTION.IS_FROZEN(values) # +
+```
 
 `FREEZE` modifies the collection in place and returns the same collection value. This means it can be used either as a statement or inside an assignment.
 

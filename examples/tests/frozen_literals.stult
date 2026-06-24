@@ -27,7 +27,7 @@ MAP_VALUE : ~{
 	.dog : 100
 	.names : {"Fido"}
 }
-STRING_VALUE : ~"dog face"
+STRING_VALUE : ~"my dog"
 EXPLICIT_NESTED : ~{
 	.values : ~{1, 2, 3}
 }

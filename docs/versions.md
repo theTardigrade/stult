@@ -14,6 +14,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Allowed same-line horizontal whitespace between a function callee and its opening call parenthesis, while keeping newline-separated forms invalid.
 * Allowed same-line horizontal whitespace between an indexed expression and its opening square bracket, while keeping newline-separated forms invalid.
+* Added shallow frozen collection literals with `~` before array, map and string literals, such as `~{1, 2, 3}`, `~{.name : "demo"}` and `~"text"`.
+* Frozen arrays, maps and strings now format with a leading `~`.
+
+#### Standard library
+
+* Updated `STD.TYPE.COLLECTION.FREEZE` so it freezes shallowly by default and accepts an optional boolean deep flag.
 
 ### v0.9.5
 

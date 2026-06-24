@@ -280,6 +280,7 @@ optional function parameters
 function calls
 array literals
 map literals
+frozen collection literals
 range segments
 index expressions
 dot access
@@ -296,6 +297,8 @@ Dot access is parsed as syntax sugar for string-key indexing. The parser lowers 
 Leading-dot field access, such as `.name`, is also lowered to an index expression, but its object is a `LeadingDotReceiverExpression`. At runtime that receiver resolves to the nearest active or captured map literal. This means leading-dot access can be used while evaluating map entry values, and functions created inside maps capture that map for later leading-dot access. If no such map exists, or if the nearest map does not contain the requested key, evaluation raises a runtime error.
 
 Map literals accept ordinary string keys and leading-dot map keys. A leading-dot map key, such as `.name : value`, is parsed as the string key `"name"` while preserving the usual map-entry mutability rules derived from the resulting key string. Bare identifier-shaped map keys remain invalid.
+
+Frozen collection literals are written by prefixing an array, map or string literal with `~`. The parser records this on the literal AST node, and the interpreter or bytecode VM creates the collection normally before applying the shared shallow-freeze helper. This keeps frozen literal syntax independent from standard-library lookup while matching the default shallow behaviour of `STD["TYPE"]["COLLECTION"]["FREEZE"]`.
 
 Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a same-line `:` branch list, written idiomatically as `(condition):(when_true|when_false)`. Horizontal whitespace may appear around the `:`. In multiline branch lists, the `|` branch separator must appear at the end of the true-branch line. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
@@ -769,7 +772,7 @@ Binding immutability and collection freezing are separate concepts.
 
 Binding immutability controls whether a name or map entry can be rebound. Collection freezing controls whether the contents of an existing array, map or string can be internally modified.
 
-Arrays, maps and strings carry collection-level frozen flags. In the Go implementation those collection fields are named `IsFrozen` on `Array`, `Map` and `String`, while binding and map-entry rebinding metadata continues to use `IsImmutable`. This keeps the implementation distinction aligned with the language distinction: immutable bindings cannot be rebound, and frozen collections cannot be internally mutated. The standard-library function `STD["TYPE"]["COLLECTION"]["FREEZE"]` sets collection frozen flags deeply and in place for arrays, maps and strings, then returns the same collection value. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level frozen flag set.
+Arrays, maps and strings carry collection-level frozen flags. In the Go implementation those collection fields are named `IsFrozen` on `Array`, `Map` and `String`, while binding and map-entry rebinding metadata continues to use `IsImmutable`. This keeps the implementation distinction aligned with the language distinction: immutable bindings cannot be rebound, and frozen collections cannot be internally mutated. Frozen collection literals and `STD["TYPE"]["COLLECTION"]["FREEZE"]` without the optional deep flag use the shared shallow-freeze helper for arrays, maps and strings. `FREEZE(collection, +)` uses the deep-freeze helper to recursively freeze nested collection graphs. `FREEZE` modifies an existing collection in place and returns the same collection value; frozen literals create a new literal value and then freeze that value before it is exposed to user code. `STD["TYPE"]["COLLECTION"]["IS_FROZEN"]` reports whether a collection value currently has its collection-level frozen flag set.
 
 `STD["TYPE"]["COLLECTION"]["CLONE"]` deeply clones collection graphs. The clone operation is cycle-safe and alias-preserving: if the original graph contains multiple references to the same nested collection, the cloned graph contains multiple references to the same cloned nested collection. Cycles in the original graph become cycles in the cloned graph. Cloned arrays, maps and strings are mutable even when the original collections are frozen. Map-entry binding mutability is preserved. Numbers are cloned defensively, while booleans, void, functions and builtin functions are reused.
 

@@ -27,8 +27,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Frozen collections](../examples/tests/frozen_collections.stult)  
   Checks that frozen arrays, maps and strings cannot be internally modified and that `IS_FROZEN` reports their frozen state.
 
+- [Frozen literals](../examples/tests/frozen_literals.stult)  
+  Checks that `~` before array, map and string literals freezes those literals, leaves nested collections mutable unless they have their own `~`, and formats frozen collections with a leading tilde.
+
 - [Deep frozen aliases](../examples/tests/deep_frozen_aliases.stult)  
-  Checks that `FREEZE` deeply freezes nested collections and that aliases to nested collections observe the frozen state.
+  Checks that `FREEZE(collection, +)` deeply freezes nested collections and that aliases to nested collections observe the frozen state.
 
 - [Cloning collections](../examples/tests/collection_clone.stult)  
   Checks that `CLONE` deeply clones collection graphs, preserves aliases and cycles, returns mutable collections, preserves map-entry mutability and reuses function closure values.
