@@ -54,6 +54,8 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Freezing collections](#freezing-collections)
     - [Ranges](#ranges)
   - [Functions](#functions)
+    - [Calling functions](#calling-functions)
+	- [Storing functions](#storing-functions)
     - [Early return](#early-return)
     - [Variadic function parameters](#variadic-function-parameters)
     - [Optional parameters](#optional-parameters)
@@ -932,7 +934,11 @@ The final expression is the return value.
 
 Functions return exactly one value.
 
-Function calls require the callee to touch the opening parenthesis:
+#### Calling functions
+
+Call a function by putting `(` after the value you want to call.
+
+The usual style is to write the call with no space before `(`:
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
@@ -941,11 +947,37 @@ SUBTRACT : { (A, B)
 	(A - B)
 }
 
-WRITE_LINE("hello")
-WRITE_LINE(SUBTRACT(10, 2))
+WRITE_LINE("hello")           # idiomatic
+WRITE_LINE ("hello")          # valid, but not idiomatic
+WRITE_LINE(SUBTRACT(10, 2))   # idiomatic
+WRITE_LINE(SUBTRACT (10, 2))  # valid, but not idiomatic
 ```
 
-This means that neither `WRITE_LINE ("hello")` nor `WRITE_LINE( SUBTRACT (10, 2))` is a valid function call.
+Once the opening parenthesis has started the call, the argument list may span multiple lines:
+
+```stult
+WRITE_LINE(
+	"hello"
+)
+
+WRITE_LINE (
+	SUBTRACT (
+		10
+		2
+	)
+)
+```
+
+The opening `(` still has to be on the same line as the value being called. So this is *not* a call:
+
+```stult
+WRITE_LINE
+(
+	"hello"
+)
+```
+
+#### Storing functions
 
 Functions can be stored in maps and arrays:
 
