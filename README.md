@@ -898,13 +898,20 @@ CONFIG : ~{
 
 WRITE_LINE(IS_FROZEN(CONFIG))         # +
 WRITE_LINE(IS_FROZEN(CONFIG.values))  # -
-
-WRITE_LINE(CONFIG.locked_values)      # ~{4, 5, 6}
 ```
 
-As seen above, frozen collections are displayed with a leading `~`.
-
 Existing collection values can also be frozen with `STD.TYPE.COLLECTION.FREEZE`. By default this is shallow. Pass `+` as the second argument to freeze nested collections too.
+
+Frozen collections are displayed with a leading `~`:
+
+```stult
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+FREEZE : STD.TYPE.COLLECTION.FREEZE
+
+colours : FREEZE({ "red", "green", "blue" })
+
+WRITE_LINE(colours)  # ~{"red", "green", "blue"}
+```
 
 A frozen collection cannot be internally modified, even when it is held by a mutable binding.
 
