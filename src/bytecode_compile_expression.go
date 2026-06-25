@@ -110,8 +110,15 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 		}
 
 		for _, argument := range expression.Arguments {
-			if err := compiler.compileExpression(argument); err != nil {
+			if err := compiler.compileExpression(argument.Expression); err != nil {
 				return err
+			}
+
+			if argument.IsSpread {
+				compiler.chunk.EmitAt(
+					BytecodeOpSpreadArgument,
+					compiler.sourceSpanFromToken(argument.SpreadToken),
+				)
 			}
 		}
 

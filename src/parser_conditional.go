@@ -167,7 +167,7 @@ func (p *Parser) parseIndexExpression(object Expression) (Expression, bool) {
 func (p *Parser) parseCallExpression(callee Expression) (Expression, bool) {
 	p.advance() // consume "("
 
-	args := []Expression{}
+	args := []CallArgument{}
 
 	p.skipNewlines()
 
@@ -180,10 +180,23 @@ func (p *Parser) parseCallExpression(callee Expression) (Expression, bool) {
 	}
 
 	for {
-		arg := p.parseExpression(precLowest)
-		if arg == nil {
+		argExpr := p.parseExpression(precLowest)
+		if argExpr == nil {
 			p.errorAtCurrent("expected function argument")
 			return nil, false
+		}
+
+		arg := CallArgument{Expression: argExpr}
+
+		if p.current.Type == TokenRangeExclusive {
+			if !tokensTouch(p.previous, p.current) {
+				p.errorAtCurrent("expected spread marker '...' to touch function argument")
+				return nil, false
+			}
+
+			arg.IsSpread = true
+			arg.SpreadToken = p.current
+			p.advance()
 		}
 
 		args = append(args, arg)

@@ -26,8 +26,9 @@ type bytecodeVMCell struct {
 }
 
 type bytecodeVMStackEntry struct {
-	Value          Value
-	IsRangeSegment bool
+	Value            Value
+	IsRangeSegment   bool
+	IsSpreadArgument bool
 }
 
 type bytecodeVMExecutionState struct {
@@ -355,6 +356,13 @@ func (vm *BytecodeVM) executeInstruction(
 
 	case BytecodeOpCall:
 		if err := vm.callValue(instruction.Operand); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpSpreadArgument:
+		if err := vm.markSpreadArgument(); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 

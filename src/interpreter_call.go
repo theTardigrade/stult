@@ -10,10 +10,20 @@ func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
 
 	args := make([]Value, 0, len(call.Arguments))
 
-	for _, argExpr := range call.Arguments {
-		arg, err := i.evalExpression(argExpr)
+	for _, argument := range call.Arguments {
+		arg, err := i.evalExpression(argument.Expression)
 		if err != nil {
 			return Value{}, err
+		}
+
+		if argument.IsSpread {
+			spreadValues, err := callSpreadArgumentValues(arg)
+			if err != nil {
+				return Value{}, err
+			}
+
+			args = append(args, spreadValues...)
+			continue
 		}
 
 		args = append(args, arg)
@@ -156,4 +166,23 @@ func requiredFunctionParameterCount(parameters []FunctionParameter) int {
 	}
 
 	return count
+}
+
+func callSpreadArgumentValues(value Value) ([]Value, error) {
+	value = resolveSpecializedValue(value)
+
+	if value.Kind != ValueArray || value.Array == nil {
+		return nil, fmt.Errorf("spread argument expected an array")
+	}
+
+	values := []Value{}
+
+	if err := value.Array.ForEach(func(_ *Number, element Value) error {
+		values = append(values, element)
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return values, nil
 }

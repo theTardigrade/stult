@@ -542,16 +542,33 @@ func (vm *BytecodeVM) jump(target int) error {
 
 func (vm *BytecodeVM) pushValue(value Value) {
 	vm.stack = append(vm.stack, bytecodeVMStackEntry{
-		Value:          value,
-		IsRangeSegment: false,
+		Value:            value,
+		IsRangeSegment:   false,
+		IsSpreadArgument: false,
 	})
 }
 
 func (vm *BytecodeVM) pushRangeSegment(value Value) {
 	vm.stack = append(vm.stack, bytecodeVMStackEntry{
-		Value:          value,
-		IsRangeSegment: true,
+		Value:            value,
+		IsRangeSegment:   true,
+		IsSpreadArgument: false,
 	})
+}
+
+func (vm *BytecodeVM) markSpreadArgument() error {
+	if len(vm.stack) == 0 {
+		return fmt.Errorf("SPREAD_ARGUMENT expected a stack value")
+	}
+
+	entry := &vm.stack[len(vm.stack)-1]
+
+	if entry.IsRangeSegment {
+		return fmt.Errorf("range segment cannot be used as a spread argument")
+	}
+
+	entry.IsSpreadArgument = true
+	return nil
 }
 
 func (vm *BytecodeVM) popEntry() (bytecodeVMStackEntry, error) {
@@ -575,6 +592,10 @@ func (vm *BytecodeVM) popValue() (Value, error) {
 		return Value{}, fmt.Errorf("range segment cannot be used as a plain value")
 	}
 
+	if entry.IsSpreadArgument {
+		return Value{}, fmt.Errorf("spread argument cannot be used as a plain value")
+	}
+
 	return entry.Value, nil
 }
 
@@ -587,6 +608,10 @@ func (vm *BytecodeVM) peekValue() (Value, error) {
 
 	if entry.IsRangeSegment {
 		return Value{}, fmt.Errorf("range segment cannot be used as a plain value")
+	}
+
+	if entry.IsSpreadArgument {
+		return Value{}, fmt.Errorf("spread argument cannot be used as a plain value")
 	}
 
 	return entry.Value, nil

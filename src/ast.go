@@ -253,9 +253,15 @@ type FunctionLiteral struct {
 
 func (*FunctionLiteral) expressionNode() {}
 
+type CallArgument struct {
+	Expression  Expression
+	IsSpread    bool
+	SpreadToken Token
+}
+
 type CallExpression struct {
 	Callee    Expression
-	Arguments []Expression
+	Arguments []CallArgument
 }
 
 func (*CallExpression) expressionNode() {}

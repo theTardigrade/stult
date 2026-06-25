@@ -264,20 +264,40 @@ func (vm *BytecodeVM) callValue(argCount int) error {
 		return fmt.Errorf("CALL expected callee and %d argument(s)", argCount)
 	}
 
-	args := make([]Value, argCount)
+	entries := make([]bytecodeVMStackEntry, argCount)
 
 	for index := argCount - 1; index >= 0; index-- {
-		arg, err := vm.popValue()
+		entry, err := vm.popEntry()
 		if err != nil {
 			return err
 		}
 
-		args[index] = arg
+		if entry.IsRangeSegment {
+			return fmt.Errorf("range segment cannot be used as a function argument")
+		}
+
+		entries[index] = entry
 	}
 
 	callee, err := vm.popValue()
 	if err != nil {
 		return err
+	}
+
+	args := make([]Value, 0, argCount)
+
+	for _, entry := range entries {
+		if entry.IsSpreadArgument {
+			spreadValues, err := callSpreadArgumentValues(entry.Value)
+			if err != nil {
+				return err
+			}
+
+			args = append(args, spreadValues...)
+			continue
+		}
+
+		args = append(args, entry.Value)
 	}
 
 	result, err := vm.callResolvedValue(callee, args)

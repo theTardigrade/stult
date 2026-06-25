@@ -36,6 +36,7 @@ const (
 	BytecodeOpIndex
 	BytecodeOpRangeIndex
 	BytecodeOpCall
+	BytecodeOpSpreadArgument
 
 	BytecodeOpIteratorInit
 	BytecodeOpIteratorRangeInit
@@ -321,6 +322,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpCall:
 		return "CALL"
+
+	case BytecodeOpSpreadArgument:
+		return "SPREAD_ARGUMENT"
 
 	case BytecodeOpIteratorInit:
 		return "ITERATOR_INIT"
