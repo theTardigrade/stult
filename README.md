@@ -1015,7 +1015,7 @@ WRITE_LINE (
 )
 ```
 
-The opening `(` still has to be on the same line as the value being called. So this is *not* a call:
+The opening `(` still has to be on the same line as the value being called. So this is *not* a valid call:
 
 ```stult
 WRITE_LINE
