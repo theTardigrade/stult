@@ -1024,21 +1024,6 @@ WRITE_LINE
 )
 ```
 
-##### Spreading an array in a function call
-
-A call argument can spread an array by writing `...` immediately after the argument expression. The array elements are passed as separate arguments in order:
-
-```stult
-WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
-parts : {"hello", " ", "world"}
-
-WRITE_LINE(parts...)  # same as WRITE_LINE("hello", " ", "world")
-```
-
-Spread arguments are valid only in function-call argument lists. The spread value must be an array.
-
-Spreading can be especially useful with variadic functions, which are introduced below.
-
 #### Storing functions
 
 Functions can be stored in maps and arrays:
@@ -1095,15 +1080,6 @@ DESCRIBE : { (label, ...values)
 
 	(_)
 }
-```
-
-Spreading arrays and variadic parameters work naturally together. A variadic parameter collects extra arguments into an array, while `array...` expands an array back into separate arguments. So to call the function we defined earlier:
-
-```stult
-values : {1, 2, 3}
-
-SUM(values...)          # same as SUM(1, 2, 3)
-SUM(10, values..., 20)  # same as SUM(10, 1, 2, 3, 20)
 ```
 
 #### Optional parameters
