@@ -862,6 +862,28 @@ Here, `.NAME` reads the `NAME` field from the surrounding `person` map, and `.ag
 
 A leading dot used in this way only looks within the nearest surrounding map. If there is no surrounding map, or if that map does not contain the requested field, the program raises an error.
 
+#### Merging maps
+
+Maps can be shallow-merged with `STD.TYPE.MAP.MERGE`. It returns a new mutable map and leaves its input maps unchanged. Later maps override earlier maps.
+
+```stult
+defaults : {
+	.host : "localhost"
+	.port : 3000
+}
+
+user : {
+	.port : 8080
+}
+
+config : STD.TYPE.MAP.MERGE(defaults, user)
+
+STD.IO.OUTPUT.WRITE_LINE(config.host) # localhost
+STD.IO.OUTPUT.WRITE_LINE(config.port) # 8080
+```
+
+The merge is shallow: nested arrays, maps and strings are reused rather than cloned.
+
 #### Cloning collections
 
 Collection values can be deeply cloned with `STD.TYPE.COLLECTION.CLONE`.
