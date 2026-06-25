@@ -25,7 +25,7 @@ type Manifest struct {
 }
 
 type manifestFile struct {
-	Run manifestRunList `json:"run"`
+	Run manifestRunList
 }
 
 type manifestRunList []string
@@ -96,13 +96,29 @@ func parseManifestFile(filename string, bytes []byte) (manifestFile, error) {
 }
 
 func parseJSONManifest(bytes []byte) (manifestFile, error) {
-	var file manifestFile
+	var fields map[string]json.RawMessage
 
-	if err := json.Unmarshal(bytes, &file); err != nil {
+	if err := json.Unmarshal(bytes, &fields); err != nil {
 		return manifestFile{}, err
 	}
 
-	return file, nil
+	if _, hasUpperRun := fields["RUN"]; hasUpperRun {
+		return manifestFile{}, fmt.Errorf(`manifest.json uses lowercase "run"; found "RUN"`)
+	}
+
+	runBytes, hasRun := fields["run"]
+	if !hasRun {
+		return manifestFile{}, nil
+	}
+
+	var run manifestRunList
+	if err := json.Unmarshal(runBytes, &run); err != nil {
+		return manifestFile{}, err
+	}
+
+	return manifestFile{
+		Run: run,
+	}, nil
 }
 
 func parseStultonManifest(bytes []byte) (manifestFile, error) {
@@ -125,36 +141,18 @@ func manifestFileFromStultonValue(value Value) (manifestFile, error) {
 		return manifestFile{}, fmt.Errorf("manifest root map is invalid")
 	}
 
-	upperRunBinding, hasUpperRun := value.Map.Entries["RUN"]
-	lowerRunBinding, hasLowerRun := value.Map.Entries["run"]
-
-	if hasUpperRun && hasLowerRun {
-		return manifestFile{}, fmt.Errorf(`manifest.stulton cannot contain both "RUN" and "run"`)
+	if _, hasLowerRun := value.Map.Entries["run"]; hasLowerRun {
+		return manifestFile{}, fmt.Errorf(`manifest.stulton uses uppercase "RUN"; found "run"`)
 	}
 
-	var runBinding Binding
-	hasRun := false
-
-	if hasUpperRun {
-		runBinding = upperRunBinding
-		hasRun = true
-	} else if hasLowerRun {
-		runBinding = lowerRunBinding
-		hasRun = true
-	}
-
+	runBinding, hasRun := value.Map.Entries["RUN"]
 	if !hasRun {
 		return manifestFile{}, nil
 	}
 
 	run, err := manifestRunListFromValue(runBinding.Value)
 	if err != nil {
-		fieldName := "RUN"
-		if hasLowerRun {
-			fieldName = "run"
-		}
-
-		return manifestFile{}, fmt.Errorf("invalid manifest field %q: %w", fieldName, err)
+		return manifestFile{}, fmt.Errorf("invalid manifest field %q: %w", "RUN", err)
 	}
 
 	return manifestFile{
@@ -216,7 +214,12 @@ func manifestStringFromValue(value Value) (string, error) {
 
 func (manifest *Manifest) validate() error {
 	if len(manifest.Run) == 0 {
-		return fmt.Errorf("Manifest %q must contain a non-empty \"run\" or \"RUN\" field", manifest.Path)
+		fieldName := "run"
+		if manifestBaseName(manifest.Path) == ManifestStultonFilename {
+			fieldName = "RUN"
+		}
+
+		return fmt.Errorf("Manifest %q must contain a non-empty %q field", manifest.Path, fieldName)
 	}
 
 	for index, runFile := range manifest.Run {
