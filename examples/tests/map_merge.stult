@@ -4,12 +4,12 @@ EXAMPLE: tests/map_merge.stult
 
 This example checks the standard map merge helpers.
 
-MAP.SHALLOW_MERGE returns a new mutable map containing top-level entries from
+MAP.MERGE_SHALLOW returns a new mutable map containing top-level entries from
 one or more source maps. Later maps override earlier maps. Input maps are not
 modified, frozen input maps are accepted, and entry values are reused rather
 than cloned.
 
-MAP.DEEP_MERGE follows the same left-to-right rules, but recursively merges map
+MAP.MERGE_DEEP follows the same left-to-right rules, but recursively merges map
 values when both sides of the same key are maps. Arrays, strings and other
 values are replaced rather than merged.
 
@@ -43,25 +43,25 @@ overrides : {
 	.host: "example.test"
 }
 
-merged : MAP.SHALLOW_MERGE(defaults, user, overrides)
+merged : MAP.MERGE_SHALLOW(defaults, user, overrides)
 
 ASSERT.EQUAL(merged.host, "example.test", "later maps should override earlier maps")
 ASSERT.EQUAL(merged.port, 8080, "middle maps should override earlier maps")
 ASSERT.EQUAL(merged.debug, +, "overridden boolean entries should be kept")
 ASSERT.EQUAL(merged.NAME, "default", "entries that are not overridden should be kept")
 
-ASSERT.EQUAL(defaults.host, "localhost", "SHALLOW_MERGE should not mutate the first input map")
-ASSERT.EQUAL(defaults.port, 3000, "SHALLOW_MERGE should not mutate overridden entries in the first input map")
-ASSERT.EQUAL(user.port, 8080, "SHALLOW_MERGE should not mutate later input maps")
+ASSERT.EQUAL(defaults.host, "localhost", "MERGE_SHALLOW should not mutate the first input map")
+ASSERT.EQUAL(defaults.port, 3000, "MERGE_SHALLOW should not mutate overridden entries in the first input map")
+ASSERT.EQUAL(user.port, 8080, "MERGE_SHALLOW should not mutate later input maps")
 
-ASSERT.FALSE(merged = defaults, "SHALLOW_MERGE should return a new map, not the first input map")
-ASSERT.FALSE(IS_FROZEN(merged), "SHALLOW_MERGE should return a mutable map")
+ASSERT.FALSE(merged = defaults, "MERGE_SHALLOW should return a new map, not the first input map")
+ASSERT.FALSE(IS_FROZEN(merged), "MERGE_SHALLOW should return a mutable map")
 
 merged.extra : "added"
 ASSERT.EQUAL(merged.extra, "added", "merged maps should allow new mutable entries")
 
 merged.nested.value : 2
-ASSERT.EQUAL(nested.value, 2, "SHALLOW_MERGE should reuse nested values rather than cloning them")
+ASSERT.EQUAL(nested.value, 2, "MERGE_SHALLOW should reuse nested values rather than cloning them")
 
 immutable_entry_failed : -
 ?{
@@ -69,35 +69,35 @@ immutable_entry_failed : -
 }|{
 	@immutable_entry_failed : +
 }
-ASSERT.TRUE(immutable_entry_failed, "SHALLOW_MERGE should preserve map-entry immutability")
+ASSERT.TRUE(immutable_entry_failed, "MERGE_SHALLOW should preserve map-entry immutability")
 
 frozen : FREEZE({
 	.path: "/tmp"
 })
-from_frozen : MAP.SHALLOW_MERGE(frozen)
-ASSERT.EQUAL(from_frozen.path, "/tmp", "SHALLOW_MERGE should accept frozen input maps")
-ASSERT.FALSE(IS_FROZEN(from_frozen), "SHALLOW_MERGE should return a mutable map from frozen input maps")
+from_frozen : MAP.MERGE_SHALLOW(frozen)
+ASSERT.EQUAL(from_frozen.path, "/tmp", "MERGE_SHALLOW should accept frozen input maps")
+ASSERT.FALSE(IS_FROZEN(from_frozen), "MERGE_SHALLOW should return a mutable map from frozen input maps")
 from_frozen.path : "/var/tmp"
-ASSERT.EQUAL(from_frozen.path, "/var/tmp", "SHALLOW_MERGE result from frozen input should be mutable")
-ASSERT.EQUAL(frozen.path, "/tmp", "SHALLOW_MERGE should not mutate frozen input maps")
+ASSERT.EQUAL(from_frozen.path, "/var/tmp", "MERGE_SHALLOW result from frozen input should be mutable")
+ASSERT.EQUAL(frozen.path, "/tmp", "MERGE_SHALLOW should not mutate frozen input maps")
 
 non_map_failed : -
 ?{
-	MAP.SHALLOW_MERGE(defaults, "not a map")
+	MAP.MERGE_SHALLOW(defaults, "not a map")
 }|{
 	@non_map_failed : +
 }
-ASSERT.TRUE(non_map_failed, "SHALLOW_MERGE should reject non-map arguments")
+ASSERT.TRUE(non_map_failed, "MERGE_SHALLOW should reject non-map arguments")
 
 no_args_failed : -
 ?{
-	MAP.SHALLOW_MERGE()
+	MAP.MERGE_SHALLOW()
 }|{
 	@no_args_failed : +
 }
-ASSERT.TRUE(no_args_failed, "SHALLOW_MERGE should require at least one argument")
+ASSERT.TRUE(no_args_failed, "MERGE_SHALLOW should require at least one argument")
 
-ASSERT.TRUE(TYPE.IS_MAP(merged), "SHALLOW_MERGE should return a map")
+ASSERT.TRUE(TYPE.IS_MAP(merged), "MERGE_SHALLOW should return a map")
 
 base_config : {
 	.server: {
@@ -120,26 +120,26 @@ user_config : {
 	.tags: {"user"}
 }
 
-deep_merged : MAP.DEEP_MERGE(base_config, user_config)
+deep_merged : MAP.MERGE_DEEP(base_config, user_config)
 
-ASSERT.EQUAL(deep_merged.server.host, "localhost", "DEEP_MERGE should keep nested entries from earlier maps")
-ASSERT.EQUAL(deep_merged.server.port, 8080, "DEEP_MERGE should override nested entries from later maps")
-ASSERT.EQUAL(deep_merged.server.NAME, "primary", "DEEP_MERGE should add nested entries from later maps")
-ASSERT.EQUAL(deep_merged.tags[0], "user", "DEEP_MERGE should replace arrays rather than merging them")
-ASSERT.EQUAL(deep_merged.cache.enabled, -, "DEEP_MERGE should keep non-overridden nested maps")
+ASSERT.EQUAL(deep_merged.server.host, "localhost", "MERGE_DEEP should keep nested entries from earlier maps")
+ASSERT.EQUAL(deep_merged.server.port, 8080, "MERGE_DEEP should override nested entries from later maps")
+ASSERT.EQUAL(deep_merged.server.NAME, "primary", "MERGE_DEEP should add nested entries from later maps")
+ASSERT.EQUAL(deep_merged.tags[0], "user", "MERGE_DEEP should replace arrays rather than merging them")
+ASSERT.EQUAL(deep_merged.cache.enabled, -, "MERGE_DEEP should keep non-overridden nested maps")
 
-ASSERT.EQUAL(base_config.server.port, 3000, "DEEP_MERGE should not mutate earlier nested maps")
-ASSERT.EQUAL(user_config.server.port, 8080, "DEEP_MERGE should not mutate later nested maps")
-ASSERT.FALSE(deep_merged = base_config, "DEEP_MERGE should return a new top-level map")
-ASSERT.FALSE(deep_merged.server = base_config.server, "DEEP_MERGE should create a new map when nested maps are merged")
-ASSERT.FALSE(deep_merged.server = user_config.server, "DEEP_MERGE nested merge result should not be either input map")
-ASSERT.TRUE(deep_merged.cache = base_config.cache, "DEEP_MERGE should reuse nested maps that are not recursively merged")
-ASSERT.FALSE(IS_FROZEN(deep_merged), "DEEP_MERGE should return a mutable map")
-ASSERT.FALSE(IS_FROZEN(deep_merged.server), "DEEP_MERGE should create mutable nested merge maps")
+ASSERT.EQUAL(base_config.server.port, 3000, "MERGE_DEEP should not mutate earlier nested maps")
+ASSERT.EQUAL(user_config.server.port, 8080, "MERGE_DEEP should not mutate later nested maps")
+ASSERT.FALSE(deep_merged = base_config, "MERGE_DEEP should return a new top-level map")
+ASSERT.FALSE(deep_merged.server = base_config.server, "MERGE_DEEP should create a new map when nested maps are merged")
+ASSERT.FALSE(deep_merged.server = user_config.server, "MERGE_DEEP nested merge result should not be either input map")
+ASSERT.TRUE(deep_merged.cache = base_config.cache, "MERGE_DEEP should reuse nested maps that are not recursively merged")
+ASSERT.FALSE(IS_FROZEN(deep_merged), "MERGE_DEEP should return a mutable map")
+ASSERT.FALSE(IS_FROZEN(deep_merged.server), "MERGE_DEEP should create mutable nested merge maps")
 
 deep_merged.server.extra : "ok"
-ASSERT.EQUAL(deep_merged.server.extra, "ok", "DEEP_MERGE nested merge result should be mutable")
-ASSERT.TRUE(TYPE.IS_ARRAY(deep_merged.tags), "DEEP_MERGE should leave replacement arrays as arrays")
+ASSERT.EQUAL(deep_merged.server.extra, "ok", "MERGE_DEEP nested merge result should be mutable")
+ASSERT.TRUE(TYPE.IS_ARRAY(deep_merged.tags), "MERGE_DEEP should leave replacement arrays as arrays")
 
 deep_immutable_entry_failed : -
 ?{
@@ -147,4 +147,4 @@ deep_immutable_entry_failed : -
 }|{
 	@deep_immutable_entry_failed : +
 }
-ASSERT.TRUE(deep_immutable_entry_failed, "DEEP_MERGE should preserve winning nested entry immutability")
+ASSERT.TRUE(deep_immutable_entry_failed, "MERGE_DEEP should preserve winning nested entry immutability")
