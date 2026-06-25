@@ -50,6 +50,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
     - [Dot access for maps](#dot-access-for-maps)
+	- [Merging maps](#merging-maps)
     - [Cloning collections](#cloning-collections)
     - [Freezing collections](#freezing-collections)
     - [Using ranges to create arrays](#using-ranges-to-create-arrays)
@@ -864,7 +865,7 @@ A leading dot used in this way only looks within the nearest surrounding map. If
 
 #### Merging maps
 
-Maps can be shallow-merged with `STD.TYPE.MAP.MERGE`. It returns a new mutable map and leaves its input maps unchanged. Later maps override earlier maps.
+Maps can be merged with `STD.TYPE.MAP.SHALLOW_MERGE` or `STD.TYPE.MAP.DEEP_MERGE`. Both return a new mutable map and leave their input maps unchanged. Later maps override earlier maps.
 
 ```stult
 defaults : {
@@ -876,13 +877,11 @@ user : {
 	.port : 8080
 }
 
-config : STD.TYPE.MAP.MERGE(defaults, user)
+config : STD.TYPE.MAP.SHALLOW_MERGE(defaults, user)
 
 STD.IO.OUTPUT.WRITE_LINE(config.host) # localhost
 STD.IO.OUTPUT.WRITE_LINE(config.port) # 8080
 ```
-
-The merge is shallow: nested arrays, maps and strings are reused rather than cloned.
 
 #### Cloning collections
 
