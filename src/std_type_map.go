@@ -6,10 +6,36 @@ func NewStdTypeMapMap() Value {
 	entries := map[string]Binding{
 		"ENTRIES": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapEntries)),
 		"KEYS":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapKeys)),
+		"MERGE":   NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapMerge)),
 		"VALUES":  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapValues)),
 	}
 
 	return NewMapValue(entries, true)
+}
+
+func StdTypeMapMerge(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) == 0 {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE expected at least 1 argument, got 0")
+	}
+
+	entries := make(map[string]Binding)
+
+	for index, arg := range args {
+		value := resolveSpecializedValue(arg)
+		if value.Kind != ValueMap {
+			return Value{}, fmt.Errorf("TYPE.MAP.MERGE argument %d must be a map", index+1)
+		}
+
+		if value.Map == nil {
+			return Value{}, fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid map")
+		}
+
+		for key, binding := range value.Map.Entries {
+			entries[key] = binding
+		}
+	}
+
+	return NewMapValue(entries, false), nil
 }
 
 func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
