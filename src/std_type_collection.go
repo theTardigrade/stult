@@ -29,11 +29,25 @@ func NewStdTypeCollectionMap() Value {
 }
 
 func StdTypeCollectionClone(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE expected 1 argument, got %d", len(args))
+	if len(args) < 1 || len(args) > 2 {
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE expected 1 or 2 arguments, got %d", len(args))
 	}
 
-	return deepCloneValue(args[0], newCollectionCloneState())
+	deep := false
+	if len(args) == 2 {
+		deepArgument := resolveSpecializedValue(args[1])
+		if deepArgument.Kind != ValueBool {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE argument 2 expected a boolean")
+		}
+
+		deep = deepArgument.Bool
+	}
+
+	if deep {
+		return deepCloneValue(args[0], newCollectionCloneState())
+	}
+
+	return shallowCloneValue(args[0])
 }
 
 func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
@@ -438,6 +452,82 @@ func StdTypeCollectionIsFrozen(_ *RuntimeContext, args []Value) (Value, error) {
 
 	default:
 		return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_FROZEN cannot inspect unknown value kind")
+	}
+}
+
+func shallowCloneValue(value Value) (Value, error) {
+	value = resolveSpecializedValue(value)
+
+	switch value.Kind {
+	case ValueMap:
+		if value.Map == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid map")
+		}
+
+		clone := &Map{
+			Entries:  make(map[string]Binding, len(value.Map.Entries)),
+			IsFrozen: false,
+		}
+
+		for key, binding := range value.Map.Entries {
+			clone.Entries[key] = Binding{
+				Value:       binding.Value,
+				IsImmutable: binding.IsImmutable,
+			}
+		}
+
+		return Value{Kind: ValueMap, Map: clone}, nil
+
+	case ValueArray:
+		if value.Array == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid array")
+		}
+
+		clone := &Array{
+			Ordinary: make([]Value, 0, len(value.Array.Ordinary)),
+			Length:   NewSmallNumber(0),
+			IsFrozen: false,
+		}
+
+		if err := value.Array.ForEach(func(_ *Number, element Value) error {
+			if err := clone.Append(element); err != nil {
+				return err
+			}
+
+			return nil
+		}); err != nil {
+			return Value{}, err
+		}
+
+		return Value{Kind: ValueArray, Array: clone}, nil
+
+	case ValueString:
+		if value.Text == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid string")
+		}
+
+		clone := &String{
+			Runes:    append([]rune(nil), value.Text.Runes...),
+			IsFrozen: false,
+		}
+
+		return Value{Kind: ValueString, Text: clone}, nil
+
+	case ValueNumber:
+		if value.Number == nil {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid number")
+		}
+
+		return NewNumberValueFromNumber(CloneNumber(value.Number)), nil
+
+	case ValueVoid,
+		ValueBool,
+		ValueFunction,
+		ValueBuiltinFunction:
+		return value, nil
+
+	default:
+		return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone unknown value kind")
 	}
 }
 
