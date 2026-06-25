@@ -288,7 +288,7 @@ leading-dot receiver expressions
 outer-name expressions
 ```
 
-Function calls are parsed as postfix expressions when an opening parenthesis appears on the same line as the callee expression. The idiomatic form keeps the callee and `(` touching, but horizontal whitespace before the `(` is accepted. A newline before the `(` keeps its normal statement-separating meaning and does not start a call.
+Function calls are parsed as postfix expressions when an opening parenthesis appears on the same line as the callee expression. The idiomatic form keeps the callee and `(` touching, but horizontal whitespace before the `(` is accepted. A newline before the `(` keeps its normal statement-separating meaning and does not start a call. Call arguments may use suffix spread syntax, such as `values...`, which the parser records on the call argument rather than as a standalone expression. The interpreter and bytecode VM both evaluate call arguments left to right and expand spread arrays into positional arguments at call time.
 
 Index expressions are parsed as postfix expressions when an opening square bracket appears on the same line as the indexed expression. The idiomatic form keeps the indexed expression and `[` touching, but horizontal whitespace before the `[` is accepted. A newline before the `[` keeps its normal statement-separating meaning and does not start an index expression.
 
@@ -991,7 +991,7 @@ Function loops are different: they deliberately reuse the existing `LoopStatemen
 
 The range-loop optimisation is also deliberately not new syntax. It recognises a specific existing AST shape in loop-source position and must never change observable behaviour. In particular, the collection parameter forces materialisation, and exact integer range semantics must not be narrowed to host integer widths.
 
-When changing function parameter syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned. Function-loop generator calls also depend on this arity metadata, so optional and variadic parameter changes must be tested against function loops too.
+When changing function parameter or call-argument syntax, keep parser validation, interpreter call binding, bytecode parameter metadata, VM call binding, bytecode disassembly and bundled bytecode encoding aligned. Function-loop generator calls also depend on arity metadata, so optional and variadic parameter changes must be tested against function loops too. Spread arguments should also be tested through both ordinary user-defined calls and builtin calls.
 
 When changing runtime semantics, check both runtime implementations.
 

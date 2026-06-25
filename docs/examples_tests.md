@@ -107,6 +107,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Function call spacing](../examples/tests/function_call_spacing.stult)  
   Checks that function calls may use same-line horizontal whitespace before the opening parenthesis, including multiline argument lists and chained calls.
 
+- [Spread arguments](../examples/tests/spread_arguments.stult)  
+  Checks that suffix spread syntax expands array values into function-call arguments for user-defined functions and builtins.
+
 ## Numbers
 
 - [Huge numbers](../examples/tests/huge_numbers.stult)  
