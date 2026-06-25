@@ -156,7 +156,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["CHOICE"](collection)`](#stdtypecollectionchoicecollection)
     - [`STD["TYPE"]["COLLECTION"]["SHUFFLE"](collection)`](#stdtypecollectionshufflecollection)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
-    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
+    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value, deep?)`](#stdtypecollectionclonevalue-deep)
     - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection, deep?)`](#stdtypecollectionfreezecollection-deep)
     - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
   - [`STD["TYPE"]["MAP"]`](#stdtypemap)
@@ -1553,9 +1553,11 @@ Returns `_`.
 Raises a runtime error if the collection is frozen.
 
 
-### `STD["TYPE"]["COLLECTION"]["CLONE"](value)`
+### `STD["TYPE"]["COLLECTION"]["CLONE"](value, deep?)`
 
-Deeply clones a value.
+Clones a value.
+
+By default, `CLONE` is shallow. It returns a new mutable top-level array, map or string, but reuses nested values.
 
 ```stult
 original : {
@@ -1565,13 +1567,29 @@ original : {
 copy : STD.TYPE.COLLECTION.CLONE(original)
 copy.nested.value : 2
 
+STD.IO.OUTPUT.WRITE_LINE(original.nested.value) # 2
+STD.IO.OUTPUT.WRITE_LINE(copy.nested.value)     # 2
+```
+
+Pass `+` as the optional second argument to deep-clone the collection graph.
+
+```stult
+original : {
+	"nested": {"value": 1}
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original, +)
+copy.nested.value : 2
+
 STD.IO.OUTPUT.WRITE_LINE(original.nested.value) # 1
 STD.IO.OUTPUT.WRITE_LINE(copy.nested.value)     # 2
 ```
 
-For arrays, maps and strings, `CLONE` returns new mutable collection values. Nested arrays, maps and strings are cloned recursively.
+For arrays, maps and strings, `CLONE` returns new mutable collection values.
+With shallow cloning, nested values are reused.
+With deep cloning, nested arrays, maps and strings are cloned recursively.
 
-Internal aliases are preserved inside the cloned graph.
+Internal aliases and cyclical graphs are preserved when deep-cloning.
 
 ```stult
 shared : {"value": 1}
@@ -1580,24 +1598,11 @@ original : {
 	"b": shared
 }
 
-copy : STD.TYPE.COLLECTION.CLONE(original)
+copy : STD.TYPE.COLLECTION.CLONE(original, +)
 copy.a.value : 9
 
 STD.IO.OUTPUT.WRITE_LINE(original.a.value) # 1
 STD.IO.OUTPUT.WRITE_LINE(copy.b.value)     # 9
-```
-
-Cyclical collection graphs are preserved.
-
-```stult
-array : {}
-array[0] : array
-
-copy : STD.TYPE.COLLECTION.CLONE(array)
-copy[1] : "copy only"
-
-STD.IO.OUTPUT.WRITE_LINE(array) # {<cyclical array>}
-STD.IO.OUTPUT.WRITE_LINE(copy)  # {<cyclical array>, "copy only"}
 ```
 
 `CLONE` returns mutable collections even when the original collections are frozen. Map-entry mutability is preserved: entries whose keys are immutable-form in the source map remain immutable entries in the clone.

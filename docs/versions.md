@@ -13,6 +13,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 #### Standard library
 
 * Renamed selected standard-library entries so map merge, number decimal-place, string case and time helpers use consistent name ordering.
+* Changed `STD.TYPE.COLLECTION.CLONE(value)` to make a shallow clone by default, matching `STD.TYPE.COLLECTION.FREEZE(value)`. Pass `+` as the optional second argument, as in `STD.TYPE.COLLECTION.CLONE(value, +)`, to deep-clone nested collection graphs.
 
 ### v0.9.8
 
