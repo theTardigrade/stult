@@ -2,9 +2,9 @@
 
 EXAMPLE: tests/collection_clone.stult
 
-This example checks that TYPE.COLLECTION.CLONE deeply clones collection
-values, preserves aliases and cycles, returns mutable collections and reuses
-function values.
+This example checks that TYPE.COLLECTION.CLONE shallow-clones collections by
+default, deeply clones them when passed +, preserves aliases and cycles for
+deep clones, returns mutable collections and reuses function values.
 
 ##
 
@@ -26,64 +26,92 @@ original : {
 	"b": shared
 }
 
-copy : CLONE(original)
+shallow_copy : CLONE(original)
 
-ASSERT_TRUE(copy ! original, "clone root should be a distinct map")
-ASSERT_TRUE(copy.a = copy.b, "clone should preserve aliases inside the cloned graph")
-ASSERT_TRUE(copy.a ! original.a, "nested alias should be cloned away from the original graph")
+ASSERT_TRUE(shallow_copy ! original, "shallow clone root should be a distinct map")
+ASSERT_TRUE(shallow_copy.a = shallow_copy.b, "shallow clone should preserve aliases")
+ASSERT_TRUE(shallow_copy.a = original.a, "shallow clone should reuse nested values")
 
-copy.a.value : 9
+shallow_copy.a.value : 9
 
-ASSERT_EQUAL(original.a.value, 1, "mutating clone should not mutate original nested map")
-ASSERT_EQUAL(copy.b.value, 9, "preserved clone alias should observe mutation through either path")
+ASSERT_EQUAL(original.a.value, 9, "mutating shared nested map through shallow clone should affect original")
+ASSERT_EQUAL(shallow_copy.b.value, 9, "shallow clone alias should observe shared mutation")
+
+deep_shared : {"value": 1}
+deep_original : {
+	"a": deep_shared
+	"b": deep_shared
+}
+
+deep_copy : CLONE(deep_original, +)
+
+ASSERT_TRUE(deep_copy ! deep_original, "deep clone root should be a distinct map")
+ASSERT_TRUE(deep_copy.a = deep_copy.b, "deep clone should preserve aliases inside the cloned graph")
+ASSERT_TRUE(deep_copy.a ! deep_original.a, "deep clone should clone nested aliases away from the original graph")
+
+deep_copy.a.value : 9
+
+ASSERT_EQUAL(deep_original.a.value, 1, "mutating deep clone should not mutate original nested map")
+ASSERT_EQUAL(deep_copy.b.value, 9, "preserved deep clone alias should observe mutation through either path")
 
 cycle : {}
 cycle[0] : cycle
 
-cycle_copy : CLONE(cycle)
+shallow_cycle_copy : CLONE(cycle)
 
-ASSERT_TRUE(cycle_copy ! cycle, "cyclical clone root should be distinct from original")
-ASSERT_TRUE(cycle_copy[0] = cycle_copy, "cyclical clone should point back to itself")
-ASSERT_TRUE(cycle_copy[0] ! cycle, "cyclical clone should not point back to original")
+ASSERT_TRUE(shallow_cycle_copy ! cycle, "shallow cyclical clone root should be distinct from original")
+ASSERT_TRUE(shallow_cycle_copy[0] = cycle, "shallow cyclical clone should still refer to the original nested array")
 
-cycle_copy[1] : "copy only"
+shallow_cycle_copy[1] : "copy only"
 
-ASSERT_EQUAL(SIZE(cycle), 1, "mutating cyclical clone should not append to original")
-ASSERT_EQUAL(SIZE(cycle_copy), 2, "cyclical clone should remain mutable")
+ASSERT_EQUAL(SIZE(cycle), 1, "mutating shallow cyclical clone should not append to original root")
+ASSERT_EQUAL(SIZE(shallow_cycle_copy), 2, "shallow cyclical clone should remain mutable")
+
+deep_cycle_copy : CLONE(cycle, +)
+
+ASSERT_TRUE(deep_cycle_copy ! cycle, "deep cyclical clone root should be distinct from original")
+ASSERT_TRUE(deep_cycle_copy[0] = deep_cycle_copy, "deep cyclical clone should point back to itself")
+ASSERT_TRUE(deep_cycle_copy[0] ! cycle, "deep cyclical clone should not point back to original")
 
 frozen_original : FREEZE({
 	"nested": {"value": 1}
 	"text": "cat"
 })
 
-frozen_copy : CLONE(frozen_original)
+shallow_frozen_copy : CLONE(frozen_original)
 
 ASSERT_TRUE(IS_FROZEN(frozen_original), "original should be frozen")
-ASSERT_TRUE(!IS_FROZEN(frozen_copy), "clone root should be mutable even when original is frozen")
-ASSERT_TRUE(!IS_FROZEN(frozen_copy.nested), "nested clone should be mutable even when original is frozen")
-ASSERT_TRUE(!IS_FROZEN(frozen_copy.text), "string clone should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(shallow_frozen_copy), "shallow clone root should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(shallow_frozen_copy.text), "string shallow clone should be mutable even when original string is frozen")
+ASSERT_TRUE(shallow_frozen_copy.nested = frozen_original.nested, "shallow clone should reuse nested map even when original is frozen")
 
-frozen_copy.nested.value : 2
-frozen_copy.text[0] : "b"
+deep_frozen_copy : CLONE(frozen_original, +)
 
-ASSERT_EQUAL(frozen_original.nested.value, 1, "mutating clone should not mutate frozen original nested map")
-ASSERT_EQUAL(frozen_copy.nested.value, 2, "nested clone should accept mutation")
-ASSERT_EQUAL(frozen_original.text, "cat", "mutating cloned string should not mutate original string")
-ASSERT_EQUAL(frozen_copy.text, "bat", "cloned string should accept mutation")
+ASSERT_TRUE(!IS_FROZEN(deep_frozen_copy), "deep clone root should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(deep_frozen_copy.nested), "nested deep clone should be mutable even when original is frozen")
+ASSERT_TRUE(!IS_FROZEN(deep_frozen_copy.text), "string deep clone should be mutable even when original is frozen")
+
+deep_frozen_copy.nested.value : 2
+deep_frozen_copy.text[0] : "b"
+
+ASSERT_EQUAL(frozen_original.nested.value, 1, "mutating deep clone should not mutate frozen original nested map")
+ASSERT_EQUAL(deep_frozen_copy.nested.value, 2, "nested deep clone should accept mutation")
+ASSERT_EQUAL(frozen_original.text, "cat", "mutating deep cloned string should not mutate original string")
+ASSERT_EQUAL(deep_frozen_copy.text, "bat", "deep cloned string should accept mutation")
 
 immutable_entry_source : {"LOCKED": 1}
-immutable_entry_copy : CLONE(immutable_entry_source)
+immutable_entry_shallow_copy : CLONE(immutable_entry_source)
 immutable_entry_error : ""
 
 ?{
-	immutable_entry_copy.LOCKED : 2
+	immutable_entry_shallow_copy.LOCKED : 2
 }|{
 	(error)
 	@immutable_entry_error : error
 }
 
 ASSERT_TRUE(immutable_entry_error ! "", "clone should preserve immutable map-entry bindings")
-ASSERT_EQUAL(immutable_entry_copy.LOCKED, 1, "failed immutable-entry assignment should not change cloned value")
+ASSERT_EQUAL(immutable_entry_shallow_copy.LOCKED, 1, "failed immutable-entry assignment should not change cloned value")
 
 number_source : {123456789012345678901234567890.125}
 number_copy : CLONE(number_source)
