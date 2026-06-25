@@ -160,3 +160,6 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Map entries](../examples/tests/map_entries.stult)  
   Checks that `STD.TYPE.MAP.ENTRIES` returns sorted shallow key-value pairs, keeps nested maps and arrays as values, returns mutable arrays and returns void for non-map values.
+
+- [Map merge](../examples/tests/map_merge.stult)  
+  Checks that `STD.TYPE.MAP.SHALLOW_MERGE` returns a new mutable shallow merge and that `STD.TYPE.MAP.DEEP_MERGE` recursively merges nested maps, while accepting frozen inputs, preserving winning entry mutability, reusing values where appropriate and rejecting non-map arguments.

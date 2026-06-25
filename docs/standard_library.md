@@ -163,6 +163,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
     - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
     - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
+    - [`STD["TYPE"]["MAP"]["SHALLOW_MERGE"](...maps)`](#stdtypemapshallow_mergemaps)
+    - [`STD["TYPE"]["MAP"]["DEEP_MERGE"](...maps)`](#stdtypemapdeep_mergemaps)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
     - [`STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`](#stdtypenumberdefault_decimal_places)
     - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
@@ -1711,6 +1713,74 @@ entries : STD.TYPE.MAP.ENTRIES({"b": 2, "a": 1})
 The returned outer array and pair arrays are mutable. Entry values are reused rather than deep-cloned.
 
 Returns `_` when the value is not a map.
+
+### `STD["TYPE"]["MAP"]["SHALLOW_MERGE"](...maps)`
+
+Returns a new mutable map containing the shallow entries from one or more input maps.
+
+Input maps are copied from left to right. When multiple maps contain the same key,
+the later map's entry wins. Input maps are not modified. Frozen input maps are
+accepted. Entry values are reused rather than cloned, and the winning map-entry
+mutability is preserved.
+
+```stult
+defaults : {
+	.host : "localhost"
+	.port : 3000
+	.debug : -
+}
+
+user : {
+	.port : 8080
+}
+
+config : STD.TYPE.MAP.SHALLOW_MERGE(defaults, user)
+```
+
+`config` is equivalent to:
+
+```stult
+{
+	.host : "localhost"
+	.port : 8080
+	.debug : -
+}
+```
+
+Raises an error when called with no maps or when any argument is not a map.
+
+### `STD["TYPE"]["MAP"]["DEEP_MERGE"](...maps)`
+
+Returns a new mutable map containing the recursively merged entries from one or more input maps.
+
+Input maps are copied from left to right. When multiple maps contain the same key,
+the later map's entry wins unless both the earlier value and the later value are maps.
+When both values are maps, those maps are recursively merged into a new mutable nested map.
+Arrays, strings and all non-map values are replaced rather than merged.
+
+Input maps are not modified. Frozen input maps are accepted. Values are reused unless
+a new map is created for a recursive merge, and the winning map-entry mutability is preserved.
+
+```stult
+defaults : {
+	.server : {
+		.host : "localhost"
+		.port : 3000
+	}
+}
+
+user : {
+	.server : {
+		.port : 8080
+	}
+}
+
+config : STD.TYPE.MAP.DEEP_MERGE(defaults, user)
+```
+
+`config.server.host` is `"localhost"`, and `config.server.port` is `8080`.
+
+Raises an error when called with no maps or when any argument is not a map.
 
 ## `STD["TYPE"]["NUMBER"]`
 

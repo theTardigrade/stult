@@ -780,6 +780,10 @@ Arrays, maps and strings carry collection-level frozen flags. In the Go implemen
 
 `STD["TYPE"]["COLLECTION"]["CLONE"]` deeply clones collection graphs. The clone operation is cycle-safe and alias-preserving: if the original graph contains multiple references to the same nested collection, the cloned graph contains multiple references to the same cloned nested collection. Cycles in the original graph become cycles in the cloned graph. Cloned arrays, maps and strings are mutable even when the original collections are frozen. Map-entry binding mutability is preserved. Numbers are cloned defensively, while booleans, void, functions and builtin functions are reused.
 
+`STD["TYPE"]["MAP"]["SHALLOW_MERGE"]` performs a shallow left-to-right map merge into a new mutable map. It accepts frozen input maps, reuses entry values and copies the winning entry binding metadata so map-entry mutability is preserved.
+
+`STD["TYPE"]["MAP"]["DEEP_MERGE"]` performs the same left-to-right map merge, but recursively merges map values when both sides of the same key are maps. Arrays, strings and all non-map values are replaced rather than merged. Recursive merge results are new mutable maps; other values are reused.
+
 Mutation helpers for arrays, maps and strings must check collection-level freezing before changing collection contents. User-facing errors for frozen collection mutation should describe the collection as frozen, rather than describing the binding as immutable.
 
 ## Standard library

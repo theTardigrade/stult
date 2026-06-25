@@ -18,6 +18,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Changed manifest field names to be format-specific: STULTON manifests now require uppercase `RUN`, while JSON manifests require lowercase `run`.
 
+#### Standard library
+
+* Added `STD.TYPE.MAP.SHALLOW_MERGE` and `STD.TYPE.MAP.DEEP_MERGE` for creating new mutable map merges without mutating the input maps.
+
 #### Examples
 
 * Added example to show how object-oriented programming is perfectly possible in Stult, despite the language not having OOP-native syntax.
