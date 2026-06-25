@@ -1,0 +1,47 @@
+##
+
+EXAMPLE: projects/make_class/counter.stult
+
+This file defines a counter prototype and creates a class-like constructor from
+it with MAKE_CLASS_FROM_PROTOTYPE.
+
+The method implementations are stored once in COUNTER_PROTOTYPE. Instances get
+small wrappers that delegate to these shared functions.
+
+##
+
+STRING : STD.TYPE.STRING.NEW
+
+COUNTER_PROTOTYPE : {
+	.data : {
+		.kind : "counter"
+		.default_start : 0
+	}
+
+	.methods : {
+		.increment : { (self, prototype)
+			self.count :+ 1
+			(self.count)
+		}
+
+		.add : { (self, prototype, amount)
+			self.count :+ amount
+			(self.count)
+		}
+
+		.reset : { (self, prototype)
+			self.count : prototype.data.default_start
+			(self.count)
+		}
+
+		.kind : { (self, prototype)
+			(prototype.data.kind)
+		}
+
+		.value : { (self, prototype)
+			(self.count)
+		}
+	}
+}
+
+COUNTER_CLASS : MAKE_CLASS_FROM_PROTOTYPE(COUNTER_PROTOTYPE)

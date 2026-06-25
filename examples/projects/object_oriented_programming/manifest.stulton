@@ -1,0 +1,7 @@
+{
+	"RUN": {
+		"make_class.stult"
+		"demo/counter.stult"
+		"demo/main.stult"
+	}
+}

@@ -1,0 +1,46 @@
+##
+
+EXAMPLE: projects/object_oriented_programming/main.stult
+
+This file demonstrates MAKE_CLASS_FROM_PROTOTYPE by creating two counters that
+share one prototype map but keep separate state.
+
+The prototype contains shared data and shared methods. Each instance gets small
+wrapper methods that delegate to the shared prototype methods.
+
+It is intentionally a pattern example rather than new language syntax.
+
+##
+
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+ASSERT_EQUAL : STD.ERROR.ASSERT.EQUAL
+
+first : COUNTER_CLASS.new({
+	.count : 10
+})
+
+second : COUNTER_CLASS.new({
+	.count : 100
+})
+
+ASSERT_EQUAL(first.kind(), "counter", "first counter should read shared prototype data")
+ASSERT_EQUAL(second.kind(), "counter", "second counter should read shared prototype data")
+
+ASSERT_EQUAL(first.increment(), 11, "first counter should increment independently")
+ASSERT_EQUAL(first.add(5), 16, "first counter should support extra method arguments")
+ASSERT_EQUAL(first.value(), 16, "first counter should keep its updated value")
+
+ASSERT_EQUAL(second.value(), 100, "second counter should keep separate state")
+ASSERT_EQUAL(second.increment(), 101, "second counter should increment independently")
+
+ASSERT_EQUAL(first.reset(), 0, "first counter should reset using shared prototype data")
+ASSERT_EQUAL(first.value(), 0, "first counter should keep its reset value")
+ASSERT_EQUAL(second.value(), 101, "second counter should not be reset by first counter")
+
+ASSERT_EQUAL(COUNTER_CLASS.get(first.CLASS_ID), first, "get should return the registered first counter")
+ASSERT_EQUAL(COUNTER_CLASS.get(second.CLASS_ID), second, "get should return the registered second counter")
+
+ASSERT_EQUAL(COUNTER_CLASS.prototype.data.kind, "counter", "the class should expose its prototype data")
+ASSERT_EQUAL(COUNTER_CLASS.prototype.data.default_start, 0, "the class should expose its prototype defaults")
+
+WRITE_LINE("MAKE_CLASS_FROM_PROTOTYPE example passed")

@@ -1,0 +1,85 @@
+##
+
+EXAMPLE: projects/object_oriented_programming/make_class.stult
+
+This file defines MAKE_CLASS_FROM_PROTOTYPE, a small class-like helper
+built only from ordinary Stult maps, functions, closures and manifest ordering.
+
+MAKE_CLASS_FROM_PROTOTYPE receives a prototype map. Each prototype entry
+should be a function that receives the instance as its first argument.
+
+The returned class map has:
+
+- .new(fields?) to create an instance,
+- .get(id) to look up an instance by id,
+- .size() to count registered instances,
+- .prototype for the shared prototype map and
+- .models for the registry of instances.
+
+Each instance gets tiny wrapper methods. The wrappers look up the real instance
+by id and forward the call to the shared prototype method.
+
+##
+
+MAKE_CLASS_FROM_PROTOTYPE : { (prototype)
+	RAISE : STD.ERROR.RAISE
+	IS_MAP : STD.TYPE.IS_MAP
+	IS_FUNCTION : STD.TYPE.IS_FUNCTION
+	IS_BUILTIN_FUNCTION : STD.TYPE.IS_BUILTIN_FUNCTION
+	TEXT : STD.TYPE.STRING.NEW
+
+	IS_CALLABLE : { (value)
+		(IS_FUNCTION(value) | IS_BUILTIN_FUNCTION(value))
+	}
+
+	(!IS_MAP(prototype)) {
+		RAISE("MAKE_CLASS_FROM_PROTOTYPE expects a prototype map")
+	}
+
+	(!IS_MAP(prototype.methods)) {
+		RAISE("MAKE_CLASS_FROM_PROTOTYPE expects prototype.methods to be a map")
+	}
+
+	((prototype.methods)) { (prototype_method, method_name)
+		(!IS_CALLABLE(prototype_method)) {
+			RAISE("MAKE_CLASS_FROM_PROTOTYPE prototype method '" + method_name + "' must be a function")
+		}
+	}
+
+	next_id : 0
+	models : {:}
+
+	({
+		.prototype : prototype
+		.models : models
+
+		.new : { (fields?)
+			((fields ! _) & !IS_MAP(fields)) {
+				RAISE("MAKE_CLASS_FROM_PROTOTYPE.new expects a map of fields, or no fields")
+			}
+
+			@next_id :+ 1
+
+			id : TEXT(next_id)
+			model : (fields = _):({:}|fields)
+
+			model.CLASS_ID : id
+			model.CLASS_PROTOTYPE : prototype
+
+			models[id] : model
+
+			((prototype.methods)) { (prototype_method, method_name)
+				model[method_name] : { (...arguments)
+					self : models[id]
+					(prototype_method(self, prototype, arguments...))
+				}
+			}
+
+			(model)
+		}
+
+		.get : { (id)
+			(models[TEXT(id)])
+		}
+	})
+}
