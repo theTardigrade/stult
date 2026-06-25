@@ -19,8 +19,8 @@ func NewStdTypeStringMap() Value {
 		"REPLACE":           NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringReplace)),
 		"REPEAT":            NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringRepeat)),
 		"SPLIT":             NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringSplit)),
-		"TO_LOWER":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToLower)),
-		"TO_UPPER":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToUpper)),
+		"TO_CASE_LOWER":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToLower)),
+		"TO_CASE_UPPER":     NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringToUpper)),
 		"TRIM":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringTrim)),
 		"TRIM_END":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringTrimEnd)),
 		"TRIM_START":        NewImmutableBinding(NewBuiltinFunctionValue(StdTypeStringTrimStart)),
@@ -122,10 +122,10 @@ func StdTypeStringTrimEnd(_ *RuntimeContext, args []Value) (Value, error) {
 
 func StdTypeStringToLower(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPE.STRING.TO_LOWER expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.STRING.TO_CASE_LOWER expected 1 argument, got %d", len(args))
 	}
 
-	text, err := StdTypeStringArg("TYPE.STRING.TO_LOWER", args[0], 1)
+	text, err := StdTypeStringArg("TYPE.STRING.TO_CASE_LOWER", args[0], 1)
 	if err != nil {
 		return Value{}, err
 	}
@@ -135,10 +135,10 @@ func StdTypeStringToLower(_ *RuntimeContext, args []Value) (Value, error) {
 
 func StdTypeStringToUpper(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TYPE.STRING.TO_UPPER expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TYPE.STRING.TO_CASE_UPPER expected 1 argument, got %d", len(args))
 	}
 
-	text, err := StdTypeStringArg("TYPE.STRING.TO_UPPER", args[0], 1)
+	text, err := StdTypeStringArg("TYPE.STRING.TO_CASE_UPPER", args[0], 1)
 	if err != nil {
 		return Value{}, err
 	}

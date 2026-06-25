@@ -9,11 +9,11 @@ import (
 func NewStdTypeNumberMap() Value {
 	entries := map[string]Binding{
 		"CLAMP":                  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberClamp)),
-		"DEFAULT_DECIMAL_PLACES": NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalPlacesToDisplay)),
+		"DECIMAL_PLACES_DEFAULT": NewImmutableBinding(NewNumberValueFromInt(DefaultDecimalPlacesToDisplay)),
+		"DECIMAL_PLACES_MAX":     NewImmutableBinding(NewNumberValueFromInt(MaxDecimalPlaces)),
 		"FORMAT":                 NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormat)),
 		"FORMAT_SCIENTIFIC":      NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberFormatScientific)),
 		"IS_WHOLE":               NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberIsWhole)),
-		"MAX_DECIMAL_PLACES":     NewImmutableBinding(NewNumberValueFromInt(MaxDecimalPlaces)),
 		"NEW":                    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeNumberNew)),
 	}
 

@@ -11,11 +11,11 @@ const maxStdTimeSleepMilliseconds = math.MaxInt64 / int64(time.Millisecond)
 
 func NewStdTimeMap() Value {
 	entries := map[string]Binding{
-		"LOCAL_CALENDAR":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeLocalCalendar)),
-		"MILLI_SLEEP":     NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliSleep)),
-		"MILLI_TIMESTAMP": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliTimestamp)),
-		"NANO_TIMESTAMP":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeNanoTimestamp)),
-		"UTC_CALENDAR":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeUTCCalendar)),
+		"CALENDAR_LOCAL":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeLocalCalendar)),
+		"CALENDAR_UTC":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeUTCCalendar)),
+		"SLEEP_MILLI":     NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliSleep)),
+		"TIMESTAMP_MILLI": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliTimestamp)),
+		"TIMESTAMP_NANO":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeNanoTimestamp)),
 	}
 
 	return NewMapValue(entries, true)
@@ -23,7 +23,7 @@ func NewStdTimeMap() Value {
 
 func builtinStdTimeLocalCalendar(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
-		return Value{}, fmt.Errorf("TIME.LOCAL_CALENDAR expected 0 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TIME.CALENDAR_LOCAL expected 0 arguments, got %d", len(args))
 	}
 
 	return stdTimeCalendarSnapshot(time.Now()), nil
@@ -31,7 +31,7 @@ func builtinStdTimeLocalCalendar(_ *RuntimeContext, args []Value) (Value, error)
 
 func builtinStdTimeUTCCalendar(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
-		return Value{}, fmt.Errorf("TIME.UTC_CALENDAR expected 0 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TIME.CALENDAR_UTC expected 0 arguments, got %d", len(args))
 	}
 
 	return stdTimeCalendarSnapshot(time.Now().UTC()), nil
@@ -39,7 +39,7 @@ func builtinStdTimeUTCCalendar(_ *RuntimeContext, args []Value) (Value, error) {
 
 func builtinStdTimeMilliTimestamp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
-		return Value{}, fmt.Errorf("TIME.MILLI_TIMESTAMP expected 0 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TIME.TIMESTAMP_MILLI expected 0 arguments, got %d", len(args))
 	}
 
 	return NewNumberValueFromInt64(time.Now().UnixMilli()), nil
@@ -47,7 +47,7 @@ func builtinStdTimeMilliTimestamp(_ *RuntimeContext, args []Value) (Value, error
 
 func builtinStdTimeNanoTimestamp(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 0 {
-		return Value{}, fmt.Errorf("TIME.NANO_TIMESTAMP expected 0 arguments, got %d", len(args))
+		return Value{}, fmt.Errorf("TIME.TIMESTAMP_NANO expected 0 arguments, got %d", len(args))
 	}
 
 	return NewNumberValueFromInt64(time.Now().UnixNano()), nil
@@ -55,10 +55,10 @@ func builtinStdTimeNanoTimestamp(_ *RuntimeContext, args []Value) (Value, error)
 
 func builtinStdTimeMilliSleep(_ *RuntimeContext, args []Value) (Value, error) {
 	if len(args) != 1 {
-		return Value{}, fmt.Errorf("TIME.MILLI_SLEEP expected 1 argument, got %d", len(args))
+		return Value{}, fmt.Errorf("TIME.SLEEP_MILLI expected 1 argument, got %d", len(args))
 	}
 
-	milliseconds, err := stdTimeMillisecondsArg("TIME.MILLI_SLEEP", args[0], 1)
+	milliseconds, err := stdTimeMillisecondsArg("TIME.SLEEP_MILLI", args[0], 1)
 	if err != nil {
 		return Value{}, err
 	}
