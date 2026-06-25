@@ -887,9 +887,9 @@ STD.IO.OUTPUT.WRITE_LINE(config.port) # 8080
 
 #### Cloning collections
 
-Collection values can be deeply cloned with `STD.TYPE.COLLECTION.CLONE`.
+Use `STD.TYPE.COLLECTION.CLONE` when you want a copy of an array, map or string.
 
-`CLONE` returns a new mutable collection graph. Nested arrays, maps and strings are cloned recursively, internal aliases and cycles are preserved, and numbers are copied defensively. Functions and builtin functions are reused.
+By default, `CLONE` makes a **shallow** copy. That means the outer collection is new and mutable, but any nested arrays, maps or strings inside it are still shared with the original.
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
@@ -899,11 +899,33 @@ original : {
 }
 
 copy : STD.TYPE.COLLECTION.CLONE(original)
+
+copy.nested.value : 2
+
+WRITE_LINE(original.nested.value) # 2
+WRITE_LINE(copy.nested.value)     # 2
+```
+
+In this example, `copy` is a new map, but `copy.nested` and `original.nested` still refer to the same nested map.
+
+Pass `+` as the second argument when you want a **deep** copy instead.
+
+```stult
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+
+original : {
+	"nested": {"value": 1}
+}
+
+copy : STD.TYPE.COLLECTION.CLONE(original, +)
+
 copy.nested.value : 2
 
 WRITE_LINE(original.nested.value) # 1
 WRITE_LINE(copy.nested.value)     # 2
 ```
+
+A deep clone recursively copies nested arrays, maps and strings. This is useful when you want to change the copy without changing the original.
 
 #### Freezing collections
 
