@@ -394,6 +394,8 @@ A JSON manifest uses lowercase JSON-style fields:
 }
 ```
 
+Manifest field names are intentionally format-specific: use uppercase `RUN` in `manifest.stulton` and lowercase `run` in `manifest.json`.
+
 Run a project directory that contains a manifest:
 
 ```bash
