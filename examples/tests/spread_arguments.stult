@@ -1,0 +1,127 @@
+##
+
+EXAMPLE: tests/spread_arguments.stult
+
+This example checks suffix spread arguments in function calls.
+
+Spread syntax is only valid in call argument lists. The expression before ...
+must evaluate to an array, and that array contributes its elements as ordinary
+positional arguments in order.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+COLLECTION : STD.TYPE.COLLECTION
+MATH : STD.MATH
+
+COLLECT : { (...values)
+	(values)
+}
+
+SUM : { (...numbers)
+	total : 0
+
+	((numbers)) { (number)
+		@total :+ number
+	}
+
+	(total)
+}
+
+TRIPLE : { (first, second, third)
+	({first, second, third})
+}
+
+WITH_OPTIONAL_AND_VARIADIC : { (first, second?, ...rest)
+	({
+		first
+		second
+		rest
+	})
+}
+
+values : {2, 3, 4}
+empty : {}
+
+ASSERT.EQUAL(
+	SUM(values...),
+	9,
+	"spread should pass array elements as variadic arguments"
+)
+
+ASSERT.EQUAL(
+	SUM(1, values..., 5),
+	15,
+	"spread should work between ordinary arguments"
+)
+
+ASSERT.EQUAL(
+	SUM(
+		1
+		values...
+		5
+	),
+	15,
+	"spread should work in multiline argument lists"
+)
+
+ASSERT.EQUAL(
+	SUM(1, empty..., 2),
+	3,
+	"spreading an empty array should contribute no arguments"
+)
+
+ASSERT.EQUAL(
+	SUM(values[0...2]...),
+	5,
+	"spread should work on array-valued expressions"
+)
+
+collected : COLLECT("start", values..., "end")
+
+ASSERT.EQUAL(COLLECTION.SIZE(collected), 5, "spread should expand inside ordinary calls")
+ASSERT.EQUAL(collected[0], "start", "ordinary argument before spread should be preserved")
+ASSERT.EQUAL(collected[1], 2, "first spread element should be passed")
+ASSERT.EQUAL(collected[2], 3, "second spread element should be passed")
+ASSERT.EQUAL(collected[3], 4, "third spread element should be passed")
+ASSERT.EQUAL(collected[4], "end", "ordinary argument after spread should be preserved")
+
+triple : TRIPLE(values...)
+
+ASSERT.EQUAL(triple[0], 2, "spread should satisfy fixed parameter 1")
+ASSERT.EQUAL(triple[1], 3, "spread should satisfy fixed parameter 2")
+ASSERT.EQUAL(triple[2], 4, "spread should satisfy fixed parameter 3")
+
+optional_result : WITH_OPTIONAL_AND_VARIADIC(values...)
+
+ASSERT.EQUAL(optional_result[0], 2, "spread should bind required parameters first")
+ASSERT.EQUAL(optional_result[1], 3, "spread should bind optional parameters when present")
+ASSERT.EQUAL(optional_result[2][0], 4, "spread should leave remaining values for variadic parameters")
+
+frozen_values : ~{8, 9}
+
+ASSERT.EQUAL(
+	SUM(1, frozen_values...),
+	18,
+	"spread should accept frozen arrays"
+)
+
+ASSERT.EQUAL(
+	MATH.MAX(values...),
+	4,
+	"spread should work for builtin functions"
+)
+
+caught_non_array_spread : -
+
+?{
+	SUM("abc"...)
+}|{
+	(_)
+	@caught_non_array_spread : +
+}
+
+ASSERT.TRUE(
+	caught_non_array_spread,
+	"spreading a non-array should raise a catchable runtime error"
+)
