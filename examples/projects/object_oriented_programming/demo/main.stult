@@ -1,6 +1,6 @@
 ##
 
-EXAMPLE: projects/object_oriented_programming/main.stult
+EXAMPLE: projects/object_oriented_programming/demo/main.stult
 
 This file demonstrates MAKE_CLASS_FROM_PROTOTYPE by creating two counters that
 share one prototype map but keep separate state.
