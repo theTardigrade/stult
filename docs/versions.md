@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### Future release
+
+#### Standard library
+
+* Renamed selected standard-library entries so map merge, number decimal-place, string case and time helpers use consistent name ordering.
+
 ### v0.9.8
 
 #### Language

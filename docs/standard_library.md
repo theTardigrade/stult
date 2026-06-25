@@ -134,11 +134,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["SYSTEM"]["ENV"](name)`](#stdsystemenvname)
   - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
 - [`STD["TIME"]`](#stdtime)
-  - [`STD["TIME"]["MILLI_TIMESTAMP"]()`](#stdtimemilli_timestamp)
-  - [`STD["TIME"]["NANO_TIMESTAMP"]()`](#stdtimenano_timestamp)
-  - [`STD["TIME"]["MILLI_SLEEP"](milliseconds)`](#stdtimemilli_sleepmilliseconds)
-  - [`STD["TIME"]["LOCAL_CALENDAR"]()`](#stdtimelocal_calendar)
-  - [`STD["TIME"]["UTC_CALENDAR"]()`](#stdtimeutc_calendar)
+  - [`STD["TIME"]["TIMESTAMP_MILLI"]()`](#stdtimetimestamp_milli)
+  - [`STD["TIME"]["TIMESTAMP_NANO"]()`](#stdtimetimestamp_nano)
+  - [`STD["TIME"]["SLEEP_MILLI"](milliseconds)`](#stdtimesleep_millimilliseconds)
+  - [`STD["TIME"]["CALENDAR_LOCAL"]()`](#stdtimecalendar_local)
+  - [`STD["TIME"]["CALENDAR_UTC"]()`](#stdtimecalendar_utc)
 - [`STD["TYPE"]`](#stdtype)
   - [`STD["TYPE"]` predicates](#stdtype-predicates)
   - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
@@ -163,11 +163,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
     - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
     - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
-    - [`STD["TYPE"]["MAP"]["SHALLOW_MERGE"](...maps)`](#stdtypemapshallow_mergemaps)
-    - [`STD["TYPE"]["MAP"]["DEEP_MERGE"](...maps)`](#stdtypemapdeep_mergemaps)
+    - [`STD["TYPE"]["MAP"]["MERGE_SHALLOW"](...maps)`](#stdtypemapmerge_shallowmaps)
+    - [`STD["TYPE"]["MAP"]["MERGE_DEEP"](...maps)`](#stdtypemapmerge_deepmaps)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
-    - [`STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`](#stdtypenumberdefault_decimal_places)
-    - [`STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`](#stdtypenumbermax_decimal_places)
+    - [`STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_DEFAULT"]`](#stdtypenumberdecimal_places_default)
+    - [`STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_MAX"]`](#stdtypenumberdecimal_places_max)
     - [`STD["TYPE"]["NUMBER"]["IS_WHOLE"](value)`](#stdtypenumberis_wholevalue)
     - [`STD["TYPE"]["NUMBER"]["CLAMP"](number, minimum, maximum)`](#stdtypenumberclampnumber-minimum-maximum)
     - [`STD["TYPE"]["NUMBER"]["FORMAT"](number, decimal_places?, options?)`](#stdtypenumberformatnumber-decimal_places-options)
@@ -179,8 +179,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["STRING"]["TRIM"](text)`](#stdtypestringtrimtext)
     - [`STD["TYPE"]["STRING"]["TRIM_START"](text)`](#stdtypestringtrim_starttext)
     - [`STD["TYPE"]["STRING"]["TRIM_END"](text)`](#stdtypestringtrim_endtext)
-    - [`STD["TYPE"]["STRING"]["TO_LOWER"](text)`](#stdtypestringto_lowertext)
-    - [`STD["TYPE"]["STRING"]["TO_UPPER"](text)`](#stdtypestringto_uppertext)
+    - [`STD["TYPE"]["STRING"]["TO_CASE_LOWER"](text)`](#stdtypestringto_case_lowertext)
+    - [`STD["TYPE"]["STRING"]["TO_CASE_UPPER"](text)`](#stdtypestringto_case_uppertext)
     - [`STD["TYPE"]["STRING"]["IS_FOUND_IN"](search, text)`](#stdtypestringis_found_insearch-text)
     - [`STD["TYPE"]["STRING"]["IS_FOUND_AT_START"](search, text)`](#stdtypestringis_found_at_startsearch-text)
     - [`STD["TYPE"]["STRING"]["IS_FOUND_AT_END"](search, text)`](#stdtypestringis_found_at_endsearch-text)
@@ -1180,44 +1180,44 @@ This function does not return, because it terminates the process.
 
 Timestamps, sleep and calendar snapshots.
 
-### `STD["TIME"]["MILLI_TIMESTAMP"]()`
+### `STD["TIME"]["TIMESTAMP_MILLI"]()`
 
 Returns the current Unix timestamp in milliseconds.
 
 ```stult
-start : STD.TIME.MILLI_TIMESTAMP()
+start : STD.TIME.TIMESTAMP_MILLI()
 ```
 
 Returns a number.
 
-### `STD["TIME"]["NANO_TIMESTAMP"]()`
+### `STD["TIME"]["TIMESTAMP_NANO"]()`
 
 Returns the current Unix timestamp in nanoseconds.
 
 ```stult
-start : STD.TIME.NANO_TIMESTAMP()
+start : STD.TIME.TIMESTAMP_NANO()
 ```
 
 Returns a number.
 
-### `STD["TIME"]["MILLI_SLEEP"](milliseconds)`
+### `STD["TIME"]["SLEEP_MILLI"](milliseconds)`
 
 Sleeps for the given number of milliseconds.
 
 ```stult
-STD.TIME.MILLI_SLEEP(500)
+STD.TIME.SLEEP_MILLI(500)
 ```
 
 The argument must be a non-negative integer number.
 
 Returns `_`.
 
-### `STD["TIME"]["LOCAL_CALENDAR"]()`
+### `STD["TIME"]["CALENDAR_LOCAL"]()`
 
 Returns a map describing the current local time.
 
 ```stult
-now : STD.TIME.LOCAL_CALENDAR()
+now : STD.TIME.CALENDAR_LOCAL()
 
 STD.IO.OUTPUT.WRITE_LINE(now.YEAR, "-", now.MONTH, "-", now.DAY)
 ```
@@ -1238,15 +1238,15 @@ ZONE
 OFFSET
 ```
 
-### `STD["TIME"]["UTC_CALENDAR"]()`
+### `STD["TIME"]["CALENDAR_UTC"]()`
 
 Returns a map describing the current UTC time and date.
 
 ```stult
-utc : STD.TIME.UTC_CALENDAR()
+utc : STD.TIME.CALENDAR_UTC()
 ```
 
-The returned map has the same keys as `LOCAL_CALENDAR`.
+The returned map has the same keys as `CALENDAR_LOCAL`.
 
 ## `STD["TYPE"]`
 
@@ -1714,7 +1714,7 @@ The returned outer array and pair arrays are mutable. Entry values are reused ra
 
 Returns `_` when the value is not a map.
 
-### `STD["TYPE"]["MAP"]["SHALLOW_MERGE"](...maps)`
+### `STD["TYPE"]["MAP"]["MERGE_SHALLOW"](...maps)`
 
 Returns a new mutable map containing the shallow entries from one or more input maps.
 
@@ -1734,7 +1734,7 @@ user : {
 	.port : 8080
 }
 
-config : STD.TYPE.MAP.SHALLOW_MERGE(defaults, user)
+config : STD.TYPE.MAP.MERGE_SHALLOW(defaults, user)
 ```
 
 `config` is equivalent to:
@@ -1749,7 +1749,7 @@ config : STD.TYPE.MAP.SHALLOW_MERGE(defaults, user)
 
 Raises an error when called with no maps or when any argument is not a map.
 
-### `STD["TYPE"]["MAP"]["DEEP_MERGE"](...maps)`
+### `STD["TYPE"]["MAP"]["MERGE_DEEP"](...maps)`
 
 Returns a new mutable map containing the recursively merged entries from one or more input maps.
 
@@ -1775,7 +1775,7 @@ user : {
 	}
 }
 
-config : STD.TYPE.MAP.DEEP_MERGE(defaults, user)
+config : STD.TYPE.MAP.MERGE_DEEP(defaults, user)
 ```
 
 `config.server.host` is `"localhost"`, and `config.server.port` is `8080`.
@@ -1786,22 +1786,22 @@ Raises an error when called with no maps or when any argument is not a map.
 
 Number constants, formatting helpers and conversion helpers.
 
-### `STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]`
+### `STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_DEFAULT"]`
 
 The number of decimal places used by ordinary number display.
 
 ```stult
-STD.TYPE.NUMBER.DEFAULT_DECIMAL_PLACES
+STD.TYPE.NUMBER.DECIMAL_PLACES_DEFAULT
 ```
 
 This controls display only. It does not limit how many decimal places Stult can store internally.
 
-### `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`
+### `STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_MAX"]`
 
 The maximum number of digits Stult stores after the decimal point.
 
 ```stult
-STD.TYPE.NUMBER.MAX_DECIMAL_PLACES
+STD.TYPE.NUMBER.DECIMAL_PLACES_MAX
 ```
 
 This limit applies to the decimal part of a number, not to the whole-number part. Whole-number values are theoretically unbounded, subject to available memory and processing time.
@@ -1852,9 +1852,9 @@ NUMBER.FORMAT(10, 256)
 # "10"
 ```
 
-`decimal_places`, if supplied, must be an integer from `0` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+`decimal_places`, if supplied, must be an integer from `0` to `STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_MAX"]`.
 
-If `decimal_places` is omitted, `STD["TYPE"]["NUMBER"]["DEFAULT_DECIMAL_PLACES"]` is used.
+If `decimal_places` is omitted, `STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_DEFAULT"]` is used.
 
 The result uses up to the requested number of decimal places and trims trailing zeroes.
 
@@ -1896,7 +1896,7 @@ NUMBER.FORMAT_SCIENTIFIC(12345, 3)
 # "1.23e+4"
 ```
 
-`significant_digits` must be an integer from `1` to `STD["TYPE"]["NUMBER"]["MAX_DECIMAL_PLACES"]`.
+`significant_digits` must be an integer from `1` to `STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_MAX"]`.
 
 The result is rounded to the requested number of significant digits.
 
@@ -1975,20 +1975,20 @@ Removes trailing whitespace.
 STD.TYPE.STRING.TRIM_END("hello  ")
 ```
 
-### `STD["TYPE"]["STRING"]["TO_LOWER"](text)`
+### `STD["TYPE"]["STRING"]["TO_CASE_LOWER"](text)`
 
 Converts text to lowercase.
 
 ```stult
-STD.TYPE.STRING.TO_LOWER("Hello")
+STD.TYPE.STRING.TO_CASE_LOWER("Hello")
 ```
 
-### `STD["TYPE"]["STRING"]["TO_UPPER"](text)`
+### `STD["TYPE"]["STRING"]["TO_CASE_UPPER"](text)`
 
 Converts text to uppercase.
 
 ```stult
-STD.TYPE.STRING.TO_UPPER("Hello")
+STD.TYPE.STRING.TO_CASE_UPPER("Hello")
 ```
 
 ### `STD["TYPE"]["STRING"]["IS_FOUND_IN"](search, text)`
