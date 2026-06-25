@@ -809,7 +809,7 @@ Because both runtime modes use the same standard library, changes to builtins us
 
 A manifest lists source files to run in order.
 
-Manifest loading normalizes STULTON and JSON manifests into one Go representation with `RunFiles`.
+Manifest loading normalizes STULTON and JSON manifests into one Go representation with `RunFiles`. STULTON manifests use the uppercase `RUN` field, while JSON manifests use the lowercase `run` field.
 
 Manifest execution preserves one shared runtime state across all listed files.
 

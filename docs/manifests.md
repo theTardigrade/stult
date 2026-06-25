@@ -14,7 +14,7 @@ This is useful for larger projects, reusable helper files, configuration files a
 - [Run order](#run-order)
 - [Shared runtime state](#shared-runtime-state)
 - [Paths](#paths)
-- [`RUN` and `run`](#run-and-run)
+- [Manifest field names](#manifest-field-names)
 - [Single-file manifests](#single-file-manifests)
 - [Running a manifest project](#running-a-manifest-project)
 - [Building a bundled executable](#building-a-bundled-executable)
@@ -193,9 +193,11 @@ Relative paths are recommended because they make projects easier to move, copy a
 
 Absolute paths can be useful for local scripts, but they make projects less portable.
 
-## `RUN` and `run`
+## Manifest field names
 
-In `manifest.stulton`, either `RUN` or `run` may be used:
+Manifest field names are format-specific.
+
+In `manifest.stulton`, use uppercase `RUN`:
 
 ```stulton
 {
@@ -205,19 +207,7 @@ In `manifest.stulton`, either `RUN` or `run` may be used:
 }
 ```
 
-or:
-
-```stulton
-{
-	"run": {
-		"main.stult"
-	}
-}
-```
-
-`RUN` is more idiomatic in STULTON because uppercase map keys fit Stult's style for immutable, project-level values.
-
-Do not include both `RUN` and `run` in the same STULTON manifest.
+Lowercase `run` is not accepted in `manifest.stulton`.
 
 In `manifest.json`, use lowercase `run`:
 
@@ -228,6 +218,8 @@ In `manifest.json`, use lowercase `run`:
 	]
 }
 ```
+
+Uppercase `RUN` is not accepted in `manifest.json`.
 
 ## Single-file manifests
 
