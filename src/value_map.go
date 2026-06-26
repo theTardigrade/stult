@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// mapNativeEntryLimit keeps ordinary and large tier, but not so high that the overflow practical maps in Go's
-// optimized native map representation. After this point, new keys use the trie overflow tier so a Stult map
-// does not depend entirely on one host map.
+// mapNativeEntryLimit keeps ordinary and large practical maps in Go's
+// optimized native map representation. After this point, new keys use the
+// trie overflow tier so a Stult map does not depend entirely on one host map.
 const mapNativeEntryLimit = 1 << 20
 
 type Map struct {

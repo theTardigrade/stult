@@ -77,7 +77,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid string")
 		}
 
-		return NewNumberValueFromInt(len(value.Text.Runes)), nil
+		return NewNumberValueFromNumber(value.Text.Len()), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -118,7 +118,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid string")
 		}
 
-		return NewBoolValue(len(value.Text.Runes) == 0), nil
+		return NewBoolValue(value.Text.IsEmpty()), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -188,11 +188,20 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if !valid || index >= len(collection.Text.Runes) {
+		if !valid {
 			return fallback, nil
 		}
 
-		return NewStringValue(string(collection.Text.Runes[index])), nil
+		r, exists, err := collection.Text.Get(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
+			return fallback, nil
+		}
+
+		return NewStringValue(string(r)), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -290,7 +299,12 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return NewBoolValue(false), nil
 		}
 
-		return NewBoolValue(index >= 0 && index < len(collection.Text.Runes)), nil
+		_, exists, err := collection.Text.Get(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		return NewBoolValue(exists), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -506,10 +520,7 @@ func shallowCloneValue(value Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid string")
 		}
 
-		clone := &String{
-			Runes:    append([]rune(nil), value.Text.Runes...),
-			IsFrozen: false,
-		}
+		clone := NewString(value.Text.CloneRunes(), false)
 
 		return Value{Kind: ValueString, Text: clone}, nil
 
@@ -611,10 +622,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueString, Text: clone}, nil
 		}
 
-		clone := &String{
-			Runes:    append([]rune(nil), value.Text.Runes...),
-			IsFrozen: false,
-		}
+		clone := NewString(value.Text.CloneRunes(), false)
 
 		state.strings[value.Text] = clone
 

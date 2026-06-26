@@ -84,3 +84,36 @@ func TestStringNativeCacheInvalidatesOnMutation(t *testing.T) {
 		t.Fatalf("String() should refresh native cache to empty string")
 	}
 }
+
+func TestStringCloneRunesDoesNotAliasStorage(t *testing.T) {
+	value := NewStringValue("cat")
+	text := value.Text
+
+	runes := text.CloneRunes()
+	runes[0] = 'b'
+
+	if got := text.String(); got != "cat" {
+		t.Fatalf("CloneRunes() should not expose mutable storage; got %q", got)
+	}
+}
+
+func TestStringForEachPreservesRuneOrder(t *testing.T) {
+	value := NewStringValue("abc")
+	text := value.Text
+
+	seen := []rune{}
+	if err := text.ForEach(func(index int, r rune) error {
+		if index != len(seen) {
+			t.Fatalf("ForEach index = %d, want %d", index, len(seen))
+		}
+
+		seen = append(seen, r)
+		return nil
+	}); err != nil {
+		t.Fatalf("ForEach() failed: %v", err)
+	}
+
+	if string(seen) != "abc" {
+		t.Fatalf("ForEach runes = %q, want %q", string(seen), "abc")
+	}
+}

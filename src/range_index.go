@@ -28,37 +28,36 @@ func rangeIndexArrayValue(object Value, start Value, end Value, step Value, isIn
 		return Value{}, fmt.Errorf("invalid array")
 	}
 
-	indexes, err := stultRangeValues(start, end, step, isInclusive)
+	values := NewArrayWithCapacityHint(0, false)
+
+	produced, err := forEachStultRangeValue(start, end, step, isInclusive, func(index Value) error {
+		index = resolveSpecializedValue(index)
+		if index.Kind != ValueNumber {
+			return fmt.Errorf("array range index must be a number")
+		}
+
+		value, ok, err := object.Array.Get(index.Number)
+		if err != nil {
+			return err
+		}
+
+		if !ok {
+			return fmt.Errorf("array range index %s out of bounds", formatArrayIndex(index.Number))
+		}
+
+		return values.Append(value)
+	})
 	if err != nil {
 		return Value{}, err
 	}
 
-	if len(indexes) == 0 {
+	if !produced {
 		if err := validateEmptyRangeIndexBounds(start, end, object.Array.lengthInteger(), "array"); err != nil {
 			return Value{}, err
 		}
 	}
 
-	values := make([]Value, 0, len(indexes))
-	for _, index := range indexes {
-		index = resolveSpecializedValue(index)
-		if index.Kind != ValueNumber {
-			return Value{}, fmt.Errorf("array range index must be a number")
-		}
-
-		value, ok, err := object.Array.Get(index.Number)
-		if err != nil {
-			return Value{}, err
-		}
-
-		if !ok {
-			return Value{}, fmt.Errorf("array range index %s out of bounds", formatArrayIndex(index.Number))
-		}
-
-		values = append(values, value)
-	}
-
-	return NewArrayValue(values, false), nil
+	return Value{Kind: ValueArray, Array: values}, nil
 }
 
 func rangeIndexStringValue(object Value, start Value, end Value, step Value, isInclusive bool) (Value, error) {
@@ -66,32 +65,37 @@ func rangeIndexStringValue(object Value, start Value, end Value, step Value, isI
 		return Value{}, fmt.Errorf("invalid string")
 	}
 
-	indexes, err := stultRangeValues(start, end, step, isInclusive)
+	runes := []rune{}
+
+	produced, err := forEachStultRangeValue(start, end, step, isInclusive, func(index Value) error {
+		stringIndex, err := numberToArrayIndex(index)
+		if err != nil {
+			return err
+		}
+
+		r, exists, err := object.Text.Get(stringIndex)
+		if err != nil {
+			return err
+		}
+
+		if !exists {
+			return fmt.Errorf("string range index %d out of bounds", stringIndex)
+		}
+
+		runes = append(runes, r)
+		return nil
+	})
 	if err != nil {
 		return Value{}, err
 	}
 
-	if len(indexes) == 0 {
-		if err := validateEmptyRangeIndexBounds(start, end, big.NewInt(int64(len(object.Text.Runes))), "string"); err != nil {
+	if !produced {
+		if err := validateEmptyRangeIndexBounds(start, end, big.NewInt(int64(object.Text.RuneCount())), "string"); err != nil {
 			return Value{}, err
 		}
 	}
 
-	runes := make([]rune, 0, len(indexes))
-	for _, index := range indexes {
-		stringIndex, err := numberToArrayIndex(index)
-		if err != nil {
-			return Value{}, err
-		}
-
-		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
-			return Value{}, fmt.Errorf("string range index %d out of bounds", stringIndex)
-		}
-
-		runes = append(runes, object.Text.Runes[stringIndex])
-	}
-
-	return NewStringValue(string(runes)), nil
+	return NewStringValueWithFrozenFromRunes(runes, false), nil
 }
 
 func validateEmptyRangeIndexBounds(start Value, end Value, length *big.Int, collectionName string) error {

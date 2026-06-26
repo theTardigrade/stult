@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 type String struct {
-	Runes              []rune
+	runes              []rune
 	nativeCache        string
 	isNativeCacheValid bool
 	IsFrozen           bool
@@ -16,7 +16,7 @@ func NewStringValue(value string) Value {
 func NewStringValueWithFrozen(value string, isFrozen bool) Value {
 	return Value{
 		Kind: ValueString,
-		Text: NewStringWithFrozenFromNative(value, isFrozen),
+		Text: NewStringFromNative(value, isFrozen),
 	}
 }
 
@@ -29,34 +29,34 @@ func NewStringValueWithFrozenFromRunes(runes []rune, isFrozen bool) Value {
 
 func NewString(runes []rune, isFrozen bool) *String {
 	return &String{
-		Runes:    append([]rune(nil), runes...),
+		runes:    append([]rune(nil), runes...),
 		IsFrozen: isFrozen,
 	}
 }
 
-func NewStringWithFrozenFromNative(value string, isFrozen bool) *String {
+func NewStringFromNative(value string, isFrozen bool) *String {
 	return &String{
-		Runes:              []rune(value),
+		runes:              []rune(value),
 		nativeCache:        value,
 		isNativeCacheValid: true,
 		IsFrozen:           isFrozen,
 	}
 }
 
-func (s *String) EntryCount() int {
+func (s *String) RuneCount() int {
 	if s == nil {
 		return 0
 	}
 
-	return len(s.Runes)
+	return len(s.runes)
 }
 
 func (s *String) Len() *Number {
-	return NewSmallNumber(int64(s.EntryCount()))
+	return NewSmallNumber(int64(s.RuneCount()))
 }
 
 func (s *String) IsEmpty() bool {
-	return s.EntryCount() == 0
+	return s.RuneCount() == 0
 }
 
 func (s *String) Get(index int) (rune, bool, error) {
@@ -64,11 +64,11 @@ func (s *String) Get(index int) (rune, bool, error) {
 		return 0, false, fmt.Errorf("invalid string")
 	}
 
-	if index < 0 || index >= len(s.Runes) {
+	if index < 0 || index >= len(s.runes) {
 		return 0, false, nil
 	}
 
-	return s.Runes[index], true, nil
+	return s.runes[index], true, nil
 }
 
 func (s *String) Set(index int, value rune) error {
@@ -84,21 +84,21 @@ func (s *String) Set(index int, value rune) error {
 		return fmt.Errorf("string index cannot be negative")
 	}
 
-	if index > len(s.Runes) {
+	if index > len(s.runes) {
 		return fmt.Errorf(
 			"string index %d is past the next append position %d",
 			index,
-			len(s.Runes),
+			len(s.runes),
 		)
 	}
 
-	if index == len(s.Runes) {
-		s.Runes = append(s.Runes, value)
+	if index == len(s.runes) {
+		s.runes = append(s.runes, value)
 		s.invalidateNativeCache()
 		return nil
 	}
 
-	s.Runes[index] = value
+	s.runes[index] = value
 	s.invalidateNativeCache()
 	return nil
 }
@@ -112,7 +112,7 @@ func (s *String) Clear() error {
 		return fmt.Errorf("cannot modify frozen string")
 	}
 
-	s.Runes = nil
+	s.runes = nil
 	s.invalidateNativeCache()
 	return nil
 }
@@ -122,7 +122,7 @@ func (s *String) CloneRunes() []rune {
 		return []rune{}
 	}
 
-	return append([]rune(nil), s.Runes...)
+	return append([]rune(nil), s.runes...)
 }
 
 func (s *String) ForEach(fn func(index int, r rune) error) error {
@@ -130,8 +130,8 @@ func (s *String) ForEach(fn func(index int, r rune) error) error {
 		return fmt.Errorf("invalid string")
 	}
 
-	for index := 0; index < len(s.Runes); index++ {
-		if err := fn(index, s.Runes[index]); err != nil {
+	for index := 0; index < len(s.runes); index++ {
+		if err := fn(index, s.runes[index]); err != nil {
 			return err
 		}
 	}
@@ -145,7 +145,7 @@ func (s *String) String() string {
 	}
 
 	if !s.isNativeCacheValid {
-		s.nativeCache = string(s.Runes)
+		s.nativeCache = string(s.runes)
 		s.isNativeCacheValid = true
 	}
 
@@ -168,7 +168,7 @@ func stringAssignmentRune(value Value) (rune, error) {
 		return 0, fmt.Errorf("string index assignment requires a valid string value")
 	}
 
-	if value.Text.EntryCount() != 1 {
+	if value.Text.RuneCount() != 1 {
 		return 0, fmt.Errorf("string index assignment value must contain exactly one rune")
 	}
 

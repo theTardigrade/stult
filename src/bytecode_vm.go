@@ -27,6 +27,7 @@ type bytecodeVMCell struct {
 
 type bytecodeVMStackEntry struct {
 	Value            Value
+	RangeIterator    *stultRangeIterator
 	IsRangeSegment   bool
 	IsSpreadArgument bool
 }

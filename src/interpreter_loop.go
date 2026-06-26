@@ -207,12 +207,21 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 
 	index := 0
 
-	for index < len(s.Runes) {
+	for index < s.RuneCount() {
+		r, exists, err := s.Get(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
+			return Value{}, fmt.Errorf("string range loop index %d out of bounds", index)
+		}
+
 		key := NewNumberValueFromInt(index)
 
 		loopBindings := collectionRangeBindings(
 			stmt.RangeParameters,
-			NewStringValue(string(s.Runes[index])),
+			NewStringValue(string(r)),
 			key,
 			Value{Kind: ValueString, Text: s},
 			key,

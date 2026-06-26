@@ -286,18 +286,15 @@ func (i *Interpreter) evalLeadingDotReceiverExpression(expr *LeadingDotReceiverE
 }
 
 func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
-	elements := make([]Value, 0, len(lit.Elements))
+	array := NewArrayWithCapacityHint(len(lit.Elements), false)
 
 	for _, arrayElement := range lit.Elements {
-		values, err := i.evalArrayElement(arrayElement)
-		if err != nil {
+		if err := i.appendArrayElement(array, arrayElement); err != nil {
 			return Value{}, err
 		}
-
-		elements = append(elements, values...)
 	}
 
-	value := NewArrayValue(elements, false)
+	value := Value{Kind: ValueArray, Array: array}
 	if lit.Frozen {
 		return freezeCollectionValue(value)
 	}
@@ -305,44 +302,48 @@ func (i *Interpreter) evalArrayLiteral(lit *ArrayLiteral) (Value, error) {
 	return value, nil
 }
 
-func (i *Interpreter) evalArrayElement(element ArrayElement) ([]Value, error) {
+func (i *Interpreter) appendArrayElement(array *Array, element ArrayElement) error {
 	switch e := element.(type) {
 	case *ExpressionArrayElement:
 		value, err := i.evalExpression(e.Expression)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		return []Value{value}, nil
+		return array.Append(value)
 
 	case *RangeArrayElement:
-		return i.evalRangeArrayElement(e)
+		return i.appendRangeArrayElement(array, e)
 
 	default:
-		return nil, fmt.Errorf("unknown array element type %T", element)
+		return fmt.Errorf("unknown array element type %T", element)
 	}
 }
 
-func (i *Interpreter) evalRangeArrayElement(element *RangeArrayElement) ([]Value, error) {
+func (i *Interpreter) appendRangeArrayElement(array *Array, element *RangeArrayElement) error {
 	startValue, err := i.evalExpression(element.Start)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	endValue, err := i.evalExpression(element.End)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	stepValue := NewVoidValue()
 	if element.Step != nil {
 		stepValue, err = i.evalExpression(element.Step)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return stultRangeValues(startValue, endValue, stepValue, element.IsInclusive)
+	_, err = forEachStultRangeValue(startValue, endValue, stepValue, element.IsInclusive, func(value Value) error {
+		return array.Append(value)
+	})
+
+	return err
 }
 
 func (i *Interpreter) evalRangeIndexExpression(expr *RangeIndexExpression) (Value, error) {
@@ -427,11 +428,16 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 			return Value{}, fmt.Errorf("invalid string")
 		}
 
-		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
+		r, exists, err := object.Text.Get(stringIndex)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
 			return Value{}, fmt.Errorf("string index %d out of bounds", stringIndex)
 		}
 
-		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
+		return NewStringValue(string(r)), nil
 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")

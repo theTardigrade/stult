@@ -271,7 +271,7 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 	}
 
 	position := iterator.Position + 1
-	if position >= len(text.Runes) {
+	if position >= text.RuneCount() {
 		iterator.HasCurrent = false
 		return vm.jump(target)
 	}
@@ -280,7 +280,16 @@ func (vm *BytecodeVM) iteratorNextString(iterator *bytecodeVMIterator, target in
 
 	iterator.Position = position
 	iterator.CurrentKey = key
-	iterator.CurrentValue = NewStringValue(string(text.Runes[position]))
+	r, exists, err := text.Get(position)
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return fmt.Errorf("string iterator index %d out of bounds", position)
+	}
+
+	iterator.CurrentValue = NewStringValue(string(r))
 	iterator.CurrentPosition = key
 	iterator.HasCurrent = true
 

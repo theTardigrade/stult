@@ -85,28 +85,32 @@ func (iterator *stultRangeIterator) nextValue() (Value, bool) {
 	return NewNumberValueFromBigInt(current), true
 }
 
-func stultRangeValues(
+func forEachStultRangeValue(
 	startValue Value,
 	endValue Value,
 	stepValue Value,
 	isInclusive bool,
-) ([]Value, error) {
+	fn func(Value) error,
+) (bool, error) {
 	iterator, err := newStultRangeIterator(startValue, endValue, stepValue, isInclusive)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
-	values := []Value{}
+	produced := false
 	for {
 		value, ok := iterator.nextValue()
 		if !ok {
 			break
 		}
 
-		values = append(values, value)
+		produced = true
+		if err := fn(value); err != nil {
+			return produced, err
+		}
 	}
 
-	return values, nil
+	return produced, nil
 }
 
 func numberToExactInteger(value Value, name string) (*big.Int, error) {

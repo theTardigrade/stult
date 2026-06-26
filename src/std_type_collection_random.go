@@ -45,16 +45,25 @@ func StdTypeCollectionChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CHOICE cannot choose from invalid string")
 		}
 
-		if len(value.Text.Runes) == 0 {
+		if value.Text.IsEmpty() {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CHOICE cannot choose from empty string")
 		}
 
-		index, err := stdMathRandIndex(len(value.Text.Runes))
+		index, err := stdMathRandIndex(value.Text.RuneCount())
 		if err != nil {
 			return Value{}, err
 		}
 
-		return NewStringValue(string(value.Text.Runes[index])), nil
+		r, exists, err := value.Text.Get(index)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CHOICE generated string index out of bounds")
+		}
+
+		return NewStringValue(string(r)), nil
 
 	case ValueMap:
 		if value.Map == nil {
@@ -123,7 +132,7 @@ func StdTypeCollectionShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SHUFFLE cannot shuffle invalid string")
 		}
 
-		runes := append([]rune{}, value.Text.Runes...)
+		runes := value.Text.CloneRunes()
 
 		if err := stdMathRandShuffleRunes(runes); err != nil {
 			return Value{}, err

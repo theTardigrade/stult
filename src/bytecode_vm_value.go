@@ -330,28 +330,38 @@ func (vm *BytecodeVM) buildArray(count int) error {
 		entries[index] = entry
 	}
 
-	values := make([]Value, 0, count)
+	array := NewArrayWithCapacityHint(count, false)
 
 	for _, entry := range entries {
 		if entry.IsRangeSegment {
-			if entry.Value.Kind != ValueArray || entry.Value.Array == nil {
-				return fmt.Errorf("range segment did not produce an array")
+			if entry.RangeIterator == nil {
+				return fmt.Errorf("range segment did not produce a range iterator")
 			}
 
-			if err := entry.Value.Array.ForEach(func(_ *Number, value Value) error {
-				values = append(values, value)
-				return nil
-			}); err != nil {
-				return err
+			for {
+				value, ok := entry.RangeIterator.nextValue()
+				if !ok {
+					break
+				}
+
+				if err := array.Append(value); err != nil {
+					return err
+				}
 			}
 
 			continue
 		}
 
-		values = append(values, entry.Value)
+		if entry.IsSpreadArgument {
+			return fmt.Errorf("spread argument cannot be used as an array element")
+		}
+
+		if err := array.Append(entry.Value); err != nil {
+			return err
+		}
 	}
 
-	vm.pushValue(NewArrayValue(values, false))
+	vm.pushValue(Value{Kind: ValueArray, Array: array})
 
 	return nil
 }
@@ -508,23 +518,14 @@ func (vm *BytecodeVM) buildRange(isInclusive bool) error {
 		return err
 	}
 
-	values, err := bytecodeRangeValues(start, end, step, isInclusive)
+	iterator, err := newStultRangeIterator(start, end, step, isInclusive)
 	if err != nil {
 		return err
 	}
 
-	vm.pushRangeSegment(NewArrayValue(values, false))
+	vm.pushRangeSegment(iterator)
 
 	return nil
-}
-
-func bytecodeRangeValues(
-	startValue Value,
-	endValue Value,
-	stepValue Value,
-	isInclusive bool,
-) ([]Value, error) {
-	return stultRangeValues(startValue, endValue, stepValue, isInclusive)
 }
 
 func (vm *BytecodeVM) jump(target int) error {
@@ -549,9 +550,9 @@ func (vm *BytecodeVM) pushValue(value Value) {
 	})
 }
 
-func (vm *BytecodeVM) pushRangeSegment(value Value) {
+func (vm *BytecodeVM) pushRangeSegment(iterator *stultRangeIterator) {
 	vm.stack = append(vm.stack, bytecodeVMStackEntry{
-		Value:            value,
+		RangeIterator:    iterator,
 		IsRangeSegment:   true,
 		IsSpreadArgument: false,
 	})
@@ -686,11 +687,16 @@ func bytecodeIndexValue(object Value, index Value) (Value, error) {
 			return Value{}, err
 		}
 
-		if stringIndex < 0 || stringIndex >= len(object.Text.Runes) {
+		r, exists, err := object.Text.Get(stringIndex)
+		if err != nil {
+			return Value{}, err
+		}
+
+		if !exists {
 			return Value{}, fmt.Errorf("string index %d out of bounds", stringIndex)
 		}
 
-		return NewStringValue(string(object.Text.Runes[stringIndex])), nil
+		return NewStringValue(string(r)), nil
 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")
