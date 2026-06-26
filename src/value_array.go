@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+// arrayOrdinaryLimit keeps ordinary arrays in a contiguous Go slice for fast
+// practical indexing. Larger arrays continue in chunked overflow storage.
 const arrayOrdinaryLimit int64 = 1 << 20
 const arrayOverflowChunkSize int64 = 1 << 20
 
@@ -27,8 +29,24 @@ type ArrayOverflow struct {
 }
 
 func NewArrayValue(elements []Value, isFrozen bool) Value {
-	array := &Array{
-		Length: NewSmallNumber(0),
+	ordinaryLimit := int(arrayOrdinaryLimit)
+	if int64(ordinaryLimit) == arrayOrdinaryLimit && len(elements) <= ordinaryLimit {
+		return Value{
+			Kind: ValueArray,
+			Array: &Array{
+				Ordinary: append([]Value(nil), elements...),
+				Length:   NewSmallNumber(int64(len(elements))),
+				IsFrozen: isFrozen,
+			},
+		}
+	}
+
+	array := NewArrayWithCapacityHint(ordinaryLimit, isFrozen)
+
+	if int64(ordinaryLimit) == arrayOrdinaryLimit && ordinaryLimit > 0 {
+		array.Ordinary = append(array.Ordinary, elements[:ordinaryLimit]...)
+		array.Length = NewSmallNumber(arrayOrdinaryLimit)
+		elements = elements[ordinaryLimit:]
 	}
 
 	for _, element := range elements {
@@ -40,12 +58,44 @@ func NewArrayValue(elements []Value, isFrozen bool) Value {
 		}
 	}
 
-	array.IsFrozen = isFrozen
-
 	return Value{
 		Kind:  ValueArray,
 		Array: array,
 	}
+}
+
+func NewArrayWithCapacityHint(capacityHint int, isFrozen bool) *Array {
+	if capacityHint < 0 {
+		capacityHint = 0
+	}
+
+	ordinaryLimit := int(arrayOrdinaryLimit)
+	if int64(ordinaryLimit) == arrayOrdinaryLimit && capacityHint > ordinaryLimit {
+		capacityHint = ordinaryLimit
+	}
+
+	return &Array{
+		Ordinary: make([]Value, 0, capacityHint),
+		Length:   NewSmallNumber(0),
+		IsFrozen: isFrozen,
+	}
+}
+
+func (array *Array) capacityHintHostLimited(limit int) int {
+	if array == nil || limit <= 0 {
+		return 0
+	}
+
+	length := array.lengthInteger()
+	if length.Sign() < 0 {
+		return 0
+	}
+
+	if length.IsInt64() && length.Int64() < int64(limit) {
+		return int(length.Int64())
+	}
+
+	return limit
 }
 
 func (array *Array) Len() *Number {
@@ -378,7 +428,7 @@ func (state *valueFormatState) formatArray(a *Array) string {
 	state.arrays[a] = true
 	defer delete(state.arrays, a)
 
-	parts := make([]string, 0, len(a.Ordinary))
+	parts := make([]string, 0, a.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 
 	if err := a.ForEach(func(_ *Number, element Value) error {
 		parts = append(parts, state.formatValue(element))

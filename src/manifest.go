@@ -177,7 +177,7 @@ func manifestRunListFromValue(value Value) (manifestRunList, error) {
 			return nil, fmt.Errorf("run array is invalid")
 		}
 
-		runFiles := make(manifestRunList, 0, len(value.Array.Ordinary))
+		runFiles := make(manifestRunList, 0, value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 
 		if err := value.Array.ForEach(func(index *Number, element Value) error {
 			text, err := manifestStringFromValue(element)

@@ -270,7 +270,7 @@ func StdTypeStringJoin(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, err
 	}
 
-	parts := make([]string, 0, len(array.Array.Ordinary))
+	parts := make([]string, 0, array.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 
 	if err := array.Array.ForEach(func(_ *Number, element Value) error {
 		value := resolveSpecializedValue(element)

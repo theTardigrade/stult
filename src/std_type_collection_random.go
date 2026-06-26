@@ -104,7 +104,7 @@ func StdTypeCollectionShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		elements := make([]Value, 0, len(value.Array.Ordinary))
+		elements := make([]Value, 0, value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			elements = append(elements, element)
 			return nil

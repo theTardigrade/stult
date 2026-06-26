@@ -487,11 +487,7 @@ func shallowCloneValue(value Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid array")
 		}
 
-		clone := &Array{
-			Ordinary: make([]Value, 0, len(value.Array.Ordinary)),
-			Length:   NewSmallNumber(0),
-			IsFrozen: false,
-		}
+		clone := NewArrayWithCapacityHint(value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)), false)
 
 		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			if err := clone.Append(element); err != nil {
@@ -585,11 +581,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueArray, Array: clone}, nil
 		}
 
-		clone := &Array{
-			Ordinary: make([]Value, 0, len(value.Array.Ordinary)),
-			Length:   NewSmallNumber(0),
-			IsFrozen: false,
-		}
+		clone := NewArrayWithCapacityHint(value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)), false)
 
 		state.arrays[value.Array] = clone
 

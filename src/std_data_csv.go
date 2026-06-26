@@ -134,7 +134,7 @@ func stdCSVRowsFromValue(value Value) ([][]string, error) {
 		return nil, fmt.Errorf("CSV.NEW expected an array of row arrays")
 	}
 
-	rows := make([][]string, 0, len(value.Array.Ordinary))
+	rows := make([][]string, 0, value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 
 	if err := value.Array.ForEach(func(rowIndex *Number, rowValue Value) error {
 		row, err := stdCSVRowFromValue(rowValue, rowIndex)
@@ -158,7 +158,7 @@ func stdCSVRowFromValue(value Value, rowIndex *Number) ([]string, error) {
 		return nil, fmt.Errorf("CSV.NEW row %s expected an array", formatArrayIndex(rowIndex))
 	}
 
-	row := make([]string, 0, len(value.Array.Ordinary))
+	row := make([]string, 0, value.Array.capacityHintHostLimited(int(arrayOrdinaryLimit)))
 
 	if err := value.Array.ForEach(func(columnIndex *Number, fieldValue Value) error {
 		field, err := stdCSVFieldFromValue(fieldValue)

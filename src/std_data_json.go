@@ -167,7 +167,7 @@ func stdJSONFromValue(value Value) (any, error) {
 			return nil, fmt.Errorf("JSON.NEW cannot convert invalid array")
 		}
 
-		elements := make([]any, 0, len(value.Array.Ordinary))
+		elements := make([]any, 0, value.Array.CapacityHint(int(arrayOrdinaryLimit)))
 
 		if err := value.Array.ForEach(func(_ *Number, element Value) error {
 			converted, err := stdJSONFromValue(element)
