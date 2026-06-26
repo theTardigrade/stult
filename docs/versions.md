@@ -14,7 +14,7 @@ This release is planned as the first stable Stult release.
 
 No changes have been made for this release yet.
 
-### v.0.9.9
+### v0.9.9
 
 #### Standard library
 
