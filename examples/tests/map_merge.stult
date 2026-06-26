@@ -6,7 +6,7 @@ This example checks STD.TYPE.MAP.MERGE.
 
 MAP.MERGE(left, right) returns a new mutable shallow merge. The right map
 overrides the left map. Input maps are not modified, frozen input maps are
-accepted, and entry values are reused rather than cloned.
+accepted and entry values are reused rather than cloned.
 
 Pass + as the optional third argument to deep-merge nested maps. Arrays,
 strings and other values are replaced rather than merged.
