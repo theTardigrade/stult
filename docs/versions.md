@@ -8,6 +8,12 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 ## Changelog
 
+### v1.0.0 (Future)
+
+This release is planned as the first stable Stult release.
+
+No changes have been made for this release yet.
+
 ### v.0.9.9
 
 #### Standard library
