@@ -205,18 +205,7 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		return Value{}, fmt.Errorf("cannot range over invalid string")
 	}
 
-	index := 0
-
-	for index < s.RuneCount() {
-		r, exists, err := s.Get(index)
-		if err != nil {
-			return Value{}, err
-		}
-
-		if !exists {
-			return Value{}, fmt.Errorf("string range loop index %d out of bounds", index)
-		}
-
+	if err := s.ForEach(func(index int, r rune) error {
 		key := NewNumberValueFromInt(index)
 
 		loopBindings := collectionRangeBindings(
@@ -228,19 +217,21 @@ func (i *Interpreter) evalStringRangeLoopStatement(stmt *LoopStatement, s *Strin
 		)
 
 		if _, err := i.evalStatementBlockWithBindings(stmt.Body, loopBindings); err != nil {
-			if flow, ok := asControlFlow(err); ok {
-				switch flow.Kind {
-				case controlFlowBreak:
-					return i.evalAfterLoopBody(stmt)
-				case controlFlowReturn:
-					return Value{}, flow
-				}
-			}
-
-			return Value{}, err
+			return err
 		}
 
-		index++
+		return nil
+	}); err != nil {
+		if flow, ok := asControlFlow(err); ok {
+			switch flow.Kind {
+			case controlFlowBreak:
+				return i.evalAfterLoopBody(stmt)
+			case controlFlowReturn:
+				return Value{}, flow
+			}
+		}
+
+		return Value{}, err
 	}
 
 	return i.evalAfterLoopBody(stmt)

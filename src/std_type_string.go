@@ -63,18 +63,19 @@ func StdTypeStringChars(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("TYPE.STRING.CHARS expected 1 argument, got %d", len(args))
 	}
 
-	text, err := StdTypeStringArg("TYPE.STRING.CHARS", args[0], 1)
-	if err != nil {
+	value := resolveSpecializedValue(args[0])
+	if value.Kind != ValueString || value.Text == nil {
 		return NewVoidValue(), nil
 	}
 
-	elements := make([]Value, 0, len([]rune(text)))
-
-	for _, ch := range text {
-		elements = append(elements, NewStringValue(string(ch)))
+	chars := NewArrayWithCapacityHint(0, false)
+	if err := value.Text.ForEach(func(_ int, r rune) error {
+		return chars.Append(NewStringValue(string(r)))
+	}); err != nil {
+		return Value{}, err
 	}
 
-	return NewArrayValue(elements, false), nil
+	return Value{Kind: ValueArray, Array: chars}, nil
 }
 
 func StdTypeStringTrim(_ *RuntimeContext, args []Value) (Value, error) {
