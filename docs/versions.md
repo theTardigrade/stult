@@ -21,7 +21,9 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 * Refactored maps behind internal helper methods.
 * Added hybrid native-map and trie-overflow map storage.
 * Tracked map sizes with exact Stult numbers.
-* Added cached native strings with mutation invalidation.
+* Added chunked array storage helpers and capacity hints.
+* Streamed range expansion and range indexing internally.
+* Added dual native and rune string storage with lazy materialization.
 * Fixed stale string output after string index assignment.
 
 ### v0.9.8
