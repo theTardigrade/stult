@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const arrayOrdinaryLimit int64 = 1 << 24
+const arrayOrdinaryLimit int64 = 1 << 28
 const arrayOverflowChunkSize int64 = 1 << 24
 
 var (
