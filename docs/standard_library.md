@@ -156,15 +156,14 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["TYPE"]["COLLECTION"]["CHOICE"](collection)`](#stdtypecollectionchoicecollection)
     - [`STD["TYPE"]["COLLECTION"]["SHUFFLE"](collection)`](#stdtypecollectionshufflecollection)
     - [`STD["TYPE"]["COLLECTION"]["CLEAR"](collection)`](#stdtypecollectionclearcollection)
-    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value, deep?)`](#stdtypecollectionclonevalue-deep)
+    - [`STD["TYPE"]["COLLECTION"]["CLONE"](value)`](#stdtypecollectionclonevalue)
     - [`STD["TYPE"]["COLLECTION"]["FREEZE"](collection, deep?)`](#stdtypecollectionfreezecollection-deep)
     - [`STD["TYPE"]["COLLECTION"]["IS_FROZEN"](value)`](#stdtypecollectionis_frozenvalue)
   - [`STD["TYPE"]["MAP"]`](#stdtypemap)
     - [`STD["TYPE"]["MAP"]["KEYS"](map)`](#stdtypemapkeysmap)
     - [`STD["TYPE"]["MAP"]["VALUES"](map)`](#stdtypemapvaluesmap)
     - [`STD["TYPE"]["MAP"]["ENTRIES"](map)`](#stdtypemapentriesmap)
-    - [`STD["TYPE"]["MAP"]["MERGE_SHALLOW"](...maps)`](#stdtypemapmerge_shallowmaps)
-    - [`STD["TYPE"]["MAP"]["MERGE_DEEP"](...maps)`](#stdtypemapmerge_deepmaps)
+    - [`STD["TYPE"]["MAP"]["MERGE"](left, right, deep?)`](#stdtypemapmergeleft-right-deep)
   - [`STD["TYPE"]["NUMBER"]`](#stdtypenumber)
     - [`STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_DEFAULT"]`](#stdtypenumberdecimal_places_default)
     - [`STD["TYPE"]["NUMBER"]["DECIMAL_PLACES_MAX"]`](#stdtypenumberdecimal_places_max)
@@ -1719,14 +1718,13 @@ The returned outer array and pair arrays are mutable. Entry values are reused ra
 
 Returns `_` when the value is not a map.
 
-### `STD["TYPE"]["MAP"]["MERGE_SHALLOW"](...maps)`
+### `STD["TYPE"]["MAP"]["MERGE"](left, right, deep?)`
 
-Returns a new mutable map containing the shallow entries from one or more input maps.
+Returns a new mutable map made from two input maps.
 
-Input maps are copied from left to right. When multiple maps contain the same key,
-the later map's entry wins. Input maps are not modified. Frozen input maps are
-accepted. Entry values are reused rather than cloned, and the winning map-entry
-mutability is preserved.
+The right map overrides the left map. Input maps are not modified. Frozen input maps are accepted.
+By default, `MERGE` is shallow: entry values are reused rather than cloned, and nested maps are shared.
+The winning map-entry mutability is preserved.
 
 ```stult
 defaults : {
@@ -1739,7 +1737,7 @@ user : {
 	.port : 8080
 }
 
-config : STD.TYPE.MAP.MERGE_SHALLOW(defaults, user)
+config : STD.TYPE.MAP.MERGE(defaults, user)
 ```
 
 `config` is equivalent to:
@@ -1752,19 +1750,7 @@ config : STD.TYPE.MAP.MERGE_SHALLOW(defaults, user)
 }
 ```
 
-Raises an error when called with no maps or when any argument is not a map.
-
-### `STD["TYPE"]["MAP"]["MERGE_DEEP"](...maps)`
-
-Returns a new mutable map containing the recursively merged entries from one or more input maps.
-
-Input maps are copied from left to right. When multiple maps contain the same key,
-the later map's entry wins unless both the earlier value and the later value are maps.
-When both values are maps, those maps are recursively merged into a new mutable nested map.
-Arrays, strings and all non-map values are replaced rather than merged.
-
-Input maps are not modified. Frozen input maps are accepted. Values are reused unless
-a new map is created for a recursive merge, and the winning map-entry mutability is preserved.
+Pass `+` as the optional third argument to deeply merge nested maps.
 
 ```stult
 defaults : {
@@ -1780,12 +1766,14 @@ user : {
 	}
 }
 
-config : STD.TYPE.MAP.MERGE_DEEP(defaults, user)
+config : STD.TYPE.MAP.MERGE(defaults, user, +)
 ```
 
 `config.server.host` is `"localhost"`, and `config.server.port` is `8080`.
 
-Raises an error when called with no maps or when any argument is not a map.
+In deep mode, when both sides of a key are maps, those maps are recursively merged into a new mutable nested map. Arrays, strings and all non-map values are replaced rather than merged. Values are reused unless a new map is created for a recursive merge.
+
+Raises an error when called with the wrong number of arguments, when either of the first two arguments is not a map, or when the optional third argument is not a boolean.
 
 ## `STD["TYPE"]["NUMBER"]`
 

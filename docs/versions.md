@@ -14,6 +14,7 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 * Renamed selected standard-library entries so map merge, number decimal-place, string case and time helpers use consistent name ordering.
 * Changed `STD.TYPE.COLLECTION.CLONE(value)` to make a shallow clone by default, matching `STD.TYPE.COLLECTION.FREEZE(value)`. Pass `+` as the optional second argument, as in `STD.TYPE.COLLECTION.CLONE(value, +)`, to deep-clone nested collection graphs.
+* Added `STD.TYPE.MAP.MERGE(left, right, deep?)` for creating new mutable map merges without mutating the input maps. It is shallow by default and deep-merges nested maps when passed `+`.
 
 ### v0.9.8
 
