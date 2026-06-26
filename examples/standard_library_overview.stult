@@ -10,72 +10,83 @@ type predicates, collection helpers and formatted console output.
 
 ##
 
-IO : STD["IO"]
-W : IO["OUTPUT"]["WRITE"]
-WL : IO["OUTPUT"]["WRITE_LINE"]
-T : STD["TYPE"]
-C : T["COLLECTION"]
+WRITE : STD.IO.OUTPUT.WRITE
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
-PRINT_TITLE_BORDER : { ( length )
-	(( { 1..length } )) {
-		W("=")
+SIZE : STD.TYPE.COLLECTION.SIZE
+HAS : STD.TYPE.COLLECTION.HAS
+
+IS_MAP : STD.TYPE.IS_MAP
+IS_ARRAY : STD.TYPE.IS_ARRAY
+IS_STRING : STD.TYPE.IS_STRING
+IS_NUMBER : STD.TYPE.IS_NUMBER
+IS_BOOL : STD.TYPE.IS_BOOL
+IS_BUILTIN_FUNCTION : STD.TYPE.IS_BUILTIN_FUNCTION
+
+PRINT_TITLE_BORDER : { (length)
+	(( {1..length} )) {
+		WRITE("=")
 	}|{
-		WL()
+		WRITE_LINE()
 	}
 
 	(_)
 }
 
-PRINT_TITLE : { ( TITLE )
-	TITLE_SIZE : C["SIZE"](TITLE)
+PRINT_TITLE : { (title)
+	title_size : SIZE(title)
 
-	PRINT_TITLE_BORDER(TITLE_SIZE)
-	WL(TITLE)
-	PRINT_TITLE_BORDER(TITLE_SIZE)
-	WL()
+	PRINT_TITLE_BORDER(title_size)
+	WRITE_LINE(title)
+	PRINT_TITLE_BORDER(title_size)
+	WRITE_LINE()
 
 	(_)
 }
 
-ITERATE_MAP_WITH_RECURSIVE_PRINTING : { ( MAP, MAP_NAME, seen_maps )
-	PRINT_TITLE(MAP_NAME)
-
-	( !T["IS_MAP"](seen_maps) ) {
-		@seen_maps : {:}
+ITERATE_MAP_WITH_RECURSIVE_PRINT : { (map, map_name, seen_paths?)
+	(seen_paths = _) {
+		@seen_paths : {:}
 	}
 
-	IS_KEY_NOT_FOUND_IN_SEEN_MAPS : { (KEY) (!C["HAS"](seen_maps, KEY)) }
+	PRINT_TITLE(map_name)
 
-	( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(MAP_NAME) ) {
-		seen_maps[MAP_NAME] : MAP
+	seen_paths[map_name] : +
+
+	next_maps : {:}
+
+	((map)) { (value, key)
+		path : map_name + "." + key
+		keyKind : _
+
+		(IS_BUILTIN_FUNCTION(value)) {
+			@keyKind : "(builtin function)"
+		} | (IS_MAP(value)) {
+			@keyKind : "(map)"
+			next_maps[path] : value
+		} | (IS_ARRAY(value)) {
+			@keyKind : "(array)"
+		} | (IS_NUMBER(value)) {
+			@keyKind : "(number)"
+		} | (IS_BOOL(value)) {
+			@keyKind : "(bool)"
+		} | (IS_STRING(value)) {
+			@keyKind : "(string)"
+		}
+
+		text : key + (IS_STRING(keyKind)):(" " + keyKind|"")
+
+		WRITE_LINE(text)
 	}
 
-	NEXT_MAPS : {:}
-
-	(( MAP )) { ( VALUE, KEY )
-		( T["IS_BUILTIN_FUNCTION"](VALUE) ) {
-			WL(KEY + " (function)")
-		}|( T["IS_MAP"](VALUE) ) {
-			WL(KEY + " (collection)")
-
-			SUB_MAP_NAME_FORMATTED : (MAP_NAME + "[\"" + KEY + "\"]")
-
-			NEXT_MAPS[SUB_MAP_NAME_FORMATTED] : VALUE
+	((next_maps)) { (sub_map, sub_map_name)
+		(!HAS(seen_paths, sub_map_name)) {
+			WRITE_LINE()
+			ITERATE_MAP_WITH_RECURSIVE_PRINT(sub_map, sub_map_name, seen_paths)
 		}
 	}
 
-	(( NEXT_MAPS )) { ( SUB_MAP, SUB_MAP_NAME )
-		( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(SUB_MAP_NAME) ) {
-			WL()
-			ITERATE_MAP_WITH_RECURSIVE_PRINTING(SUB_MAP, SUB_MAP_NAME, seen_maps)
-
-			( IS_KEY_NOT_FOUND_IN_SEEN_MAPS(SUB_MAP_NAME) ) {
-				seen_maps[SUB_MAP_NAME] : SUB_MAP
-			}
-		}
-	}
-
 	(_)
 }
 
-ITERATE_MAP_WITH_RECURSIVE_PRINTING(STD, "STD", {:})
+ITERATE_MAP_WITH_RECURSIVE_PRINT(STD, "STD")
