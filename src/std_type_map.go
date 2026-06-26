@@ -4,69 +4,68 @@ import "fmt"
 
 func NewStdTypeMapMap() Value {
 	entries := map[string]Binding{
-		"ENTRIES":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapEntries)),
-		"KEYS":          NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapKeys)),
-		"MERGE_SHALLOW": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapShallowMerge)),
-		"MERGE_DEEP":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapDeepMerge)),
-		"VALUES":        NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapValues)),
+		"ENTRIES": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapEntries)),
+		"KEYS":    NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapKeys)),
+		"MERGE":   NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapMerge)),
+		"VALUES":  NewImmutableBinding(NewBuiltinFunctionValue(StdTypeMapValues)),
 	}
 
 	return NewMapValue(entries, true)
 }
 
-func StdTypeMapShallowMerge(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) == 0 {
-		return Value{}, fmt.Errorf("TYPE.MAP.MERGE_SHALLOW expected at least 1 argument, got 0")
+func StdTypeMapMerge(_ *RuntimeContext, args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE expected 2 or 3 arguments, got %d", len(args))
 	}
 
-	entries := make(map[string]Binding)
+	left := resolveSpecializedValue(args[0])
+	if left.Kind != ValueMap {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE argument 1 must be a map")
+	}
 
-	for index, arg := range args {
-		value := resolveSpecializedValue(arg)
-		if value.Kind != ValueMap {
-			return Value{}, fmt.Errorf("TYPE.MAP.MERGE_SHALLOW argument %d must be a map", index+1)
+	if left.Map == nil {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid map")
+	}
+
+	right := resolveSpecializedValue(args[1])
+	if right.Kind != ValueMap {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE argument 2 must be a map")
+	}
+
+	if right.Map == nil {
+		return Value{}, fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid map")
+	}
+
+	deep := false
+	if len(args) == 3 {
+		deepArgument := resolveSpecializedValue(args[2])
+		if deepArgument.Kind != ValueBool {
+			return Value{}, fmt.Errorf("TYPE.MAP.MERGE argument 3 expected a boolean")
 		}
 
-		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPE.MAP.MERGE_SHALLOW cannot merge invalid map")
+		deep = deepArgument.Bool
+	}
+
+	if deep {
+		merged, err := deepMergeMapPair(left.Map, right.Map, newMapDeepMergeState())
+		if err != nil {
+			return Value{}, err
 		}
 
-		for key, binding := range value.Map.Entries {
-			entries[key] = binding
-		}
+		return Value{Kind: ValueMap, Map: merged}, nil
+	}
+
+	entries := make(map[string]Binding, len(left.Map.Entries)+len(right.Map.Entries))
+
+	for key, binding := range left.Map.Entries {
+		entries[key] = binding
+	}
+
+	for key, binding := range right.Map.Entries {
+		entries[key] = binding
 	}
 
 	return NewMapValue(entries, false), nil
-}
-
-func StdTypeMapDeepMerge(_ *RuntimeContext, args []Value) (Value, error) {
-	if len(args) == 0 {
-		return Value{}, fmt.Errorf("TYPE.MAP.MERGE_DEEP expected at least 1 argument, got 0")
-	}
-
-	result := &Map{
-		Entries:  make(map[string]Binding),
-		IsFrozen: false,
-	}
-
-	state := newMapDeepMergeState()
-
-	for index, arg := range args {
-		value := resolveSpecializedValue(arg)
-		if value.Kind != ValueMap {
-			return Value{}, fmt.Errorf("TYPE.MAP.MERGE_DEEP argument %d must be a map", index+1)
-		}
-
-		if value.Map == nil {
-			return Value{}, fmt.Errorf("TYPE.MAP.MERGE_DEEP cannot merge invalid map")
-		}
-
-		if err := deepMergeMapInto(result, value.Map, state); err != nil {
-			return Value{}, err
-		}
-	}
-
-	return Value{Kind: ValueMap, Map: result}, nil
 }
 
 type mapDeepMergePair struct {
@@ -86,11 +85,11 @@ func newMapDeepMergeState() *mapDeepMergeState {
 
 func deepMergeMapInto(target *Map, source *Map, state *mapDeepMergeState) error {
 	if target == nil {
-		return fmt.Errorf("TYPE.MAP.MERGE_DEEP cannot merge into invalid map")
+		return fmt.Errorf("TYPE.MAP.MERGE cannot merge into invalid map")
 	}
 
 	if source == nil {
-		return fmt.Errorf("TYPE.MAP.MERGE_DEEP cannot merge invalid map")
+		return fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid map")
 	}
 
 	for key, incomingBinding := range source.Entries {
@@ -117,7 +116,7 @@ func deepMergeBindings(current Binding, incoming Binding, state *mapDeepMergeSta
 
 	if currentValue.Kind == ValueMap && incomingValue.Kind == ValueMap {
 		if currentValue.Map == nil || incomingValue.Map == nil {
-			return Binding{}, fmt.Errorf("TYPE.MAP.MERGE_DEEP cannot merge invalid nested map")
+			return Binding{}, fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid nested map")
 		}
 
 		merged, err := deepMergeMapPair(currentValue.Map, incomingValue.Map, state)
@@ -136,7 +135,7 @@ func deepMergeBindings(current Binding, incoming Binding, state *mapDeepMergeSta
 
 func deepMergeMapPair(left *Map, right *Map, state *mapDeepMergeState) (*Map, error) {
 	if left == nil || right == nil {
-		return nil, fmt.Errorf("TYPE.MAP.MERGE_DEEP cannot merge invalid nested map")
+		return nil, fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid nested map")
 	}
 
 	pair := mapDeepMergePair{left: left, right: right}
