@@ -7,7 +7,7 @@ import (
 )
 
 const arrayOrdinaryLimit int64 = 1 << 24
-const arrayOverflowChunkSize int64 = 1 << 16
+const arrayOverflowChunkSize int64 = 1 << 24
 
 var (
 	arrayOrdinaryLimitBig     = big.NewInt(arrayOrdinaryLimit)
