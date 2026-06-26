@@ -3,8 +3,8 @@
 EXAMPLE: tests/collection_clone.stult
 
 This example checks that TYPE.COLLECTION.CLONE shallow-clones collections by
-default, deeply clones them when passed +, preserves aliases and cycles for
-deep clones, returns mutable collections and reuses function values.
+ default, deeply clones them when passed +, preserves aliases and cycles for
+ deep clones, returns mutable collections and reuses function values.
 
 ##
 
