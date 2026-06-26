@@ -55,7 +55,7 @@ func StdTypeMapMerge(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{Kind: ValueMap, Map: merged}, nil
 	}
 
-	merged := NewMap(make(map[string]Binding, left.Map.EntryCount()+right.Map.EntryCount()), false)
+	merged := NewMap(nil, false)
 
 	if err := left.Map.ForEach(func(key string, binding Binding) error {
 		return merged.Set(key, binding)
@@ -144,7 +144,7 @@ func deepMergeMapPair(left *Map, right *Map, state *mapDeepMergeState) (*Map, er
 		return existing, nil
 	}
 
-	merged := NewMap(make(map[string]Binding, left.EntryCount()+right.EntryCount()), false)
+	merged := NewMap(nil, false)
 
 	state.pairs[pair] = merged
 
@@ -174,14 +174,14 @@ func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect invalid map")
 		}
 
-		keys := value.Map.Keys()
-		elements := make([]Value, 0, len(keys))
-
-		for _, key := range keys {
-			elements = append(elements, NewStringValue(key))
+		array := &Array{Length: NewSmallNumber(0)}
+		if err := value.Map.ForEach(func(key string, _ Binding) error {
+			return array.Append(NewStringValue(key))
+		}); err != nil {
+			return Value{}, err
 		}
 
-		return NewArrayValue(elements, false), nil
+		return Value{Kind: ValueArray, Array: array}, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -210,20 +210,19 @@ func StdTypeMapEntries(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.ENTRIES cannot inspect invalid map")
 		}
 
-		keys := value.Map.Keys()
-		elements := make([]Value, 0, len(keys))
-
-		for _, key := range keys {
-			binding, _ := value.Map.Get(key)
+		array := &Array{Length: NewSmallNumber(0)}
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			pair := NewArrayValue([]Value{
 				NewStringValue(key),
 				binding.Value,
 			}, false)
 
-			elements = append(elements, pair)
+			return array.Append(pair)
+		}); err != nil {
+			return Value{}, err
 		}
 
-		return NewArrayValue(elements, false), nil
+		return Value{Kind: ValueArray, Array: array}, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -252,15 +251,14 @@ func StdTypeMapValues(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect invalid map")
 		}
 
-		keys := value.Map.Keys()
-		elements := make([]Value, 0, len(keys))
-
-		for _, key := range keys {
-			binding, _ := value.Map.Get(key)
-			elements = append(elements, binding.Value)
+		array := &Array{Length: NewSmallNumber(0)}
+		if err := value.Map.ForEach(func(_ string, binding Binding) error {
+			return array.Append(binding.Value)
+		}); err != nil {
+			return Value{}, err
 		}
 
-		return NewArrayValue(elements, false), nil
+		return Value{Kind: ValueArray, Array: array}, nil
 
 	case ValueVoid,
 		ValueNumber,

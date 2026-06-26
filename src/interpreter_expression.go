@@ -232,7 +232,7 @@ func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value
 }
 
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
-	m := NewMap(make(map[string]Binding, len(lit.Entries)), false)
+	m := NewMap(nil, false)
 
 	previousDotMap := i.currentDotMap
 	i.currentDotMap = m

@@ -465,7 +465,7 @@ func shallowCloneValue(value Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid map")
 		}
 
-		clone := NewMap(make(map[string]Binding, value.Map.EntryCount()), false)
+		clone := NewMap(nil, false)
 
 		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			return clone.Set(key, Binding{
@@ -547,7 +547,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueMap, Map: clone}, nil
 		}
 
-		clone := NewMap(make(map[string]Binding, value.Map.EntryCount()), false)
+		clone := NewMap(nil, false)
 
 		state.maps[value.Map] = clone
 

@@ -119,7 +119,7 @@ func stdJSONToValue(value any) (Value, error) {
 		return NewArrayValue(elements, false), nil
 
 	case map[string]any:
-		entries := make(map[string]Binding)
+		mapValue := NewMap(nil, false)
 
 		for key, item := range v {
 			element, err := stdJSONToValue(item)
@@ -127,13 +127,15 @@ func stdJSONToValue(value any) (Value, error) {
 				return Value{}, err
 			}
 
-			entries[key] = Binding{
+			if err := mapValue.Set(key, Binding{
 				Value:       element,
 				IsImmutable: isImmutableIdentifier(key),
+			}); err != nil {
+				return Value{}, err
 			}
 		}
 
-		return NewMapValue(entries, false), nil
+		return Value{Kind: ValueMap, Map: mapValue}, nil
 
 	default:
 		return Value{}, fmt.Errorf("unsupported JSON value %T", value)

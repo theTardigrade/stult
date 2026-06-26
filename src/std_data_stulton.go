@@ -144,7 +144,7 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 			return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow frozen map literals")
 		}
 
-		entries := make(map[string]Binding)
+		mapValue := NewMap(nil, false)
 
 		for _, entry := range e.Entries {
 			if entry.IsDotKey {
@@ -157,7 +157,7 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 
 			key := entry.Key.Literal
 
-			if _, exists := entries[key]; exists {
+			if mapValue.Has(key) {
 				return Value{}, fmt.Errorf(
 					"line %d, column %d: DATA.STULTON.PARSE duplicate map key %q",
 					entry.Key.StartOfLine,
@@ -171,13 +171,15 @@ func stdDataStultonValueFromExpression(expr Expression) (Value, error) {
 				return Value{}, err
 			}
 
-			entries[key] = Binding{
+			if err := mapValue.Set(key, Binding{
 				Value:       value,
 				IsImmutable: isImmutableIdentifier(key),
+			}); err != nil {
+				return Value{}, err
 			}
 		}
 
-		return NewMapValue(entries, false), nil
+		return Value{Kind: ValueMap, Map: mapValue}, nil
 
 	default:
 		return Value{}, fmt.Errorf("DATA.STULTON.PARSE does not allow %s", stdDataStultonExpressionName(expr))

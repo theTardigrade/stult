@@ -365,7 +365,7 @@ func (vm *BytecodeVM) buildMap(entryCount int) error {
 		return fmt.Errorf("BUILD_MAP expected %d stack value(s)", entryCount*2)
 	}
 
-	entries := make(map[string]Binding, entryCount)
+	mapValue := NewMap(nil, false)
 
 	for index := entryCount - 1; index >= 0; index-- {
 		value, err := vm.popValue()
@@ -385,17 +385,19 @@ func (vm *BytecodeVM) buildMap(entryCount int) error {
 		}
 
 		keyText := key.Text.String()
-		if _, exists := entries[keyText]; exists {
+		if mapValue.Has(keyText) {
 			return fmt.Errorf("duplicate map key %q", keyText)
 		}
 
-		entries[keyText] = Binding{
+		if err := mapValue.Set(keyText, Binding{
 			Value:       value,
 			IsImmutable: isImmutableIdentifier(keyText),
+		}); err != nil {
+			return err
 		}
 	}
 
-	vm.pushValue(NewMapValue(entries, false))
+	vm.pushValue(Value{Kind: ValueMap, Map: mapValue})
 
 	return nil
 }

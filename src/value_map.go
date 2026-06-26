@@ -2,25 +2,38 @@ package main
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
 )
 
+const maxHostInt = int(^uint(0) >> 1)
+
 type Map struct {
-	Entries  map[string]Binding
-	IsFrozen bool
+	root       *mapNode
+	entryCount *Number
+	IsFrozen   bool
+}
+
+type mapNode struct {
+	binding    Binding
+	hasBinding bool
+	children   map[rune]*mapNode
 }
 
 func NewMap(entries map[string]Binding, isFrozen bool) *Map {
-	if entries == nil {
-		entries = map[string]Binding{}
+	m := &Map{
+		root:       &mapNode{},
+		entryCount: NewSmallNumber(0),
+		IsFrozen:   isFrozen,
 	}
 
-	return &Map{
-		Entries:  entries,
-		IsFrozen: isFrozen,
+	for key, binding := range entries {
+		_ = m.Set(key, binding)
 	}
+
+	return m
 }
 
 func NewMapValue(entries map[string]Binding, isFrozen bool) Value {
@@ -30,29 +43,70 @@ func NewMapValue(entries map[string]Binding, isFrozen bool) Value {
 	}
 }
 
+func (m *Map) ensureRoot() {
+	if m.root == nil {
+		m.root = &mapNode{}
+	}
+
+	if m.entryCount == nil {
+		m.entryCount = NewSmallNumber(0)
+	}
+}
+
 func (m *Map) EntryCount() int {
-	if m == nil || m.Entries == nil {
+	if m == nil {
 		return 0
 	}
 
-	return len(m.Entries)
+	count := m.Len()
+	count64, accuracy := count.Int64()
+	if accuracy == big.Above || count64 > int64(maxHostInt) {
+		return maxHostInt
+	}
+
+	if accuracy == big.Below || count64 < 0 {
+		return 0
+	}
+
+	return int(count64)
 }
 
 func (m *Map) Len() *Number {
-	return NewSmallNumber(int64(m.EntryCount()))
+	if m == nil || m.entryCount == nil {
+		return NewSmallNumber(0)
+	}
+
+	return CloneNumber(m.entryCount)
 }
 
 func (m *Map) IsEmpty() bool {
-	return m.EntryCount() == 0
+	return m == nil || m.Len().Sign() == 0
 }
 
 func (m *Map) Get(key string) (Binding, bool) {
-	if m == nil || m.Entries == nil {
+	if m == nil || m.root == nil {
 		return Binding{}, false
 	}
 
-	binding, exists := m.Entries[key]
-	return binding, exists
+	node := m.root
+	for _, r := range key {
+		if node.children == nil {
+			return Binding{}, false
+		}
+
+		child := node.children[r]
+		if child == nil {
+			return Binding{}, false
+		}
+
+		node = child
+	}
+
+	if !node.hasBinding {
+		return Binding{}, false
+	}
+
+	return node.binding, true
 }
 
 func (m *Map) Has(key string) bool {
@@ -65,11 +119,29 @@ func (m *Map) Set(key string, binding Binding) error {
 		return fmt.Errorf("invalid map")
 	}
 
-	if m.Entries == nil {
-		m.Entries = map[string]Binding{}
+	m.ensureRoot()
+
+	node := m.root
+	for _, r := range key {
+		if node.children == nil {
+			node.children = map[rune]*mapNode{}
+		}
+
+		child := node.children[r]
+		if child == nil {
+			child = &mapNode{}
+			node.children[r] = child
+		}
+
+		node = child
 	}
 
-	m.Entries[key] = binding
+	if !node.hasBinding {
+		m.entryCount = numberAdd(m.entryCount, NewSmallNumber(1))
+	}
+
+	node.binding = binding
+	node.hasBinding = true
 	return nil
 }
 
@@ -78,22 +150,22 @@ func (m *Map) Clear() error {
 		return fmt.Errorf("invalid map")
 	}
 
-	m.Entries = map[string]Binding{}
+	m.root = &mapNode{}
+	m.entryCount = NewSmallNumber(0)
 	return nil
 }
 
 func (m *Map) Keys() []string {
-	if m == nil || m.Entries == nil {
-		return []string{}
+	keys := []string{}
+
+	if m == nil {
+		return keys
 	}
 
-	keys := make([]string, 0, len(m.Entries))
-
-	for key := range m.Entries {
+	_ = m.ForEach(func(key string, _ Binding) error {
 		keys = append(keys, key)
-	}
-
-	sort.Strings(keys)
+		return nil
+	})
 
 	return keys
 }
@@ -103,13 +175,39 @@ func (m *Map) ForEach(fn func(key string, binding Binding) error) error {
 		return fmt.Errorf("invalid map")
 	}
 
-	for _, key := range m.Keys() {
-		binding, exists := m.Get(key)
-		if !exists {
-			continue
-		}
+	if m.root == nil {
+		return nil
+	}
 
-		if err := fn(key, binding); err != nil {
+	return m.root.forEach(nil, fn)
+}
+
+func (node *mapNode) forEach(prefix []rune, fn func(key string, binding Binding) error) error {
+	if node == nil {
+		return nil
+	}
+
+	if node.hasBinding {
+		if err := fn(string(prefix), node.binding); err != nil {
+			return err
+		}
+	}
+
+	if len(node.children) == 0 {
+		return nil
+	}
+
+	runes := make([]rune, 0, len(node.children))
+	for r := range node.children {
+		runes = append(runes, r)
+	}
+
+	sort.Slice(runes, func(i, j int) bool {
+		return runes[i] < runes[j]
+	})
+
+	for _, r := range runes {
+		if err := node.children[r].forEach(append(prefix, r), fn); err != nil {
 			return err
 		}
 	}

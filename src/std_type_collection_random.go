@@ -148,18 +148,20 @@ func StdTypeCollectionShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, err
 		}
 
-		entries := make(map[string]Binding, len(keys))
+		mapRaw := NewMap(nil, false)
 
 		for index, key := range keys {
 			originalBinding, _ := value.Map.Get(key)
 
-			entries[key] = Binding{
+			if err := mapRaw.Set(key, Binding{
 				Value:       values[index],
 				IsImmutable: originalBinding.IsImmutable,
+			}); err != nil {
+				return Value{}, err
 			}
 		}
 
-		return NewMapValue(entries, false), nil
+		return Value{Kind: ValueMap, Map: mapRaw}, nil
 
 	case ValueVoid,
 		ValueNumber,
