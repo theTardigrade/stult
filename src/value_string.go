@@ -16,7 +16,7 @@ func NewStringValue(value string) Value {
 func NewStringValueWithFrozen(value string, isFrozen bool) Value {
 	return Value{
 		Kind: ValueString,
-		Text: NewStringFromNative(value, isFrozen),
+		Text: NewStringWithFrozenFromNative(value, isFrozen),
 	}
 }
 
@@ -34,7 +34,7 @@ func NewString(runes []rune, isFrozen bool) *String {
 	}
 }
 
-func NewStringFromNative(value string, isFrozen bool) *String {
+func NewStringWithFrozenFromNative(value string, isFrozen bool) *String {
 	return &String{
 		Runes:              []rune(value),
 		nativeCache:        value,
