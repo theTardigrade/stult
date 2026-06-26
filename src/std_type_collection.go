@@ -346,6 +346,10 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot clear invalid string")
 		}
 
+		if value.Text.IsFrozen {
+			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen string")
+		}
+
 		if err := value.Text.Clear(); err != nil {
 			return Value{}, err
 		}
@@ -506,7 +510,12 @@ func shallowCloneValue(value Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid string")
 		}
 
-		return Value{Kind: ValueString, Text: NewString(value.Text.CloneRunes(), false)}, nil
+		clone := &String{
+			Runes:    append([]rune(nil), value.Text.Runes...),
+			IsFrozen: false,
+		}
+
+		return Value{Kind: ValueString, Text: clone}, nil
 
 	case ValueNumber:
 		if value.Number == nil {
@@ -610,7 +619,10 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueString, Text: clone}, nil
 		}
 
-		clone := NewString(value.Text.CloneRunes(), false)
+		clone := &String{
+			Runes:    append([]rune(nil), value.Text.Runes...),
+			IsFrozen: false,
+		}
 
 		state.strings[value.Text] = clone
 

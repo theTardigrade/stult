@@ -174,14 +174,14 @@ func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect invalid map")
 		}
 
-		array := &Array{Length: NewSmallNumber(0)}
-		if err := value.Map.ForEach(func(key string, _ Binding) error {
-			return array.Append(NewStringValue(key))
-		}); err != nil {
-			return Value{}, err
+		keys := value.Map.Keys()
+		elements := make([]Value, 0, len(keys))
+
+		for _, key := range keys {
+			elements = append(elements, NewStringValue(key))
 		}
 
-		return Value{Kind: ValueArray, Array: array}, nil
+		return NewArrayValue(elements, false), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -210,19 +210,20 @@ func StdTypeMapEntries(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.ENTRIES cannot inspect invalid map")
 		}
 
-		array := &Array{Length: NewSmallNumber(0)}
-		if err := value.Map.ForEach(func(key string, binding Binding) error {
+		keys := value.Map.Keys()
+		elements := make([]Value, 0, len(keys))
+
+		for _, key := range keys {
+			binding, _ := value.Map.Get(key)
 			pair := NewArrayValue([]Value{
 				NewStringValue(key),
 				binding.Value,
 			}, false)
 
-			return array.Append(pair)
-		}); err != nil {
-			return Value{}, err
+			elements = append(elements, pair)
 		}
 
-		return Value{Kind: ValueArray, Array: array}, nil
+		return NewArrayValue(elements, false), nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -251,14 +252,15 @@ func StdTypeMapValues(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect invalid map")
 		}
 
-		array := &Array{Length: NewSmallNumber(0)}
-		if err := value.Map.ForEach(func(_ string, binding Binding) error {
-			return array.Append(binding.Value)
-		}); err != nil {
-			return Value{}, err
+		keys := value.Map.Keys()
+		elements := make([]Value, 0, len(keys))
+
+		for _, key := range keys {
+			binding, _ := value.Map.Get(key)
+			elements = append(elements, binding.Value)
 		}
 
-		return Value{Kind: ValueArray, Array: array}, nil
+		return NewArrayValue(elements, false), nil
 
 	case ValueVoid,
 		ValueNumber,

@@ -2,18 +2,25 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-const maxHostInt = int(^uint(0) >> 1)
+// mapNativeEntryLimit keeps ordinary and large tier, but not so high that the overflow practical maps in Go's
+// optimized native map representation. After this point, new keys use the trie overflow tier so a Stult map
+// does not depend entirely on one host map.
+const mapNativeEntryLimit = 1 << 20
 
 type Map struct {
-	root       *mapNode
+	Entries    map[string]Binding
+	overflow   *mapTrie
 	entryCount *Number
 	IsFrozen   bool
+}
+
+type mapTrie struct {
+	root *mapNode
 }
 
 type mapNode struct {
@@ -24,7 +31,7 @@ type mapNode struct {
 
 func NewMap(entries map[string]Binding, isFrozen bool) *Map {
 	m := &Map{
-		root:       &mapNode{},
+		Entries:    map[string]Binding{},
 		entryCount: NewSmallNumber(0),
 		IsFrozen:   isFrozen,
 	}
@@ -43,38 +50,34 @@ func NewMapValue(entries map[string]Binding, isFrozen bool) Value {
 	}
 }
 
-func (m *Map) ensureRoot() {
-	if m.root == nil {
-		m.root = &mapNode{}
+func newMapTrie() *mapTrie {
+	return &mapTrie{root: &mapNode{}}
+}
+
+func (m *Map) ensureStorage() {
+	if m.Entries == nil {
+		m.Entries = map[string]Binding{}
 	}
 
 	if m.entryCount == nil {
-		m.entryCount = NewSmallNumber(0)
+		m.entryCount = NewSmallNumber(int64(len(m.Entries)))
 	}
 }
 
-func (m *Map) EntryCount() int {
-	if m == nil {
-		return 0
+func (m *Map) ensureOverflow() *mapTrie {
+	if m.overflow == nil {
+		m.overflow = newMapTrie()
 	}
 
-	count := m.Len()
-	count64, accuracy := count.Int64()
-	if accuracy == big.Above || count64 > int64(maxHostInt) {
-		return maxHostInt
-	}
-
-	if accuracy == big.Below || count64 < 0 {
-		return 0
-	}
-
-	return int(count64)
+	return m.overflow
 }
 
 func (m *Map) Len() *Number {
-	if m == nil || m.entryCount == nil {
+	if m == nil {
 		return NewSmallNumber(0)
 	}
+
+	m.ensureStorage()
 
 	return CloneNumber(m.entryCount)
 }
@@ -84,29 +87,21 @@ func (m *Map) IsEmpty() bool {
 }
 
 func (m *Map) Get(key string) (Binding, bool) {
-	if m == nil || m.root == nil {
+	if m == nil {
 		return Binding{}, false
 	}
 
-	node := m.root
-	for _, r := range key {
-		if node.children == nil {
-			return Binding{}, false
-		}
+	m.ensureStorage()
 
-		child := node.children[r]
-		if child == nil {
-			return Binding{}, false
-		}
-
-		node = child
+	if binding, exists := m.Entries[key]; exists {
+		return binding, true
 	}
 
-	if !node.hasBinding {
+	if m.overflow == nil {
 		return Binding{}, false
 	}
 
-	return node.binding, true
+	return m.overflow.Get(key)
 }
 
 func (m *Map) Has(key string) bool {
@@ -119,29 +114,27 @@ func (m *Map) Set(key string, binding Binding) error {
 		return fmt.Errorf("invalid map")
 	}
 
-	m.ensureRoot()
+	m.ensureStorage()
 
-	node := m.root
-	for _, r := range key {
-		if node.children == nil {
-			node.children = map[rune]*mapNode{}
-		}
-
-		child := node.children[r]
-		if child == nil {
-			child = &mapNode{}
-			node.children[r] = child
-		}
-
-		node = child
+	if _, exists := m.Entries[key]; exists {
+		m.Entries[key] = binding
+		return nil
 	}
 
-	if !node.hasBinding {
-		m.entryCount = numberAdd(m.entryCount, NewSmallNumber(1))
+	if m.overflow != nil {
+		if _, exists := m.overflow.Get(key); exists {
+			m.overflow.Set(key, binding)
+			return nil
+		}
 	}
 
-	node.binding = binding
-	node.hasBinding = true
+	if len(m.Entries) < mapNativeEntryLimit {
+		m.Entries[key] = binding
+	} else {
+		m.ensureOverflow().Set(key, binding)
+	}
+
+	m.entryCount = numberAdd(m.entryCount, NewSmallNumber(1))
 	return nil
 }
 
@@ -150,7 +143,8 @@ func (m *Map) Clear() error {
 		return fmt.Errorf("invalid map")
 	}
 
-	m.root = &mapNode{}
+	m.Entries = map[string]Binding{}
+	m.overflow = nil
 	m.entryCount = NewSmallNumber(0)
 	return nil
 }
@@ -175,39 +169,146 @@ func (m *Map) ForEach(fn func(key string, binding Binding) error) error {
 		return fmt.Errorf("invalid map")
 	}
 
-	if m.root == nil {
+	m.ensureStorage()
+
+	nativeKeys := make([]string, 0, len(m.Entries))
+	for key := range m.Entries {
+		nativeKeys = append(nativeKeys, key)
+	}
+	sort.Strings(nativeKeys)
+
+	if m.overflow == nil || m.overflow.IsEmpty() {
+		for _, key := range nativeKeys {
+			if err := fn(key, m.Entries[key]); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
 
-	return m.root.forEach(nil, fn)
+	nativeIndex := 0
+
+	if err := m.overflow.ForEach(func(key string, binding Binding) error {
+		for nativeIndex < len(nativeKeys) && nativeKeys[nativeIndex] < key {
+			nativeKey := nativeKeys[nativeIndex]
+			if err := fn(nativeKey, m.Entries[nativeKey]); err != nil {
+				return err
+			}
+
+			nativeIndex++
+		}
+
+		if err := fn(key, binding); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	for nativeIndex < len(nativeKeys) {
+		nativeKey := nativeKeys[nativeIndex]
+		if err := fn(nativeKey, m.Entries[nativeKey]); err != nil {
+			return err
+		}
+
+		nativeIndex++
+	}
+
+	return nil
 }
 
-func (node *mapNode) forEach(prefix []rune, fn func(key string, binding Binding) error) error {
-	if node == nil {
+func (t *mapTrie) IsEmpty() bool {
+	return t == nil || t.root == nil || (!t.root.hasBinding && len(t.root.children) == 0)
+}
+
+func (t *mapTrie) Get(key string) (Binding, bool) {
+	if t == nil || t.root == nil {
+		return Binding{}, false
+	}
+
+	node := t.root
+	for _, r := range key {
+		if node.children == nil {
+			return Binding{}, false
+		}
+
+		next := node.children[r]
+		if next == nil {
+			return Binding{}, false
+		}
+
+		node = next
+	}
+
+	if !node.hasBinding {
+		return Binding{}, false
+	}
+
+	return node.binding, true
+}
+
+func (t *mapTrie) Set(key string, binding Binding) bool {
+	if t.root == nil {
+		t.root = &mapNode{}
+	}
+
+	node := t.root
+	for _, r := range key {
+		if node.children == nil {
+			node.children = map[rune]*mapNode{}
+		}
+
+		next := node.children[r]
+		if next == nil {
+			next = &mapNode{}
+			node.children[r] = next
+		}
+
+		node = next
+	}
+
+	inserted := !node.hasBinding
+	node.binding = binding
+	node.hasBinding = true
+	return inserted
+}
+
+func (t *mapTrie) ForEach(fn func(key string, binding Binding) error) error {
+	if t == nil || t.root == nil {
 		return nil
 	}
 
-	if node.hasBinding {
-		if err := fn(string(prefix), node.binding); err != nil {
+	return t.root.forEach(nil, fn)
+}
+
+func (n *mapNode) forEach(prefix []rune, fn func(key string, binding Binding) error) error {
+	if n == nil {
+		return nil
+	}
+
+	if n.hasBinding {
+		if err := fn(string(prefix), n.binding); err != nil {
 			return err
 		}
 	}
 
-	if len(node.children) == 0 {
+	if len(n.children) == 0 {
 		return nil
 	}
 
-	runes := make([]rune, 0, len(node.children))
-	for r := range node.children {
-		runes = append(runes, r)
+	children := make([]rune, 0, len(n.children))
+	for r := range n.children {
+		children = append(children, r)
 	}
-
-	sort.Slice(runes, func(i, j int) bool {
-		return runes[i] < runes[j]
+	sort.Slice(children, func(i, j int) bool {
+		return children[i] < children[j]
 	})
 
-	for _, r := range runes {
-		if err := node.children[r].forEach(append(prefix, r), fn); err != nil {
+	for _, r := range children {
+		if err := n.children[r].forEach(append(prefix, r), fn); err != nil {
 			return err
 		}
 	}
@@ -236,14 +337,12 @@ func (state *valueFormatState) formatMap(m *Map) string {
 	state.maps[m] = true
 	defer delete(state.maps, m)
 
-	keys := sortedMapKeys(m)
+	parts := []string{}
 
-	parts := make([]string, 0, len(keys))
-
-	for _, key := range keys {
-		binding, _ := m.Get(key)
+	_ = m.ForEach(func(key string, binding Binding) error {
 		parts = append(parts, strconv.Quote(key)+": "+state.formatValue(binding.Value))
-	}
+		return nil
+	})
 
 	return prefix + "{" + strings.Join(parts, ", ") + "}"
 }
