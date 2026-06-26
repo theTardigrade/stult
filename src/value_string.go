@@ -1,12 +1,23 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"unicode/utf8"
+)
+
+type stringStorageState uint8
+
+const (
+	stringStorageNative stringStorageState = iota
+	stringStorageRunes
+	stringStorageBoth
+)
 
 type String struct {
-	runes              []rune
-	nativeCache        string
-	isNativeCacheValid bool
-	IsFrozen           bool
+	runes        []rune
+	native       string
+	storageState stringStorageState
+	IsFrozen     bool
 }
 
 func NewStringValue(value string) Value {
@@ -29,17 +40,17 @@ func NewStringValueWithFrozenFromRunes(runes []rune, isFrozen bool) Value {
 
 func NewString(runes []rune, isFrozen bool) *String {
 	return &String{
-		runes:    append([]rune(nil), runes...),
-		IsFrozen: isFrozen,
+		runes:        append([]rune(nil), runes...),
+		storageState: stringStorageRunes,
+		IsFrozen:     isFrozen,
 	}
 }
 
 func NewStringFromNative(value string, isFrozen bool) *String {
 	return &String{
-		runes:              []rune(value),
-		nativeCache:        value,
-		isNativeCacheValid: true,
-		IsFrozen:           isFrozen,
+		native:       value,
+		storageState: stringStorageNative,
+		IsFrozen:     isFrozen,
 	}
 }
 
@@ -48,7 +59,11 @@ func (s *String) RuneCount() int {
 		return 0
 	}
 
-	return len(s.runes)
+	if s.hasRunes() {
+		return len(s.runes)
+	}
+
+	return utf8.RuneCountInString(s.native)
 }
 
 func (s *String) Len() *Number {
@@ -60,8 +75,8 @@ func (s *String) IsEmpty() bool {
 }
 
 func (s *String) Get(index int) (rune, bool, error) {
-	if s == nil {
-		return 0, false, fmt.Errorf("invalid string")
+	if err := s.ensureRunes(); err != nil {
+		return 0, false, err
 	}
 
 	if index < 0 || index >= len(s.runes) {
@@ -72,8 +87,8 @@ func (s *String) Get(index int) (rune, bool, error) {
 }
 
 func (s *String) Set(index int, value rune) error {
-	if s == nil {
-		return fmt.Errorf("invalid string")
+	if err := s.ensureRunes(); err != nil {
+		return err
 	}
 
 	if s.IsFrozen {
@@ -94,12 +109,12 @@ func (s *String) Set(index int, value rune) error {
 
 	if index == len(s.runes) {
 		s.runes = append(s.runes, value)
-		s.invalidateNativeCache()
+		s.invalidateNative()
 		return nil
 	}
 
 	s.runes[index] = value
-	s.invalidateNativeCache()
+	s.invalidateNative()
 	return nil
 }
 
@@ -113,7 +128,7 @@ func (s *String) Clear() error {
 	}
 
 	s.runes = nil
-	s.invalidateNativeCache()
+	s.invalidateNative()
 	return nil
 }
 
@@ -122,12 +137,16 @@ func (s *String) CloneRunes() []rune {
 		return []rune{}
 	}
 
+	if err := s.ensureRunes(); err != nil {
+		return []rune{}
+	}
+
 	return append([]rune(nil), s.runes...)
 }
 
 func (s *String) ForEach(fn func(index int, r rune) error) error {
-	if s == nil {
-		return fmt.Errorf("invalid string")
+	if err := s.ensureRunes(); err != nil {
+		return err
 	}
 
 	for index := 0; index < len(s.runes); index++ {
@@ -144,17 +163,44 @@ func (s *String) String() string {
 		return ""
 	}
 
-	if !s.isNativeCacheValid {
-		s.nativeCache = string(s.runes)
-		s.isNativeCacheValid = true
-	}
-
-	return s.nativeCache
+	s.ensureNative()
+	return s.native
 }
 
-func (s *String) invalidateNativeCache() {
-	s.nativeCache = ""
-	s.isNativeCacheValid = false
+func (s *String) ensureRunes() error {
+	if s == nil {
+		return fmt.Errorf("invalid string")
+	}
+
+	if s.hasRunes() {
+		return nil
+	}
+
+	s.runes = []rune(s.native)
+	s.storageState = stringStorageBoth
+	return nil
+}
+
+func (s *String) ensureNative() {
+	if s.hasNative() {
+		return
+	}
+
+	s.native = string(s.runes)
+	s.storageState = stringStorageBoth
+}
+
+func (s *String) hasRunes() bool {
+	return s.storageState == stringStorageRunes || s.storageState == stringStorageBoth
+}
+
+func (s *String) hasNative() bool {
+	return s.storageState == stringStorageNative || s.storageState == stringStorageBoth
+}
+
+func (s *String) invalidateNative() {
+	s.native = ""
+	s.storageState = stringStorageRunes
 }
 
 func stringAssignmentRune(value Value) (rune, error) {
