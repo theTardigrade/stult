@@ -698,10 +698,10 @@ The above Stult code is roughly equivalent to the following C code:
 ```c
 double count = 10;
 
-count += 1;
-count -= 1;
-count *= 2;
-count /= 5;
+count += 1; // 11
+count -= 1; // 10
+count *= 2; // 20
+count /= 5; // 4
 ```
 
 Compound assignment can also update mutable outer bindings:
