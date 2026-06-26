@@ -116,7 +116,7 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 			break
 		}
 
-		binding, ok := m.Entries[key]
+		binding, ok := m.Get(key)
 		if !ok {
 			continue
 		}
@@ -151,7 +151,7 @@ func (i *Interpreter) evalMapRangeLoopStatement(stmt *LoopStatement, m *Map) (Va
 }
 
 func nextMapRangeKey(m *Map, lastKey string, hasLastKey bool) (string, bool) {
-	keys := sortedMapKeys(m)
+	keys := m.Keys()
 
 	for _, key := range keys {
 		if !hasLastKey || key > lastKey {

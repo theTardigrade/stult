@@ -401,10 +401,7 @@ func (vm *BytecodeVM) buildMap(entryCount int) error {
 }
 
 func (vm *BytecodeVM) beginMapLiteral() {
-	m := &Map{
-		Entries:  map[string]Binding{},
-		IsFrozen: false,
-	}
+	m := NewMap(nil, false)
 
 	vm.dotMapStack = append(vm.dotMapStack, vm.currentDotMap)
 	vm.currentDotMap = m
@@ -421,7 +418,7 @@ func (vm *BytecodeVM) checkMapEntry(nameConstant int) error {
 		return err
 	}
 
-	if _, exists := vm.currentDotMap.Entries[key]; exists {
+	if vm.currentDotMap.Has(key) {
 		return fmt.Errorf("duplicate map key %q", key)
 	}
 
@@ -443,13 +440,15 @@ func (vm *BytecodeVM) addMapEntry(nameConstant int) error {
 		return err
 	}
 
-	if _, exists := vm.currentDotMap.Entries[key]; exists {
+	if vm.currentDotMap.Has(key) {
 		return fmt.Errorf("duplicate map key %q", key)
 	}
 
-	vm.currentDotMap.Entries[key] = Binding{
+	if err := vm.currentDotMap.Set(key, Binding{
 		Value:       value,
 		IsImmutable: isImmutableIdentifier(key),
+	}); err != nil {
+		return err
 	}
 
 	return nil
@@ -647,7 +646,7 @@ func bytecodeIndexValue(object Value, index Value) (Value, error) {
 
 		key := index.Text.String()
 
-		binding, ok := object.Map.Entries[key]
+		binding, ok := object.Map.Get(key)
 		if !ok {
 			return Value{}, fmt.Errorf("map has no key %q", key)
 		}

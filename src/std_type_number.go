@@ -160,10 +160,10 @@ func parseNumberFormatOptions(value Value, argumentName string) (numberFormatOpt
 
 	options := numberFormatOptions{}
 
-	for key, binding := range value.Map.Entries {
+	if err := value.Map.ForEach(func(key string, binding Binding) error {
 		optionValue := resolveSpecializedValue(binding.Value)
 		if optionValue.Kind != ValueBool {
-			return numberFormatOptions{}, fmt.Errorf("TYPE.NUMBER.FORMAT option %q expected a bool", key)
+			return fmt.Errorf("TYPE.NUMBER.FORMAT option %q expected a bool", key)
 		}
 
 		switch key {
@@ -174,8 +174,12 @@ func parseNumberFormatOptions(value Value, argumentName string) (numberFormatOpt
 			options.GroupDigits = optionValue.Bool
 
 		default:
-			return numberFormatOptions{}, fmt.Errorf("TYPE.NUMBER.FORMAT unknown option %q", key)
+			return fmt.Errorf("TYPE.NUMBER.FORMAT unknown option %q", key)
 		}
+
+		return nil
+	}); err != nil {
+		return numberFormatOptions{}, err
 	}
 
 	return options, nil

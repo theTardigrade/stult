@@ -55,17 +55,21 @@ func StdTypeMapMerge(_ *RuntimeContext, args []Value) (Value, error) {
 		return Value{Kind: ValueMap, Map: merged}, nil
 	}
 
-	entries := make(map[string]Binding, len(left.Map.Entries)+len(right.Map.Entries))
+	merged := NewMap(make(map[string]Binding, left.Map.EntryCount()+right.Map.EntryCount()), false)
 
-	for key, binding := range left.Map.Entries {
-		entries[key] = binding
+	if err := left.Map.ForEach(func(key string, binding Binding) error {
+		return merged.Set(key, binding)
+	}); err != nil {
+		return Value{}, err
 	}
 
-	for key, binding := range right.Map.Entries {
-		entries[key] = binding
+	if err := right.Map.ForEach(func(key string, binding Binding) error {
+		return merged.Set(key, binding)
+	}); err != nil {
+		return Value{}, err
 	}
 
-	return NewMapValue(entries, false), nil
+	return Value{Kind: ValueMap, Map: merged}, nil
 }
 
 type mapDeepMergePair struct {
@@ -92,11 +96,10 @@ func deepMergeMapInto(target *Map, source *Map, state *mapDeepMergeState) error 
 		return fmt.Errorf("TYPE.MAP.MERGE cannot merge invalid map")
 	}
 
-	for key, incomingBinding := range source.Entries {
-		currentBinding, exists := target.Entries[key]
+	return source.ForEach(func(key string, incomingBinding Binding) error {
+		currentBinding, exists := target.Get(key)
 		if !exists {
-			target.Entries[key] = incomingBinding
-			continue
+			return target.Set(key, incomingBinding)
 		}
 
 		mergedBinding, err := deepMergeBindings(currentBinding, incomingBinding, state)
@@ -104,10 +107,8 @@ func deepMergeMapInto(target *Map, source *Map, state *mapDeepMergeState) error 
 			return err
 		}
 
-		target.Entries[key] = mergedBinding
-	}
-
-	return nil
+		return target.Set(key, mergedBinding)
+	})
 }
 
 func deepMergeBindings(current Binding, incoming Binding, state *mapDeepMergeState) (Binding, error) {
@@ -143,15 +144,14 @@ func deepMergeMapPair(left *Map, right *Map, state *mapDeepMergeState) (*Map, er
 		return existing, nil
 	}
 
-	merged := &Map{
-		Entries:  make(map[string]Binding, len(left.Entries)+len(right.Entries)),
-		IsFrozen: false,
-	}
+	merged := NewMap(make(map[string]Binding, left.EntryCount()+right.EntryCount()), false)
 
 	state.pairs[pair] = merged
 
-	for key, binding := range left.Entries {
-		merged.Entries[key] = binding
+	if err := left.ForEach(func(key string, binding Binding) error {
+		return merged.Set(key, binding)
+	}); err != nil {
+		return nil, err
 	}
 
 	if err := deepMergeMapInto(merged, right, state); err != nil {
@@ -174,7 +174,7 @@ func StdTypeMapKeys(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.KEYS cannot inspect invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		elements := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
@@ -210,13 +210,14 @@ func StdTypeMapEntries(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.ENTRIES cannot inspect invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		elements := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
+			binding, _ := value.Map.Get(key)
 			pair := NewArrayValue([]Value{
 				NewStringValue(key),
-				value.Map.Entries[key].Value,
+				binding.Value,
 			}, false)
 
 			elements = append(elements, pair)
@@ -251,11 +252,12 @@ func StdTypeMapValues(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.MAP.VALUES cannot inspect invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		elements := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
-			elements = append(elements, value.Map.Entries[key].Value)
+			binding, _ := value.Map.Get(key)
+			elements = append(elements, binding.Value)
 		}
 
 		return NewArrayValue(elements, false), nil

@@ -244,7 +244,7 @@ func (vm *BytecodeVM) iteratorNextMap(iterator *bytecodeVMIterator, target int) 
 			return vm.jump(target)
 		}
 
-		binding, ok := m.Entries[key]
+		binding, ok := m.Get(key)
 
 		iterator.LastMapKey = key
 		iterator.HasLastMapKey = true

@@ -61,18 +61,19 @@ func StdTypeCollectionChoice(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CHOICE cannot choose from invalid map")
 		}
 
-		if len(value.Map.Entries) == 0 {
+		if value.Map.IsEmpty() {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CHOICE cannot choose from empty map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 
 		index, err := stdMathRandIndex(len(keys))
 		if err != nil {
 			return Value{}, err
 		}
 
-		return value.Map.Entries[keys[index]].Value, nil
+		binding, _ := value.Map.Get(keys[index])
+		return binding.Value, nil
 
 	case ValueVoid,
 		ValueNumber,
@@ -135,11 +136,12 @@ func StdTypeCollectionShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SHUFFLE cannot shuffle invalid map")
 		}
 
-		keys := sortedMapKeys(value.Map)
+		keys := value.Map.Keys()
 		values := make([]Value, 0, len(keys))
 
 		for _, key := range keys {
-			values = append(values, value.Map.Entries[key].Value)
+			binding, _ := value.Map.Get(key)
+			values = append(values, binding.Value)
 		}
 
 		if err := stdMathRandShuffleValues(values); err != nil {
@@ -149,7 +151,7 @@ func StdTypeCollectionShuffle(_ *RuntimeContext, args []Value) (Value, error) {
 		entries := make(map[string]Binding, len(keys))
 
 		for index, key := range keys {
-			originalBinding := value.Map.Entries[key]
+			originalBinding, _ := value.Map.Get(key)
 
 			entries[key] = Binding{
 				Value:       values[index],

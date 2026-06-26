@@ -141,11 +141,11 @@ func manifestFileFromStultonValue(value Value) (manifestFile, error) {
 		return manifestFile{}, fmt.Errorf("manifest root map is invalid")
 	}
 
-	if _, hasLowerRun := value.Map.Entries["run"]; hasLowerRun {
+	if value.Map.Has("run") {
 		return manifestFile{}, fmt.Errorf(`manifest.stulton uses uppercase "RUN"; found "run"`)
 	}
 
-	runBinding, hasRun := value.Map.Entries["RUN"]
+	runBinding, hasRun := value.Map.Get("RUN")
 	if !hasRun {
 		return manifestFile{}, nil
 	}

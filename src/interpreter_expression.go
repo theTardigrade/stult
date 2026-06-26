@@ -232,10 +232,7 @@ func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value
 }
 
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
-	m := &Map{
-		Entries:  make(map[string]Binding, len(lit.Entries)),
-		IsFrozen: false,
-	}
+	m := NewMap(make(map[string]Binding, len(lit.Entries)), false)
 
 	previousDotMap := i.currentDotMap
 	i.currentDotMap = m
@@ -246,7 +243,7 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 	for _, entry := range lit.Entries {
 		key := entry.Key.Literal
 
-		if _, exists := m.Entries[key]; exists {
+		if m.Has(key) {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: duplicate map key %q",
 				entry.Key.StartOfLine,
@@ -260,9 +257,11 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 			return Value{}, err
 		}
 
-		m.Entries[key] = Binding{
+		if err := m.Set(key, Binding{
 			Value:       value,
 			IsImmutable: isImmutableIdentifier(key),
+		}); err != nil {
+			return Value{}, err
 		}
 	}
 
@@ -394,7 +393,7 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 
 		key := index.Text.String()
 
-		binding, ok := object.Map.Entries[key]
+		binding, ok := object.Map.Get(key)
 		if !ok {
 			return Value{}, fmt.Errorf("map has no key %q", key)
 		}

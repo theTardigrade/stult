@@ -63,7 +63,7 @@ func StdTypeCollectionSize(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.SIZE cannot determine size of invalid map")
 		}
 
-		return NewNumberValueFromInt(len(value.Map.Entries)), nil
+		return NewNumberValueFromNumber(value.Map.Len()), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -104,7 +104,7 @@ func StdTypeCollectionIsEmpty(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.IS_EMPTY cannot determine emptiness of invalid map")
 		}
 
-		return NewBoolValue(len(value.Map.Entries) == 0), nil
+		return NewBoolValue(value.Map.IsEmpty()), nil
 
 	case ValueArray:
 		if value.Array == nil {
@@ -151,7 +151,7 @@ func StdTypeCollectionGet(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.GET map key must be a string")
 		}
 
-		binding, exists := collection.Map.Entries[key.Text.String()]
+		binding, exists := collection.Map.Get(key.Text.String())
 		if !exists {
 			return fallback, nil
 		}
@@ -261,7 +261,7 @@ func StdTypeCollectionHas(_ *RuntimeContext, args []Value) (Value, error) {
 			return NewBoolValue(false), nil
 		}
 
-		_, exists := collection.Map.Entries[key.Text.String()]
+		exists := collection.Map.Has(key.Text.String())
 		return NewBoolValue(exists), nil
 
 	case ValueArray:
@@ -321,7 +321,9 @@ func StdTypeCollectionClear(_ *RuntimeContext, args []Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLEAR cannot modify frozen map")
 		}
 
-		value.Map.Entries = make(map[string]Binding)
+		if err := value.Map.Clear(); err != nil {
+			return Value{}, err
+		}
 		return NewVoidValue(), nil
 
 	case ValueArray:
@@ -464,16 +466,15 @@ func shallowCloneValue(value Value) (Value, error) {
 			return Value{}, fmt.Errorf("TYPE.COLLECTION.CLONE cannot clone invalid map")
 		}
 
-		clone := &Map{
-			Entries:  make(map[string]Binding, len(value.Map.Entries)),
-			IsFrozen: false,
-		}
+		clone := NewMap(make(map[string]Binding, value.Map.EntryCount()), false)
 
-		for key, binding := range value.Map.Entries {
-			clone.Entries[key] = Binding{
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
+			return clone.Set(key, Binding{
 				Value:       binding.Value,
 				IsImmutable: binding.IsImmutable,
-			}
+			})
+		}); err != nil {
+			return Value{}, err
 		}
 
 		return Value{Kind: ValueMap, Map: clone}, nil
@@ -552,23 +553,22 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return Value{Kind: ValueMap, Map: clone}, nil
 		}
 
-		clone := &Map{
-			Entries:  make(map[string]Binding, len(value.Map.Entries)),
-			IsFrozen: false,
-		}
+		clone := NewMap(make(map[string]Binding, value.Map.EntryCount()), false)
 
 		state.maps[value.Map] = clone
 
-		for key, binding := range value.Map.Entries {
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			clonedValue, err := deepCloneValue(binding.Value, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
-			clone.Entries[key] = Binding{
+			return clone.Set(key, Binding{
 				Value:       clonedValue,
 				IsImmutable: binding.IsImmutable,
-			}
+			})
+		}); err != nil {
+			return Value{}, err
 		}
 
 		return Value{Kind: ValueMap, Map: clone}, nil

@@ -128,20 +128,24 @@ func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 
 	key := index.Text.String()
 
-	binding, exists := m.Entries[key]
+	binding, exists := m.Get(key)
 	if exists && binding.IsImmutable {
 		return Value{}, fmt.Errorf("cannot reassign immutable map entry %q", key)
 	}
 
 	if exists {
 		binding.Value = value
-		m.Entries[key] = binding
+		if err := m.Set(key, binding); err != nil {
+			return Value{}, err
+		}
 		return value, nil
 	}
 
-	m.Entries[key] = Binding{
+	if err := m.Set(key, Binding{
 		Value:       value,
 		IsImmutable: isImmutableIdentifier(key),
+	}); err != nil {
+		return Value{}, err
 	}
 
 	return value, nil

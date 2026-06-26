@@ -68,14 +68,16 @@ func deepFreezeCollectionValueWithState(value Value, state *collectionFreezeStat
 
 		state.maps[value.Map] = true
 
-		for key, binding := range value.Map.Entries {
+		if err := value.Map.ForEach(func(key string, binding Binding) error {
 			frozenValue, err := deepFreezeNestedCollectionValue(binding.Value, state)
 			if err != nil {
-				return Value{}, err
+				return err
 			}
 
 			binding.Value = frozenValue
-			value.Map.Entries[key] = binding
+			return value.Map.Set(key, binding)
+		}); err != nil {
+			return Value{}, err
 		}
 
 		value.Map.IsFrozen = true

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 )
 
@@ -296,18 +295,14 @@ func stdDataStultonFormatMap(m *Map, indent int) (string, error) {
 		return "", fmt.Errorf("DATA.STULTON.NEW cannot encode invalid map")
 	}
 
-	if len(m.Entries) == 0 {
+	if m.IsEmpty() {
 		return "{:}", nil
 	}
 
 	currentIndent := strings.Repeat("\t", indent)
 	childIndent := strings.Repeat("\t", indent+1)
 
-	keys := make([]string, 0, len(m.Entries))
-	for key := range m.Entries {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
+	keys := m.Keys()
 
 	lines := []string{"{"}
 
@@ -317,7 +312,8 @@ func stdDataStultonFormatMap(m *Map, indent int) (string, error) {
 			return "", err
 		}
 
-		text, err := stdDataStultonFormatValue(m.Entries[key].Value, indent+1)
+		binding, _ := m.Get(key)
+		text, err := stdDataStultonFormatValue(binding.Value, indent+1)
 		if err != nil {
 			return "", err
 		}
