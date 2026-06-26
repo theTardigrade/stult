@@ -145,16 +145,26 @@ func (s *String) CloneRunes() []rune {
 }
 
 func (s *String) ForEach(fn func(index int, r rune) error) error {
-	if err := s.ensureRunes(); err != nil {
-		return err
+	if s == nil {
+		return fmt.Errorf("invalid string")
 	}
 
-	for index := 0; index < len(s.runes); index++ {
-		if err := fn(index, s.runes[index]); err != nil {
+	if s.hasRunes() {
+		for index, r := range s.runes {
+			if err := fn(index, r); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	index := 0
+	for _, r := range s.native {
+		if err := fn(index, r); err != nil {
 			return err
 		}
+		index++
 	}
-
 	return nil
 }
 
