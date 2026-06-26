@@ -865,9 +865,9 @@ A leading dot used in this way only looks within the nearest surrounding map. If
 
 #### Merging maps
 
-Maps can be merged with `STD.TYPE.MAP.MERGE_SHALLOW` or `STD.TYPE.MAP.MERGE_DEEP`. Both return a new mutable map and leave their input maps unchanged. Later maps override earlier maps.
+Use `STD.TYPE.MAP.MERGE` when you want to combine two maps into a new map.
 
-Here's an example:
+The first map provides the starting values. The second map overrides any matching keys.
 
 ```stult
 defaults : {
@@ -879,23 +879,74 @@ user : {
 	.port : 8080
 }
 
-config : STD.TYPE.MAP.MERGE_SHALLOW(defaults, user)
+config : STD.TYPE.MAP.MERGE(defaults, user)
 
 STD.IO.OUTPUT.WRITE_LINE(config.host) # localhost
 STD.IO.OUTPUT.WRITE_LINE(config.port) # 8080
 ```
 
+`MERGE` does not change either input map. It returns a new mutable map.
+
+By default, `MERGE` is shallow. That means nested maps are reused instead of being merged.
+
+```stult
+defaults : {
+	.server : {
+		.host : "localhost"
+		.port : 3000
+	}
+}
+
+user : {
+	.server : {
+		.port : 8080
+	}
+}
+
+config : STD.TYPE.MAP.MERGE(defaults, user)
+
+STD.IO.OUTPUT.WRITE_LINE(config.server.port) # 8080
+```
+
+In that example, `user.server` replaces `defaults.server`, so `config.server.host` is not kept.
+
+Pass `+` as the third argument when you want a deep merge.
+
+```stult
+defaults : {
+	.server : {
+		.host : "localhost"
+		.port : 3000
+	}
+}
+
+user : {
+	.server : {
+		.port : 8080
+	}
+}
+
+config : STD.TYPE.MAP.MERGE(defaults, user, +)
+
+STD.IO.OUTPUT.WRITE_LINE(config.server.host) # localhost
+STD.IO.OUTPUT.WRITE_LINE(config.server.port) # 8080
+```
+
+A deep merge recursively combines nested maps. Other values, such as arrays, strings and numbers, are still replaced rather than merged.
+
 #### Cloning collections
 
 Use `STD.TYPE.COLLECTION.CLONE` when you want a copy of an array, map or string.
 
-By default, `CLONE` makes a **shallow** copy. That means the outer collection is new and mutable, but any nested arrays, maps or strings inside it are still shared with the original.
+By default, `CLONE` makes a shallow copy. That means the outer collection is new and mutable, but nested arrays, maps and strings are still shared with the original.
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 original : {
-	"nested": {"value": 1}
+	.nested : {
+		.value : 1
+	}
 }
 
 copy : STD.TYPE.COLLECTION.CLONE(original)
@@ -906,15 +957,17 @@ WRITE_LINE(original.nested.value) # 2
 WRITE_LINE(copy.nested.value)     # 2
 ```
 
-In this example, `copy` is a new map, but `copy.nested` and `original.nested` still refer to the same nested map.
+In that example, `copy` is a new map, but `copy.nested` and `original.nested` still refer to the same nested map.
 
-Pass `+` as the second argument when you want a **deep** copy instead.
+Pass `+` as the second argument when you want a deep clone.
 
 ```stult
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
 
 original : {
-	"nested": {"value": 1}
+	.nested : {
+		.value : 1
+	}
 }
 
 copy : STD.TYPE.COLLECTION.CLONE(original, +)
