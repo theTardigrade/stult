@@ -17,6 +17,10 @@ This release is planned as the first stable Stult release.
 * Added `-o` and `--output` to `stult dump` so bytecode disassembly can be written directly to a file.
 * Documented and tested `--output` as the long form of the `stult build -o` output option.
 
+#### Testing
+
+* Added interpreter/bytecode parity tests for ordinary public examples and runnable manifest projects, with an explicit skip list for long-running animation examples.
+
 ### v0.9.9
 
 #### Standard library

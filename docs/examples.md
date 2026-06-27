@@ -2,6 +2,8 @@
 
 These examples show how to use Stult for small scripts, data processing, loops, functions, manifests and bundled executables.
 
+Almost all of the examples listed in this file are also run by the Go test suite as public documentation fixtures. However, for reasons of efficiency, the example projects that involve long-running animation are skipped by the test suite.
+
 ## Contents
 
 - [Collections](#collections)
@@ -85,4 +87,4 @@ These examples show how to use Stult for small scripts, data processing, loops, 
 
 There are also some public regression-test examples.
 
-These code files are described in [`examples_tests.md`](examples_tests.md).
+The ordinary examples above are smoke-tested as runnable documentation fixtures. The regression-test examples under `examples/tests/` are more focused language and standard-library fixtures and are described in [`examples_tests.md`](examples_tests.md).

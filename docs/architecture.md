@@ -908,15 +908,22 @@ Do not replace user-facing Stult error messages with raw Go panics.
 
 ## Tests
 
-The Go test suite includes public example-test programs.
+The Go test suite includes public example-test programs and ordinary public examples.
 
-These tests live under:
+Regression-oriented example tests live under:
 
 ```text
 examples/tests/
 ```
 
-Each `.stult` file in that directory is run through both runtime modes:
+Ordinary public examples live under:
+
+```text
+examples/
+examples/projects/
+```
+
+Runnable `.stult` files and manifest projects are run through both runtime modes:
 
 ```text
 interpreter
@@ -925,11 +932,11 @@ bytecode VM
 
 A test passes only when both runtime modes complete successfully and produce the same stdout and stderr.
 
-If both runtime modes fail with matching errors, the test still fails. Matching failure is not success for these example-test programs.
+If both runtime modes fail with matching errors, the test still fails. Matching failure is not success for these example programs.
 
 The purpose of these tests is not just coverage. The files under `examples/tests/` are public regression fixtures for language behaviour, parser behaviour, standard-library behaviour and interpreter/bytecode parity. For example, the function-loop fixture checks indexed generators, zero-argument generators, optional generator parameters, ignored loop-body parameters and ordinary break behaviour. The range-loop optimisation fixture checks direct range streaming, very large integer bounds, descending and stepped ranges, and the fallback path where the loop body can observe the materialised collection.
 
-The ordinary examples outside `examples/tests/` are public examples and documentation fixtures, but they are not all run automatically by `go test`.
+The ordinary examples are also documentation fixtures, so the test suite runs the non-interactive examples that users are likely to copy from the README and examples documentation. Examples that intentionally animate or sleep for a long time are kept in an explicit skip list with a reason.
 
 When changing compiler, VM, interpreter, standard library, manifests or bundling, run:
 
