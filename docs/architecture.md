@@ -735,6 +735,8 @@ collection entries where applicable
 outer writes
 ```
 
+Bindings may also carry a runtime type contract. `<.>` records the runtime value kind assigned when the binding is created and rejects later assignments of a different kind. `<*>` explicitly requests the default dynamic behaviour. Contract markers are declaration syntax: they may appear only when a binding or map entry is created, not on later reassignment. Because bytecode execution needs to distinguish explicit `<*>` from an uncontracted assignment, the compiler emits separate store opcodes for explicit-any contracts even though the resulting binding contract is the same as the default any-kind contract.
+
 ### Number values
 
 Stult has one user-visible number type.

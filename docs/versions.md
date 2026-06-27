@@ -12,6 +12,10 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 This release is planned as the first stable Stult release.
 
+#### Language
+
+* Added binding type contracts. `name<.> : value` records the initial runtime value kind and rejects later assignments of a different kind. `name<*> : value` explicitly keeps the default dynamic binding behaviour. Contract markers must touch the binding name or map key and can only be used when the binding or map entry is created.
+
 #### Command line
 
 * Added `-o` and `--output` to `stult dump` so bytecode disassembly can be written directly to a file.
