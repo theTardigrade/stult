@@ -64,9 +64,21 @@ redeclaration_error : ""
 }
 ASSERT.TRUE(IS_FOUND_IN("can only be declared when the binding is created", redeclaration_error), "same-kind contracts should not be redeclared on existing bindings")
 
+void_value<STD.TYPE.VOID> : _
+void_value : STD.TYPE.VOID.NEW()
+ASSERT.TRUE(STD.TYPE.IS_VOID(void_value), "named void contract should allow void reassignment")
+
 number<STD.TYPE.NUMBER> : 11
 number : 12
 ASSERT.EQUAL(number, 12, "named number contract should allow number reassignment")
+
+void_error : ""
+?{
+	@void_value : 0
+}|{ (error)
+	@void_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects void value, got number value", void_error), "named void contract should reject number reassignment")
 
 number_error : ""
 ?{
