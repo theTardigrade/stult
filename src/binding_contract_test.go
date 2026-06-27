@@ -146,25 +146,30 @@ value<*> : "one"`
 	}
 }
 
-func TestBindingContractsOnMapEntriesRejectKindChange(t *testing.T) {
-	source := `settings : {
+func TestBindingContractsRejectMapEntryContractSyntax(t *testing.T) {
+	sources := []string{
+		`settings : {
 	.port<.> : 8080
-	"mode"<.> : "dev"
-}
-settings.port : "8080"`
+}`,
+		`settings : {
+	"mode"<STD.TYPE.STRING> : "dev"
+}`,
+	}
 
-	for _, mode := range bindingContractRunModes() {
-		t.Run(mode.Name, func(t *testing.T) {
-			_, _, err := captureStdoutAndStderrForTest(t, func() error {
-				return mode.Run(source)
+	for _, source := range sources {
+		for _, mode := range bindingContractRunModes() {
+			t.Run(mode.Name, func(t *testing.T) {
+				_, _, err := captureStdoutAndStderrForTest(t, func() error {
+					return mode.Run(source)
+				})
+
+				if err == nil {
+					t.Fatal("expected program to fail")
+				}
+
+				assertErrorContainsForBindingContractTest(t, err, "map entry contracts are not supported")
 			})
-
-			if err == nil {
-				t.Fatal("expected program to fail")
-			}
-
-			assertErrorContainsForBindingContractTest(t, err, "expects number value, got string value")
-		})
+		}
 	}
 }
 
@@ -329,6 +334,104 @@ alias["temp"] : "not available"`
 			}
 
 			assertErrorContainsForBindingContractTest(t, err, "expects bool value, got string value")
+		})
+	}
+}
+
+func TestBindingContractsAllowNestedAnyContracts(t *testing.T) {
+	source := `values<STD.TYPE.ARRAY<STD.TYPE.ARRAY<*>>> : {
+	{1, 2, 3}
+	{"four", 5, 6}
+	{_}
+}
+values[0][0] : "one"
+values[3] : {+, "mixed", 99}
+STD.IO.OUTPUT.WRITE_LINE(STD.TYPE.IS_ARRAY(values[3]))`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "+\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestBindingContractsInferMapValueSameKindContracts(t *testing.T) {
+	source := `values<STD.TYPE.MAP<.>> : {
+	"a": 1
+	"b": 2
+	"c": 3
+}
+values["d"] : "four"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number value, got string value")
+		})
+	}
+}
+
+func TestBindingContractsInferArrayElementSameKindContractsFromFirstAppend(t *testing.T) {
+	source := `values<STD.TYPE.ARRAY<.>> : {}
+values[0] : "first"
+values[1] : 2`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects string value, got number value")
+		})
+	}
+}
+
+func TestBindingContractsEnforceMultidimensionalNamedContracts(t *testing.T) {
+	source := `value<STD.TYPE.ARRAY<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>> : {
+	{1, 2, 3}
+	{4, 5, 6}
+	{7, 8, 9}
+}
+row : value[0]
+row[0] : "one"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number value, got string value")
 		})
 	}
 }

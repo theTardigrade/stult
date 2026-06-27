@@ -257,15 +257,9 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 			return Value{}, err
 		}
 
-		contract := BindingContractFromDeclaration(entry.ContractDeclaration, value)
-		if err := contract.Check(key, value); err != nil {
-			return Value{}, err
-		}
-
 		if err := m.Set(key, Binding{
 			Value:       value,
 			IsImmutable: isImmutableIdentifier(key),
-			Contract:    contract,
 		}); err != nil {
 			return Value{}, err
 		}

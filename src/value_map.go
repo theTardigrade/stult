@@ -116,7 +116,7 @@ func (m *Map) Set(key string, binding Binding) error {
 	}
 
 	if m.ValueContract != nil {
-		if err := m.ValueContract.Check(fmt.Sprintf("map entry %q", key), binding.Value); err != nil {
+		if err := m.ValueContract.CheckAndLearn(fmt.Sprintf("map entry %q", key), binding.Value); err != nil {
 			return err
 		}
 	}

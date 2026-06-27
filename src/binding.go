@@ -13,9 +13,10 @@ const (
 )
 
 type BindingContract struct {
-	Kind      BindingContractKind
-	KindValue ValueKind
-	Element   *BindingContract
+	Kind         BindingContractKind
+	KindValue    ValueKind
+	HasKindValue bool
+	Element      *BindingContract
 }
 
 type BindingContractDeclaration struct {
@@ -40,8 +41,9 @@ func NewSameKindBindingContract(value Value) BindingContract {
 	value = resolveSpecializedValue(value)
 
 	return BindingContract{
-		Kind:      BindingContractSameKind,
-		KindValue: value.Kind,
+		Kind:         BindingContractSameKind,
+		KindValue:    value.Kind,
+		HasKindValue: true,
 	}
 }
 
@@ -50,10 +52,7 @@ func BindingContractFromDeclaration(declaration *BindingContractDeclaration, ini
 		return BindingContract{}
 	}
 
-	if declaration.Contract.Kind == BindingContractSameKind {
-		return NewSameKindBindingContract(initialValue)
-	}
-
+	_ = initialValue
 	return declaration.Contract.Clone()
 }
 
@@ -67,11 +66,25 @@ func (contract BindingContract) Clone() BindingContract {
 	return cloned
 }
 
+func (contract BindingContract) ClonePointer() *BindingContract {
+	cloned := contract.Clone()
+	return &cloned
+}
+
 func (contract BindingContract) IsAny() bool {
 	return contract.Kind == BindingContractAnyKind
 }
 
 func (contract BindingContract) Check(name string, value Value) error {
+	checked := contract.Clone()
+	return checked.CheckAndLearn(name, value)
+}
+
+func (contract *BindingContract) CheckAndLearn(name string, value Value) error {
+	if contract == nil {
+		return nil
+	}
+
 	value = resolveSpecializedValue(value)
 
 	switch contract.Kind {
@@ -79,6 +92,12 @@ func (contract BindingContract) Check(name string, value Value) error {
 		return nil
 
 	case BindingContractSameKind:
+		if !contract.HasKindValue {
+			contract.KindValue = value.Kind
+			contract.HasKindValue = true
+			return nil
+		}
+
 		if value.Kind != contract.KindValue {
 			return fmt.Errorf(
 				"binding %q expects %s value, got %s value",
@@ -112,7 +131,7 @@ func (contract BindingContract) Check(name string, value Value) error {
 		}
 
 		if contract.Element != nil {
-			if err := checkArrayElementContract(name, value.Array, *contract.Element); err != nil {
+			if err := checkArrayElementContract(name, value.Array, contract.Element); err != nil {
 				return err
 			}
 
@@ -131,7 +150,7 @@ func (contract BindingContract) Check(name string, value Value) error {
 		}
 
 		if contract.Element != nil {
-			if err := checkMapValueContract(name, value.Map, *contract.Element); err != nil {
+			if err := checkMapValueContract(name, value.Map, contract.Element); err != nil {
 				return err
 			}
 
@@ -145,14 +164,9 @@ func (contract BindingContract) Check(name string, value Value) error {
 	}
 }
 
-func (contract BindingContract) ClonePointer() *BindingContract {
-	cloned := contract.Clone()
-	return &cloned
-}
-
-func checkArrayElementContract(name string, array *Array, elementContract BindingContract) error {
+func checkArrayElementContract(name string, array *Array, elementContract *BindingContract) error {
 	return array.ForEach(func(index *Number, value Value) error {
-		if err := elementContract.Check(fmt.Sprintf("%s[%s]", name, index.Format(DefaultDecimalPlacesToDisplay)), value); err != nil {
+		if err := elementContract.CheckAndLearn(fmt.Sprintf("%s[%s]", name, index.Format(DefaultDecimalPlacesToDisplay)), value); err != nil {
 			return err
 		}
 
@@ -160,9 +174,9 @@ func checkArrayElementContract(name string, array *Array, elementContract Bindin
 	})
 }
 
-func checkMapValueContract(name string, m *Map, valueContract BindingContract) error {
+func checkMapValueContract(name string, m *Map, valueContract *BindingContract) error {
 	return m.ForEach(func(key string, binding Binding) error {
-		if err := valueContract.Check(fmt.Sprintf("%s[%q]", name, key), binding.Value); err != nil {
+		if err := valueContract.CheckAndLearn(fmt.Sprintf("%s[%q]", name, key), binding.Value); err != nil {
 			return err
 		}
 

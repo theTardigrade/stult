@@ -60,20 +60,21 @@ func (e *Environment) SetWithContract(
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 
-		if err := existing.Contract.Check(name, value); err != nil {
+		contract := existing.Contract.Clone()
+		if err := contract.CheckAndLearn(name, value); err != nil {
 			return err
 		}
 
 		e.values[name] = Binding{
 			Value:       value,
 			IsImmutable: existing.IsImmutable,
-			Contract:    existing.Contract,
+			Contract:    contract,
 		}
 		return nil
 	}
 
 	contract := BindingContractFromDeclaration(contractDeclaration, value)
-	if err := contract.Check(name, value); err != nil {
+	if err := contract.CheckAndLearn(name, value); err != nil {
 		return err
 	}
 
@@ -97,14 +98,15 @@ func (e *Environment) SetOuter(name string, value Value) error {
 			return fmt.Errorf("cannot reassign immutable outer constant %q", name)
 		}
 
-		if err := existing.Contract.Check(name, value); err != nil {
+		contract := existing.Contract.Clone()
+		if err := contract.CheckAndLearn(name, value); err != nil {
 			return err
 		}
 
 		env.values[name] = Binding{
 			Value:       value,
 			IsImmutable: existing.IsImmutable,
-			Contract:    existing.Contract,
+			Contract:    contract,
 		}
 
 		return nil

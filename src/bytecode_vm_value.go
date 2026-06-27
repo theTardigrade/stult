@@ -147,14 +147,15 @@ func (vm *BytecodeVM) storeGlobal(
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 
-		if err := existing.Contract.Check(name, value); err != nil {
+		updatedContract := existing.Contract.Clone()
+		if err := updatedContract.CheckAndLearn(name, value); err != nil {
 			return err
 		}
 
 		vm.globals[name] = Binding{
 			Value:       value,
 			IsImmutable: existing.IsImmutable,
-			Contract:    existing.Contract,
+			Contract:    updatedContract,
 		}
 
 		return nil
@@ -164,7 +165,7 @@ func (vm *BytecodeVM) storeGlobal(
 	if contractDeclared {
 		bindingContract = bytecodeBindingContractFromTemplate(contract, value)
 	}
-	if err := bindingContract.Check(name, value); err != nil {
+	if err := bindingContract.CheckAndLearn(name, value); err != nil {
 		return err
 	}
 
@@ -187,14 +188,15 @@ func (vm *BytecodeVM) storeExistingGlobal(name string, value Value) error {
 		return fmt.Errorf("cannot reassign immutable outer constant %q", name)
 	}
 
-	if err := existing.Contract.Check(name, value); err != nil {
+	updatedContract := existing.Contract.Clone()
+	if err := updatedContract.CheckAndLearn(name, value); err != nil {
 		return err
 	}
 
 	vm.globals[name] = Binding{
 		Value:       value,
 		IsImmutable: existing.IsImmutable,
-		Contract:    existing.Contract,
+		Contract:    updatedContract,
 	}
 
 	return nil
@@ -235,14 +237,14 @@ func (vm *BytecodeVM) storeLocal(
 			return fmt.Errorf("binding contract for local %d can only be declared when the binding is created", index)
 		}
 
-		if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
+		if err := cell.Contract.CheckAndLearn(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
 			return err
 		}
 	} else if contractDeclared {
 		cell.Contract = bytecodeBindingContractFromTemplate(contract, value)
 	}
 
-	if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
+	if err := cell.Contract.CheckAndLearn(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
 		return err
 	}
 
@@ -348,7 +350,7 @@ func (vm *BytecodeVM) storeUpvalue(
 		return fmt.Errorf("cannot reassign immutable upvalue %d", index)
 	}
 
-	if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("upvalue %d", index)), value); err != nil {
+	if err := cell.Contract.CheckAndLearn(bytecodeCellName(cell, fmt.Sprintf("upvalue %d", index)), value); err != nil {
 		return err
 	}
 
@@ -517,7 +519,7 @@ func (vm *BytecodeVM) addMapEntry(
 	}
 
 	bindingContract := bytecodeBindingContractFromTemplate(contract, value)
-	if err := bindingContract.Check(key, value); err != nil {
+	if err := bindingContract.CheckAndLearn(key, value); err != nil {
 		return err
 	}
 
@@ -862,10 +864,7 @@ func bytecodeBindingContractFromTemplate(
 	contract BindingContract,
 	initialValue Value,
 ) BindingContract {
-	if contract.Kind == BindingContractSameKind {
-		return NewSameKindBindingContract(initialValue)
-	}
-
+	_ = initialValue
 	return contract.Clone()
 }
 

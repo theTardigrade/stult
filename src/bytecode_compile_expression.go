@@ -443,27 +443,11 @@ func (compiler *BytecodeCompiler) compileMapLiteral(expression *MapLiteral) erro
 			return err
 		}
 
-		opcode := BytecodeOpAddMapEntry
-		if bindingContractKindFromDeclaration(entry.ContractDeclaration) == BindingContractSameKind {
-			opcode = BytecodeOpAddMapEntrySameKind
-		} else if isNamedBindingContractDeclaration(entry.ContractDeclaration) {
-			opcode = BytecodeOpAddMapEntryContract
-		}
-
-		if isNamedBindingContractDeclaration(entry.ContractDeclaration) {
-			compiler.chunk.EmitOperandContractAt(
-				opcode,
-				key,
-				entry.ContractDeclaration.Contract,
-				compiler.sourceSpanFromToken(entry.Key),
-			)
-		} else {
-			compiler.chunk.EmitOperandAt(
-				opcode,
-				key,
-				compiler.sourceSpanFromToken(entry.Key),
-			)
-		}
+		compiler.chunk.EmitOperandAt(
+			BytecodeOpAddMapEntry,
+			key,
+			compiler.sourceSpanFromToken(entry.Key),
+		)
 	}
 
 	compiler.chunk.EmitAt(

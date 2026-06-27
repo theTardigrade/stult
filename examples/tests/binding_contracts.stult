@@ -1,13 +1,14 @@
-
 ##
 
 EXAMPLE: tests/binding_contracts.stult
 
-This example checks binding type contracts.
+This example checks optional runtime type contracts.
 
-A `<.>` contract records the runtime value kind of the first assigned value and
-rejects later assignments of a different kind. A `<*>` contract explicitly keeps
-the default dynamic behaviour.
+Stult is dynamic by default. A `<.>` contract records the runtime value kind of
+the first assigned value and rejects later assignments of a different kind. A
+`<*>` contract explicitly keeps the default dynamic behaviour. Named contracts
+such as `STD.TYPE.NUMBER`, `STD.TYPE.ARRAY<...>` and `STD.TYPE.MAP<...>` opt in
+to runtime enforcement for bindings and collection mutation.
 
 ##
 
@@ -28,15 +29,15 @@ LIMIT<*> : 10
 ASSERT.EQUAL(NAME, "Example", "immutable bindings may declare same-kind contracts")
 ASSERT.EQUAL(LIMIT, 10, "immutable bindings may declare any contracts")
 
-settings : {
-	.key<.> : 814
-	"mode"<.> : "development"
+settings<STD.TYPE.MAP<STD.TYPE.NUMBER>> : {
+	"key": 814
+	"port": 8080
 }
 
 settings.key : 819
-settings.mode : "production"
-ASSERT.EQUAL(settings.key, 819, "same-kind map entry reassignment should be valid")
-ASSERT.EQUAL(settings.mode, "production", "string-key map entry contracts should be valid")
+settings["timeout"] : 30
+ASSERT.EQUAL(settings.key, 819, "map-wide value contracts should allow valid entry reassignment")
+ASSERT.EQUAL(settings.timeout, 30, "map-wide value contracts should allow valid new entries")
 
 value_error : ""
 ?{
@@ -52,7 +53,7 @@ map_error : ""
 }|{ (error)
 	@map_error : error
 }
-ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", map_error), "same-kind map entry should reject kind changes")
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", map_error), "map-wide value contracts should reject invalid entries")
 
 redeclaration_error : ""
 ?{
@@ -62,7 +63,6 @@ redeclaration_error : ""
 	@redeclaration_error : error
 }
 ASSERT.TRUE(IS_FOUND_IN("can only be declared when the binding is created", redeclaration_error), "same-kind contracts should not be redeclared on existing bindings")
-
 
 number<STD.TYPE.NUMBER> : 11
 number : 12
@@ -76,10 +76,10 @@ number_error : ""
 }
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", number_error), "named number contract should reject string reassignment")
 
-names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"lemon", "orange"}
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"apple", "orange"}
 names_alias : names
-names_alias[2] : "apple"
-ASSERT.EQUAL(names[2], "apple", "array string contract should allow string append through alias")
+names_alias[2] : "pear"
+ASSERT.EQUAL(names[2], "pear", "array string contract should allow string append through alias")
 
 array_error : ""
 ?{
@@ -104,3 +104,27 @@ map_contract_error : ""
 	@map_contract_error : error
 }
 ASSERT.TRUE(IS_FOUND_IN("expects bool value, got string value", map_contract_error), "map bool contract should reject non-bool entry through alias")
+
+mixed_rows<STD.TYPE.ARRAY<STD.TYPE.ARRAY<*>>> : {
+	{1, 2, 3}
+	{"four", 5, 6}
+	{_}
+}
+mixed_rows[0][0] : "one"
+mixed_rows[3] : {+, "mixed", 99}
+ASSERT.TRUE(STD.TYPE.IS_ARRAY(mixed_rows[3]), "nested any contracts should allow mixed inner values")
+
+same_kind_values<STD.TYPE.MAP<.>> : {
+	"a": 1
+	"b": 2
+	"c": 3
+}
+same_kind_values["d"] : 4
+
+same_kind_map_error : ""
+?{
+	same_kind_values["e"] : "five"
+}|{ (error)
+	@same_kind_map_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", same_kind_map_error), "nested same-kind map contracts should infer value kind")

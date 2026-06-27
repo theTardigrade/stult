@@ -177,10 +177,9 @@ type MapLiteral struct {
 func (*MapLiteral) expressionNode() {}
 
 type MapEntry struct {
-	Key                 Token
-	Value               Expression
-	IsDotKey            bool
-	ContractDeclaration *BindingContractDeclaration
+	Key      Token
+	Value    Expression
+	IsDotKey bool
 }
 
 type ArrayLiteral struct {

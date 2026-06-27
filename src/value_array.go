@@ -186,7 +186,7 @@ func (array *Array) checkElementContract(value Value) error {
 		return nil
 	}
 
-	return array.ElementContract.Check("array element", value)
+	return array.ElementContract.CheckAndLearn("array element", value)
 }
 
 func (array *Array) Append(value Value) error {

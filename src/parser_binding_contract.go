@@ -17,23 +17,20 @@ func (p *Parser) parseBindingContractAfterToken(
 	}
 
 	switch start.Type {
-	case TokenContractSameKind:
-		p.advance()
-		return &BindingContractDeclaration{
-			Token:    start,
-			Contract: BindingContract{Kind: BindingContractSameKind},
-		}, true
+	case TokenContractSameKind, TokenContractAny:
+		contract, ok := p.parseBindingContractType()
+		if !ok {
+			return nil, false
+		}
 
-	case TokenContractAny:
-		p.advance()
 		return &BindingContractDeclaration{
 			Token:    start,
-			Contract: BindingContract{},
+			Contract: contract,
 		}, true
 
 	case TokenLess:
 		p.advance()
-		contract, ok := p.parseNamedBindingContractType(start)
+		contract, ok := p.parseBindingContractType()
 		if !ok {
 			return nil, false
 		}
@@ -54,7 +51,26 @@ func (p *Parser) parseBindingContractAfterToken(
 	}
 }
 
-func (p *Parser) parseNamedBindingContractType(open Token) (BindingContract, bool) {
+func (p *Parser) parseBindingContractType() (BindingContract, bool) {
+	switch p.current.Type {
+	case TokenContractSameKind:
+		p.advance()
+		return BindingContract{Kind: BindingContractSameKind}, true
+
+	case TokenContractAny:
+		p.advance()
+		return BindingContract{}, true
+
+	case TokenIdentifier:
+		return p.parseNamedBindingContractType()
+
+	default:
+		p.errorAtCurrent("expected binding contract")
+		return BindingContract{}, false
+	}
+}
+
+func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 	pathTokens := []Token{}
 
 	if p.current.Type != TokenIdentifier || p.current.Literal != "STD" {
@@ -97,7 +113,7 @@ func (p *Parser) parseNamedBindingContractType(open Token) (BindingContract, boo
 		return BindingContract{}, false
 	}
 
-	if p.current.Type == TokenLess {
+	if p.current.Type == TokenLess || p.current.Type == TokenContractSameKind || p.current.Type == TokenContractAny {
 		if !tokensTouch(previous, p.current) {
 			p.errorAtCurrent("expected nested binding contract to touch its collection contract")
 			return BindingContract{}, false
@@ -108,22 +124,32 @@ func (p *Parser) parseNamedBindingContractType(open Token) (BindingContract, boo
 			return BindingContract{}, false
 		}
 
-		nestedOpen := p.current
-		p.advance()
-		element, ok := p.parseNamedBindingContractType(nestedOpen)
-		if !ok {
-			return BindingContract{}, false
+		var element BindingContract
+		if p.current.Type == TokenLess {
+			p.advance()
+
+			var ok bool
+			element, ok = p.parseBindingContractType()
+			if !ok {
+				return BindingContract{}, false
+			}
+
+			if !p.expectCurrent(TokenGreater, "expected '>' after nested binding contract") {
+				return BindingContract{}, false
+			}
+
+			p.advance()
+		} else {
+			var ok bool
+			element, ok = p.parseBindingContractType()
+			if !ok {
+				return BindingContract{}, false
+			}
 		}
 
-		if !p.expectCurrent(TokenGreater, "expected '>' after nested binding contract") {
-			return BindingContract{}, false
-		}
-
-		p.advance()
 		contract.Element = element.ClonePointer()
 	}
 
-	_ = open
 	return contract, true
 }
 
