@@ -12,7 +12,9 @@ Stult is currently pre-1.0. Until v1.0.0, language syntax, standard-library shap
 
 This release is planned as the first stable Stult release.
 
-No changes have been made for this release yet.
+#### Command line
+
+* Added `-o` and `--output` to `stult dump` so bytecode disassembly can be written directly to a file.
 
 ### v0.9.9
 

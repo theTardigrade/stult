@@ -103,9 +103,10 @@ source
   -> AST
   -> CompileBytecode
   -> FormatBytecode
+  -> stdout or -o/--output file
 ```
 
-`stult dump` is bytecode-only.
+`stult dump` is bytecode-only. By default it prints the formatted disassembly to standard output. If `-o` or `--output` is provided, it writes the same disassembly to that file instead and creates parent directories as needed.
 
 ### Interpreter runtime
 
@@ -218,7 +219,7 @@ manifest file    run that manifest directly
 
 Program arguments after the source, `-` stdin target, manifest or directory target are stored in `RuntimeContext.Args` and exposed to Stult code as `STD["SYSTEM"]["ARGS"]`.
 
-The `dump` command does not use runtime modes. It compiles to bytecode and prints a disassembly.
+The `dump` command does not use runtime modes. It compiles to bytecode and prints a disassembly, or writes that disassembly to `-o`/`--output` when an output file is provided.
 
 The `build` command creates a standalone executable by appending a bundle archive and footer to the current runner executable.
 
