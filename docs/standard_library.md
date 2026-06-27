@@ -141,6 +141,10 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["TIME"]["CALENDAR_UTC"]()`](#stdtimecalendar_utc)
 - [`STD["TYPE"]`](#stdtype)
   - [`STD["TYPE"]` predicates](#stdtype-predicates)
+  - [`STD["TYPE"]["VOID"]`](#stdtypevoid)
+    - [`STD["TYPE"]["VOID"]["NEW"]()`](#stdtypevoidnew)
+  - [`STD["TYPE"]["FUNCTION"]`](#stdtypefunction)
+  - [`STD["TYPE"]["BUILTIN_FUNCTION"]`](#stdtypebuiltin_function)
   - [`STD["TYPE"]["ARRAY"]`](#stdtypearray)
     - [`STD["TYPE"]["ARRAY"]["APPEND"](array, ...values)`](#stdtypearrayappendarray-values)
     - [`STD["TYPE"]["ARRAY"]["REVERSE"](array)`](#stdtypearrayreversearray)
@@ -1268,6 +1272,26 @@ STD.TYPE.IS_COLLECTION({"a", "b"})
 ```
 
 `STD["TYPE"]["IS_COLLECTION"]` returns true for arrays, maps and strings.
+
+## `STD["TYPE"]["VOID"]`
+
+Void-specific helpers and the standard-library namespace used by `STD.TYPE.VOID` contracts.
+
+### `STD["TYPE"]["VOID"]["NEW"]()`
+
+Returns `_`.
+
+```stult
+empty : STD.TYPE.VOID.NEW()
+```
+
+## `STD["TYPE"]["FUNCTION"]`
+
+Function type namespace used by `STD.TYPE.FUNCTION` contracts. User-defined functions are created with function literals.
+
+## `STD["TYPE"]["BUILTIN_FUNCTION"]`
+
+Builtin-function type namespace used by `STD.TYPE.BUILTIN_FUNCTION` contracts. Builtin functions are provided by the standard library.
 
 ## `STD["TYPE"]["ARRAY"]`
 
