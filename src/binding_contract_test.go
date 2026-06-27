@@ -58,7 +58,7 @@ value : "one"`
 func TestBindingContractsAllowExplicitAnyContract(t *testing.T) {
 	source := `value<*> : 1
 value : "one"
-value<*> : {:}
+value : {:}
 STD.IO.OUTPUT.WRITE_LINE(STD.TYPE.IS_MAP(value))`
 
 	for _, mode := range bindingContractRunModes() {
@@ -108,9 +108,28 @@ STD.IO.OUTPUT.WRITE_LINE(NAME, ":", LIMIT)`
 	}
 }
 
-func TestBindingContractsRejectRedeclarationOnExistingSameKindBinding(t *testing.T) {
+func TestBindingContractsRejectSameKindRedeclarationOnExistingBinding(t *testing.T) {
 	source := `value<.> : 1
 value<.> : 2`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "can only be declared when the binding is created")
+		})
+	}
+}
+
+func TestBindingContractsRejectAnyRedeclarationOnExistingBinding(t *testing.T) {
+	source := `value<*> : 1
+value<*> : "one"`
 
 	for _, mode := range bindingContractRunModes() {
 		t.Run(mode.Name, func(t *testing.T) {

@@ -16,6 +16,7 @@ func (vm *BytecodeVM) storeGlobalFromStack(
 	instructionIndex int,
 	operand int,
 	isImmutable bool,
+	contractDeclared bool,
 	contractKind BindingContractKind,
 ) error {
 	name, err := vm.constantName(operand)
@@ -28,7 +29,7 @@ func (vm *BytecodeVM) storeGlobalFromStack(
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if err := vm.storeGlobal(name, value, isImmutable, contractKind); err != nil {
+	if err := vm.storeGlobal(name, value, isImmutable, contractDeclared, contractKind); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -60,6 +61,7 @@ func (vm *BytecodeVM) storeLocalFromStack(
 	instructionIndex int,
 	index int,
 	isImmutable bool,
+	contractDeclared bool,
 	contractKind BindingContractKind,
 ) error {
 	value, err := vm.popValue()
@@ -67,7 +69,7 @@ func (vm *BytecodeVM) storeLocalFromStack(
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if err := vm.storeLocal(index, value, isImmutable, false, contractKind); err != nil {
+	if err := vm.storeLocal(index, value, isImmutable, false, contractDeclared, contractKind); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -131,6 +133,7 @@ func (vm *BytecodeVM) storeGlobal(
 	name string,
 	value Value,
 	isImmutable bool,
+	contractDeclared bool,
 	contractKind BindingContractKind,
 ) error {
 	existing, exists := vm.globals[name]
@@ -140,7 +143,7 @@ func (vm *BytecodeVM) storeGlobal(
 	}
 
 	if exists {
-		if contractKind != BindingContractAnyKind {
+		if contractDeclared {
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 
@@ -157,10 +160,15 @@ func (vm *BytecodeVM) storeGlobal(
 		return nil
 	}
 
+	contract := BindingContract{}
+	if contractDeclared {
+		contract = bytecodeBindingContractFromKind(contractKind, value)
+	}
+
 	vm.globals[name] = Binding{
 		Value:       value,
 		IsImmutable: isImmutable,
-		Contract:    bytecodeBindingContractFromKind(contractKind, value),
+		Contract:    contract,
 	}
 
 	return nil
@@ -207,6 +215,7 @@ func (vm *BytecodeVM) storeLocal(
 	value Value,
 	isImmutable bool,
 	allowImmutableRebind bool,
+	contractDeclared bool,
 	contractKind BindingContractKind,
 ) error {
 	cell, err := vm.localCell(index)
@@ -219,14 +228,14 @@ func (vm *BytecodeVM) storeLocal(
 	}
 
 	if cell.Initialized {
-		if contractKind != BindingContractAnyKind {
+		if contractDeclared {
 			return fmt.Errorf("binding contract for local %d can only be declared when the binding is created", index)
 		}
 
 		if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
 			return err
 		}
-	} else if contractKind != BindingContractAnyKind {
+	} else if contractDeclared {
 		cell.Contract = bytecodeBindingContractFromKind(contractKind, value)
 	}
 

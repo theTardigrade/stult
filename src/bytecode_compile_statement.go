@@ -83,11 +83,9 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 		return compiler.compileOuterNameStore(statement.Name)
 	}
 
-	contract := bindingContractKindFromTokenPointer(statement.ContractToken)
-
 	if compiler.shouldStorePlainNameAsLocal() {
 		index := compiler.ensureLocalWithContract(statement.Name.Literal, statement.IsImmutable, BindingContract{})
-		opcode := bytecodeLocalStoreOpcode(statement.IsImmutable, contract)
+		opcode := bytecodeLocalStoreOpcode(statement.IsImmutable, statement.ContractToken)
 
 		compiler.chunk.EmitOperandAt(
 			opcode,
@@ -99,7 +97,7 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 	}
 
 	name := compiler.chunk.AddNameConstant(statement.Name.Literal)
-	opcode := bytecodeGlobalStoreOpcode(statement.IsImmutable, contract)
+	opcode := bytecodeGlobalStoreOpcode(statement.IsImmutable, statement.ContractToken)
 
 	compiler.chunk.EmitOperandAt(
 		opcode,
@@ -569,14 +567,22 @@ func bindingContractKindFromTokenPointer(token *Token) BindingContractKind {
 
 func bytecodeGlobalStoreOpcode(
 	isImmutable bool,
-	contract BindingContractKind,
+	contractToken *Token,
 ) BytecodeOpcode {
-	if contract == BindingContractSameKind {
-		if isImmutable {
-			return BytecodeOpStoreGlobalImmutableSameKind
+	if contractToken != nil {
+		if contractToken.Type == TokenContractSameKind {
+			if isImmutable {
+				return BytecodeOpStoreGlobalImmutableSameKind
+			}
+
+			return BytecodeOpStoreGlobalMutableSameKind
 		}
 
-		return BytecodeOpStoreGlobalMutableSameKind
+		if isImmutable {
+			return BytecodeOpStoreGlobalImmutableAny
+		}
+
+		return BytecodeOpStoreGlobalMutableAny
 	}
 
 	if isImmutable {
@@ -588,14 +594,22 @@ func bytecodeGlobalStoreOpcode(
 
 func bytecodeLocalStoreOpcode(
 	isImmutable bool,
-	contract BindingContractKind,
+	contractToken *Token,
 ) BytecodeOpcode {
-	if contract == BindingContractSameKind {
-		if isImmutable {
-			return BytecodeOpStoreLocalImmutableSameKind
+	if contractToken != nil {
+		if contractToken.Type == TokenContractSameKind {
+			if isImmutable {
+				return BytecodeOpStoreLocalImmutableSameKind
+			}
+
+			return BytecodeOpStoreLocalMutableSameKind
 		}
 
-		return BytecodeOpStoreLocalMutableSameKind
+		if isImmutable {
+			return BytecodeOpStoreLocalImmutableAny
+		}
+
+		return BytecodeOpStoreLocalMutableAny
 	}
 
 	if isImmutable {

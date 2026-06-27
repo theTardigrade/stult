@@ -56,7 +56,7 @@ func (e *Environment) SetWithContract(
 			return fmt.Errorf("cannot reassign immutable constant %q", name)
 		}
 
-		if contractToken != nil && contractToken.Type != TokenContractAny {
+		if contractToken != nil {
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 

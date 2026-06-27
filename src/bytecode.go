@@ -17,10 +17,14 @@ const (
 
 	BytecodeOpStoreGlobalMutable
 	BytecodeOpStoreGlobalImmutable
+	BytecodeOpStoreGlobalMutableAny
+	BytecodeOpStoreGlobalImmutableAny
 	BytecodeOpStoreGlobalMutableSameKind
 	BytecodeOpStoreGlobalImmutableSameKind
 	BytecodeOpStoreLocalMutable
 	BytecodeOpStoreLocalImmutable
+	BytecodeOpStoreLocalMutableAny
+	BytecodeOpStoreLocalImmutableAny
 	BytecodeOpStoreLocalMutableSameKind
 	BytecodeOpStoreLocalImmutableSameKind
 	BytecodeOpStoreUpvalueMutable
@@ -281,6 +285,12 @@ func (opcode BytecodeOpcode) String() string {
 	case BytecodeOpStoreGlobalImmutable:
 		return "STORE_GLOBAL_IMMUTABLE"
 
+	case BytecodeOpStoreGlobalMutableAny:
+		return "STORE_GLOBAL_MUTABLE_ANY"
+
+	case BytecodeOpStoreGlobalImmutableAny:
+		return "STORE_GLOBAL_IMMUTABLE_ANY"
+
 	case BytecodeOpStoreGlobalMutableSameKind:
 		return "STORE_GLOBAL_MUTABLE_SAME_KIND"
 
@@ -295,6 +305,12 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpStoreLocalImmutable:
 		return "STORE_LOCAL_IMMUTABLE"
+
+	case BytecodeOpStoreLocalMutableAny:
+		return "STORE_LOCAL_MUTABLE_ANY"
+
+	case BytecodeOpStoreLocalImmutableAny:
+		return "STORE_LOCAL_IMMUTABLE_ANY"
 
 	case BytecodeOpStoreLocalMutableSameKind:
 		return "STORE_LOCAL_MUTABLE_SAME_KIND"
