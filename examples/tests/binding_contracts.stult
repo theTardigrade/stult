@@ -8,7 +8,8 @@ Stult is dynamic by default. A `<.>` contract records the runtime value kind of
 the first assigned value and rejects later assignments of a different kind. A
 `<*>` contract explicitly keeps the default dynamic behaviour. Named contracts
 such as `STD.TYPE.NUMBER`, `STD.TYPE.ARRAY<...>` and `STD.TYPE.MAP<...>` opt in
-to runtime enforcement for bindings and collection mutation.
+to runtime enforcement for bindings and collection mutation. Union contracts use `|`
+to accept more than one contract option.
 
 ##
 
@@ -140,3 +141,40 @@ same_kind_map_error : ""
 	@same_kind_map_error : error
 }
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", same_kind_map_error), "nested same-kind map contracts should infer value kind")
+
+
+scalar_union<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+scalar_union : +
+ASSERT.EQUAL(scalar_union, +, "union scalar contracts should allow either accepted kind")
+
+scalar_union_error : ""
+?{
+	@scalar_union : "test"
+}|{ (error)
+	@scalar_union_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number or bool value, got string value", scalar_union_error), "union scalar contracts should reject values outside the union")
+
+number_or_text<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
+	1, "two", 3, "four", 5, "six"
+}
+number_or_text[6] : "seven"
+number_or_text[7] : 8
+ASSERT.EQUAL(STD.TYPE.COLLECTION.SIZE(number_or_text), 8, "union array element contracts should allow each accepted kind")
+
+array_union_error : ""
+?{
+	number_or_text[8] : +
+}|{ (error)
+	@array_union_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number or string value, got bool value", array_union_error), "union array element contracts should reject values outside the union")
+
+maybe_add<STD.TYPE.FUNCTION|STD.TYPE.VOID> : _
+maybe_add : { (a, b)
+	(a + b)
+}
+
+(maybe_add ! _) {
+	ASSERT.EQUAL(maybe_add(1, 2), 3, "function-or-void union should allow replacing void with a function")
+}
