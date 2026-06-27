@@ -660,7 +660,11 @@ value<*> : 0
 value : "zero"  # valid, because <*> keeps the default dynamic behaviour
 ```
 
-`<.>` means that future assignments must keep the same runtime value kind as the first value. `<*>` is an explicit form of the default behaviour: any runtime value kind is accepted. The contract marker must touch the binding name.
+`<.>` means that future assignments must keep the same runtime value kind as the first value.
+
+`<*>` is an explicit form of the default behaviour: any runtime value kind is accepted.
+
+The contract marker must touch the binding name.
 
 ```stult
 count_a<.> : 0   # valid
