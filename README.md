@@ -50,6 +50,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Unnamed contracts](#unnamed-contracts)
     - [Named contracts](#named-contracts)
     - [Union contracts](#union-contracts)
+    - [Contract aliases](#contract-aliases)
     - [Contract syntax](#contract-syntax)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
@@ -514,6 +515,7 @@ arrays
 maps
 functions
 builtin functions
+contracts
 ```
 
 The void value is written as `_`.
@@ -654,7 +656,7 @@ FALSE : STD.TYPE.BOOL.FALSE
 
 ### Optional type system
 
-Stult is dynamic by default. A normal binding can be reassigned to any runtime value kind:
+Stult is dynamic by default. A normal binding can be reassigned to any kind of value:
 
 ```stult
 value : 0
@@ -662,61 +664,72 @@ value : "zero"
 value : {:}
 ```
 
-However, a binding may opt in to a type contract when it is created.
-
-Contracts are optional, but when a contract is used, it is enforced at runtime by both the interpreter and the bytecode virtual machine.
-
-#### Unnamed contracts
-
-Unnamed contracts are simple built-in contracts for cases where you only want to preserve a value’s runtime kind or explicitly keep the default dynamic behaviour.
-
-```stult
-count<.> : 0
-count : 1       # valid, because the value is still a number
-count : "one"   # runtime error
-
-value<*> : 0
-value : "zero"  # valid, because <*> keeps the default dynamic behaviour
-```
-
-`<.>` means that future assignments must keep the same runtime value kind as the first value.
-
-`<*>` is an explicit form of the default behaviour: any runtime value kind is accepted.
-
-#### Named contracts
-
-Named contracts can use the standard-library type namespaces directly inside the angle brackets:
+When you want a binding to stay within a particular shape, you can give it a contract when it is created.
 
 ```stult
 amount<STD.TYPE.NUMBER> : 11
 amount : 12       # valid
 amount : "twelve" # runtime error
+```
 
+Contracts are optional. When you do use one, Stult checks it while the program runs.
+
+#### Unnamed contracts
+
+Unnamed contracts are the smallest contracts Stult provides.
+
+Use `<.>` when a binding should keep the same kind of value it started with:
+
+```stult
+count<.> : 0
+count : 1       # valid
+count : "one"   # runtime error
+```
+
+Use `<*>` when you want to be explicit that the binding should stay fully dynamic:
+
+```stult
+value<*> : 0
+value : "zero"  # valid
+value : {:}     # valid
+```
+
+#### Named contracts
+
+Named contracts use the standard-library type names directly inside the angle brackets:
+
+```stult
+amount<STD.TYPE.NUMBER> : 11
 name<STD.TYPE.STRING> : "test"
 flag<STD.TYPE.BOOL> : +
 ```
 
-Array and map contracts can also constrain their contained values:
+Array and map contracts can also describe the values they contain:
 
 ```stult
-names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"test", "test2"}
-names[2] : "example" # valid
-names[3] : 123       # runtime error
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Ada", "Grace"}
 
+names[2] : "Katherine" # valid
+names[3] : 123         # runtime error
+```
+
+```stult
 flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
 	"dev": -
 	"prod": +
 }
+
 flags["test"] : +               # valid
 flags["temp"] : "not available" # runtime error
 ```
 
-Map keys are always strings, so `STD.TYPE.MAP<...>` contracts describe map values, not map keys.
+Map keys are always strings, so `STD.TYPE.MAP<...>` describes the map’s values, not its keys.
 
-Collection contracts attach to the collection value as well as the binding. That means aliases cannot bypass them:
+Collection contracts stay attached to the collection itself. That means an alias cannot bypass the contract:
 
 ```stult
-names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"example"}
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Example"}
+
 alias : names
 alias[1] : 123 # runtime error
 ```
@@ -734,19 +747,21 @@ STD.TYPE.MAP
 STD.TYPE.MAP<contract>
 STD.TYPE.FUNCTION
 STD.TYPE.BUILTIN_FUNCTION
+STD.TYPE.CONTRACT
 ```
 
 #### Union contracts
 
-Union contracts use `|` to accept more than one contract option:
+Use `|` when more than one kind of value should be accepted:
 
 ```stult
 value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+
 value : +      # valid
 value : "test" # runtime error
 ```
 
-They can also be used inside collection contracts:
+Union contracts also work inside array and map contracts:
 
 ```stult
 items<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
@@ -758,7 +773,42 @@ items[5] : "six"  # valid
 items[6] : +      # runtime error
 ```
 
-A union contract is valid when the value satisfies any one of its options. The `|` operator has the lowest precedence inside contracts, so `STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>` means “array of number-or-string values”.
+A union contract accepts a value when any one of its options accepts that value.
+
+#### Contract aliases
+
+When a contract gets long, you can store it in a binding and reuse it by name.
+
+```stult
+NumberOrStringArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>
+
+value<NumberOrStringArray> : {
+	1, "two", 3, "four"
+}
+
+value2<NumberOrStringArray> : {
+	"test", 99, 100, 101
+}
+```
+
+The expression `<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>` creates a contract value.
+
+`STD.TYPE.CONTRACT` is the contract for those contract values:
+
+```stult
+STD.TYPE.IS_CONTRACT(NumberOrStringArray) # true
+```
+
+A binding used as a contract alias is checked at the point where it is used. Its current value must be a contract value:
+
+```stult
+Type<STD.TYPE.CONTRACT|STD.TYPE.NUMBER> : <STD.TYPE.NUMBER>
+Type : 21
+
+value<Type> : 1 # runtime error, because Type is currently a number
+```
+
+Changing an alias later does not change contracts that were already attached to earlier bindings.
 
 #### Contract syntax
 
@@ -769,7 +819,7 @@ count_a<.> : 0   # valid
 count_b <.> : 0  # invalid
 ```
 
-Contract markers are declaration-only. They can be used when a binding is created, but not when an existing binding is reassigned.
+Contracts can only be added when a binding is created. Reassignments use the normal `name : value` form.
 
 ```stult
 value<STD.TYPE.NUMBER> : 1
@@ -777,7 +827,7 @@ value<STD.TYPE.NUMBER> : 2 # runtime error
 value : 2                  # valid
 ```
 
-Immutable bindings may use contracts too, for consistency, even though they cannot be rebound.
+Immutable bindings can use contracts too, even though they cannot be reassigned:
 
 ```stult
 LIMIT<STD.TYPE.NUMBER> : 10
@@ -1568,19 +1618,21 @@ In this example, the division arm is not evaluated.
 
 ### Error handling
 
-Stult supports both block-level and expression-level error handling.
+Stult has two ways to recover from runtime errors.
 
-Runtime errors can come from failed operations, failed standard-library assertions or explicit calls to `STD.ERROR.RAISE`.
+Use a fallible expression when you only need a fallback value. Use a try-catch statement when you want to run a block of recovery code or inspect the error message.
+
+Programs can also raise their own runtime errors with `STD.ERROR.RAISE`.
 
 #### Fallible expressions
 
-A fallible expression tries one expression and returns a fallback value if the attempt raises a catchable runtime error.
+A fallible expression tries one expression and returns a fallback value if the attempt fails:
 
 ```stult
 number : ?(STD.TYPE.NUMBER.NEW(text) | 0)
 ```
 
-The expression before `|` is evaluated first. If it succeeds, that value is returned and the fallback expression is not evaluated. If it raises a catchable runtime error, the fallback expression is evaluated and returned instead.
+The expression before `|` is tried first. If it succeeds, its value is returned and the fallback is skipped. If it raises a catchable runtime error, the fallback expression is evaluated instead.
 
 ```stult
 items : {:}
@@ -1589,9 +1641,9 @@ name : ?(items.name | "unknown")
 
 The `?` marker must touch the opening parenthesis.
 
-The `|` separates the attempted expression from the fallback expression. To use logical `|` inside the attempted expression, wrap that part in parentheses.
+To use logical `|` inside the attempted expression, wrap that part in parentheses.
 
-Fallible expressions catch runtime errors only. They do not catch syntax errors, parsing errors, bytecode compile errors or command-line setup errors.
+Fallible expressions catch runtime errors only. They do not catch syntax errors, parsing errors, bytecode-compilation errors or command-line-setup errors.
 
 #### Try-catch statements
 
