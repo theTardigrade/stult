@@ -108,6 +108,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 - [Binding contracts](../examples/tests/binding_contracts.stult)  
   Checks optional runtime binding contracts, including `<.>`, `<*>`, named `STD.TYPE` contracts, union contracts, immutable contracted bindings, array element contracts, map value contracts, alias-safe collection mutation checks and declaration-only contract syntax.
 
+- [Contract aliases](../examples/tests/contract_aliases.stult)  
+  Checks contract literal values, `STD.TYPE.CONTRACT`, `STD.TYPE.IS_CONTRACT`, reusable contract aliases, nested aliases and runtime errors when a contract-position alias currently contains a non-contract value.
+
 ## Functions
 
 - [Optional parameters](../examples/tests/optional_parameters.stult)  

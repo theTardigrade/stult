@@ -1,3 +1,4 @@
+
 # Standard library
 
 The Stult standard library is available through the immutable binding `STD`.
@@ -1268,6 +1269,7 @@ STD.TYPE.IS_ARRAY({})
 STD.TYPE.IS_MAP({:})
 STD.TYPE.IS_FUNCTION({ () (_) })
 STD.TYPE.IS_BUILTIN_FUNCTION(STD.IO.OUTPUT.WRITE_LINE)
+STD.TYPE.IS_CONTRACT(<STD.TYPE.NUMBER>)
 STD.TYPE.IS_COLLECTION({"a", "b"})
 ```
 
@@ -1284,6 +1286,10 @@ Returns `_`.
 ```stult
 empty : STD.TYPE.VOID.NEW()
 ```
+
+## `STD["TYPE"]["CONTRACT"]`
+
+Contract type namespace used by `STD.TYPE.CONTRACT` contracts. Contract values are created with contract literal syntax such as `<STD.TYPE.NUMBER>` or `<STD.TYPE.ARRAY<STD.TYPE.STRING>>`.
 
 ## `STD["TYPE"]["FUNCTION"]`
 
@@ -2070,3 +2076,4 @@ STD.TYPE.STRING.JOIN({"a", "b", "c"}, ",")
 String elements are used directly.
 
 Non-string elements are converted with their printed representation.
+
