@@ -87,4 +87,6 @@ Almost all of the examples listed in this file are also run by the Go test suite
 
 There are also some public regression-test examples.
 
-The ordinary examples above are smoke-tested as runnable documentation fixtures. The regression-test examples under `examples/tests/` are more focused language and standard-library fixtures and are described in [`examples_tests.md`](examples_tests.md).
+The ordinary examples above are smoke-tested as runnable documentation fixtures.
+
+The regression-test examples under `examples/tests/` are more focused language and standard-library fixtures and are described in [`examples_tests.md`](examples_tests.md).
