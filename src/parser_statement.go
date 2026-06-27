@@ -9,7 +9,7 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseLoopStatement()
 	}
 
-	if p.current.Type == TokenQuestion {
+	if p.current.Type == TokenQuestion && p.peek.Type == TokenLBrace {
 		return p.parseTryCatchStatement()
 	}
 
