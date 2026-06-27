@@ -21,6 +21,7 @@ This release is planned as the first stable Stult release.
 * Collection contracts validate array/map contents and attach to the collection value, so aliases cannot bypass mutation checks.
 * Nested collection contracts may use named contracts, `<.>` or `<*>`.
 * Contract markers must touch the binding name and can only be used when the binding is created; map literal entries do not have their own angle-bracket contract syntax.
+* Added fallible expressions with `?(attempt | fallback)` for expression-level recovery from catchable runtime errors.
 
 #### Command line
 

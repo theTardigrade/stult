@@ -1,4 +1,3 @@
-
 # Architecture
 
 This document describes how Stult is implemented.
@@ -275,6 +274,7 @@ compound assignments
 conditionals
 conditional expressions
 match expressions
+fallible expressions
 try-catch statements
 dynamic loops
 function literals
@@ -307,6 +307,8 @@ Frozen collection literals are written by prefixing an array, map or string lite
 Conditional expressions are represented as `ConditionalExpression` AST nodes. They require a parenthesised condition followed by a same-line `:` branch list, written idiomatically as `(condition):(when_true|when_false)`. Horizontal whitespace may appear around the `:`. In multiline branch lists, the `|` branch separator must appear at the end of the true-branch line. Unlike dot access, conditional expressions are not lowered to an existing AST shape because only one branch may be evaluated.
 
 Match expressions are represented as `MatchExpression` AST nodes. They require a parenthesised subject followed by a same-line `:` arm list, written idiomatically as `(subject):{ "case": result _: fallback }`. Horizontal whitespace may appear around the `:`. Match arms store scalar literal patterns separately from their result expressions. The default `_` arm is stored separately so explicit arms can be checked before the default arm, even when `_` appears earlier in source.
+
+Fallible expressions are represented as `FallibleExpression` AST nodes. They are written as `?(attempt | fallback)`, with the `?` marker touching the opening parenthesis. The parser treats the top-level `|` as the separator between the attempted expression and the fallback expression, so logical `|` inside the attempted expression should be parenthesised.
 
 The expression parser treats a trailing binary operator as an explicit line-continuation marker. This applies to arithmetic, comparison, equality and logical operators. A newline before a binary operator does not continue the previous expression; in delimited expression contexts it is rejected, and in list-like contexts it starts a new item or statement according to the surrounding grammar.
 
@@ -388,11 +390,13 @@ Conditionals, conditional expressions, match expressions, loops, break and early
 
 The compiler emits placeholder jump operands and patches them once target instruction indices are known.
 
-Logical `&`, logical `|`, conditional expressions and match expressions are compiled with control flow rather than eager evaluation.
+Logical `&`, logical `|`, conditional expressions, match expressions and fallible expressions are compiled with control flow rather than eager evaluation.
 
 For a conditional expression, the compiler emits the condition, jumps to the false branch when needed, compiles exactly one selected branch at runtime and leaves that branch value on the stack.
 
 For a match expression, the compiler evaluates the subject once, stores it in a compiler-generated local slot, compares it with each explicit arm pattern in source order, and jumps to the selected result expression. If no explicit arm matches, the compiler emits the default expression when one exists, or void when no default exists.
+
+For a fallible expression, the compiler emits a temporary try handler around the attempted expression. Normal completion leaves the attempted value on the stack and jumps around the fallback. A catchable runtime error unwinds to the fallback path, discards the generated error-message value and evaluates the fallback expression instead.
 
 Early return from functions compiles to a return path that exits the current function chunk.
 
@@ -663,6 +667,8 @@ The interpreter remains useful because it is simpler to reason about than the by
 Conditional expressions are evaluated directly by the interpreter. The interpreter evaluates the condition first, checks that it is a boolean and then evaluates only the selected branch expression.
 
 Match expressions are also evaluated directly by the interpreter. The interpreter evaluates the subject once, compares it with explicit scalar-literal patterns using the same equality semantics as `=`, evaluates only the selected result expression, and falls back to the default arm or void when no explicit arm matches.
+
+Fallible expressions are evaluated directly by the interpreter. The interpreter evaluates the attempted expression first. If it succeeds, that value is returned and the fallback expression is skipped. If it raises an ordinary runtime error, the fallback expression is evaluated and returned. Break and early-return control values pass through unchanged.
 
 Try-catch statements are evaluated directly by the interpreter. The interpreter runs the try body in a child frame. If it receives an ordinary runtime error, it runs the catch body in a fresh child frame and optionally binds the error message string to the catch parameter. Break and early-return control values pass through unchanged.
 
@@ -998,7 +1004,7 @@ tests
 
 Some syntax can deliberately reuse existing AST and runtime paths. Dot access is one example: `object.key` is lowered to an index expression with a string key, so ordinary indexing, assignment and compound-assignment behaviour should remain the source of truth. Leading-dot field access also reuses index-expression assignment behaviour, but its receiver is runtime-resolved from the nearest captured map, so interpreter and bytecode map-capture handling must stay aligned.
 
-Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition):(when_true|when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression.
+Other syntax needs its own AST shape even when it looks compact. Conditional expressions are one example: `(condition):(when_true|when_false)` must remain lazy, so it should be handled as control flow in both the interpreter and bytecode compiler rather than as a call-like expression. Fallible expressions are similar: `?(attempt | fallback)` must skip the fallback when the attempt succeeds, and it must catch only runtime errors from the attempted expression.
 
 Match expressions are another example: `(subject):{ ... }` must evaluate the subject once, evaluate only the selected result expression, and treat `_` as a fallback after explicit patterns fail. It should therefore be handled as its own AST and compiler path rather than lowered to a map or function call.
 
@@ -1036,4 +1042,3 @@ stult build --interpreter ...
 and run the generated executables directly.
 
 When changing the bytecode format or disassembler, update `stult dump` output expectations accordingly.
-

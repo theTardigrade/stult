@@ -81,6 +81,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 ## Error handling
 
+- [Fallible expression](../examples/tests/fallible_expression.stult)  
+  Checks that fallible expressions return successful attempted values, evaluate fallbacks after catchable runtime errors, skip fallbacks after success, work inside array literals and let fallback errors escape.
+
 - [Try-catch](../examples/tests/try_catch.stult)  
   Checks that try-catch catches runtime errors, supports an optional error-message parameter, skips the catch block when the try block succeeds, lets catch-block errors escape, catches the nearest handler and preserves break and early-return control flow.
 
