@@ -225,7 +225,7 @@ stult run [--bytecode|--interpreter] [file.stult|directory|manifest|-] [args...]
 stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]
 stult dump [--bytecode] [-o|--output <output-file>] [file.stult|directory|manifest|-]
 stult dump [--bytecode] [-o|--output <output-file>] -e|--eval <source-string>
-stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>
+stult build [--bytecode|--interpreter] [project-directory-or-file.stult] [-o|--output <output-executable>]
 ```
 
 `stult` with no subcommand prints usage.
@@ -442,21 +442,23 @@ A bytecode bundle embeds:
 Build a bytecode bundle:
 
 ```bash
-stult build examples/projects/bool -o bool-app
+stult build examples/projects/bool --output bool-app
 ```
 
 This is the same as:
 
 ```bash
-stult build --bytecode examples/projects/bool -o bool-app
+stult build --bytecode examples/projects/bool --output bool-app
 ```
+
+The shorter `-o` form is also accepted as an alias for `--output`.
 
 Bytecode bundles do not need the original `.stult` source at runtime.
 
 If you explicitly want a source/interpreter bundle, use `--interpreter`:
 
 ```bash
-stult build --interpreter examples/projects/bool -o bool-app
+stult build --interpreter examples/projects/bool --output bool-app
 ```
 
 A source/interpreter bundle embeds:
