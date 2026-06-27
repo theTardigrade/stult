@@ -725,6 +725,18 @@ flags["temp"] : "not available" # runtime error
 
 Map keys are always strings, so `STD.TYPE.MAP<...>` describes the map’s values, not its keys.
 
+Use `STD.TYPE.COLLECTION` when any collection is allowed. It accepts arrays, maps and strings, and is equivalent to `STD.TYPE.ARRAY<*>|STD.TYPE.MAP<*>|STD.TYPE.STRING`.
+
+```stult
+value<STD.TYPE.COLLECTION> : {1, 2, 3}
+
+value : {:}      # valid
+value : "1-2-3" # valid
+value : -        # runtime error
+```
+
+`STD.TYPE.COLLECTION` does not take a nested contract. Use explicit array or map contracts when the contained values matter.
+
 Collection contracts stay attached to the collection itself. That means an alias cannot bypass the contract:
 
 ```stult
@@ -741,6 +753,7 @@ STD.TYPE.VOID
 STD.TYPE.NUMBER
 STD.TYPE.BOOL
 STD.TYPE.STRING
+STD.TYPE.COLLECTION
 STD.TYPE.ARRAY
 STD.TYPE.ARRAY<contract>
 STD.TYPE.MAP
