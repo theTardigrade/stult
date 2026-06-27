@@ -200,43 +200,55 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, nil
 
 	case BytecodeOpStoreGlobalMutable:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, false, BindingContractAnyKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, false, BindingContract{})
 
 	case BytecodeOpStoreGlobalImmutable:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, false, BindingContractAnyKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, false, BindingContract{})
 
 	case BytecodeOpStoreGlobalMutableAny:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, true, BindingContractAnyKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, true, BindingContract{})
 
 	case BytecodeOpStoreGlobalImmutableAny:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, true, BindingContractAnyKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, true, BindingContract{})
 
 	case BytecodeOpStoreGlobalMutableSameKind:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, true, BindingContractSameKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, true, BindingContract{Kind: BindingContractSameKind})
 
 	case BytecodeOpStoreGlobalImmutableSameKind:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, true, BindingContractSameKind)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, true, BindingContract{Kind: BindingContractSameKind})
+
+	case BytecodeOpStoreGlobalMutableContract:
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, true, instruction.Contract)
+
+	case BytecodeOpStoreGlobalImmutableContract:
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, true, instruction.Contract)
 
 	case BytecodeOpStoreExistingGlobal:
 		return Value{}, false, vm.storeExistingGlobalFromStack(instructionIndex, instruction.Operand)
 
 	case BytecodeOpStoreLocalMutable:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, false, BindingContractAnyKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, false, BindingContract{})
 
 	case BytecodeOpStoreLocalImmutable:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, false, BindingContractAnyKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, false, BindingContract{})
 
 	case BytecodeOpStoreLocalMutableAny:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, true, BindingContractAnyKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, true, BindingContract{})
 
 	case BytecodeOpStoreLocalImmutableAny:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, true, BindingContractAnyKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, true, BindingContract{})
 
 	case BytecodeOpStoreLocalMutableSameKind:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, true, BindingContractSameKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, true, BindingContract{Kind: BindingContractSameKind})
 
 	case BytecodeOpStoreLocalImmutableSameKind:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, true, BindingContractSameKind)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, true, BindingContract{Kind: BindingContractSameKind})
+
+	case BytecodeOpStoreLocalMutableContract:
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, true, instruction.Contract)
+
+	case BytecodeOpStoreLocalImmutableContract:
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, true, instruction.Contract)
 
 	case BytecodeOpStoreUpvalueMutable:
 		return Value{}, false, vm.storeUpvalueFromStack(instructionIndex, instruction.Operand, false)
@@ -292,14 +304,21 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, nil
 
 	case BytecodeOpAddMapEntry:
-		if err := vm.addMapEntry(instruction.Operand, BindingContractAnyKind); err != nil {
+		if err := vm.addMapEntry(instruction.Operand, BindingContract{}); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 
 		return Value{}, false, nil
 
 	case BytecodeOpAddMapEntrySameKind:
-		if err := vm.addMapEntry(instruction.Operand, BindingContractSameKind); err != nil {
+		if err := vm.addMapEntry(instruction.Operand, BindingContract{Kind: BindingContractSameKind}); err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		return Value{}, false, nil
+
+	case BytecodeOpAddMapEntryContract:
+		if err := vm.addMapEntry(instruction.Operand, instruction.Contract); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 

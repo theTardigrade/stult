@@ -61,28 +61,25 @@ func (p *Parser) parseStatement() Statement {
 }
 
 func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statement {
-	var contractToken *Token
+	var contractDeclaration *BindingContractDeclaration
 
-	if isBindingContractToken(p.current.Type) {
-		parsedContractToken := p.current
-
+	if isBindingContractStart(p.current.Type) {
 		identifier, ok := target.(*IdentifierExpression)
 		if !ok || identifier.IsOuter {
 			p.errorAtCurrent("binding contracts can only be declared on plain binding assignment targets")
 			return nil
 		}
 
-		if !tokensTouch(identifier.Token, parsedContractToken) {
-			p.errorAtCurrent("expected binding contract to touch binding name")
+		contract, ok := p.parseBindingContractAfterToken(identifier.Token, "binding name")
+		if !ok {
 			return nil
 		}
 
-		contractToken = &parsedContractToken
-		p.advance()
+		contractDeclaration = contract
 	}
 
 	if !isAssignmentOperator(p.current.Type) {
-		if contractToken != nil {
+		if contractDeclaration != nil {
 			p.errorAtCurrent("expected ':' after binding contract")
 			return nil
 		}
@@ -100,7 +97,7 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 	}
 
 	if isCompoundAssignmentOperator(assignToken.Type) {
-		if contractToken != nil {
+		if contractDeclaration != nil {
 			p.errorAtToken(assignToken, "binding contracts can only be declared on plain assignment")
 			return nil
 		}
@@ -120,11 +117,11 @@ func (p *Parser) finishExpressionOrAssignmentStatement(target Expression) Statem
 	switch t := target.(type) {
 	case *IdentifierExpression:
 		return &AssignmentStatement{
-			Name:          t.Token,
-			Value:         value,
-			IsImmutable:   t.IsImmutable,
-			IsOuter:       t.IsOuter,
-			ContractToken: contractToken,
+			Name:                t.Token,
+			Value:               value,
+			IsImmutable:         t.IsImmutable,
+			IsOuter:             t.IsOuter,
+			ContractDeclaration: contractDeclaration,
 		}
 
 	case *IndexExpression:
@@ -187,6 +184,6 @@ func statementAllowsTightFollower(stmt Statement) bool {
 	}
 }
 
-func isBindingContractToken(tokenType TokenType) bool {
-	return tokenType == TokenContractSameKind || tokenType == TokenContractAny
+func isBindingContractStart(tokenType TokenType) bool {
+	return tokenType == TokenContractSameKind || tokenType == TokenContractAny || tokenType == TokenLess
 }

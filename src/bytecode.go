@@ -21,12 +21,16 @@ const (
 	BytecodeOpStoreGlobalImmutableAny
 	BytecodeOpStoreGlobalMutableSameKind
 	BytecodeOpStoreGlobalImmutableSameKind
+	BytecodeOpStoreGlobalMutableContract
+	BytecodeOpStoreGlobalImmutableContract
 	BytecodeOpStoreLocalMutable
 	BytecodeOpStoreLocalImmutable
 	BytecodeOpStoreLocalMutableAny
 	BytecodeOpStoreLocalImmutableAny
 	BytecodeOpStoreLocalMutableSameKind
 	BytecodeOpStoreLocalImmutableSameKind
+	BytecodeOpStoreLocalMutableContract
+	BytecodeOpStoreLocalImmutableContract
 	BytecodeOpStoreUpvalueMutable
 	BytecodeOpStoreUpvalueImmutable
 	BytecodeOpStoreIndex
@@ -37,6 +41,7 @@ const (
 	BytecodeOpCheckMapEntry
 	BytecodeOpAddMapEntry
 	BytecodeOpAddMapEntrySameKind
+	BytecodeOpAddMapEntryContract
 	BytecodeOpEndMap
 	BytecodeOpBuildRange
 	BytecodeOpFreezeCollection
@@ -91,8 +96,9 @@ const (
 )
 
 type BytecodeInstruction struct {
-	Opcode  BytecodeOpcode
-	Operand int
+	Opcode   BytecodeOpcode
+	Operand  int
+	Contract BindingContract
 }
 
 type BytecodeSourceSpan struct {
@@ -229,6 +235,23 @@ func (chunk *BytecodeChunk) EmitOperandAt(
 	return len(chunk.Instructions) - 1
 }
 
+func (chunk *BytecodeChunk) EmitOperandContractAt(
+	opcode BytecodeOpcode,
+	operand int,
+	contract BindingContract,
+	sourceSpan BytecodeSourceSpan,
+) int {
+	chunk.Instructions = append(chunk.Instructions, BytecodeInstruction{
+		Opcode:   opcode,
+		Operand:  operand,
+		Contract: contract.Clone(),
+	})
+
+	chunk.SourceSpans = append(chunk.SourceSpans, sourceSpan)
+
+	return len(chunk.Instructions) - 1
+}
+
 func (chunk *BytecodeChunk) PatchOperand(instructionIndex int, operand int) error {
 	if instructionIndex < 0 || instructionIndex >= len(chunk.Instructions) {
 		return fmt.Errorf("cannot patch bytecode instruction %d", instructionIndex)
@@ -297,6 +320,12 @@ func (opcode BytecodeOpcode) String() string {
 	case BytecodeOpStoreGlobalImmutableSameKind:
 		return "STORE_GLOBAL_IMMUTABLE_SAME_KIND"
 
+	case BytecodeOpStoreGlobalMutableContract:
+		return "STORE_GLOBAL_MUTABLE_CONTRACT"
+
+	case BytecodeOpStoreGlobalImmutableContract:
+		return "STORE_GLOBAL_IMMUTABLE_CONTRACT"
+
 	case BytecodeOpStoreExistingGlobal:
 		return "STORE_EXISTING_GLOBAL"
 
@@ -317,6 +346,12 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpStoreLocalImmutableSameKind:
 		return "STORE_LOCAL_IMMUTABLE_SAME_KIND"
+
+	case BytecodeOpStoreLocalMutableContract:
+		return "STORE_LOCAL_MUTABLE_CONTRACT"
+
+	case BytecodeOpStoreLocalImmutableContract:
+		return "STORE_LOCAL_IMMUTABLE_CONTRACT"
 
 	case BytecodeOpStoreUpvalueMutable:
 		return "STORE_UPVALUE_MUTABLE"
@@ -344,6 +379,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpAddMapEntrySameKind:
 		return "ADD_MAP_ENTRY_SAME_KIND"
+
+	case BytecodeOpAddMapEntryContract:
+		return "ADD_MAP_ENTRY_CONTRACT"
 
 	case BytecodeOpEndMap:
 		return "END_MAP"

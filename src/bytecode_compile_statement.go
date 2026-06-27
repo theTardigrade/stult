@@ -85,25 +85,43 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 
 	if compiler.shouldStorePlainNameAsLocal() {
 		index := compiler.ensureLocalWithContract(statement.Name.Literal, statement.IsImmutable, BindingContract{})
-		opcode := bytecodeLocalStoreOpcode(statement.IsImmutable, statement.ContractToken)
+		opcode := bytecodeLocalStoreOpcode(statement.IsImmutable, statement.ContractDeclaration)
 
-		compiler.chunk.EmitOperandAt(
-			opcode,
-			index,
-			compiler.sourceSpanFromToken(statement.Name),
-		)
+		if isNamedBindingContractDeclaration(statement.ContractDeclaration) {
+			compiler.chunk.EmitOperandContractAt(
+				opcode,
+				index,
+				statement.ContractDeclaration.Contract,
+				compiler.sourceSpanFromToken(statement.Name),
+			)
+		} else {
+			compiler.chunk.EmitOperandAt(
+				opcode,
+				index,
+				compiler.sourceSpanFromToken(statement.Name),
+			)
+		}
 
 		return nil
 	}
 
 	name := compiler.chunk.AddNameConstant(statement.Name.Literal)
-	opcode := bytecodeGlobalStoreOpcode(statement.IsImmutable, statement.ContractToken)
+	opcode := bytecodeGlobalStoreOpcode(statement.IsImmutable, statement.ContractDeclaration)
 
-	compiler.chunk.EmitOperandAt(
-		opcode,
-		name,
-		compiler.sourceSpanFromToken(statement.Name),
-	)
+	if isNamedBindingContractDeclaration(statement.ContractDeclaration) {
+		compiler.chunk.EmitOperandContractAt(
+			opcode,
+			name,
+			statement.ContractDeclaration.Contract,
+			compiler.sourceSpanFromToken(statement.Name),
+		)
+	} else {
+		compiler.chunk.EmitOperandAt(
+			opcode,
+			name,
+			compiler.sourceSpanFromToken(statement.Name),
+		)
+	}
 
 	return nil
 }
@@ -557,20 +575,28 @@ func (compiler *BytecodeCompiler) emitTryEndForReturn() {
 	}
 }
 
-func bindingContractKindFromTokenPointer(token *Token) BindingContractKind {
-	if token == nil || token.Type == TokenContractAny {
+func bindingContractKindFromDeclaration(declaration *BindingContractDeclaration) BindingContractKind {
+	if declaration == nil {
 		return BindingContractAnyKind
 	}
 
-	return BindingContractSameKind
+	return declaration.Contract.Kind
 }
 
 func bytecodeGlobalStoreOpcode(
 	isImmutable bool,
-	contractToken *Token,
+	contractDeclaration *BindingContractDeclaration,
 ) BytecodeOpcode {
-	if contractToken != nil {
-		if contractToken.Type == TokenContractSameKind {
+	if contractDeclaration != nil {
+		if isNamedBindingContractDeclaration(contractDeclaration) {
+			if isImmutable {
+				return BytecodeOpStoreGlobalImmutableContract
+			}
+
+			return BytecodeOpStoreGlobalMutableContract
+		}
+
+		if contractDeclaration.Contract.Kind == BindingContractSameKind {
 			if isImmutable {
 				return BytecodeOpStoreGlobalImmutableSameKind
 			}
@@ -594,10 +620,18 @@ func bytecodeGlobalStoreOpcode(
 
 func bytecodeLocalStoreOpcode(
 	isImmutable bool,
-	contractToken *Token,
+	contractDeclaration *BindingContractDeclaration,
 ) BytecodeOpcode {
-	if contractToken != nil {
-		if contractToken.Type == TokenContractSameKind {
+	if contractDeclaration != nil {
+		if isNamedBindingContractDeclaration(contractDeclaration) {
+			if isImmutable {
+				return BytecodeOpStoreLocalImmutableContract
+			}
+
+			return BytecodeOpStoreLocalMutableContract
+		}
+
+		if contractDeclaration.Contract.Kind == BindingContractSameKind {
 			if isImmutable {
 				return BytecodeOpStoreLocalImmutableSameKind
 			}
@@ -617,4 +651,13 @@ func bytecodeLocalStoreOpcode(
 	}
 
 	return BytecodeOpStoreLocalMutable
+}
+
+func isNamedBindingContractDeclaration(declaration *BindingContractDeclaration) bool {
+	if declaration == nil {
+		return false
+	}
+
+	return declaration.Contract.Kind != BindingContractAnyKind &&
+		declaration.Contract.Kind != BindingContractSameKind
 }

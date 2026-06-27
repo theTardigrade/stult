@@ -13,10 +13,11 @@ import (
 const mapNativeEntryLimit = 1 << 20
 
 type Map struct {
-	Entries    map[string]Binding
-	overflow   *mapTrie
-	entryCount *Number
-	IsFrozen   bool
+	Entries       map[string]Binding
+	overflow      *mapTrie
+	entryCount    *Number
+	IsFrozen      bool
+	ValueContract *BindingContract
 }
 
 type mapTrie struct {
@@ -112,6 +113,12 @@ func (m *Map) Has(key string) bool {
 func (m *Map) Set(key string, binding Binding) error {
 	if m == nil {
 		return fmt.Errorf("invalid map")
+	}
+
+	if m.ValueContract != nil {
+		if err := m.ValueContract.Check(fmt.Sprintf("map entry %q", key), binding.Value); err != nil {
+			return err
+		}
 	}
 
 	m.ensureStorage()

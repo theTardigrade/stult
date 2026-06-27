@@ -298,6 +298,10 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 			continue
 		}
 
+		if p.current.Type == TokenLess && tokensTouch(p.previous, p.current) && p.peek.Type == TokenIdentifier && p.peek.Literal == "STD" {
+			break
+		}
+
 		currentPrec := precedence(p.current.Type)
 		if currentPrec == precLowest || currentPrec <= parentPrec {
 			break

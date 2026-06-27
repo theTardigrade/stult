@@ -340,7 +340,7 @@ func (vm *BytecodeVM) storeIteratorValue(instructionIndex int, localIndex int) e
 		return vm.runtimeError(instructionIndex, "iterator has no current value")
 	}
 
-	if err := vm.storeLocal(localIndex, iterator.CurrentValue, false, true, false, BindingContractAnyKind); err != nil {
+	if err := vm.storeLocal(localIndex, iterator.CurrentValue, false, true, false, BindingContract{}); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -357,7 +357,7 @@ func (vm *BytecodeVM) storeIteratorKey(instructionIndex int, localIndex int) err
 		return vm.runtimeError(instructionIndex, "iterator has no current key")
 	}
 
-	if err := vm.storeLocal(localIndex, iterator.CurrentKey, false, true, false, BindingContractAnyKind); err != nil {
+	if err := vm.storeLocal(localIndex, iterator.CurrentKey, false, true, false, BindingContract{}); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -377,7 +377,7 @@ func (vm *BytecodeVM) storeIteratorCollection(instructionIndex int, localIndex i
 		)
 	}
 
-	if err := vm.storeLocal(localIndex, iterator.Source, false, true, false, BindingContractAnyKind); err != nil {
+	if err := vm.storeLocal(localIndex, iterator.Source, false, true, false, BindingContract{}); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -400,7 +400,7 @@ func (vm *BytecodeVM) storeIteratorPosition(instructionIndex int, localIndex int
 		false,
 		true,
 		false,
-		BindingContractAnyKind,
+		BindingContract{},
 	); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}

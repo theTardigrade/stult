@@ -165,7 +165,7 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			value = args[index]
 		}
 
-		if err := vm.storeLocal(localIndex, value, parameter.IsImmutable, true, false, BindingContractAnyKind); err != nil {
+		if err := vm.storeLocal(localIndex, value, parameter.IsImmutable, true, false, BindingContract{}); err != nil {
 			return err
 		}
 	}
@@ -192,7 +192,7 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			function.VariadicParameter.IsImmutable,
 			true,
 			false,
-			BindingContractAnyKind,
+			BindingContract{},
 		); err != nil {
 			return err
 		}

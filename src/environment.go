@@ -49,14 +49,14 @@ func (e *Environment) SetWithContract(
 	name string,
 	value Value,
 	isImmutable bool,
-	contractToken *Token,
+	contractDeclaration *BindingContractDeclaration,
 ) error {
 	if existing, ok := e.values[name]; ok {
 		if existing.IsImmutable {
 			return fmt.Errorf("cannot reassign immutable constant %q", name)
 		}
 
-		if contractToken != nil {
+		if contractDeclaration != nil {
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 
@@ -72,10 +72,15 @@ func (e *Environment) SetWithContract(
 		return nil
 	}
 
+	contract := BindingContractFromDeclaration(contractDeclaration, value)
+	if err := contract.Check(name, value); err != nil {
+		return err
+	}
+
 	e.values[name] = Binding{
 		Value:       value,
 		IsImmutable: isImmutable,
-		Contract:    bindingContractFromTokenPointer(contractToken, value),
+		Contract:    contract,
 	}
 
 	return nil
@@ -127,12 +132,4 @@ func (e *Environment) Dump() {
 
 		fmt.Printf("%s = %s (%s)\n", name, binding.Value.String(), mutability)
 	}
-}
-
-func bindingContractFromTokenPointer(token *Token, initialValue Value) BindingContract {
-	if token == nil {
-		return BindingContract{}
-	}
-
-	return BindingContractFromToken(*token, initialValue)
 }

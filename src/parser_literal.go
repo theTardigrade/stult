@@ -194,15 +194,15 @@ func (p *Parser) isStringMapKeyStart() bool {
 		return true
 	}
 
-	if !isBindingContractToken(p.peek.Type) || !tokensTouch(p.current, p.peek) {
+	if !isBindingContractStart(p.peek.Type) || !tokensTouch(p.current, p.peek) {
 		return false
 	}
 
 	checkpoint := p.checkpoint()
+	key := p.current
 	p.advance()
-	p.advance()
-
-	isMapKey := p.current.Type == TokenColon
+	_, ok := p.parseBindingContractAfterToken(key, "map key")
+	isMapKey := ok && p.current.Type == TokenColon
 	p.restore(checkpoint)
 
 	return isMapKey
@@ -218,12 +218,13 @@ func (p *Parser) isLeadingDotMapKeyStart() bool {
 	p.advance()
 
 	touchesIdentifier := tokensTouch(dot, p.current)
+	key := p.current
 	p.advance()
 
 	isMapKey := touchesIdentifier && p.current.Type == TokenColon
-	if touchesIdentifier && isBindingContractToken(p.current.Type) && tokensTouch(p.previous, p.current) {
-		p.advance()
-		isMapKey = p.current.Type == TokenColon
+	if touchesIdentifier && isBindingContractStart(p.current.Type) && tokensTouch(key, p.current) {
+		_, ok := p.parseBindingContractAfterToken(key, "map key")
+		isMapKey = ok && p.current.Type == TokenColon
 	}
 	p.restore(checkpoint)
 
@@ -234,7 +235,7 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	entries := []MapEntry{}
 
 	for {
-		key, isDotKey, contractToken, ok := p.parseMapEntryKey()
+		key, isDotKey, contractDeclaration, ok := p.parseMapEntryKey()
 		if !ok {
 			return nil
 		}
@@ -252,10 +253,10 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 		}
 
 		entries = append(entries, MapEntry{
-			Key:           key,
-			Value:         value,
-			IsDotKey:      isDotKey,
-			ContractToken: contractToken,
+			Key:                 key,
+			Value:               value,
+			IsDotKey:            isDotKey,
+			ContractDeclaration: contractDeclaration,
 		})
 
 		if p.current.Type == TokenRBrace {
@@ -284,16 +285,16 @@ func (p *Parser) parseMapLiteral(openBrace Token) Expression {
 	return &MapLiteral{Token: openBrace, Entries: entries}
 }
 
-func (p *Parser) parseMapEntryKey() (Token, bool, *Token, bool) {
+func (p *Parser) parseMapEntryKey() (Token, bool, *BindingContractDeclaration, bool) {
 	if p.current.Type == TokenString {
 		key := p.current
 		p.advance()
-		contractToken, ok := p.parseOptionalBindingContractAfterToken(key, "map key")
+		contractDeclaration, ok := p.parseBindingContractAfterToken(key, "map key")
 		if !ok {
 			return Token{}, false, nil, false
 		}
 
-		return key, false, contractToken, true
+		return key, false, contractDeclaration, true
 	}
 
 	if p.current.Type != TokenDot {
@@ -316,30 +317,12 @@ func (p *Parser) parseMapEntryKey() (Token, bool, *Token, bool) {
 
 	key := p.current
 	p.advance()
-	contractToken, ok := p.parseOptionalBindingContractAfterToken(key, "map key")
+	contractDeclaration, ok := p.parseBindingContractAfterToken(key, "map key")
 	if !ok {
 		return Token{}, false, nil, false
 	}
 
-	return key, true, contractToken, true
-}
-
-func (p *Parser) parseOptionalBindingContractAfterToken(
-	annotated Token,
-	description string,
-) (*Token, bool) {
-	if !isBindingContractToken(p.current.Type) {
-		return nil, true
-	}
-
-	contractToken := p.current
-	if !tokensTouch(annotated, contractToken) {
-		p.errorAtCurrent("expected binding contract to touch " + description)
-		return nil, false
-	}
-
-	p.advance()
-	return &contractToken, true
+	return key, true, contractDeclaration, true
 }
 
 func (p *Parser) parseArrayLiteral(openBrace Token) Expression {

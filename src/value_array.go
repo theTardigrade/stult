@@ -18,10 +18,11 @@ var (
 )
 
 type Array struct {
-	Ordinary []Value
-	Overflow *ArrayOverflow
-	Length   *Number
-	IsFrozen bool
+	Ordinary        []Value
+	Overflow        *ArrayOverflow
+	Length          *Number
+	IsFrozen        bool
+	ElementContract *BindingContract
 }
 
 type ArrayOverflow struct {
@@ -169,6 +170,10 @@ func (array *Array) Set(index *Number, value Value) error {
 		)
 	}
 
+	if err := array.checkElementContract(value); err != nil {
+		return err
+	}
+
 	if comparison == 0 {
 		return array.appendUnchecked(value)
 	}
@@ -176,7 +181,19 @@ func (array *Array) Set(index *Number, value Value) error {
 	return array.setExisting(integer, value)
 }
 
+func (array *Array) checkElementContract(value Value) error {
+	if array == nil || array.ElementContract == nil {
+		return nil
+	}
+
+	return array.ElementContract.Check("array element", value)
+}
+
 func (array *Array) Append(value Value) error {
+	if err := array.checkElementContract(value); err != nil {
+		return err
+	}
+
 	return array.Set(array.Len(), value)
 }
 

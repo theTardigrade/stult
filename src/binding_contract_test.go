@@ -226,3 +226,109 @@ func assertErrorContainsForBindingContractTest(t *testing.T, err error, expected
 		t.Fatalf("expected error to contain %q, got: %v", expected, err)
 	}
 }
+
+func TestBindingContractsAllowNamedScalarContracts(t *testing.T) {
+	source := `value<STD.TYPE.NUMBER> : 11
+value : 12
+STD.IO.OUTPUT.WRITE_LINE(value)`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "12\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestBindingContractsRejectNamedScalarContractMismatch(t *testing.T) {
+	source := `value<STD.TYPE.NUMBER> : 11
+value : "eleven"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number value, got string value")
+		})
+	}
+}
+
+func TestBindingContractsRejectInvalidInitialNamedScalarValue(t *testing.T) {
+	source := `value<STD.TYPE.NUMBER> : "eleven"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number value, got string value")
+		})
+	}
+}
+
+func TestBindingContractsEnforceArrayElementContractsThroughAliases(t *testing.T) {
+	source := `values<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"one", "two"}
+alias : values
+alias[2] : 3`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects string value, got number value")
+		})
+	}
+}
+
+func TestBindingContractsEnforceMapValueContractsThroughAliases(t *testing.T) {
+	source := `flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
+	"dev": -
+	"prod": +
+}
+alias : flags
+alias["temp"] : "not available"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects bool value, got string value")
+		})
+	}
+}
