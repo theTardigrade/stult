@@ -208,6 +208,15 @@ func bindingContractForStdTypeName(name string) (BindingContract, bool) {
 		return BindingContract{Kind: BindingContractExactKind, KindValue: ValueBuiltinFunction}, true
 	case "CONTRACT":
 		return BindingContract{Kind: BindingContractExactKind, KindValue: ValueContract}, true
+	case "COLLECTION":
+		return BindingContract{
+			Kind: BindingContractUnionKind,
+			Options: []BindingContract{
+				{Kind: BindingContractArrayKind},
+				{Kind: BindingContractMapKind},
+				{Kind: BindingContractExactKind, KindValue: ValueString},
+			},
+		}, true
 	case "ARRAY":
 		return BindingContract{Kind: BindingContractArrayKind}, true
 	case "MAP":
