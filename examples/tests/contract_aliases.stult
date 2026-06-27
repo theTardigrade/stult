@@ -1,0 +1,70 @@
+##
+
+EXAMPLE: tests/contract_aliases.stult
+
+This example checks contract literals and contract aliases.
+
+Contract literals produce contract values. Those values can be stored in bindings,
+checked with `STD.TYPE.IS_CONTRACT`, constrained with `STD.TYPE.CONTRACT`, and reused
+by name in later binding contracts.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
+
+NumberOrStringArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>
+ASSERT.TRUE(STD.TYPE.IS_CONTRACT(NumberOrStringArray), "contract literals should produce contract values")
+
+value<NumberOrStringArray> : {
+	1, "two", 3, "four", 5, "six"
+}
+
+value2<NumberOrStringArray> : {
+	"test", 99, 100, 101
+}
+
+ASSERT.EQUAL(STD.TYPE.COLLECTION.SIZE(value), 6, "contract aliases should validate the first array")
+ASSERT.EQUAL(STD.TYPE.COLLECTION.SIZE(value2), 4, "contract aliases should validate the second array")
+
+alias_error : ""
+?{
+	bad<NumberOrStringArray> : {1, +}
+}|{ (error)
+	@alias_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number or string value, got bool value", alias_error), "contract aliases should reject invalid values")
+
+MaybeNumber<STD.TYPE.CONTRACT> : <STD.TYPE.NUMBER|STD.TYPE.VOID>
+score<MaybeNumber> : _
+score : 10
+score : _
+ASSERT.TRUE(STD.TYPE.IS_VOID(score), "contract aliases should support union contracts")
+
+JsonScalar<STD.TYPE.CONTRACT> : <STD.TYPE.STRING|STD.TYPE.NUMBER|STD.TYPE.BOOL|STD.TYPE.VOID>
+JsonArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<JsonScalar>>
+json_values<JsonArray> : {
+	"one", 2, +, _
+}
+ASSERT.EQUAL(STD.TYPE.COLLECTION.SIZE(json_values), 4, "contract literals should allow nested aliases")
+
+mutable_type<STD.TYPE.CONTRACT|STD.TYPE.NUMBER> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>
+mutable_value<mutable_type> : {"before", 1}
+mutable_type : 21
+ASSERT.EQUAL(mutable_type, 21, "contract values can participate in union contracts")
+
+non_contract_alias_error : ""
+?{
+	should_fail<mutable_type> : {"test", 99}
+}|{ (error)
+	@non_contract_alias_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("must be a contract value, got number value", non_contract_alias_error), "contract aliases should require the current alias value to be a contract")
+
+meta_error : ""
+?{
+	not_a_contract<STD.TYPE.CONTRACT> : 123
+}|{ (error)
+	@meta_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects contract value, got number value", meta_error), "STD.TYPE.CONTRACT should reject non-contract values")
