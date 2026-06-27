@@ -260,6 +260,7 @@ func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {
 		if err := m.Set(key, Binding{
 			Value:       value,
 			IsImmutable: isImmutableIdentifier(key),
+			Contract:    bindingContractFromTokenPointer(entry.ContractToken, value),
 		}); err != nil {
 			return Value{}, err
 		}

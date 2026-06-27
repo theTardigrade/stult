@@ -134,6 +134,10 @@ func assignMapIndex(m *Map, index Value, value Value) (Value, error) {
 	}
 
 	if exists {
+		if err := binding.Contract.Check(key, value); err != nil {
+			return Value{}, err
+		}
+
 		binding.Value = value
 		if err := m.Set(key, binding); err != nil {
 			return Value{}, err

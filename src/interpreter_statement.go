@@ -15,7 +15,7 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
 			}
 		} else {
-			if err := i.Env.Set(s.Name.Literal, value, s.IsImmutable); err != nil {
+			if err := i.Env.SetWithContract(s.Name.Literal, value, s.IsImmutable, s.ContractToken); err != nil {
 				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
 			}
 		}

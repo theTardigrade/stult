@@ -125,13 +125,21 @@ func (compiler *BytecodeCompiler) shouldStorePlainNameAsLocal() bool {
 }
 
 func (compiler *BytecodeCompiler) ensureLocal(name string, isImmutable bool) int {
+	return compiler.ensureLocalWithContract(name, isImmutable, BindingContract{})
+}
+
+func (compiler *BytecodeCompiler) ensureLocalWithContract(
+	name string,
+	isImmutable bool,
+	contract BindingContract,
+) int {
 	if index, ok := compiler.currentLocalIndex(name); ok {
 		return index
 	}
 
 	scope := compiler.currentLocalScope()
 	scopeDepth := len(compiler.localScopes) - 1
-	index := compiler.chunk.AddLocal(name, isImmutable, scopeDepth)
+	index := compiler.chunk.AddLocal(name, isImmutable, scopeDepth, contract)
 
 	scope[name] = index
 
@@ -205,13 +213,13 @@ func (compiler *BytecodeCompiler) resolveUpvalueWithValue(name string) (int, Byt
 
 	if localIndex, ok := compiler.parent.localIndex(name); ok {
 		local := compiler.parent.chunk.Locals[localIndex]
-		index := compiler.addUpvalue(name, local.IsImmutable, true, localIndex)
+		index := compiler.addUpvalue(name, local.IsImmutable, true, localIndex, local.Contract)
 
 		return index, compiler.chunk.Upvalues[index], true
 	}
 
 	if parentUpvalueIndex, parentUpvalue, ok := compiler.parent.resolveUpvalueWithValue(name); ok {
-		index := compiler.addUpvalue(name, parentUpvalue.IsImmutable, false, parentUpvalueIndex)
+		index := compiler.addUpvalue(name, parentUpvalue.IsImmutable, false, parentUpvalueIndex, parentUpvalue.Contract)
 
 		return index, compiler.chunk.Upvalues[index], true
 	}
@@ -224,12 +232,13 @@ func (compiler *BytecodeCompiler) addUpvalue(
 	isImmutable bool,
 	isLocal bool,
 	index int,
+	contract BindingContract,
 ) int {
 	if existingIndex, ok := compiler.upvalueIndex(name); ok {
 		return existingIndex
 	}
 
-	upvalueIndex := compiler.chunk.AddUpvalue(name, isImmutable, isLocal, index)
+	upvalueIndex := compiler.chunk.AddUpvalue(name, isImmutable, isLocal, index, contract)
 	compiler.upvalueIndexes[name] = upvalueIndex
 
 	return upvalueIndex

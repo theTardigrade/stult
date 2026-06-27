@@ -72,6 +72,20 @@ func (l *Lexer) NextToken() Token {
 		return l.makeToken(TokenNotEqual, "!", line, col)
 
 	case '<':
+		if l.peekChar() == '.' && l.peekAhead(2) == '>' {
+			l.readChar()
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenContractSameKind, "<.>", line, col)
+		}
+
+		if l.peekChar() == '*' && l.peekAhead(2) == '>' {
+			l.readChar()
+			l.readChar()
+			l.readChar()
+			return l.makeToken(TokenContractAny, "<*>", line, col)
+		}
+
 		if l.peekChar() == '=' {
 			l.readChar()
 			l.readChar()

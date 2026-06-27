@@ -17,8 +17,12 @@ const (
 
 	BytecodeOpStoreGlobalMutable
 	BytecodeOpStoreGlobalImmutable
+	BytecodeOpStoreGlobalMutableSameKind
+	BytecodeOpStoreGlobalImmutableSameKind
 	BytecodeOpStoreLocalMutable
 	BytecodeOpStoreLocalImmutable
+	BytecodeOpStoreLocalMutableSameKind
+	BytecodeOpStoreLocalImmutableSameKind
 	BytecodeOpStoreUpvalueMutable
 	BytecodeOpStoreUpvalueImmutable
 	BytecodeOpStoreIndex
@@ -28,6 +32,7 @@ const (
 	BytecodeOpBeginMap
 	BytecodeOpCheckMapEntry
 	BytecodeOpAddMapEntry
+	BytecodeOpAddMapEntrySameKind
 	BytecodeOpEndMap
 	BytecodeOpBuildRange
 	BytecodeOpFreezeCollection
@@ -102,6 +107,7 @@ type BytecodeLocal struct {
 	Name        string
 	IsImmutable bool
 	ScopeDepth  int
+	Contract    BindingContract
 }
 
 type BytecodeUpvalue struct {
@@ -109,6 +115,7 @@ type BytecodeUpvalue struct {
 	IsImmutable bool
 	IsLocal     bool
 	Index       int
+	Contract    BindingContract
 }
 
 type BytecodeFunction struct {
@@ -151,11 +158,17 @@ func (chunk *BytecodeChunk) AddNameConstant(name string) int {
 	return chunk.AddConstant(NewStringValue(name))
 }
 
-func (chunk *BytecodeChunk) AddLocal(name string, isImmutable bool, scopeDepth int) int {
+func (chunk *BytecodeChunk) AddLocal(
+	name string,
+	isImmutable bool,
+	scopeDepth int,
+	contract BindingContract,
+) int {
 	chunk.Locals = append(chunk.Locals, BytecodeLocal{
 		Name:        name,
 		IsImmutable: isImmutable,
 		ScopeDepth:  scopeDepth,
+		Contract:    contract,
 	})
 
 	return len(chunk.Locals) - 1
@@ -166,12 +179,14 @@ func (chunk *BytecodeChunk) AddUpvalue(
 	isImmutable bool,
 	isLocal bool,
 	index int,
+	contract BindingContract,
 ) int {
 	chunk.Upvalues = append(chunk.Upvalues, BytecodeUpvalue{
 		Name:        name,
 		IsImmutable: isImmutable,
 		IsLocal:     isLocal,
 		Index:       index,
+		Contract:    contract,
 	})
 
 	return len(chunk.Upvalues) - 1
@@ -266,6 +281,12 @@ func (opcode BytecodeOpcode) String() string {
 	case BytecodeOpStoreGlobalImmutable:
 		return "STORE_GLOBAL_IMMUTABLE"
 
+	case BytecodeOpStoreGlobalMutableSameKind:
+		return "STORE_GLOBAL_MUTABLE_SAME_KIND"
+
+	case BytecodeOpStoreGlobalImmutableSameKind:
+		return "STORE_GLOBAL_IMMUTABLE_SAME_KIND"
+
 	case BytecodeOpStoreExistingGlobal:
 		return "STORE_EXISTING_GLOBAL"
 
@@ -274,6 +295,12 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpStoreLocalImmutable:
 		return "STORE_LOCAL_IMMUTABLE"
+
+	case BytecodeOpStoreLocalMutableSameKind:
+		return "STORE_LOCAL_MUTABLE_SAME_KIND"
+
+	case BytecodeOpStoreLocalImmutableSameKind:
+		return "STORE_LOCAL_IMMUTABLE_SAME_KIND"
 
 	case BytecodeOpStoreUpvalueMutable:
 		return "STORE_UPVALUE_MUTABLE"
@@ -298,6 +325,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpAddMapEntry:
 		return "ADD_MAP_ENTRY"
+
+	case BytecodeOpAddMapEntrySameKind:
+		return "ADD_MAP_ENTRY_SAME_KIND"
 
 	case BytecodeOpEndMap:
 		return "END_MAP"

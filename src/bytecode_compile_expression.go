@@ -443,8 +443,13 @@ func (compiler *BytecodeCompiler) compileMapLiteral(expression *MapLiteral) erro
 			return err
 		}
 
+		opcode := BytecodeOpAddMapEntry
+		if bindingContractKindFromTokenPointer(entry.ContractToken) == BindingContractSameKind {
+			opcode = BytecodeOpAddMapEntrySameKind
+		}
+
 		compiler.chunk.EmitOperandAt(
-			BytecodeOpAddMapEntry,
+			opcode,
 			key,
 			compiler.sourceSpanFromToken(entry.Key),
 		)

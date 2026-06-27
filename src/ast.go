@@ -13,10 +13,11 @@ type Expression interface {
 }
 
 type AssignmentStatement struct {
-	Name        Token
-	Value       Expression
-	IsImmutable bool
-	IsOuter     bool
+	Name          Token
+	Value         Expression
+	IsImmutable   bool
+	IsOuter       bool
+	ContractToken *Token
 }
 
 func (s *AssignmentStatement) statementNode() {}
@@ -176,9 +177,10 @@ type MapLiteral struct {
 func (*MapLiteral) expressionNode() {}
 
 type MapEntry struct {
-	Key      Token
-	Value    Expression
-	IsDotKey bool
+	Key           Token
+	Value         Expression
+	IsDotKey      bool
+	ContractToken *Token
 }
 
 type ArrayLiteral struct {

@@ -50,6 +50,9 @@ const (
 	TokenLessEqual    TokenType = "<="
 	TokenGreater      TokenType = ">"
 	TokenGreaterEqual TokenType = ">="
+
+	TokenContractSameKind TokenType = "<.>"
+	TokenContractAny      TokenType = "<*>"
 )
 
 type Token struct {

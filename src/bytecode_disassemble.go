@@ -247,8 +247,11 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		BytecodeOpLoadGlobal,
 		BytecodeOpCheckMapEntry,
 		BytecodeOpAddMapEntry,
+		BytecodeOpAddMapEntrySameKind,
 		BytecodeOpStoreGlobalMutable,
 		BytecodeOpStoreGlobalImmutable,
+		BytecodeOpStoreGlobalMutableSameKind,
+		BytecodeOpStoreGlobalImmutableSameKind,
 		BytecodeOpStoreExistingGlobal:
 		fmt.Fprintf(&builder, " %d", instruction.Operand)
 

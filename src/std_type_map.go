@@ -128,6 +128,7 @@ func deepMergeBindings(current Binding, incoming Binding, state *mapDeepMergeSta
 		return Binding{
 			Value:       Value{Kind: ValueMap, Map: merged},
 			IsImmutable: incoming.IsImmutable,
+			Contract:    incoming.Contract,
 		}, nil
 	}
 

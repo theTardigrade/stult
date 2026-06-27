@@ -4,9 +4,11 @@ import "fmt"
 
 func newBytecodeVMCell(local BytecodeLocal) *bytecodeVMCell {
 	return &bytecodeVMCell{
+		Name:        local.Name,
 		Value:       NewVoidValue(),
 		Initialized: false,
 		IsImmutable: local.IsImmutable,
+		Contract:    local.Contract,
 	}
 }
 
@@ -14,6 +16,7 @@ func (vm *BytecodeVM) storeGlobalFromStack(
 	instructionIndex int,
 	operand int,
 	isImmutable bool,
+	contractKind BindingContractKind,
 ) error {
 	name, err := vm.constantName(operand)
 	if err != nil {
@@ -25,7 +28,7 @@ func (vm *BytecodeVM) storeGlobalFromStack(
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if err := vm.storeGlobal(name, value, isImmutable); err != nil {
+	if err := vm.storeGlobal(name, value, isImmutable, contractKind); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -57,13 +60,14 @@ func (vm *BytecodeVM) storeLocalFromStack(
 	instructionIndex int,
 	index int,
 	isImmutable bool,
+	contractKind BindingContractKind,
 ) error {
 	value, err := vm.popValue()
 	if err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
-	if err := vm.storeLocal(index, value, isImmutable, false); err != nil {
+	if err := vm.storeLocal(index, value, isImmutable, false, contractKind); err != nil {
 		return vm.runtimeError(instructionIndex, "%s", err.Error())
 	}
 
@@ -123,7 +127,12 @@ func (vm *BytecodeVM) loadGlobal(name string) (Value, error) {
 	return binding.Value, nil
 }
 
-func (vm *BytecodeVM) storeGlobal(name string, value Value, isImmutable bool) error {
+func (vm *BytecodeVM) storeGlobal(
+	name string,
+	value Value,
+	isImmutable bool,
+	contractKind BindingContractKind,
+) error {
 	existing, exists := vm.globals[name]
 
 	if exists && existing.IsImmutable {
@@ -131,9 +140,18 @@ func (vm *BytecodeVM) storeGlobal(name string, value Value, isImmutable bool) er
 	}
 
 	if exists {
+		if contractKind != BindingContractAnyKind {
+			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
+		}
+
+		if err := existing.Contract.Check(name, value); err != nil {
+			return err
+		}
+
 		vm.globals[name] = Binding{
 			Value:       value,
 			IsImmutable: existing.IsImmutable,
+			Contract:    existing.Contract,
 		}
 
 		return nil
@@ -142,6 +160,7 @@ func (vm *BytecodeVM) storeGlobal(name string, value Value, isImmutable bool) er
 	vm.globals[name] = Binding{
 		Value:       value,
 		IsImmutable: isImmutable,
+		Contract:    bytecodeBindingContractFromKind(contractKind, value),
 	}
 
 	return nil
@@ -157,9 +176,14 @@ func (vm *BytecodeVM) storeExistingGlobal(name string, value Value) error {
 		return fmt.Errorf("cannot reassign immutable outer constant %q", name)
 	}
 
+	if err := existing.Contract.Check(name, value); err != nil {
+		return err
+	}
+
 	vm.globals[name] = Binding{
 		Value:       value,
 		IsImmutable: existing.IsImmutable,
+		Contract:    existing.Contract,
 	}
 
 	return nil
@@ -183,6 +207,7 @@ func (vm *BytecodeVM) storeLocal(
 	value Value,
 	isImmutable bool,
 	allowImmutableRebind bool,
+	contractKind BindingContractKind,
 ) error {
 	cell, err := vm.localCell(index)
 	if err != nil {
@@ -191,6 +216,18 @@ func (vm *BytecodeVM) storeLocal(
 
 	if cell.Initialized && cell.IsImmutable && !allowImmutableRebind {
 		return fmt.Errorf("cannot reassign immutable local %d", index)
+	}
+
+	if cell.Initialized {
+		if contractKind != BindingContractAnyKind {
+			return fmt.Errorf("binding contract for local %d can only be declared when the binding is created", index)
+		}
+
+		if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
+			return err
+		}
+	} else if contractKind != BindingContractAnyKind {
+		cell.Contract = bytecodeBindingContractFromKind(contractKind, value)
 	}
 
 	cell.Value = value
@@ -293,6 +330,10 @@ func (vm *BytecodeVM) storeUpvalue(
 
 	if cell.Initialized && cell.IsImmutable && !allowImmutableRebind {
 		return fmt.Errorf("cannot reassign immutable upvalue %d", index)
+	}
+
+	if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("upvalue %d", index)), value); err != nil {
+		return err
 	}
 
 	cell.Value = value
@@ -437,7 +478,10 @@ func (vm *BytecodeVM) checkMapEntry(nameConstant int) error {
 	return nil
 }
 
-func (vm *BytecodeVM) addMapEntry(nameConstant int) error {
+func (vm *BytecodeVM) addMapEntry(
+	nameConstant int,
+	contractKind BindingContractKind,
+) error {
 	if vm.currentDotMap == nil {
 		return fmt.Errorf("no active map literal")
 	}
@@ -459,6 +503,7 @@ func (vm *BytecodeVM) addMapEntry(nameConstant int) error {
 	if err := vm.currentDotMap.Set(key, Binding{
 		Value:       value,
 		IsImmutable: isImmutableIdentifier(key),
+		Contract:    bytecodeBindingContractFromKind(contractKind, value),
 	}); err != nil {
 		return err
 	}
@@ -790,4 +835,23 @@ func (vm *BytecodeVM) runtimeError(
 		instructionIndex,
 		message,
 	)
+}
+
+func bytecodeBindingContractFromKind(
+	contractKind BindingContractKind,
+	initialValue Value,
+) BindingContract {
+	if contractKind == BindingContractSameKind {
+		return NewSameKindBindingContract(initialValue)
+	}
+
+	return BindingContract{}
+}
+
+func bytecodeCellName(cell *bytecodeVMCell, fallback string) string {
+	if cell != nil && cell.Name != "" {
+		return cell.Name
+	}
+
+	return fallback
 }

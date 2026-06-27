@@ -489,6 +489,7 @@ func shallowCloneValue(value Value) (Value, error) {
 			return clone.Set(key, Binding{
 				Value:       binding.Value,
 				IsImmutable: binding.IsImmutable,
+				Contract:    binding.Contract,
 			})
 		}); err != nil {
 			return Value{}, err
@@ -576,6 +577,7 @@ func deepCloneValue(value Value, state *collectionCloneState) (Value, error) {
 			return clone.Set(key, Binding{
 				Value:       clonedValue,
 				IsImmutable: binding.IsImmutable,
+				Contract:    binding.Contract,
 			})
 		}); err != nil {
 			return Value{}, err

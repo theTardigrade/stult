@@ -83,13 +83,11 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 		return compiler.compileOuterNameStore(statement.Name)
 	}
 
-	if compiler.shouldStorePlainNameAsLocal() {
-		index := compiler.ensureLocal(statement.Name.Literal, statement.IsImmutable)
-		opcode := BytecodeOpStoreLocalMutable
+	contract := bindingContractKindFromTokenPointer(statement.ContractToken)
 
-		if statement.IsImmutable {
-			opcode = BytecodeOpStoreLocalImmutable
-		}
+	if compiler.shouldStorePlainNameAsLocal() {
+		index := compiler.ensureLocalWithContract(statement.Name.Literal, statement.IsImmutable, BindingContract{})
+		opcode := bytecodeLocalStoreOpcode(statement.IsImmutable, contract)
 
 		compiler.chunk.EmitOperandAt(
 			opcode,
@@ -101,11 +99,7 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 	}
 
 	name := compiler.chunk.AddNameConstant(statement.Name.Literal)
-	opcode := BytecodeOpStoreGlobalMutable
-
-	if statement.IsImmutable {
-		opcode = BytecodeOpStoreGlobalImmutable
-	}
+	opcode := bytecodeGlobalStoreOpcode(statement.IsImmutable, contract)
 
 	compiler.chunk.EmitOperandAt(
 		opcode,
@@ -563,4 +557,50 @@ func (compiler *BytecodeCompiler) emitTryEndForReturn() {
 	for depth := compiler.tryDepth; depth > 0; depth-- {
 		compiler.chunk.Emit(BytecodeOpTryEnd)
 	}
+}
+
+func bindingContractKindFromTokenPointer(token *Token) BindingContractKind {
+	if token == nil || token.Type == TokenContractAny {
+		return BindingContractAnyKind
+	}
+
+	return BindingContractSameKind
+}
+
+func bytecodeGlobalStoreOpcode(
+	isImmutable bool,
+	contract BindingContractKind,
+) BytecodeOpcode {
+	if contract == BindingContractSameKind {
+		if isImmutable {
+			return BytecodeOpStoreGlobalImmutableSameKind
+		}
+
+		return BytecodeOpStoreGlobalMutableSameKind
+	}
+
+	if isImmutable {
+		return BytecodeOpStoreGlobalImmutable
+	}
+
+	return BytecodeOpStoreGlobalMutable
+}
+
+func bytecodeLocalStoreOpcode(
+	isImmutable bool,
+	contract BindingContractKind,
+) BytecodeOpcode {
+	if contract == BindingContractSameKind {
+		if isImmutable {
+			return BytecodeOpStoreLocalImmutableSameKind
+		}
+
+		return BytecodeOpStoreLocalMutableSameKind
+	}
+
+	if isImmutable {
+		return BytecodeOpStoreLocalImmutable
+	}
+
+	return BytecodeOpStoreLocalMutable
 }
