@@ -200,10 +200,10 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, nil
 
 	case BytecodeOpStoreGlobalMutable:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, BindingContractAny)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, BindingContractAnyKind)
 
 	case BytecodeOpStoreGlobalImmutable:
-		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, BindingContractAny)
+		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, true, BindingContractAnyKind)
 
 	case BytecodeOpStoreGlobalMutableSameKind:
 		return Value{}, false, vm.storeGlobalFromStack(instructionIndex, instruction.Operand, false, BindingContractSameKind)
@@ -215,10 +215,10 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, vm.storeExistingGlobalFromStack(instructionIndex, instruction.Operand)
 
 	case BytecodeOpStoreLocalMutable:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, BindingContractAny)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, BindingContractAnyKind)
 
 	case BytecodeOpStoreLocalImmutable:
-		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, BindingContractAny)
+		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, true, BindingContractAnyKind)
 
 	case BytecodeOpStoreLocalMutableSameKind:
 		return Value{}, false, vm.storeLocalFromStack(instructionIndex, instruction.Operand, false, BindingContractSameKind)
@@ -280,7 +280,7 @@ func (vm *BytecodeVM) executeInstruction(
 		return Value{}, false, nil
 
 	case BytecodeOpAddMapEntry:
-		if err := vm.addMapEntry(instruction.Operand, BindingContractAny); err != nil {
+		if err := vm.addMapEntry(instruction.Operand, BindingContractAnyKind); err != nil {
 			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
 		}
 

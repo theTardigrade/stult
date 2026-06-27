@@ -140,7 +140,7 @@ func (vm *BytecodeVM) storeGlobal(
 	}
 
 	if exists {
-		if contractKind != BindingContractAny {
+		if contractKind != BindingContractAnyKind {
 			return fmt.Errorf("binding contract for %q can only be declared when the binding is created", name)
 		}
 
@@ -219,14 +219,14 @@ func (vm *BytecodeVM) storeLocal(
 	}
 
 	if cell.Initialized {
-		if contractKind != BindingContractAny {
+		if contractKind != BindingContractAnyKind {
 			return fmt.Errorf("binding contract for local %d can only be declared when the binding is created", index)
 		}
 
 		if err := cell.Contract.Check(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
 			return err
 		}
-	} else if contractKind != BindingContractAny {
+	} else if contractKind != BindingContractAnyKind {
 		cell.Contract = bytecodeBindingContractFromKind(contractKind, value)
 	}
 

@@ -5,7 +5,7 @@ import "fmt"
 type BindingContractKind int
 
 const (
-	BindingContractAny BindingContractKind = iota
+	BindingContractAnyKind BindingContractKind = iota
 	BindingContractSameKind
 )
 
@@ -45,14 +45,14 @@ func BindingContractFromToken(token Token, initialValue Value) BindingContract {
 }
 
 func (contract BindingContract) IsAny() bool {
-	return contract.Kind == BindingContractAny
+	return contract.Kind == BindingContractAnyKind
 }
 
 func (contract BindingContract) Check(name string, value Value) error {
 	value = resolveSpecializedValue(value)
 
 	switch contract.Kind {
-	case BindingContractAny:
+	case BindingContractAnyKind:
 		return nil
 
 	case BindingContractSameKind:

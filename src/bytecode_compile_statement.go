@@ -561,7 +561,7 @@ func (compiler *BytecodeCompiler) emitTryEndForReturn() {
 
 func bindingContractKindFromTokenPointer(token *Token) BindingContractKind {
 	if token == nil || token.Type == TokenContractAny {
-		return BindingContractAny
+		return BindingContractAnyKind
 	}
 
 	return BindingContractSameKind
