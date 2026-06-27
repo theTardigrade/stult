@@ -1,0 +1,63 @@
+##
+
+EXAMPLE: tests/binding_contracts.stult
+
+This example checks binding type contracts.
+
+A `<.>` contract records the runtime value kind of the first assigned value and
+rejects later assignments of a different kind. A `<*>` contract explicitly keeps
+the default dynamic behaviour.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
+
+count<.> : 0
+count : 1
+ASSERT.EQUAL(count, 1, "same-kind number reassignment should be valid")
+
+value<*> : 0
+value : "zero"
+value : {:}
+ASSERT.TRUE(STD.TYPE.IS_MAP(value), "explicit any contract should preserve dynamic assignment")
+
+NAME<.> : "Example"
+LIMIT<*> : 10
+ASSERT.EQUAL(NAME, "Example", "immutable bindings may declare same-kind contracts")
+ASSERT.EQUAL(LIMIT, 10, "immutable bindings may declare any contracts")
+
+settings : {
+	.key<.> : 814
+	"mode"<.> : "development"
+}
+
+settings.key : 819
+settings.mode : "production"
+ASSERT.EQUAL(settings.key, 819, "same-kind map entry reassignment should be valid")
+ASSERT.EQUAL(settings.mode, "production", "string-key map entry contracts should be valid")
+
+value_error : ""
+?{
+	@count : "one"
+}|{ (error)
+	@value_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", value_error), "same-kind binding should reject kind changes")
+
+map_error : ""
+?{
+	settings.key : "820"
+}|{ (error)
+	@map_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", map_error), "same-kind map entry should reject kind changes")
+
+redeclaration_error : ""
+?{
+	local<.> : 1
+	local<.> : 2
+}|{ (error)
+	@redeclaration_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("can only be declared when the binding is created", redeclaration_error), "same-kind contracts should not be redeclared on existing bindings")
