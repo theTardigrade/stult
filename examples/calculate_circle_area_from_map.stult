@@ -19,7 +19,7 @@ SQUARE : MATH["SQUARE"]
 
 CIRCLE : {
 	"radius": 10
-	"AREA": { () R : CIRCLE["radius"] (@PI * @SQUARE(R)) }
+	"AREA": { () R : CIRCLE["radius"], (@PI * @SQUARE(R)) }
 }
 
 WRITE_LINE("The area of the small circle:  ", CIRCLE["AREA"]())
