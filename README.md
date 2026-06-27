@@ -223,8 +223,8 @@ The `stult` command uses explicit subcommands:
 ```text
 stult run [--bytecode|--interpreter] [file.stult|directory|manifest|-] [args...]
 stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]
-stult dump [--bytecode] [file.stult|directory|manifest|-]
-stult dump [--bytecode] -e|--eval <source-string>
+stult dump [--bytecode] [-o|--output <output-file>] [file.stult|directory|manifest|-]
+stult dump [--bytecode] [-o|--output <output-file>] -e|--eval <source-string>
 stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>
 ```
 
@@ -342,6 +342,15 @@ The evaluated source runs with the standard library available as `STD`.
 ```bash
 stult dump examples/calculate_circle_area_from_map.stult
 ```
+
+For larger dumps, write the disassembly to a file with `-o` or `--output`:
+
+```bash
+stult dump examples/calculate_circle_area_from_map.stult -o circle.dump.txt
+stult dump examples/calculate_circle_area_from_map.stult --output circle.dump.txt
+```
+
+When an output file is provided, `dump` writes the disassembly to that file instead of standard output. Parent directories are created automatically when needed.
 
 This is the same as:
 
