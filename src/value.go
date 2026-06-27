@@ -11,6 +11,7 @@ const (
 	ValueArray
 	ValueFunction
 	ValueBuiltinFunction
+	ValueContract
 )
 
 type Value struct {
@@ -22,6 +23,7 @@ type Value struct {
 	Array           *Array
 	Function        *Function
 	BuiltinFunction BuiltinFunction
+	Contract        *BindingContract
 }
 
 // resolveSpecializedValue normalizes wrapper/specialized values before

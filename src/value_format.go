@@ -89,6 +89,12 @@ func (state *valueFormatState) formatValue(v Value) string {
 	case ValueFunction:
 		return "<function>"
 
+	case ValueContract:
+		if v.Contract == nil {
+			return "<contract>"
+		}
+		return "<" + v.Contract.SourceString() + ">"
+
 	default:
 		return "<unknown>"
 	}

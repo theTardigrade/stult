@@ -35,6 +35,12 @@ func valuesEqual(left Value, right Value) (bool, error) {
 	case ValueBuiltinFunction:
 		return false, fmt.Errorf("cannot compare builtin functions")
 
+	case ValueContract:
+		if left.Contract == nil || right.Contract == nil {
+			return left.Contract == right.Contract, nil
+		}
+		return left.Contract.SourceString() == right.Contract.SourceString(), nil
+
 	default:
 		return false, fmt.Errorf("cannot compare unknown value kind")
 	}

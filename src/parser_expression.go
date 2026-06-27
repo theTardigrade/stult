@@ -144,6 +144,14 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeRangePostf
 
 		left = fallible
 
+	case TokenLess, TokenContractSameKind, TokenContractAny:
+		contractLiteral, ok := p.parseContractLiteralExpression()
+		if !ok {
+			return nil
+		}
+
+		left = contractLiteral
+
 	case TokenLParen:
 		inner, closeParen, ok := p.parseParenthesizedExpression("grouped expression cannot be empty")
 		if !ok {
@@ -198,11 +206,46 @@ func tokenCanStartExpression(tokenType TokenType) bool {
 		TokenTilde,
 		TokenQuestion,
 		TokenDot,
+		TokenLess,
+		TokenContractSameKind,
+		TokenContractAny,
 		TokenLParen,
 		TokenLBrace:
 		return true
 	default:
 		return false
+	}
+}
+
+func (p *Parser) parseContractLiteralExpression() (Expression, bool) {
+	start := p.current
+
+	switch start.Type {
+	case TokenContractSameKind, TokenContractAny:
+		contract, ok := p.parseBindingContractType()
+		if !ok {
+			return nil, false
+		}
+
+		return &ContractLiteral{Token: start, Contract: contract}, true
+
+	case TokenLess:
+		p.advance()
+		contract, ok := p.parseBindingContractType()
+		if !ok {
+			return nil, false
+		}
+
+		if !p.expectCurrent(TokenGreater, "expected '>' after contract literal") {
+			return nil, false
+		}
+
+		p.advance()
+		return &ContractLiteral{Token: start, Contract: contract}, true
+
+	default:
+		p.errorAtCurrent("expected contract literal")
+		return nil, false
 	}
 }
 
@@ -368,7 +411,7 @@ func (p *Parser) parseExpressionTailWithOptions(left Expression, parentPrec int,
 			continue
 		}
 
-		if p.current.Type == TokenLess && tokensTouch(p.previous, p.current) && p.peek.Type == TokenIdentifier && p.peek.Literal == "STD" {
+		if p.current.Type == TokenLess && p.currentLessLooksLikeBindingContractBeforeAssignment() {
 			break
 		}
 

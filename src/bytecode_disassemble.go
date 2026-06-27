@@ -329,6 +329,7 @@ func formatBytecodeInstruction(index int, instruction BytecodeInstruction, chunk
 		fmt.Fprintf(&builder, " %04d", instruction.Operand)
 
 	case BytecodeOpLoadVoid,
+		BytecodeOpLoadContract,
 		BytecodeOpLoadTrue,
 		BytecodeOpLoadFalse,
 		BytecodeOpStoreIndex,
@@ -414,6 +415,9 @@ func bytecodeConstantKindName(value Value) string {
 
 	case ValueBuiltinFunction:
 		return "builtin_function"
+
+	case ValueContract:
+		return "contract"
 
 	default:
 		return "unknown"

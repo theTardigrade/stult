@@ -9,6 +9,7 @@ type BytecodeOpcode int
 const (
 	BytecodeOpLoadVoid BytecodeOpcode = iota
 	BytecodeOpLoadConst
+	BytecodeOpLoadContract
 	BytecodeOpLoadTrue
 	BytecodeOpLoadFalse
 	BytecodeOpLoadGlobal
@@ -286,6 +287,9 @@ func (opcode BytecodeOpcode) String() string {
 
 	case BytecodeOpLoadConst:
 		return "LOAD_CONST"
+
+	case BytecodeOpLoadContract:
+		return "LOAD_CONTRACT"
 
 	case BytecodeOpLoadTrue:
 		return "LOAD_TRUE"

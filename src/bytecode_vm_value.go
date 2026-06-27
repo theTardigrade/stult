@@ -163,7 +163,11 @@ func (vm *BytecodeVM) storeGlobal(
 
 	bindingContract := BindingContract{}
 	if contractDeclared {
-		bindingContract = bytecodeBindingContractFromTemplate(contract, value)
+		resolvedContract, err := vm.resolveBindingContractAliases(contract)
+		if err != nil {
+			return err
+		}
+		bindingContract = bytecodeBindingContractFromTemplate(resolvedContract, value)
 	}
 	if err := bindingContract.CheckAndLearn(name, value); err != nil {
 		return err
@@ -241,7 +245,11 @@ func (vm *BytecodeVM) storeLocal(
 			return err
 		}
 	} else if contractDeclared {
-		cell.Contract = bytecodeBindingContractFromTemplate(contract, value)
+		resolvedContract, err := vm.resolveBindingContractAliases(contract)
+		if err != nil {
+			return err
+		}
+		cell.Contract = bytecodeBindingContractFromTemplate(resolvedContract, value)
 	}
 
 	if err := cell.Contract.CheckAndLearn(bytecodeCellName(cell, fmt.Sprintf("local %d", index)), value); err != nil {
@@ -874,4 +882,44 @@ func bytecodeCellName(cell *bytecodeVMCell, fallback string) string {
 	}
 
 	return fallback
+}
+
+func (vm *BytecodeVM) resolveBindingContractAliases(contract BindingContract) (BindingContract, error) {
+	return contract.ResolveAliases(func(name string) (Value, bool) {
+		if vm.chunk != nil {
+			for index := len(vm.locals) - 1; index >= 0; index-- {
+				if index >= len(vm.chunk.Locals) {
+					continue
+				}
+				local := vm.chunk.Locals[index]
+				if local.Name != name {
+					continue
+				}
+				cell := vm.locals[index]
+				if cell != nil && cell.Initialized {
+					return cell.Value, true
+				}
+			}
+
+			for index := len(vm.upvalues) - 1; index >= 0; index-- {
+				if index >= len(vm.chunk.Upvalues) {
+					continue
+				}
+				upvalue := vm.chunk.Upvalues[index]
+				if upvalue.Name != name {
+					continue
+				}
+				cell := vm.upvalues[index]
+				if cell != nil && cell.Initialized {
+					return cell.Value, true
+				}
+			}
+		}
+
+		binding, ok := vm.globals[name]
+		if !ok {
+			return Value{}, false
+		}
+		return binding.Value, true
+	})
 }

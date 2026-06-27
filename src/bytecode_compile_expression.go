@@ -154,6 +154,18 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 	case *FallibleExpression:
 		return compiler.compileFallibleExpression(expression)
 
+	case *ContractLiteral:
+		for _, alias := range expression.Contract.AliasNames() {
+			compiler.resolveUpvalue(alias)
+		}
+		compiler.chunk.EmitOperandContractAt(
+			BytecodeOpLoadContract,
+			0,
+			expression.Contract,
+			compiler.sourceSpanFromToken(expression.Token),
+		)
+		return nil
+
 	case *BinaryExpression:
 		if expression.Operator == "&" || expression.Operator == "|" {
 			return compiler.compileLogicalBinaryExpression(expression)

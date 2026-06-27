@@ -90,7 +90,18 @@ func (p *Parser) parseBindingContractTerm() (BindingContract, bool) {
 		return BindingContract{}, true
 
 	case TokenIdentifier:
-		return p.parseNamedBindingContractType()
+		if p.current.Literal == "_" {
+			p.errorAtCurrent("expected contract alias name")
+			return BindingContract{}, false
+		}
+
+		if p.current.Literal == "STD" {
+			return p.parseNamedBindingContractType()
+		}
+
+		alias := p.current.Literal
+		p.advance()
+		return BindingContract{Kind: BindingContractAliasKind, AliasName: alias}, true
 
 	default:
 		p.errorAtCurrent("expected binding contract")
@@ -195,6 +206,8 @@ func bindingContractForStdTypeName(name string) (BindingContract, bool) {
 		return BindingContract{Kind: BindingContractExactKind, KindValue: ValueFunction}, true
 	case "BUILTIN_FUNCTION":
 		return BindingContract{Kind: BindingContractExactKind, KindValue: ValueBuiltinFunction}, true
+	case "CONTRACT":
+		return BindingContract{Kind: BindingContractExactKind, KindValue: ValueContract}, true
 	case "ARRAY":
 		return BindingContract{Kind: BindingContractArrayKind}, true
 	case "MAP":

@@ -8,6 +8,7 @@ func NewStdTypeMap() Value {
 		"BOOL":             NewImmutableBinding(NewStdTypeBoolMap()),
 		"BUILTIN_FUNCTION": NewImmutableBinding(NewStdTypeBuiltinFunctionMap()),
 		"COLLECTION":       NewImmutableBinding(NewStdTypeCollectionMap()),
+		"CONTRACT":         NewImmutableBinding(NewStdTypeContractMap()),
 		"FUNCTION":         NewImmutableBinding(NewStdTypeFunctionMap()),
 		"MAP":              NewImmutableBinding(NewStdTypeMapMap()),
 		"NUMBER":           NewImmutableBinding(NewStdTypeNumberMap()),
@@ -18,6 +19,7 @@ func NewStdTypeMap() Value {
 		"IS_BOOL":             NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsBool)),
 		"IS_BUILTIN_FUNCTION": NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsBuiltinFunction)),
 		"IS_COLLECTION":       NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsCollection)),
+		"IS_CONTRACT":         NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsContract)),
 		"IS_FUNCTION":         NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsFunction)),
 		"IS_MAP":              NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsMap)),
 		"IS_NUMBER":           NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsNumber)),
@@ -54,6 +56,12 @@ func StdTypeIsCollection(_ *RuntimeContext, args []Value) (Value, error) {
 		default:
 			return false
 		}
+	})
+}
+
+func StdTypeIsContract(_ *RuntimeContext, args []Value) (Value, error) {
+	return StdTypePredicate("TYPE.IS_CONTRACT", args, func(value Value) bool {
+		return value.Kind == ValueContract
 	})
 }
 

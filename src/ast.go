@@ -150,6 +150,13 @@ type FallibleExpression struct {
 
 func (e *FallibleExpression) expressionNode() {}
 
+type ContractLiteral struct {
+	Token    Token
+	Contract BindingContract
+}
+
+func (e *ContractLiteral) expressionNode() {}
+
 type MatchArm struct {
 	Pattern MatchPattern
 	Value   Expression

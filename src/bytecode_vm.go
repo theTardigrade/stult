@@ -159,6 +159,15 @@ func (vm *BytecodeVM) executeInstruction(
 		vm.pushValue(bytecodeCloneValueForLoad(value))
 		return Value{}, false, nil
 
+	case BytecodeOpLoadContract:
+		contract, err := vm.resolveBindingContractAliases(instruction.Contract)
+		if err != nil {
+			return Value{}, false, vm.runtimeError(instructionIndex, "%s", err.Error())
+		}
+
+		vm.pushValue(NewContractValue(contract))
+		return Value{}, false, nil
+
 	case BytecodeOpLoadTrue:
 		vm.pushValue(NewBoolValue(true))
 		return Value{}, false, nil

@@ -11,6 +11,7 @@ const (
 	BindingContractArrayKind
 	BindingContractMapKind
 	BindingContractUnionKind
+	BindingContractAliasKind
 )
 
 type BindingContract struct {
@@ -19,6 +20,7 @@ type BindingContract struct {
 	HasKindValue bool
 	Element      *BindingContract
 	Options      []BindingContract
+	AliasName    string
 }
 
 type BindingContractDeclaration struct {
@@ -184,6 +186,9 @@ func (contract *BindingContract) CheckAndLearn(name string, value Value) error {
 			valueKindName(value.Kind),
 		)
 
+	case BindingContractAliasKind:
+		return fmt.Errorf("binding %q has unresolved contract alias %q", name, contract.AliasName)
+
 	default:
 		return fmt.Errorf("binding %q has unknown contract kind %d", name, contract.Kind)
 	}
@@ -236,6 +241,8 @@ func (contract BindingContract) ExpectedValueDescription() string {
 			parts = append(parts, option.ExpectedValueDescription())
 		}
 		return joinContractDescriptions(parts)
+	case BindingContractAliasKind:
+		return contract.AliasName
 	default:
 		return "unknown"
 	}
@@ -285,7 +292,177 @@ func valueKindName(kind ValueKind) string {
 		return "function"
 	case ValueBuiltinFunction:
 		return "builtin function"
+	case ValueContract:
+		return "contract"
 	default:
 		return "unknown"
 	}
+}
+
+type BindingContractValueLookup func(name string) (Value, bool)
+
+func NewContractValue(contract BindingContract) Value {
+	cloned := contract.Clone()
+	return Value{Kind: ValueContract, Contract: &cloned}
+}
+
+func (contract BindingContract) ResolveAliases(lookup BindingContractValueLookup) (BindingContract, error) {
+	return contract.resolveAliases(lookup, map[string]bool{})
+}
+
+func (contract BindingContract) resolveAliases(
+	lookup BindingContractValueLookup,
+	seen map[string]bool,
+) (BindingContract, error) {
+	switch contract.Kind {
+	case BindingContractAliasKind:
+		if contract.AliasName == "" {
+			return BindingContract{}, fmt.Errorf("empty contract alias")
+		}
+
+		if seen[contract.AliasName] {
+			return BindingContract{}, fmt.Errorf("cyclic contract alias %q", contract.AliasName)
+		}
+
+		value, ok := lookup(contract.AliasName)
+		if !ok {
+			return BindingContract{}, fmt.Errorf("undefined contract alias %q", contract.AliasName)
+		}
+
+		value = resolveSpecializedValue(value)
+		if value.Kind != ValueContract || value.Contract == nil {
+			return BindingContract{}, fmt.Errorf("contract alias %q must be a contract value, got %s value", contract.AliasName, valueKindName(value.Kind))
+		}
+
+		seen[contract.AliasName] = true
+		resolved, err := value.Contract.resolveAliases(lookup, seen)
+		delete(seen, contract.AliasName)
+		return resolved, err
+
+	case BindingContractArrayKind, BindingContractMapKind:
+		resolved := contract.Clone()
+		if contract.Element != nil {
+			element, err := contract.Element.resolveAliases(lookup, seen)
+			if err != nil {
+				return BindingContract{}, err
+			}
+			resolved.Element = &element
+		}
+		return resolved, nil
+
+	case BindingContractUnionKind:
+		resolved := contract.Clone()
+		resolved.Options = make([]BindingContract, len(contract.Options))
+		for index := range contract.Options {
+			option, err := contract.Options[index].resolveAliases(lookup, seen)
+			if err != nil {
+				return BindingContract{}, err
+			}
+			resolved.Options[index] = option
+		}
+		return resolved, nil
+
+	default:
+		return contract.Clone(), nil
+	}
+}
+
+func (contract BindingContract) HasAlias() bool {
+	switch contract.Kind {
+	case BindingContractAliasKind:
+		return true
+	case BindingContractArrayKind, BindingContractMapKind:
+		return contract.Element != nil && contract.Element.HasAlias()
+	case BindingContractUnionKind:
+		for _, option := range contract.Options {
+			if option.HasAlias() {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (contract BindingContract) AliasNames() []string {
+	names := []string{}
+	seen := map[string]bool{}
+	contract.collectAliasNames(&names, seen)
+	return names
+}
+
+func (contract BindingContract) collectAliasNames(names *[]string, seen map[string]bool) {
+	switch contract.Kind {
+	case BindingContractAliasKind:
+		if contract.AliasName != "" && !seen[contract.AliasName] {
+			seen[contract.AliasName] = true
+			*names = append(*names, contract.AliasName)
+		}
+	case BindingContractArrayKind, BindingContractMapKind:
+		if contract.Element != nil {
+			contract.Element.collectAliasNames(names, seen)
+		}
+	case BindingContractUnionKind:
+		for _, option := range contract.Options {
+			option.collectAliasNames(names, seen)
+		}
+	}
+}
+
+func (contract BindingContract) SourceString() string {
+	switch contract.Kind {
+	case BindingContractAnyKind:
+		return "*"
+	case BindingContractSameKind:
+		return "."
+	case BindingContractExactKind:
+		switch contract.KindValue {
+		case ValueVoid:
+			return "STD.TYPE.VOID"
+		case ValueNumber:
+			return "STD.TYPE.NUMBER"
+		case ValueBool:
+			return "STD.TYPE.BOOL"
+		case ValueString:
+			return "STD.TYPE.STRING"
+		case ValueFunction:
+			return "STD.TYPE.FUNCTION"
+		case ValueBuiltinFunction:
+			return "STD.TYPE.BUILTIN_FUNCTION"
+		case ValueContract:
+			return "STD.TYPE.CONTRACT"
+		default:
+			return valueKindName(contract.KindValue)
+		}
+	case BindingContractArrayKind:
+		if contract.Element == nil {
+			return "STD.TYPE.ARRAY"
+		}
+		return "STD.TYPE.ARRAY<" + contract.Element.SourceString() + ">"
+	case BindingContractMapKind:
+		if contract.Element == nil {
+			return "STD.TYPE.MAP"
+		}
+		return "STD.TYPE.MAP<" + contract.Element.SourceString() + ">"
+	case BindingContractUnionKind:
+		parts := make([]string, 0, len(contract.Options))
+		for _, option := range contract.Options {
+			parts = append(parts, option.SourceString())
+		}
+		return joinContractSourceParts(parts)
+	case BindingContractAliasKind:
+		return contract.AliasName
+	default:
+		return "unknown"
+	}
+}
+
+func joinContractSourceParts(parts []string) string {
+	if len(parts) == 0 {
+		return "unknown"
+	}
+	result := parts[0]
+	for _, part := range parts[1:] {
+		result += "|" + part
+	}
+	return result
 }

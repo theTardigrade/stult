@@ -74,6 +74,12 @@ func (compiler *BytecodeCompiler) compileAssignmentStatement(statement *Assignme
 		return err
 	}
 
+	if statement.ContractDeclaration != nil {
+		for _, alias := range statement.ContractDeclaration.Contract.AliasNames() {
+			compiler.resolveUpvalue(alias)
+		}
+	}
+
 	if statement.Name.Literal == "_" {
 		compiler.chunk.EmitAt(BytecodeOpPop, compiler.sourceSpanFromToken(statement.Name))
 		return nil

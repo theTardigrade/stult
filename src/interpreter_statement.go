@@ -15,7 +15,16 @@ func (i *Interpreter) evalStatement(stmt Statement) (Value, error) {
 				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
 			}
 		} else {
-			if err := i.Env.SetWithContract(s.Name.Literal, value, s.IsImmutable, s.ContractDeclaration); err != nil {
+			contractDeclaration := s.ContractDeclaration
+			if contractDeclaration != nil {
+				contract, err := i.resolveBindingContractAliases(contractDeclaration.Contract)
+				if err != nil {
+					return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
+				}
+				contractDeclaration = &BindingContractDeclaration{Token: contractDeclaration.Token, Contract: contract}
+			}
+
+			if err := i.Env.SetWithContract(s.Name.Literal, value, s.IsImmutable, contractDeclaration); err != nil {
 				return Value{}, fmt.Errorf("line %d, column %d: %w", s.Name.StartOfLine, s.Name.StartOfColumn, err)
 			}
 		}

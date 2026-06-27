@@ -78,6 +78,13 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *FallibleExpression:
 		return i.evalFallibleExpression(e)
 
+	case *ContractLiteral:
+		contract, err := i.resolveBindingContractAliases(e.Contract)
+		if err != nil {
+			return Value{}, err
+		}
+		return NewContractValue(contract), nil
+
 	case *MapLiteral:
 		return i.evalMapLiteral(e)
 
@@ -458,4 +465,14 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")
 	}
+}
+
+func (i *Interpreter) resolveBindingContractAliases(contract BindingContract) (BindingContract, error) {
+	return contract.ResolveAliases(func(name string) (Value, bool) {
+		binding, ok := i.Env.Get(name)
+		if !ok {
+			return Value{}, false
+		}
+		return binding.Value, true
+	})
 }
