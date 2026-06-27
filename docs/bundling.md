@@ -63,8 +63,8 @@ The bundled executable still uses the Stult runtime. The difference is that the 
 Stult supports two bundle modes:
 
 ```bash
-stult build --bytecode my_tool -o my-tool
-stult build --interpreter my_tool -o my-tool
+stult build --bytecode my_tool --output my-tool
+stult build --interpreter my_tool --output my-tool
 ```
 
 `--bytecode` is the default.
@@ -83,13 +83,13 @@ A bytecode bundle embeds:
 Build a bytecode bundle:
 
 ```bash
-stult build my_tool -o my-tool
+stult build my_tool --output my-tool
 ```
 
 This is the same as:
 
 ```bash
-stult build --bytecode my_tool -o my-tool
+stult build --bytecode my_tool --output my-tool
 ```
 
 A bytecode bundle does not need the original `.stult` source files at runtime.
@@ -107,7 +107,7 @@ A source/interpreter bundle embeds:
 Build a source/interpreter bundle:
 
 ```bash
-stult build --interpreter my_tool -o my-tool
+stult build --interpreter my_tool --output my-tool
 ```
 
 When the generated executable starts, it loads the embedded source files and runs them through the tree-walk interpreter.
@@ -145,7 +145,7 @@ WRITE_LINE("Hello from a bundled Stult executable.")
 Build the default bytecode bundle:
 
 ```bash
-stult build ./example_tool -o example-tool
+stult build ./example_tool --output example-tool
 ```
 
 Run the generated executable:
@@ -163,7 +163,7 @@ On Windows:
 Build a source/interpreter bundle instead:
 
 ```bash
-stult build --interpreter ./example_tool -o example-tool
+stult build --interpreter ./example_tool --output example-tool
 ```
 
 ## Building from a project directory
@@ -171,13 +171,13 @@ stult build --interpreter ./example_tool -o example-tool
 The build command has this form:
 
 ```bash
-stult build [--bytecode|--interpreter] <project-directory> -o <output-executable>
+stult build [--bytecode|--interpreter] <project-directory> [-o|--output <output-executable>]
 ```
 
 For example:
 
 ```bash
-stult build examples/projects/bool -o bool-app
+stult build examples/projects/bool --output bool-app
 ```
 
 The project directory must contain one root manifest file:
@@ -199,7 +199,7 @@ Do not put both manifest files in the same project root.
 You can also build a standalone executable from a single `.stult` source file:
 
 ```bash
-stult build examples/calculate_circle_area_from_map.stult -o circle-area-app
+stult build examples/calculate_circle_area_from_map.stult --output circle-area-app
 ```
 
 Stult creates an internal manifest for the single source file, then bundles that program.
@@ -209,19 +209,19 @@ The default is still a bytecode bundle.
 Use `--interpreter` if you want a source/interpreter bundle:
 
 ```bash
-stult build --interpreter examples/calculate_circle_area_from_map.stult -o circle-area-app
+stult build --interpreter examples/calculate_circle_area_from_map.stult --output circle-area-app
 ```
 
 ## Output paths
 
-Use `-o` or `--output` to choose the generated executable path:
-
-```bash
-stult build examples/projects/bool -o bool-app
-```
+Use `--output` or its short alias `-o` to choose the generated executable path:
 
 ```bash
 stult build examples/projects/bool --output bool-app
+```
+
+```bash
+stult build examples/projects/bool -o bool-app
 ```
 
 If no output path is given, Stult uses the project directory name or source file name:
@@ -255,7 +255,7 @@ You need a `stult` executable to build a bundled executable.
 You do not need Go installed if you are using a distributed Stult binary:
 
 ```bash
-stult build my_tool -o my-tool
+stult build my_tool --output my-tool
 ```
 
 Go is only needed if you are building Stult itself from source.
@@ -275,7 +275,7 @@ go build -o stult ./src
 Once you have a Stult binary, the normal bundling command is:
 
 ```bash
-stult build my_tool -o my-tool
+stult build my_tool --output my-tool
 ```
 
 ## What gets embedded
@@ -467,7 +467,7 @@ stult run my_tool
 Then build it with:
 
 ```bash
-stult build my_tool -o my-tool
+stult build my_tool --output my-tool
 ```
 
 ## Running after copying
@@ -509,7 +509,7 @@ stult run my_tool
 Then, when the project works:
 
 ```bash
-stult build my_tool -o my-tool
+stult build my_tool --output my-tool
 ```
 
 Then run the bundled executable:
@@ -527,7 +527,7 @@ stult run --interpreter my_tool
 If you explicitly want to build a source/interpreter bundle:
 
 ```bash
-stult build --interpreter my_tool -o my-tool
+stult build --interpreter my_tool --output my-tool
 ```
 
 If you are working from the Stult source repository and have not built a local `stult` binary yet, you can use:
@@ -539,7 +539,7 @@ go run ./util/build_helper.go local
 Then use the generated binary:
 
 ```bash
-./stult build my_tool -o my-tool
+./stult build my_tool --output my-tool
 ```
 
 ## Troubleshooting
@@ -583,7 +583,7 @@ This is intentional.
 Use `--interpreter` if you explicitly want a source bundle:
 
 ```bash
-stult build --interpreter my_tool -o my-tool
+stult build --interpreter my_tool --output my-tool
 ```
 
 ### Avoid absolute manifest paths
@@ -601,11 +601,11 @@ Stult refuses to overwrite the executable that is currently running the build.
 For example, if you are running the build with `stult`, do not attempt to write the output back to `stult`:
 
 ```bash
-stult build my_tool -o stult
+stult build my_tool --output stult
 ```
 
 Choose a different output path:
 
 ```bash
-stult build my_tool -o my-bundled-tool
+stult build my_tool --output my-bundled-tool
 ```

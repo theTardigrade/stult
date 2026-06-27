@@ -288,7 +288,7 @@ stult run --bytecode examples/projects/bool
 Manifest projects can be bundled into standalone executables:
 
 ```bash
-stult build examples/projects/bool -o bool-app
+stult build examples/projects/bool --output bool-app
 ```
 
 By default, `stult build` creates a bytecode bundle.
@@ -296,13 +296,13 @@ By default, `stult build` creates a bytecode bundle.
 This is the same as:
 
 ```bash
-stult build --bytecode examples/projects/bool -o bool-app
+stult build --bytecode examples/projects/bool --output bool-app
 ```
 
 If you explicitly want a source/interpreter bundle, use `--interpreter`:
 
 ```bash
-stult build --interpreter examples/projects/bool -o bool-app
+stult build --interpreter examples/projects/bool --output bool-app
 ```
 
 Then run the generated executable directly:

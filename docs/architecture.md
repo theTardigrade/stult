@@ -221,7 +221,7 @@ Program arguments after the source, `-` stdin target, manifest or directory targ
 
 The `dump` command does not use runtime modes. It compiles to bytecode and prints a disassembly, or writes that disassembly to `-o`/`--output` when an output file is provided.
 
-The `build` command creates a standalone executable by appending a bundle archive and footer to the current runner executable.
+The `build` command creates a standalone executable by appending a bundle archive and footer to the current runner executable. It accepts `--output` and the short alias `-o` to choose the generated executable path.
 
 ## Lexing
 

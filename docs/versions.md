@@ -15,6 +15,7 @@ This release is planned as the first stable Stult release.
 #### Command line
 
 * Added `-o` and `--output` to `stult dump` so bytecode disassembly can be written directly to a file.
+* Documented and tested `--output` as the long form of the `stult build -o` output option.
 
 ### v0.9.9
 
