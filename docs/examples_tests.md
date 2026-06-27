@@ -103,7 +103,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 ## Optional type system
 
 - [Binding contracts](../examples/tests/binding_contracts.stult)  
-  Checks optional runtime binding contracts, including `<.>`, `<*>`, named `STD.TYPE` contracts, immutable contracted bindings, map-entry contracts, array element contracts, map value contracts, alias-safe collection mutation checks and declaration-only contract syntax.
+  Checks optional runtime binding contracts, including `<.>`, `<*>`, named `STD.TYPE` contracts, union contracts, immutable contracted bindings, array element contracts, map value contracts, alias-safe collection mutation checks and declaration-only contract syntax.
 
 ## Functions
 
