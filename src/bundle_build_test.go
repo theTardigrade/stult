@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -16,7 +18,24 @@ type commandResult struct {
 	Err    error
 }
 
-func TestBuildSingleSourceBundleRuns(t *testing.T) {
+var (
+	integrationRunnerOnce    sync.Once
+	integrationRunnerPath    string
+	integrationRunnerTempDir string
+	integrationRunnerErr     error
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+
+	if integrationRunnerTempDir != "" {
+		_ = os.RemoveAll(integrationRunnerTempDir)
+	}
+
+	os.Exit(code)
+}
+
+func TestBuildSingleSourceBundleRunsInBytecodeMode(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping bundle/build integration test in short mode")
 	}
@@ -27,55 +46,43 @@ func TestBuildSingleSourceBundleRuns(t *testing.T) {
 	sourcePath := filepath.Join(workDir, "hello.stult")
 	writeFileForIntegrationTest(t, sourcePath, `STD.IO.OUTPUT.WRITE_LINE("single:", STD.SYSTEM.ARGS[0], ":", STD.SYSTEM.ARGS[1])`)
 
-	cases := []struct {
-		Name string
-		Mode string
-	}{
-		{Name: "bytecode", Mode: "--bytecode"},
-		{Name: "interpreter", Mode: "--interpreter"},
+	outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "single-bytecode"))
+
+	buildResult := runCommandForIntegrationTest(
+		t,
+		workDir,
+		runner,
+		"build",
+		"--bytecode",
+		sourcePath,
+		"-o",
+		outputPath,
+	)
+	if buildResult.Err != nil {
+		t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
+	}
+	if buildResult.Stderr != "" {
+		t.Fatalf("unexpected build stderr: %q", buildResult.Stderr)
+	}
+	if !strings.Contains(buildResult.Stdout, "Built "+outputPath) {
+		t.Fatalf("unexpected build stdout: %q", buildResult.Stdout)
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "single-"+tc.Name))
+	assertExecutableExistsForIntegrationTest(t, outputPath)
 
-			buildResult := runCommandForIntegrationTest(
-				t,
-				workDir,
-				runner,
-				"build",
-				tc.Mode,
-				sourcePath,
-				"-o",
-				outputPath,
-			)
-			if buildResult.Err != nil {
-				t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
-			}
-			if buildResult.Stderr != "" {
-				t.Fatalf("unexpected build stderr: %q", buildResult.Stderr)
-			}
-			if !strings.Contains(buildResult.Stdout, "Built "+outputPath) {
-				t.Fatalf("unexpected build stdout: %q", buildResult.Stdout)
-			}
-
-			assertExecutableExistsForIntegrationTest(t, outputPath)
-
-			runResult := runCommandForIntegrationTest(t, workDir, outputPath, "left", "right")
-			if runResult.Err != nil {
-				t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
-			}
-			if runResult.Stdout != "single:left:right\n" {
-				t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
-			}
-			if runResult.Stderr != "" {
-				t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
-			}
-		})
+	runResult := runCommandForIntegrationTest(t, workDir, outputPath, "left", "right")
+	if runResult.Err != nil {
+		t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
+	}
+	if runResult.Stdout != "single:left:right\n" {
+		t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
+	}
+	if runResult.Stderr != "" {
+		t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
 	}
 }
 
-func TestBuildManifestProjectBundleRunsFilesInOrder(t *testing.T) {
+func TestBuildManifestProjectBundleRunsFilesInOrderInInterpreterMode(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping bundle/build integration test in short mode")
 	}
@@ -94,48 +101,36 @@ func TestBuildManifestProjectBundleRunsFilesInOrder(t *testing.T) {
 	writeFileForIntegrationTest(t, filepath.Join(projectDir, "src", "setup.stult"), `PREFIX : "manifest"`)
 	writeFileForIntegrationTest(t, filepath.Join(projectDir, "src", "main.stult"), `STD.IO.OUTPUT.WRITE_LINE(PREFIX, ":", STD.SYSTEM.ARGS[0])`)
 
-	cases := []struct {
-		Name string
-		Mode string
-	}{
-		{Name: "bytecode", Mode: "--bytecode"},
-		{Name: "interpreter", Mode: "--interpreter"},
+	outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "project-interpreter"))
+
+	buildResult := runCommandForIntegrationTest(
+		t,
+		workDir,
+		runner,
+		"build",
+		"--interpreter",
+		projectDir,
+		"-o",
+		outputPath,
+	)
+	if buildResult.Err != nil {
+		t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
+	}
+	if buildResult.Stderr != "" {
+		t.Fatalf("unexpected build stderr: %q", buildResult.Stderr)
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "project-"+tc.Name))
+	assertExecutableExistsForIntegrationTest(t, outputPath)
 
-			buildResult := runCommandForIntegrationTest(
-				t,
-				workDir,
-				runner,
-				"build",
-				tc.Mode,
-				projectDir,
-				"-o",
-				outputPath,
-			)
-			if buildResult.Err != nil {
-				t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
-			}
-			if buildResult.Stderr != "" {
-				t.Fatalf("unexpected build stderr: %q", buildResult.Stderr)
-			}
-
-			assertExecutableExistsForIntegrationTest(t, outputPath)
-
-			runResult := runCommandForIntegrationTest(t, projectDir, outputPath, "arg")
-			if runResult.Err != nil {
-				t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
-			}
-			if runResult.Stdout != "manifest:arg\n" {
-				t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
-			}
-			if runResult.Stderr != "" {
-				t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
-			}
-		})
+	runResult := runCommandForIntegrationTest(t, projectDir, outputPath, "arg")
+	if runResult.Err != nil {
+		t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
+	}
+	if runResult.Stdout != "manifest:arg\n" {
+		t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
+	}
+	if runResult.Stderr != "" {
+		t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
 	}
 }
 
@@ -169,15 +164,34 @@ func TestBuildDirectoryWithoutManifestFails(t *testing.T) {
 func buildStultRunnerForIntegrationTest(t *testing.T) string {
 	t.Helper()
 
-	outputPath := executablePathForIntegrationTest(filepath.Join(t.TempDir(), "stult-test-runner"))
-	result := runCommandForIntegrationTest(t, "", "go", "build", "-o", outputPath, ".")
-	if result.Err != nil {
-		t.Fatalf("could not build stult test runner: %v\nstdout:\n%s\nstderr:\n%s", result.Err, result.Stdout, result.Stderr)
+	integrationRunnerOnce.Do(func() {
+		integrationRunnerTempDir, integrationRunnerErr = os.MkdirTemp("", "stult-integration-runner-*")
+		if integrationRunnerErr != nil {
+			return
+		}
+
+		integrationRunnerPath = executablePathForIntegrationTest(filepath.Join(integrationRunnerTempDir, "stult-test-runner"))
+		result := runCommandForIntegrationTestWithoutTB("", "go", "build", "-o", integrationRunnerPath, ".")
+		if result.Err != nil {
+			integrationRunnerErr = fmt.Errorf(
+				"could not build stult test runner: %w\nstdout:\n%s\nstderr:\n%s",
+				result.Err,
+				result.Stdout,
+				result.Stderr,
+			)
+			return
+		}
+
+		if err := checkExecutableExistsForIntegrationTest(integrationRunnerPath); err != nil {
+			integrationRunnerErr = err
+		}
+	})
+
+	if integrationRunnerErr != nil {
+		t.Fatal(integrationRunnerErr)
 	}
 
-	assertExecutableExistsForIntegrationTest(t, outputPath)
-
-	return outputPath
+	return integrationRunnerPath
 }
 
 func runCommandForIntegrationTest(
@@ -188,6 +202,14 @@ func runCommandForIntegrationTest(
 ) commandResult {
 	t.Helper()
 
+	return runCommandForIntegrationTestWithoutTB(dir, name, args...)
+}
+
+func runCommandForIntegrationTestWithoutTB(
+	dir string,
+	name string,
+	args ...string,
+) commandResult {
 	cmd := exec.Command(name, args...)
 	if dir != "" {
 		cmd.Dir = dir
@@ -222,16 +244,24 @@ func writeFileForIntegrationTest(t *testing.T, filename string, contents string)
 func assertExecutableExistsForIntegrationTest(t *testing.T, filename string) {
 	t.Helper()
 
+	if err := checkExecutableExistsForIntegrationTest(filename); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func checkExecutableExistsForIntegrationTest(filename string) error {
 	info, err := os.Stat(filename)
 	if err != nil {
-		t.Fatalf("expected executable %q to exist: %v", filename, err)
+		return fmt.Errorf("expected executable %q to exist: %w", filename, err)
 	}
 	if info.IsDir() {
-		t.Fatalf("expected executable %q to be a file", filename)
+		return fmt.Errorf("expected executable %q to be a file", filename)
 	}
 	if runtime.GOOS != "windows" && info.Mode().Perm()&0111 == 0 {
-		t.Fatalf("expected executable %q to have at least one executable bit; mode is %s", filename, info.Mode())
+		return fmt.Errorf("expected executable %q to have at least one executable bit; mode is %s", filename, info.Mode())
 	}
+
+	return nil
 }
 
 func executablePathForIntegrationTest(path string) string {
