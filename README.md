@@ -46,7 +46,10 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
     - [Boolean bindings](#boolean-bindings)
-    - [Type contracts](#type-contracts)
+  - [Optional type system](#optional-type-system)
+    - [Unnamed contracts](#unnamed-contracts)
+	- [Named contracts](#named-contracts)
+	- [Contract syntax](#contract-syntax)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -647,9 +650,23 @@ TRUE : STD.TYPE.BOOL.TRUE
 FALSE : STD.TYPE.BOOL.FALSE
 ```
 
-#### Type contracts
+### Optional type system
 
-A binding may also declare a type contract when it is created.
+Stult is dynamic by default. A normal binding can be reassigned to any runtime value kind:
+
+```stult
+value : 0
+value : "zero"
+value : {:}
+```
+
+However, a binding may opt in to a type contract when it is created.
+
+Contracts are optional, but when a contract is used, it is enforced at runtime by both the interpreter and the bytecode virtual machine.
+
+#### Unnamed contracts
+
+Unnamed contracts are simple built-in contracts for cases where you only want to preserve a value’s runtime kind or explicitly keep the default dynamic behaviour.
 
 ```stult
 count<.> : 0
@@ -664,6 +681,61 @@ value : "zero"  # valid, because <*> keeps the default dynamic behaviour
 
 `<*>` is an explicit form of the default behaviour: any runtime value kind is accepted.
 
+### Named contracts
+
+Named contracts can use the standard-library type namespaces directly inside the angle brackets:
+
+```stult
+amount<STD.TYPE.NUMBER> : 11
+amount : 12       # valid
+amount : "twelve" # runtime error
+
+name<STD.TYPE.STRING> : "test"
+flag<STD.TYPE.BOOL> : +
+```
+
+Array and map contracts can also constrain their contained values:
+
+```stult
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"test", "test2"}
+names[2] : "example" # valid
+names[3] : 123       # runtime error
+
+flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
+	"dev": -
+	"prod": +
+}
+flags["test"] : +               # valid
+flags["temp"] : "not available" # runtime error
+```
+
+Map keys are always strings, so `STD.TYPE.MAP<...>` contracts describe map values, not map keys.
+
+Collection contracts attach to the collection value as well as the binding. That means aliases cannot bypass them:
+
+```stult
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"example"}
+alias : names
+alias[1] : 123 # runtime error
+```
+
+Supported named contracts are:
+
+```text
+STD.TYPE.VOID
+STD.TYPE.NUMBER
+STD.TYPE.BOOL
+STD.TYPE.STRING
+STD.TYPE.ARRAY
+STD.TYPE.ARRAY<contract>
+STD.TYPE.MAP
+STD.TYPE.MAP<contract>
+STD.TYPE.FUNCTION
+STD.TYPE.BUILTIN_FUNCTION
+```
+
+#### Contract syntax
+
 The contract marker must touch the binding name.
 
 ```stult
@@ -671,19 +743,27 @@ count_a<.> : 0   # valid
 count_b <.> : 0  # invalid
 ```
 
-Immutable bindings may use contracts too, for consistency, even though they cannot normally be rebound.
+Contract markers are declaration-only. They can be used when a binding is created, but not when an existing binding is reassigned.
 
 ```stult
-LIMIT<.> : 10
-NAME<.> : "Example"
+value<STD.TYPE.NUMBER> : 1
+value<STD.TYPE.NUMBER> : 2 # runtime error
+value : 2                  # valid
+```
+
+Immutable bindings may use contracts too, for consistency, even though they cannot be rebound.
+
+```stult
+LIMIT<STD.TYPE.NUMBER> : 10
+NAME<STD.TYPE.STRING> : "Example"
 ```
 
 Map literal entries may also declare contracts:
 
 ```stult
 settings : {
-	.key<.> : 814
-	"mode"<.> : "development"
+	.key<STD.TYPE.NUMBER> : 814
+	"mode"<STD.TYPE.STRING> : "development"
 }
 ```
 
