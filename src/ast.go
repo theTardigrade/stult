@@ -142,6 +142,14 @@ type MatchExpression struct {
 
 func (e *MatchExpression) expressionNode() {}
 
+type FallibleExpression struct {
+	Token    Token
+	Attempt  Expression
+	Fallback Expression
+}
+
+func (e *FallibleExpression) expressionNode() {}
+
 type MatchArm struct {
 	Pattern MatchPattern
 	Value   Expression

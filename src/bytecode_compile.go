@@ -402,6 +402,9 @@ func (compiler *BytecodeCompiler) sourceSpanForExpression(expression Expression)
 	case *MatchExpression:
 		return compiler.sourceSpanFromToken(expression.Token)
 
+	case *FallibleExpression:
+		return compiler.sourceSpanFromToken(expression.Token)
+
 	case *MapLiteral:
 		return compiler.sourceSpanFromToken(expression.Token)
 

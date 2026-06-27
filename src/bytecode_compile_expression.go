@@ -151,6 +151,9 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 	case *MatchExpression:
 		return compiler.compileMatchExpression(expression)
 
+	case *FallibleExpression:
+		return compiler.compileFallibleExpression(expression)
+
 	case *BinaryExpression:
 		if expression.Operator == "&" || expression.Operator == "|" {
 			return compiler.compileLogicalBinaryExpression(expression)
@@ -183,6 +186,32 @@ func (compiler *BytecodeCompiler) compileExpression(expression Expression) error
 			expression,
 		)
 	}
+}
+
+func (compiler *BytecodeCompiler) compileFallibleExpression(expression *FallibleExpression) error {
+	sourceSpan := compiler.sourceSpanFromToken(expression.Token)
+
+	tryStart := compiler.chunk.EmitOperandAt(BytecodeOpTryStart, -1, sourceSpan)
+
+	if err := compiler.compileExpression(expression.Attempt); err != nil {
+		return err
+	}
+
+	compiler.chunk.EmitAt(BytecodeOpTryEnd, sourceSpan)
+	afterFallbackJump := compiler.chunk.EmitOperandAt(BytecodeOpJump, -1, sourceSpan)
+	fallbackStart := len(compiler.chunk.Instructions)
+
+	if err := compiler.chunk.PatchOperand(tryStart, fallbackStart); err != nil {
+		return err
+	}
+
+	compiler.chunk.EmitAt(BytecodeOpPop, sourceSpan)
+
+	if err := compiler.compileExpression(expression.Fallback); err != nil {
+		return err
+	}
+
+	return compiler.patchJumpToCurrent(afterFallbackJump)
 }
 
 func (compiler *BytecodeCompiler) compileIdentifierExpression(expression *IdentifierExpression) error {

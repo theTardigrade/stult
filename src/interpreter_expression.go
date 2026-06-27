@@ -75,6 +75,9 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 	case *MatchExpression:
 		return i.evalMatchExpression(e)
 
+	case *FallibleExpression:
+		return i.evalFallibleExpression(e)
+
 	case *MapLiteral:
 		return i.evalMapLiteral(e)
 
@@ -229,6 +232,19 @@ func (i *Interpreter) evalLogicalBinaryExpression(expr *BinaryExpression) (Value
 	default:
 		return Value{}, fmt.Errorf("unknown logical operator %q", expr.Operator)
 	}
+}
+
+func (i *Interpreter) evalFallibleExpression(expr *FallibleExpression) (Value, error) {
+	value, err := i.evalExpression(expr.Attempt)
+	if err == nil {
+		return value, nil
+	}
+
+	if _, ok := asControlFlow(err); ok {
+		return Value{}, err
+	}
+
+	return i.evalExpression(expr.Fallback)
 }
 
 func (i *Interpreter) evalMapLiteral(lit *MapLiteral) (Value, error) {

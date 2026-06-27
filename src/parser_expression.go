@@ -136,6 +136,14 @@ func (p *Parser) parseExpressionWithOptions(parentPrec int, stopBeforeRangePostf
 			Right:    right,
 		}
 
+	case TokenQuestion:
+		fallible, ok := p.parseFallibleExpression()
+		if !ok {
+			return nil
+		}
+
+		left = fallible
+
 	case TokenLParen:
 		inner, closeParen, ok := p.parseParenthesizedExpression("grouped expression cannot be empty")
 		if !ok {
@@ -188,6 +196,7 @@ func tokenCanStartExpression(tokenType TokenType) bool {
 		TokenIdentifier,
 		TokenAt,
 		TokenTilde,
+		TokenQuestion,
 		TokenDot,
 		TokenLParen,
 		TokenLBrace:
@@ -195,6 +204,67 @@ func tokenCanStartExpression(tokenType TokenType) bool {
 	default:
 		return false
 	}
+}
+
+func (p *Parser) parseFallibleExpression() (Expression, bool) {
+	question := p.current
+	p.advance() // consume "?"
+
+	if !p.expectCurrent(TokenLParen, "expected '(' after fallible expression marker") {
+		return nil, false
+	}
+
+	if !tokensTouch(question, p.current) {
+		p.errorAtCurrent("expected fallible expression marker to touch '('")
+		return nil, false
+	}
+
+	p.advance() // consume "("
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.errorAtToken(question, "fallible expression expected attempted and fallback expressions")
+		return nil, false
+	}
+
+	attempt := p.parseExpression(precLogicalOr)
+	if attempt == nil {
+		p.errorAtToken(question, "expected attempted expression in fallible expression")
+		return nil, false
+	}
+
+	if p.current.Type != TokenOr {
+		p.errorAtCurrent("expected '|' between attempted and fallback expressions")
+		return nil, false
+	}
+
+	p.advance() // consume "|"
+	p.skipNewlines()
+
+	if p.current.Type == TokenRParen {
+		p.errorAtToken(question, "fallible expression expected fallback expression")
+		return nil, false
+	}
+
+	fallback := p.parseExpression(precLowest)
+	if fallback == nil {
+		p.errorAtToken(question, "expected fallback expression in fallible expression")
+		return nil, false
+	}
+
+	p.skipNewlines()
+
+	if !p.expectCurrent(TokenRParen, "expected ')' after fallible expression") {
+		return nil, false
+	}
+
+	p.advance() // consume ")"
+
+	return &FallibleExpression{
+		Token:    question,
+		Attempt:  attempt,
+		Fallback: fallback,
+	}, true
 }
 
 func (p *Parser) parseLeadingDotExpression() (Expression, bool) {
