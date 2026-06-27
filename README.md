@@ -72,6 +72,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Conditional expressions](#conditional-expressions)
     - [Match expressions](#match-expressions)
   - [Error handling](#error-handling)
+    - [Fallible expressions](#fallible-expressions)
     - [Try-catch statements](#try-catch-statements)
   - [Loops](#loops)
     - [Infinite loops](#infinite-loops)
@@ -1566,6 +1567,27 @@ RESULT : ("safe"):{
 In this example, the division arm is not evaluated.
 
 ### Error handling
+
+#### Fallible expressions
+
+A fallible expression tries one expression and returns a fallback value if the attempt raises a catchable runtime error.
+
+```stult
+number : ?(STD.TYPE.NUMBER.NEW(text) | 0)
+```
+
+The expression before `|` is evaluated first. If it succeeds, that value is returned and the fallback expression is not evaluated. If it raises a catchable runtime error, the fallback expression is evaluated and returned instead.
+
+```stult
+items : {:}
+name : ?(items.name | "unknown")
+```
+
+The `?` marker must touch the opening parenthesis.
+
+The `|` separates the attempted expression from the fallback expression. To use logical `|` inside the attempted expression, wrap that part in parentheses.
+
+Fallible expressions catch runtime errors only. They do not catch syntax errors, parsing errors, bytecode compile errors or command-line setup errors.
 
 #### Try-catch statements
 
