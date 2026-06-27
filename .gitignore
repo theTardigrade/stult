@@ -3,6 +3,4 @@ dist/
 **/__ignore/
 
 *.exe
-*.txt
-
-!LICENSE.txt
+*.tmp.*
