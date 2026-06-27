@@ -84,7 +84,7 @@ func commandUsage() string {
 		"  stult run [--bytecode|--interpreter] -e|--eval <source-string> [args...]\n" +
 		"  stult dump [--bytecode] [-o|--output <output-file>] [file.stult|directory|manifest|-]\n" +
 		"  stult dump [--bytecode] [-o|--output <output-file>] -e|--eval <source-string>\n" +
-		"  stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>"
+		"  stult build [--bytecode|--interpreter] [project-directory-or-file.stult] [-o|--output <output-executable>]"
 }
 
 func dumpUsage() string {

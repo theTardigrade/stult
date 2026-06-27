@@ -91,7 +91,7 @@ func parseBuildCommandArgs(args []string) (string, string, BuildBundleOptions, e
 
 func buildUsage() string {
 	return "Usage:\n" +
-		"  stult build [--bytecode|--interpreter] [project-directory-or-file.stult] -o <output-executable>\n" +
+		"  stult build [--bytecode|--interpreter] [project-directory-or-file.stult] [-o|--output <output-executable>]\n" +
 		"  stult build [project-directory-or-file.stult]"
 }
 
