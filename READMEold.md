@@ -46,7 +46,6 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
     - [Boolean bindings](#boolean-bindings)
-    - [Type contracts](#type-contracts)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -645,42 +644,6 @@ The standard library also provides equivalent boolean bindings, which can be use
 ```stult
 TRUE : STD.TYPE.BOOL.TRUE
 FALSE : STD.TYPE.BOOL.FALSE
-```
-
-#### Type contracts
-
-A binding may also declare a type contract when it is created.
-
-```stult
-count<.> : 0
-count : 1       # valid, because the value is still a number
-count : "one"   # runtime error
-
-value<*> : 0
-value : "zero"  # valid, because <*> keeps the default dynamic behaviour
-```
-
-`<.>` means that future assignments must keep the same runtime value kind as the first value. `<*>` is an explicit form of the default behaviour: any runtime value kind is accepted. The contract marker must touch the binding name.
-
-```stult
-count<.> : 0   # valid
-count <.> : 0  # invalid
-```
-
-Immutable bindings may use contracts too, for consistency, even though they cannot normally be rebound.
-
-```stult
-LIMIT<.> : 10
-NAME<.> : "Example"
-```
-
-Map literal entries may also declare contracts:
-
-```stult
-settings : {
-	.key<.> : 814
-	"mode"<.> : "development"
-}
 ```
 
 ### Operators
