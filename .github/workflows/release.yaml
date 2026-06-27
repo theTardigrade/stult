@@ -24,6 +24,9 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Run go vet
+        run: go vet ./...
+
       - name: Build dist binaries
         run: go run ./util/build_helper.go dist
 
