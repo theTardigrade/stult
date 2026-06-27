@@ -162,17 +162,24 @@ func runSourceStringWithMode(
 }
 
 func runDumpCommand(args []string) error {
-	dumpArgs, err := parseDumpArgs(args)
+	dumpArgs, options, err := parseDumpArgs(args)
 	if err != nil {
 		return err
 	}
 
+	var dump string
+
 	if len(dumpArgs) > 0 && isEvalFlag(dumpArgs[0]) {
 		if len(dumpArgs) != 2 {
-			return fmt.Errorf("Usage: stult dump [--bytecode] -e|--eval <source-string>")
+			return fmt.Errorf("Usage: stult dump [--bytecode] [-o|--output <output-file>] -e|--eval <source-string>")
 		}
 
-		return dumpSourceStringBytecode(dumpArgs[1], "<eval>")
+		dump, err = formatSourceStringBytecode(dumpArgs[1], "<eval>")
+		if err != nil {
+			return err
+		}
+
+		return writeDumpOutput(dump, options.OutputPath)
 	}
 
 	switch len(dumpArgs) {
@@ -182,73 +189,99 @@ func runDumpCommand(args []string) error {
 			return err
 		}
 
-		return dumpTargetBytecode(manifestPath)
+		dump, err = formatTargetBytecode(manifestPath)
 
 	case 1:
 		if isStdinTarget(dumpArgs[0]) {
-			return dumpSourceStdinBytecode()
+			dump, err = formatSourceStdinBytecode()
+		} else {
+			dump, err = formatTargetBytecode(dumpArgs[0])
 		}
 
-		return dumpTargetBytecode(dumpArgs[0])
-
 	default:
-		return fmt.Errorf("Usage: stult dump [--bytecode] [file.stult|directory|manifest|-]")
+		return fmt.Errorf("Usage: stult dump [--bytecode] [-o|--output <output-file>] [file.stult|directory|manifest|-]")
 	}
-}
 
-func dumpTargetBytecode(target string) error {
-	manifestPath, isManifest, err := manifestPathFromArgument(target)
 	if err != nil {
 		return err
+	}
+
+	return writeDumpOutput(dump, options.OutputPath)
+}
+
+func writeDumpOutput(dump string, outputPath string) error {
+	if outputPath == "" {
+		fmt.Print(dump)
+		return nil
+	}
+
+	absoluteOutputPath, err := filepath.Abs(outputPath)
+	if err != nil {
+		return fmt.Errorf("Could not resolve dump output path %q: %w", outputPath, err)
+	}
+
+	if err := os.MkdirAll(filepath.Dir(absoluteOutputPath), 0755); err != nil {
+		return fmt.Errorf("Could not create dump output directory: %w", err)
+	}
+
+	if err := os.WriteFile(absoluteOutputPath, []byte(dump), 0644); err != nil {
+		return fmt.Errorf("Could not write dump output %q: %w", outputPath, err)
+	}
+
+	return nil
+}
+
+func formatTargetBytecode(target string) (string, error) {
+	manifestPath, isManifest, err := manifestPathFromArgument(target)
+	if err != nil {
+		return "", err
 	}
 
 	if isManifest {
-		return dumpManifestBytecode(manifestPath)
+		return formatManifestBytecode(manifestPath)
 	}
 
-	return dumpSourceFileBytecode(target)
+	return formatSourceFileBytecode(target)
 }
 
-func dumpSourceStdinBytecode() error {
+func formatSourceStdinBytecode() (string, error) {
 	source, err := readSourceFromStdin()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return dumpSourceStringBytecode(source, stdinDisplayName)
+	return formatSourceStringBytecode(source, stdinDisplayName)
 }
 
-func dumpSourceStringBytecode(source string, displayName string) error {
+func formatSourceStringBytecode(source string, displayName string) (string, error) {
 	chunk, err := compileSourceStringToBytecode(source, displayName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Print(FormatBytecode(chunk))
-
-	return nil
+	return FormatBytecode(chunk), nil
 }
 
-func dumpSourceFileBytecode(filename string) error {
+func formatSourceFileBytecode(filename string) (string, error) {
 	chunk, err := compileSourceFileToBytecode(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Print(FormatBytecode(chunk))
-
-	return nil
+	return FormatBytecode(chunk), nil
 }
 
-func dumpManifestBytecode(filename string) error {
+func formatManifestBytecode(filename string) (string, error) {
 	manifest, files, err := loadManifestFileFromFS(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
+
+	var builder strings.Builder
 
 	for index, runFile := range manifest.RunFiles {
 		if index > 0 {
-			fmt.Println()
+			builder.WriteByte('\n')
 		}
 
 		var chunk *BytecodeChunk
@@ -261,13 +294,13 @@ func dumpManifestBytecode(filename string) error {
 		}
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
-		fmt.Print(FormatBytecode(chunk))
+		builder.WriteString(FormatBytecode(chunk))
 	}
 
-	return nil
+	return builder.String(), nil
 }
 
 func runManifestFile(filename string) error {
