@@ -663,8 +663,8 @@ value : "zero"  # valid, because <*> keeps the default dynamic behaviour
 `<.>` means that future assignments must keep the same runtime value kind as the first value. `<*>` is an explicit form of the default behaviour: any runtime value kind is accepted. The contract marker must touch the binding name.
 
 ```stult
-count<.> : 0   # valid
-count <.> : 0  # invalid
+countA<.> : 0   # valid
+countB <.> : 0  # invalid
 ```
 
 Immutable bindings may use contracts too, for consistency, even though they cannot normally be rebound.
