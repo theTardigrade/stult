@@ -16,7 +16,7 @@ This release is planned as the first stable Stult release.
 
 * Added optional runtime binding type contracts.
 * Added unnamed contracts: `name<.> : value` preserves the initial runtime value kind, while `name<*> : value` explicitly keeps the default dynamic behaviour.
-* Added named contracts such as `name<STD.TYPE.VOID> : value`, `name<STD.TYPE.NUMBER> : value`, `names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : value` and `flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : value`.
+* Added named contracts such as `name<STD.TYPE.VOID> : value`, `name<STD.TYPE.NUMBER> : value`, `value<STD.TYPE.COLLECTION> : value`, `names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : value` and `flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : value`.
 * Added union contracts such as `value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : value` and `items<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : value`.
 * Added contract literals and aliases, such as `NumberOrStringArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>` followed by `value<NumberOrStringArray> : value`.
 * Collection contracts validate array/map contents and attach to the collection value, so aliases cannot bypass mutation checks.
