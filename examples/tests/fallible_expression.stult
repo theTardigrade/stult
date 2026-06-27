@@ -1,0 +1,69 @@
+##
+
+EXAMPLE: tests/fallible_expression.stult
+
+This example checks fallible expressions.
+
+A fallible expression evaluates an attempted expression and returns its value when
+it succeeds. If the attempted expression raises a catchable runtime error, the
+fallback expression is evaluated and returned instead.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+
+successful_division : ?(10 / 2 | 0)
+ASSERT.EQUAL(successful_division, 5, "fallible expression should return a successful attempt value")
+
+failed_division : ?(10 / 0 | 0)
+ASSERT.EQUAL(failed_division, 0, "fallible expression should return the fallback after an attempted expression fails")
+
+fallback_was_skipped : -
+
+success : ?(
+	"kept" |
+	({ ()
+		@fallback_was_skipped : +
+		("fallback")
+	})()
+)
+
+ASSERT.EQUAL(success, "kept", "fallible expression should keep the successful value")
+ASSERT.FALSE(fallback_was_skipped, "fallible expression should not evaluate the fallback after success")
+
+fallback_was_evaluated : -
+
+recovered : ?(
+	STD.ERROR.RAISE("fail") |
+	({ ()
+		@fallback_was_evaluated : +
+		("fallback")
+	})()
+)
+
+ASSERT.EQUAL(recovered, "fallback", "fallible expression should return the fallback value after failure")
+ASSERT.TRUE(fallback_was_evaluated, "fallible expression should evaluate the fallback after failure")
+
+missing_value : ?({:}.missing | "missing")
+ASSERT.EQUAL(missing_value, "missing", "fallible expression should catch map lookup errors")
+
+not_callable : ?(1() | "not callable")
+ASSERT.EQUAL(not_callable, "not callable", "fallible expression should catch call errors")
+
+array_values : {
+	?(STD.ERROR.RAISE("first") | "fallback")
+	?(2 * 3 | 0)
+}
+
+ASSERT.EQUAL(array_values[0], "fallback", "fallible expressions should be usable inside array literals")
+ASSERT.EQUAL(array_values[1], 6, "successful fallible expressions should be usable inside array literals")
+
+fallback_error_escaped : -
+
+?{
+	?(STD.ERROR.RAISE("attempt failed") | STD.ERROR.RAISE("fallback failed"))
+}|{ (_)
+	@fallback_error_escaped : +
+}
+
+ASSERT.TRUE(fallback_error_escaped, "errors raised by fallback expressions should still escape")
