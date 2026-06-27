@@ -481,3 +481,127 @@ row[0] : "one"`
 		})
 	}
 }
+
+func TestBindingContractsAllowUnionScalarContracts(t *testing.T) {
+	source := `value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+value : +
+STD.IO.OUTPUT.WRITE_LINE(value)`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "+\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestBindingContractsRejectUnionScalarMismatch(t *testing.T) {
+	source := `value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+value : "test"`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number or bool value, got string value")
+		})
+	}
+}
+
+func TestBindingContractsAllowUnionArrayElementContracts(t *testing.T) {
+	source := `value<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
+	1, "two", 3, "four", 5, "six"
+}
+value[6] : 7
+value[7] : "eight"
+STD.IO.OUTPUT.WRITE_LINE(STD.TYPE.COLLECTION.SIZE(value))`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "8\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestBindingContractsRejectUnionArrayElementMismatch(t *testing.T) {
+	source := `value<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {1, "two"}
+value[2] : +`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects number or string value, got bool value")
+		})
+	}
+}
+
+func TestBindingContractsAllowFunctionOrVoidUnionContracts(t *testing.T) {
+	source := `value<STD.TYPE.FUNCTION|STD.TYPE.VOID> : _
+value : { (a, b)
+	(a + b)
+}
+
+(value ! _) {
+	STD.IO.OUTPUT.WRITE_LINE("1 + 2 = ", value(1, 2))
+}`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "1 + 2 = 3\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}

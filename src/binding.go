@@ -10,6 +10,7 @@ const (
 	BindingContractExactKind
 	BindingContractArrayKind
 	BindingContractMapKind
+	BindingContractUnionKind
 )
 
 type BindingContract struct {
@@ -17,6 +18,7 @@ type BindingContract struct {
 	KindValue    ValueKind
 	HasKindValue bool
 	Element      *BindingContract
+	Options      []BindingContract
 }
 
 type BindingContractDeclaration struct {
@@ -61,6 +63,13 @@ func (contract BindingContract) Clone() BindingContract {
 	if contract.Element != nil {
 		element := contract.Element.Clone()
 		cloned.Element = &element
+	}
+
+	if contract.Options != nil {
+		cloned.Options = make([]BindingContract, len(contract.Options))
+		for index, option := range contract.Options {
+			cloned.Options[index] = option.Clone()
+		}
 	}
 
 	return cloned
@@ -159,6 +168,22 @@ func (contract *BindingContract) CheckAndLearn(name string, value Value) error {
 
 		return nil
 
+	case BindingContractUnionKind:
+		for index := range contract.Options {
+			option := contract.Options[index].Clone()
+			if err := option.CheckAndLearn(name, value); err == nil {
+				contract.Options[index] = option
+				return nil
+			}
+		}
+
+		return fmt.Errorf(
+			"binding %q expects %s value, got %s value",
+			name,
+			contract.ExpectedValueDescription(),
+			valueKindName(value.Kind),
+		)
+
 	default:
 		return fmt.Errorf("binding %q has unknown contract kind %d", name, contract.Kind)
 	}
@@ -182,6 +207,64 @@ func checkMapValueContract(name string, m *Map, valueContract *BindingContract) 
 
 		return nil
 	})
+}
+
+func (contract BindingContract) ExpectedValueDescription() string {
+	switch contract.Kind {
+	case BindingContractAnyKind:
+		return "any"
+	case BindingContractSameKind:
+		if contract.HasKindValue {
+			return valueKindName(contract.KindValue)
+		}
+		return "same-kind"
+	case BindingContractExactKind:
+		return valueKindName(contract.KindValue)
+	case BindingContractArrayKind:
+		if contract.Element == nil {
+			return "array"
+		}
+		return "array of " + contract.Element.ExpectedValueDescription()
+	case BindingContractMapKind:
+		if contract.Element == nil {
+			return "map"
+		}
+		return "map of " + contract.Element.ExpectedValueDescription()
+	case BindingContractUnionKind:
+		parts := make([]string, 0, len(contract.Options))
+		for _, option := range contract.Options {
+			parts = append(parts, option.ExpectedValueDescription())
+		}
+		return joinContractDescriptions(parts)
+	default:
+		return "unknown"
+	}
+}
+
+func joinContractDescriptions(parts []string) string {
+	switch len(parts) {
+	case 0:
+		return "unknown"
+	case 1:
+		return parts[0]
+	case 2:
+		return parts[0] + " or " + parts[1]
+	default:
+		return fmt.Sprintf("%s or %s", joinWithComma(parts[:len(parts)-1]), parts[len(parts)-1])
+	}
+}
+
+func joinWithComma(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+
+	result := parts[0]
+	for _, part := range parts[1:] {
+		result += ", " + part
+	}
+
+	return result
 }
 
 func valueKindName(kind ValueKind) string {

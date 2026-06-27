@@ -52,6 +52,34 @@ func (p *Parser) parseBindingContractAfterToken(
 }
 
 func (p *Parser) parseBindingContractType() (BindingContract, bool) {
+	left, ok := p.parseBindingContractTerm()
+	if !ok {
+		return BindingContract{}, false
+	}
+
+	if p.current.Type != TokenOr {
+		return left, true
+	}
+
+	options := []BindingContract{left}
+	for p.current.Type == TokenOr {
+		p.advance()
+
+		right, ok := p.parseBindingContractTerm()
+		if !ok {
+			return BindingContract{}, false
+		}
+
+		options = append(options, right)
+	}
+
+	return BindingContract{
+		Kind:    BindingContractUnionKind,
+		Options: options,
+	}, true
+}
+
+func (p *Parser) parseBindingContractTerm() (BindingContract, bool) {
 	switch p.current.Type {
 	case TokenContractSameKind:
 		p.advance()
