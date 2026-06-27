@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/contract_aliases.stult
@@ -68,3 +69,18 @@ meta_error : ""
 	@meta_error : error
 }
 ASSERT.TRUE(IS_FOUND_IN("expects contract value, got number value", meta_error), "STD.TYPE.CONTRACT should reject non-contract values")
+
+MaybeCollection<STD.TYPE.CONTRACT> : <STD.TYPE.COLLECTION|STD.TYPE.VOID>
+maybe_collection<MaybeCollection> : _
+maybe_collection : {1, 2, 3}
+maybe_collection : "1-2-3"
+maybe_collection : {:}
+ASSERT.TRUE(STD.TYPE.IS_MAP(maybe_collection), "contract aliases should support collection contracts")
+
+collection_alias_error : ""
+?{
+	@maybe_collection : -
+}|{ (error)
+	@collection_alias_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects array, map or string or void value, got bool value", collection_alias_error), "collection aliases should reject non-collection non-void values")

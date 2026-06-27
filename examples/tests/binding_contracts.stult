@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/binding_contracts.stult
@@ -178,3 +179,24 @@ maybe_add : { (a, b)
 (maybe_add ! _) {
 	ASSERT.EQUAL(maybe_add(1, 2), 3, "function-or-void union should allow replacing void with a function")
 }
+
+collection<STD.TYPE.COLLECTION> : {1, 2, 3}
+ASSERT.TRUE(STD.TYPE.IS_ARRAY(collection), "collection contract should allow arrays")
+collection : {:}
+ASSERT.TRUE(STD.TYPE.IS_MAP(collection), "collection contract should allow maps")
+collection : "1-2-3"
+ASSERT.TRUE(STD.TYPE.IS_STRING(collection), "collection contract should allow strings")
+
+collection_error : ""
+?{
+	@collection : -
+}|{ (error)
+	@collection_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects array, map or string value, got bool value", collection_error), "collection contract should reject non-collections")
+
+maybe_collection<STD.TYPE.COLLECTION|STD.TYPE.VOID> : _
+maybe_collection : {"one", "two", "three"}
+maybe_collection : "one-two-three"
+maybe_collection : {:}
+ASSERT.TRUE(STD.TYPE.IS_MAP(maybe_collection), "collection contract should work inside unions")
