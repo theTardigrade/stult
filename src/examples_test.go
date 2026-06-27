@@ -59,6 +59,96 @@ func TestExampleTestFilesRun(t *testing.T) {
 	}
 }
 
+var skippedPublicExampleFiles = map[string]string{}
+
+var skippedPublicManifestProjects = map[string]string{
+	"animated_sine_wave": "time-based animation sleeps between frames and runs for several seconds",
+	"autonomous_snake":   "time-based animation sleeps between frames and is intentionally long-running",
+}
+
+func TestPublicExampleFilesRun(t *testing.T) {
+	examplesDir := examplesDirForTest(t)
+
+	entries, err := os.ReadDir(examplesDir)
+	if err != nil {
+		t.Fatalf("could not read examples directory: %v", err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		if filepath.Ext(entry.Name()) != expectedFileExtension {
+			continue
+		}
+
+		relativePath := entry.Name()
+		filename := filepath.Join(examplesDir, relativePath)
+
+		t.Run(relativePath, func(t *testing.T) {
+			if reason, ok := skippedPublicExampleFiles[relativePath]; ok {
+				t.Skip(reason)
+			}
+
+			args := publicExampleArgsForTest(t, relativePath)
+
+			compareExampleRunsForTest(
+				t,
+				relativePath,
+				func() error {
+					return runExampleSourceFileWithInterpreterArgsForTest(filename, args)
+				},
+				func() error {
+					return runExampleSourceFileWithBytecodeArgsForTest(filename, args)
+				},
+			)
+		})
+	}
+}
+
+func TestPublicManifestProjectsRun(t *testing.T) {
+	projectsDir := exampleProjectsDirForTest(t)
+
+	entries, err := os.ReadDir(projectsDir)
+	if err != nil {
+		t.Fatalf("could not read example projects directory: %v", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		relativePath := entry.Name()
+		projectDir := filepath.Join(projectsDir, relativePath)
+		manifestPath := filepath.Join(projectDir, ManifestStultonFilename)
+
+		if _, err := os.Stat(manifestPath); err != nil {
+			continue
+		}
+
+		t.Run(relativePath, func(t *testing.T) {
+			if reason, ok := skippedPublicManifestProjects[relativePath]; ok {
+				t.Skip(reason)
+			}
+
+			args := publicManifestProjectArgsForTest(t, relativePath)
+
+			compareExampleRunsForTest(
+				t,
+				relativePath,
+				func() error {
+					return runExampleManifestFileWithInterpreterForTest(manifestPath, args)
+				},
+				func() error {
+					return runExampleManifestFileWithBytecodeForTest(manifestPath, args)
+				},
+			)
+		})
+	}
+}
+
 func compareExampleRunsForTest(
 	t *testing.T,
 	relativePath string,
@@ -252,15 +342,31 @@ func excerptAroundByteIndex(text string, index int) string {
 }
 
 func runExampleSourceFileWithInterpreterForTest(filename string) error {
-	interpreter := NewInterpreter()
+	return runExampleSourceFileWithInterpreterArgsForTest(filename, nil)
+}
+
+func runExampleSourceFileWithInterpreterArgsForTest(filename string, args []string) error {
+	interpreter := NewInterpreterWithArgs(args)
 
 	return runSourceFile(interpreter, filename)
 }
 
 func runExampleSourceFileWithBytecodeForTest(filename string) error {
-	vm := NewBytecodeVM(nil)
+	return runExampleSourceFileWithBytecodeArgsForTest(filename, nil)
+}
+
+func runExampleSourceFileWithBytecodeArgsForTest(filename string, args []string) error {
+	vm := NewBytecodeVM(args)
 
 	return runExampleSourceFileWithBytecodeVMForTest(vm, filename)
+}
+
+func runExampleManifestFileWithInterpreterForTest(filename string, args []string) error {
+	return runManifestFileWithMode(RuntimeModeInterpreter, filename, args)
+}
+
+func runExampleManifestFileWithBytecodeForTest(filename string, args []string) error {
+	return runManifestFileWithMode(RuntimeModeBytecode, filename, args)
 }
 
 func runExampleSourceFileWithBytecodeVMForTest(vm *BytecodeVM, filename string) error {
@@ -327,4 +433,60 @@ func exampleTestsDirForTest(t *testing.T) string {
 
 	t.Fatal("could not find examples/tests directory")
 	return ""
+}
+
+func examplesDirForTest(t *testing.T) string {
+	t.Helper()
+
+	candidates := []string{
+		filepath.Join("..", "examples"),
+		"examples",
+	}
+
+	for _, candidate := range candidates {
+		info, err := os.Stat(candidate)
+		if err == nil && info.IsDir() {
+			return candidate
+		}
+	}
+
+	t.Fatal("could not find examples directory")
+	return ""
+}
+
+func exampleProjectsDirForTest(t *testing.T) string {
+	t.Helper()
+
+	projectsDir := filepath.Join(examplesDirForTest(t), "projects")
+
+	info, err := os.Stat(projectsDir)
+	if err == nil && info.IsDir() {
+		return projectsDir
+	}
+
+	t.Fatalf("could not find example projects directory %q", projectsDir)
+	return ""
+}
+
+func publicExampleArgsForTest(t *testing.T, relativePath string) []string {
+	t.Helper()
+
+	switch relativePath {
+	case "csv_to_json_converter.stult":
+		inputPath := filepath.Join(t.TempDir(), "scores.csv")
+		if err := os.WriteFile(inputPath, []byte("name,score\nAda,10\nGrace,20\n"), 0644); err != nil {
+			t.Fatalf("could not write CSV input for %q: %v", relativePath, err)
+		}
+
+		return []string{inputPath}
+
+	default:
+		return nil
+	}
+}
+
+func publicManifestProjectArgsForTest(t *testing.T, relativePath string) []string {
+	t.Helper()
+
+	return nil
 }
