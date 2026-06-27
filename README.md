@@ -48,8 +48,9 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Boolean bindings](#boolean-bindings)
   - [Optional type system](#optional-type-system)
     - [Unnamed contracts](#unnamed-contracts)
-	- [Named contracts](#named-contracts)
-	- [Contract syntax](#contract-syntax)
+    - [Named contracts](#named-contracts)
+    - [Union contracts](#union-contracts)
+    - [Contract syntax](#contract-syntax)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -681,7 +682,7 @@ value : "zero"  # valid, because <*> keeps the default dynamic behaviour
 
 `<*>` is an explicit form of the default behaviour: any runtime value kind is accepted.
 
-### Named contracts
+#### Named contracts
 
 Named contracts can use the standard-library type namespaces directly inside the angle brackets:
 
@@ -734,6 +735,30 @@ STD.TYPE.FUNCTION
 STD.TYPE.BUILTIN_FUNCTION
 ```
 
+#### Union contracts
+
+Union contracts use `|` to accept more than one contract option:
+
+```stult
+value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+value : +      # valid
+value : "test" # runtime error
+```
+
+They can also be used inside collection contracts:
+
+```stult
+items<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
+	1, "two", 3, "four"
+}
+
+items[4] : 5      # valid
+items[5] : "six"  # valid
+items[6] : +      # runtime error
+```
+
+A union contract is valid when the value satisfies any one of its options. The `|` operator has the lowest precedence inside contracts, so `STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>` means “array of number-or-string values”.
+
 #### Contract syntax
 
 The contract marker must touch the binding name.
@@ -756,15 +781,6 @@ Immutable bindings may use contracts too, for consistency, even though they cann
 ```stult
 LIMIT<STD.TYPE.NUMBER> : 10
 NAME<STD.TYPE.STRING> : "Example"
-```
-
-Map literal entries may also declare contracts:
-
-```stult
-settings : {
-	.key<STD.TYPE.NUMBER> : 814
-	"mode"<STD.TYPE.STRING> : "development"
-}
 ```
 
 ### Operators
