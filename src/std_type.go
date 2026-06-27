@@ -4,12 +4,15 @@ import "fmt"
 
 func NewStdTypeMap() Value {
 	entries := map[string]Binding{
-		"ARRAY":      NewImmutableBinding(NewStdTypeArrayMap()),
-		"BOOL":       NewImmutableBinding(NewStdTypeBoolMap()),
-		"COLLECTION": NewImmutableBinding(NewStdTypeCollectionMap()),
-		"MAP":        NewImmutableBinding(NewStdTypeMapMap()),
-		"NUMBER":     NewImmutableBinding(NewStdTypeNumberMap()),
-		"STRING":     NewImmutableBinding(NewStdTypeStringMap()),
+		"ARRAY":            NewImmutableBinding(NewStdTypeArrayMap()),
+		"BOOL":             NewImmutableBinding(NewStdTypeBoolMap()),
+		"BUILTIN_FUNCTION": NewImmutableBinding(NewStdTypeBuiltinFunctionMap()),
+		"COLLECTION":       NewImmutableBinding(NewStdTypeCollectionMap()),
+		"FUNCTION":         NewImmutableBinding(NewStdTypeFunctionMap()),
+		"MAP":              NewImmutableBinding(NewStdTypeMapMap()),
+		"NUMBER":           NewImmutableBinding(NewStdTypeNumberMap()),
+		"STRING":           NewImmutableBinding(NewStdTypeStringMap()),
+		"VOID":             NewImmutableBinding(NewStdTypeVoidMap()),
 
 		"IS_ARRAY":            NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsArray)),
 		"IS_BOOL":             NewImmutableBinding(NewBuiltinFunctionValue(StdTypeIsBool)),

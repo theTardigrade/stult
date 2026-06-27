@@ -258,6 +258,52 @@ STD.IO.OUTPUT.WRITE_LINE(value)`
 	}
 }
 
+func TestBindingContractsAllowNamedVoidContract(t *testing.T) {
+	source := `value<STD.TYPE.VOID> : _
+value : _
+STD.IO.OUTPUT.WRITE_LINE(STD.TYPE.IS_VOID(value))
+STD.IO.OUTPUT.WRITE_LINE(STD.TYPE.IS_VOID(STD.TYPE.VOID.NEW()))`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			stdout, stderr, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err != nil {
+				t.Fatalf("program failed: %v", err)
+			}
+
+			if stdout != "+\n+\n" {
+				t.Fatalf("unexpected stdout: %q", stdout)
+			}
+
+			if stderr != "" {
+				t.Fatalf("unexpected stderr: %q", stderr)
+			}
+		})
+	}
+}
+
+func TestBindingContractsRejectNamedVoidContractMismatch(t *testing.T) {
+	source := `value<STD.TYPE.VOID> : _
+value : 0`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+
+			assertErrorContainsForBindingContractTest(t, err, "expects void value, got number value")
+		})
+	}
+}
+
 func TestBindingContractsRejectNamedScalarContractMismatch(t *testing.T) {
 	source := `value<STD.TYPE.NUMBER> : 11
 value : "eleven"`
