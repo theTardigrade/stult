@@ -17,6 +17,7 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 * [Error handling](#error-handling)
 * [Literal parsing](#literal-parsing)
 * [Maps](#maps)
+* [Optional type system](#optional-type-system)
 * [Functions](#functions)
 * [Numbers](#numbers)
 * [Mathematics](#mathematics)
@@ -98,6 +99,11 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Leading dot access](../examples/tests/leading_dot_access.stult)  
   Checks that `.field` map keys create string-key entries, that functions written inside maps can use `.field` to read and update the nearest surrounding map, and that captured functions keep their original map receiver when called through another binding.
+
+## Optional type system
+
+- [Binding contracts](../examples/tests/binding_contracts.stult)  
+  Checks optional runtime binding contracts, including `<.>`, `<*>`, named `STD.TYPE` contracts, immutable contracted bindings, map-entry contracts, array element contracts, map value contracts, alias-safe collection mutation checks and declaration-only contract syntax.
 
 ## Functions
 

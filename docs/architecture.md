@@ -735,7 +735,11 @@ collection entries where applicable
 outer writes
 ```
 
-Bindings may also carry a runtime type contract. `<.>` records the runtime value kind assigned when the binding is created and rejects later assignments of a different kind. `<*>` explicitly requests the default dynamic behaviour. Contract markers are declaration syntax: they may appear only when a binding or map entry is created, not on later reassignment. Because bytecode execution needs to distinguish explicit `<*>` from an uncontracted assignment, the compiler emits separate store opcodes for explicit-any contracts even though the resulting binding contract is the same as the default any-kind contract.
+Bindings may also carry optional runtime type contracts. `<.>` records the runtime value kind assigned when the binding is created and rejects later assignments of a different kind. `<*>` explicitly requests the default dynamic behaviour. Named contracts such as `STD.TYPE.NUMBER`, `STD.TYPE.ARRAY<STD.TYPE.STRING>` and `STD.TYPE.MAP<STD.TYPE.BOOL>` are parsed as contract descriptors rather than ordinary expressions. They are enforced when the binding or map entry is created and on later reassignment.
+
+Collection contracts also attach to the collection value itself. An array value created or assigned through `STD.TYPE.ARRAY<contract>` stores the element contract on the `Array`, and a map value created or assigned through `STD.TYPE.MAP<contract>` stores the value contract on the `Map`. Mutation paths such as array index assignment, map index assignment and helper functions that call `Array.Set` or `Map.Set` must check those collection-level contracts. This prevents aliases from bypassing the contract.
+
+Contract markers are declaration syntax: they may appear only when a binding or map entry is created, not on later reassignment. Because bytecode execution needs to distinguish explicit `<*>` from an uncontracted assignment, the compiler emits separate store opcodes for explicit-any contracts even though the resulting binding contract is the same as the default any-kind contract. Named contracts are stored directly on bytecode instructions so the VM can create and validate the same runtime contract as the interpreter.
 
 ### Number values
 
