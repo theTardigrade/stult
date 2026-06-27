@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: tests/binding_contracts.stult
@@ -61,3 +62,45 @@ redeclaration_error : ""
 	@redeclaration_error : error
 }
 ASSERT.TRUE(IS_FOUND_IN("can only be declared when the binding is created", redeclaration_error), "same-kind contracts should not be redeclared on existing bindings")
+
+
+number<STD.TYPE.NUMBER> : 11
+number : 12
+ASSERT.EQUAL(number, 12, "named number contract should allow number reassignment")
+
+number_error : ""
+?{
+	@number : "twelve"
+}|{ (error)
+	@number_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", number_error), "named number contract should reject string reassignment")
+
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"lemon", "orange"}
+names_alias : names
+names_alias[2] : "apple"
+ASSERT.EQUAL(names[2], "apple", "array string contract should allow string append through alias")
+
+array_error : ""
+?{
+	names_alias[3] : 123
+}|{ (error)
+	@array_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects string value, got number value", array_error), "array string contract should reject non-string append through alias")
+
+flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
+	"dev": -
+	"prod": +
+}
+flags_alias : flags
+flags_alias["test"] : +
+ASSERT.EQUAL(flags.test, +, "map bool contract should allow bool entry through alias")
+
+map_contract_error : ""
+?{
+	flags_alias["temp"] : "not available"
+}|{ (error)
+	@map_contract_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects bool value, got string value", map_contract_error), "map bool contract should reject non-bool entry through alias")
