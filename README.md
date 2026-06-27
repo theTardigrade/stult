@@ -1568,6 +1568,10 @@ In this example, the division arm is not evaluated.
 
 ### Error handling
 
+Stult supports both block-level and expression-level error handling.
+
+Runtime errors can come from failed operations, failed standard-library assertions or explicit calls to `STD.ERROR.RAISE`.
+
 #### Fallible expressions
 
 A fallible expression tries one expression and returns a fallback value if the attempt raises a catchable runtime error.
@@ -1601,7 +1605,9 @@ A try-catch statement lets a program recover from runtime errors. The try block 
 }
 ```
 
-`STD.ERROR.RAISE(message?)` raises a catchable runtime error directly. The catch block is often used for recovery or cleanup.
+`STD.ERROR.RAISE(message?)` is used here to raise a catchable runtime error directly.
+
+The catch block can be used for running recovery code or cleanup tasks.
 
 A try block may also be used without a catch block. In that form, catchable runtime errors are suppressed and execution continues after the try block:
 
