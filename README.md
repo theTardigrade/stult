@@ -1,3 +1,4 @@
+
 # Stult
 
 Stult is a small programming language and runtime written in Go.
@@ -49,6 +50,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Optional type system](#optional-type-system)
     - [Unnamed contracts](#unnamed-contracts)
     - [Named contracts](#named-contracts)
+    - [Structured map contracts](#structured-map-contracts)
     - [Union contracts](#union-contracts)
     - [Contract aliases](#contract-aliases)
     - [Contract syntax](#contract-syntax)
@@ -723,7 +725,7 @@ flags["test"] : +               # valid
 flags["temp"] : "not available" # runtime error
 ```
 
-Map keys are always strings, so `STD.TYPE.MAP<...>` describes the map’s values, not its keys.
+Map keys are always strings, so `STD.TYPE.MAP<contract>` describes the map’s values, not its keys. For maps where particular keys are expected, use a structured map contract.
 
 Use `STD.TYPE.COLLECTION` when any collection is allowed. It accepts arrays, maps and strings, and is equivalent to `STD.TYPE.ARRAY<*>|STD.TYPE.MAP<*>|STD.TYPE.STRING`.
 
@@ -758,10 +760,68 @@ STD.TYPE.ARRAY
 STD.TYPE.ARRAY<contract>
 STD.TYPE.MAP
 STD.TYPE.MAP<contract>
+STD.TYPE.MAP<{ key-contracts }>
 STD.TYPE.FUNCTION
 STD.TYPE.BUILTIN_FUNCTION
 STD.TYPE.CONTRACT
 ```
+
+#### Structured map contracts
+
+Use a structured map contract when a map should have particular keys.
+
+```stult
+User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+	.role?: STD.TYPE.STRING
+}>>
+
+user<User> : {
+	.name: "Jake"
+	.age: 28
+}
+
+user.role : "admin" # valid
+user.age : "late twenties" # runtime error
+```
+
+A key without `?` is required. A key with `?` is optional, but if it exists, its value must satisfy the key's contract.
+
+Structured map contracts are strict by default. Extra keys are rejected unless you add a wildcard entry.
+
+```stult
+User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+	_: STD.TYPE.STRING
+}>>
+
+user<User> : {
+	.name: "Ada"
+	.age: 37
+	.country: "UK" # valid because the wildcard accepts strings
+}
+
+user.active : + # runtime error
+```
+
+Use `_: *` when extra keys should be allowed with any kind of value.
+
+```stult
+OpenUser<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	_: *
+}>>
+
+user<OpenUser> : {
+	.name: "Ada"
+	.active: +
+	.score: 99
+}
+```
+
+Structured map contracts stay attached to the map value, so aliases cannot bypass them.
 
 #### Union contracts
 
