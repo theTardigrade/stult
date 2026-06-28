@@ -1,5 +1,10 @@
 package main
 
+// Binding-contract lookahead is bounded so malformed input cannot make
+// statement disambiguation scan arbitrarily far. The limit is intentionally
+// generous because structured map contracts can be large and deeply nested.
+const maxBindingContractLookaheadTokens = 1 << 16
+
 func (p *Parser) tokensAhead(count int) []Token {
 	if count <= 0 {
 		return nil
@@ -24,24 +29,37 @@ func (p *Parser) currentLessLooksLikeBindingContractBeforeAssignment() bool {
 		return false
 	}
 
-	tokens := p.tokensAhead(80)
-	depth := 0
+	tokens := p.tokensAhead(maxBindingContractLookaheadTokens)
+	angleDepth := 0
+	braceDepth := 0
 	for index, token := range tokens {
 		switch token.Type {
 		case TokenLess:
-			depth++
+			angleDepth++
 		case TokenGreater:
-			depth--
-			if depth == 0 {
+			angleDepth--
+			if angleDepth == 0 {
 				if index+1 >= len(tokens) {
 					return false
 				}
 				return isAssignmentOperator(tokens[index+1].Type)
 			}
-			if depth < 0 {
+			if angleDepth < 0 {
 				return false
 			}
-		case TokenNewline, TokenComma, TokenEOF:
+		case TokenLBrace:
+			if angleDepth > 0 {
+				braceDepth++
+			}
+		case TokenRBrace:
+			if braceDepth > 0 {
+				braceDepth--
+			}
+		case TokenNewline, TokenComma:
+			if braceDepth == 0 {
+				return false
+			}
+		case TokenEOF:
 			return false
 		}
 	}

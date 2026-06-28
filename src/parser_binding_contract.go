@@ -85,7 +85,7 @@ func (p *Parser) parseBindingContractTerm() (BindingContract, bool) {
 		p.advance()
 		return BindingContract{Kind: BindingContractSameKind}, true
 
-	case TokenContractAny:
+	case TokenContractAny, TokenStar:
 		p.advance()
 		return BindingContract{}, true
 
@@ -167,6 +167,20 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 		if p.current.Type == TokenLess {
 			p.advance()
 
+			if baseName == "MAP" && p.current.Type == TokenLBrace {
+				structuredContract, ok := p.parseStructuredMapBindingContract()
+				if !ok {
+					return BindingContract{}, false
+				}
+
+				if !p.expectCurrent(TokenGreater, "expected '>' after structured map binding contract") {
+					return BindingContract{}, false
+				}
+
+				p.advance()
+				return structuredContract, true
+			}
+
 			var ok bool
 			element, ok = p.parseBindingContractType()
 			if !ok {
@@ -190,6 +204,165 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 	}
 
 	return contract, true
+}
+
+func (p *Parser) parseStructuredMapBindingContract() (BindingContract, bool) {
+	openBrace := p.current
+	p.advance() // consume "{"
+	p.skipSeparators()
+
+	fields := []BindingContractMapField{}
+	seenFields := map[string]bool{}
+	var wildcard *BindingContract
+
+	if p.current.Type == TokenRBrace {
+		p.advance()
+		return BindingContract{Kind: BindingContractMapKind, IsStructuredMap: true}, true
+	}
+
+	for {
+		key, isWildcard, isOptional, ok := p.parseStructuredMapBindingContractKey()
+		if !ok {
+			return BindingContract{}, false
+		}
+
+		if !p.expectCurrent(TokenColon, "expected ':' after structured map contract key") {
+			return BindingContract{}, false
+		}
+
+		p.advance()
+
+		valueContract, ok := p.parseBindingContractType()
+		if !ok {
+			return BindingContract{}, false
+		}
+
+		if isWildcard {
+			if wildcard != nil {
+				p.errorAtCurrent("structured map contract cannot declare '_' more than once")
+				return BindingContract{}, false
+			}
+
+			cloned := valueContract.Clone()
+			wildcard = &cloned
+		} else {
+			if seenFields[key] {
+				p.errorAtCurrent("structured map contract cannot declare the same key more than once")
+				return BindingContract{}, false
+			}
+
+			seenFields[key] = true
+			fields = append(fields, BindingContractMapField{
+				Key:        key,
+				Contract:   valueContract,
+				IsOptional: isOptional,
+			})
+		}
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
+		}
+
+		if p.current.Type == TokenEOF {
+			p.errorAtToken(openBrace, "unterminated structured map contract")
+			return BindingContract{}, false
+		}
+
+		if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+			p.errorAtCurrent("expected comma, newline, or '}' after structured map contract entry")
+			return BindingContract{}, false
+		}
+
+		p.skipSeparators()
+
+		if p.current.Type == TokenRBrace {
+			p.advance()
+			break
+		}
+	}
+
+	return BindingContract{
+		Kind:            BindingContractMapKind,
+		IsStructuredMap: true,
+		MapFields:       fields,
+		MapWildcard:     wildcard,
+	}, true
+}
+
+func (p *Parser) parseStructuredMapBindingContractKey() (string, bool, bool, bool) {
+	switch p.current.Type {
+	case TokenDot:
+		dot := p.current
+		p.advance()
+
+		if p.current.Type != TokenIdentifier {
+			p.errorAtToken(dot, "expected identifier after structured map contract key '.'")
+			return "", false, false, false
+		}
+
+		if !tokensTouch(dot, p.current) {
+			p.errorAtCurrent("expected structured map contract key to touch '.'")
+			return "", false, false, false
+		}
+
+		keyToken := p.current
+		key := keyToken.Literal
+		p.advance()
+
+		isOptional, ok := p.parseOptionalStructuredMapBindingContractKeyMarker(keyToken)
+		if !ok {
+			return "", false, false, false
+		}
+
+		return key, false, isOptional, true
+
+	case TokenString:
+		keyToken := p.current
+		key := keyToken.Literal
+		p.advance()
+
+		isOptional, ok := p.parseOptionalStructuredMapBindingContractKeyMarker(keyToken)
+		if !ok {
+			return "", false, false, false
+		}
+
+		return key, false, isOptional, true
+
+	case TokenIdentifier:
+		if p.current.Literal != "_" {
+			p.errorAtCurrent("expected structured map contract key, string key, or '_' wildcard")
+			return "", false, false, false
+		}
+
+		wildcardToken := p.current
+		p.advance()
+
+		if p.current.Type == TokenQuestion && tokensTouch(wildcardToken, p.current) {
+			p.errorAtCurrent("structured map contract wildcard cannot be optional")
+			return "", false, false, false
+		}
+
+		return "", true, false, true
+
+	default:
+		p.errorAtCurrent("expected structured map contract key")
+		return "", false, false, false
+	}
+}
+
+func (p *Parser) parseOptionalStructuredMapBindingContractKeyMarker(keyToken Token) (bool, bool) {
+	if p.current.Type != TokenQuestion {
+		return false, true
+	}
+
+	if !tokensTouch(keyToken, p.current) {
+		p.errorAtCurrent("expected '?' to touch optional structured map contract key")
+		return false, false
+	}
+
+	p.advance()
+	return true, true
 }
 
 func bindingContractForStdTypeName(name string) (BindingContract, bool) {

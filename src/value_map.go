@@ -13,11 +13,12 @@ import (
 const mapNativeEntryLimit = 1 << 20
 
 type Map struct {
-	Entries       map[string]Binding
-	overflow      *mapTrie
-	entryCount    *Number
-	IsFrozen      bool
-	ValueContract *BindingContract
+	Entries            map[string]Binding
+	overflow           *mapTrie
+	entryCount         *Number
+	IsFrozen           bool
+	ValueContract      *BindingContract
+	StructuredContract *BindingContract
 }
 
 type mapTrie struct {
@@ -115,6 +116,12 @@ func (m *Map) Set(key string, binding Binding) error {
 		return fmt.Errorf("invalid map")
 	}
 
+	if m.StructuredContract != nil {
+		if err := m.StructuredContract.CheckStructuredMapEntryAndLearn("map", key, binding.Value); err != nil {
+			return err
+		}
+	}
+
 	if m.ValueContract != nil {
 		if err := m.ValueContract.CheckAndLearn(fmt.Sprintf("map entry %q", key), binding.Value); err != nil {
 			return err
@@ -148,6 +155,10 @@ func (m *Map) Set(key string, binding Binding) error {
 func (m *Map) Clear() error {
 	if m == nil {
 		return fmt.Errorf("invalid map")
+	}
+
+	if m.StructuredContract.HasRequiredStructuredMapFields() {
+		return fmt.Errorf("cannot clear map with required structured map contract keys")
 	}
 
 	m.Entries = map[string]Binding{}

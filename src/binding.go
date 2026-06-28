@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type BindingContractKind int
 
@@ -15,12 +18,21 @@ const (
 )
 
 type BindingContract struct {
-	Kind         BindingContractKind
-	KindValue    ValueKind
-	HasKindValue bool
-	Element      *BindingContract
-	Options      []BindingContract
-	AliasName    string
+	Kind            BindingContractKind
+	KindValue       ValueKind
+	HasKindValue    bool
+	Element         *BindingContract
+	Options         []BindingContract
+	AliasName       string
+	IsStructuredMap bool
+	MapFields       []BindingContractMapField
+	MapWildcard     *BindingContract
+}
+
+type BindingContractMapField struct {
+	Key        string
+	Contract   BindingContract
+	IsOptional bool
 }
 
 type BindingContractDeclaration struct {
@@ -72,6 +84,22 @@ func (contract BindingContract) Clone() BindingContract {
 		for index, option := range contract.Options {
 			cloned.Options[index] = option.Clone()
 		}
+	}
+
+	if contract.MapFields != nil {
+		cloned.MapFields = make([]BindingContractMapField, len(contract.MapFields))
+		for index, field := range contract.MapFields {
+			cloned.MapFields[index] = BindingContractMapField{
+				Key:        field.Key,
+				Contract:   field.Contract.Clone(),
+				IsOptional: field.IsOptional,
+			}
+		}
+	}
+
+	if contract.MapWildcard != nil {
+		wildcard := contract.MapWildcard.Clone()
+		cloned.MapWildcard = &wildcard
 	}
 
 	return cloned
@@ -160,6 +188,15 @@ func (contract *BindingContract) CheckAndLearn(name string, value Value) error {
 			)
 		}
 
+		if contract.IsStructuredMap {
+			if err := checkStructuredMapContract(name, value.Map, contract); err != nil {
+				return err
+			}
+
+			value.Map.StructuredContract = contract.ClonePointer()
+			return nil
+		}
+
 		if contract.Element != nil {
 			if err := checkMapValueContract(name, value.Map, contract.Element); err != nil {
 				return err
@@ -214,6 +251,76 @@ func checkMapValueContract(name string, m *Map, valueContract *BindingContract) 
 	})
 }
 
+func checkStructuredMapContract(name string, m *Map, contract *BindingContract) error {
+	fieldIndexes := map[string]int{}
+	for index, field := range contract.MapFields {
+		if _, exists := fieldIndexes[field.Key]; exists {
+			return fmt.Errorf("binding %q has duplicate map contract key %q", name, field.Key)
+		}
+		fieldIndexes[field.Key] = index
+
+		binding, exists := m.Get(field.Key)
+		if !exists {
+			if field.IsOptional {
+				continue
+			}
+
+			return fmt.Errorf("binding %q missing required map key %q", name, field.Key)
+		}
+
+		if err := contract.MapFields[index].Contract.CheckAndLearn(fmt.Sprintf("%s[%q]", name, field.Key), binding.Value); err != nil {
+			return err
+		}
+	}
+
+	return m.ForEach(func(key string, binding Binding) error {
+		if _, exists := fieldIndexes[key]; exists {
+			return nil
+		}
+
+		if contract.MapWildcard != nil {
+			return contract.MapWildcard.CheckAndLearn(fmt.Sprintf("%s[%q]", name, key), binding.Value)
+		}
+
+		return fmt.Errorf("binding %q does not allow map key %q", name, key)
+	})
+}
+
+func (contract *BindingContract) CheckStructuredMapEntryAndLearn(name string, key string, value Value) error {
+	if contract == nil || contract.Kind != BindingContractMapKind || !contract.IsStructuredMap {
+		return nil
+	}
+
+	for index := range contract.MapFields {
+		field := contract.MapFields[index]
+		if field.Key != key {
+			continue
+		}
+
+		return contract.MapFields[index].Contract.CheckAndLearn(fmt.Sprintf("%s[%q]", name, key), value)
+	}
+
+	if contract.MapWildcard != nil {
+		return contract.MapWildcard.CheckAndLearn(fmt.Sprintf("%s[%q]", name, key), value)
+	}
+
+	return fmt.Errorf("%s does not allow map key %q", name, key)
+}
+
+func (contract *BindingContract) HasRequiredStructuredMapFields() bool {
+	if contract == nil || contract.Kind != BindingContractMapKind || !contract.IsStructuredMap {
+		return false
+	}
+
+	for _, field := range contract.MapFields {
+		if !field.IsOptional {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (contract BindingContract) ExpectedValueDescription() string {
 	switch contract.Kind {
 	case BindingContractAnyKind:
@@ -231,6 +338,9 @@ func (contract BindingContract) ExpectedValueDescription() string {
 		}
 		return "array of " + contract.Element.ExpectedValueDescription()
 	case BindingContractMapKind:
+		if contract.IsStructuredMap {
+			return "map matching " + contract.structuredMapDescription()
+		}
 		if contract.Element == nil {
 			return "map"
 		}
@@ -348,6 +458,30 @@ func (contract BindingContract) resolveAliases(
 			}
 			resolved.Element = &element
 		}
+
+		if contract.MapFields != nil {
+			resolved.MapFields = make([]BindingContractMapField, len(contract.MapFields))
+			for index, field := range contract.MapFields {
+				fieldContract, err := field.Contract.resolveAliases(lookup, seen)
+				if err != nil {
+					return BindingContract{}, err
+				}
+				resolved.MapFields[index] = BindingContractMapField{
+					Key:        field.Key,
+					Contract:   fieldContract,
+					IsOptional: field.IsOptional,
+				}
+			}
+		}
+
+		if contract.MapWildcard != nil {
+			wildcard, err := contract.MapWildcard.resolveAliases(lookup, seen)
+			if err != nil {
+				return BindingContract{}, err
+			}
+			resolved.MapWildcard = &wildcard
+		}
+
 		return resolved, nil
 
 	case BindingContractUnionKind:
@@ -372,7 +506,15 @@ func (contract BindingContract) HasAlias() bool {
 	case BindingContractAliasKind:
 		return true
 	case BindingContractArrayKind, BindingContractMapKind:
-		return contract.Element != nil && contract.Element.HasAlias()
+		if contract.Element != nil && contract.Element.HasAlias() {
+			return true
+		}
+		for _, field := range contract.MapFields {
+			if field.Contract.HasAlias() {
+				return true
+			}
+		}
+		return contract.MapWildcard != nil && contract.MapWildcard.HasAlias()
 	case BindingContractUnionKind:
 		for _, option := range contract.Options {
 			if option.HasAlias() {
@@ -400,6 +542,12 @@ func (contract BindingContract) collectAliasNames(names *[]string, seen map[stri
 	case BindingContractArrayKind, BindingContractMapKind:
 		if contract.Element != nil {
 			contract.Element.collectAliasNames(names, seen)
+		}
+		for _, field := range contract.MapFields {
+			field.Contract.collectAliasNames(names, seen)
+		}
+		if contract.MapWildcard != nil {
+			contract.MapWildcard.collectAliasNames(names, seen)
 		}
 	case BindingContractUnionKind:
 		for _, option := range contract.Options {
@@ -439,6 +587,9 @@ func (contract BindingContract) SourceString() string {
 		}
 		return "STD.TYPE.ARRAY<" + contract.Element.SourceString() + ">"
 	case BindingContractMapKind:
+		if contract.IsStructuredMap {
+			return "STD.TYPE.MAP<" + contract.structuredMapSourceString() + ">"
+		}
 		if contract.Element == nil {
 			return "STD.TYPE.MAP"
 		}
@@ -454,6 +605,79 @@ func (contract BindingContract) SourceString() string {
 	default:
 		return "unknown"
 	}
+}
+
+func (contract BindingContract) structuredMapDescription() string {
+	parts := []string{}
+	for _, field := range contract.MapFields {
+		marker := ""
+		if field.IsOptional {
+			marker = " optional"
+		}
+		parts = append(parts, fmt.Sprintf("%q%s as %s", field.Key, marker, field.Contract.ExpectedValueDescription()))
+	}
+
+	if contract.MapWildcard != nil {
+		parts = append(parts, "other keys as "+contract.MapWildcard.ExpectedValueDescription())
+	}
+
+	if len(parts) == 0 {
+		return "{}"
+	}
+
+	return "{" + joinWithComma(parts) + "}"
+}
+
+func (contract BindingContract) structuredMapSourceString() string {
+	parts := []string{}
+	for _, field := range contract.MapFields {
+		key := strconv.Quote(field.Key)
+		if isIdentifierString(field.Key) && field.Key != "_" {
+			key = "." + field.Key
+		}
+		if field.IsOptional {
+			key += "?"
+		}
+		parts = append(parts, key+": "+field.Contract.SourceString())
+	}
+
+	if contract.MapWildcard != nil {
+		parts = append(parts, "_: "+contract.MapWildcard.SourceString())
+	}
+
+	return "{" + joinContractMapSourceParts(parts) + "}"
+}
+
+func joinContractMapSourceParts(parts []string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	result := parts[0]
+	for _, part := range parts[1:] {
+		result += ", " + part
+	}
+	return result
+}
+
+func isIdentifierString(text string) bool {
+	if text == "" {
+		return false
+	}
+
+	for index, ch := range text {
+		if index == 0 {
+			if !isIdentStart(ch) {
+				return false
+			}
+			continue
+		}
+
+		if !isIdentPart(ch) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func joinContractSourceParts(parts []string) string {
