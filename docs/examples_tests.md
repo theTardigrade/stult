@@ -1,4 +1,5 @@
 
+
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -111,6 +112,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Contract aliases](../examples/tests/contract_aliases.stult)  
   Checks contract literal values, `STD.TYPE.CONTRACT`, `STD.TYPE.IS_CONTRACT`, reusable contract aliases, nested aliases, aliases that use `STD.TYPE.COLLECTION` and runtime errors when a contract-position alias currently contains a non-contract value.
+
+- [Structured map contracts](../examples/tests/structured_map_contracts.stult)  
+  Checks `STD.TYPE.MAP<{...}>` contracts, including required keys, optional keys, strict-by-default extra-key rejection, wildcard contracts, `_: *`, contract aliases inside structured fields, mutation enforcement and clear rejection when required keys would be removed.
 
 ## Functions
 

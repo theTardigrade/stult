@@ -1274,8 +1274,6 @@ STD.TYPE.IS_COLLECTION({"a", "b"})
 
 `STD["TYPE"]["IS_COLLECTION"]` returns true for arrays, maps and strings.
 
-`STD.TYPE.COLLECTION` can also be used as a contract when a binding may contain any array, map or string.
-
 ## `STD["TYPE"]["VOID"]`
 
 Void-specific helpers and the standard-library namespace used by `STD.TYPE.VOID` contracts.
@@ -1422,6 +1420,8 @@ String conversion ignores surrounding whitespace and case.
 ## `STD["TYPE"]["COLLECTION"]`
 
 Helpers shared by arrays, maps and strings. The namespace is also used by `STD.TYPE.COLLECTION` contracts, which accept arrays, maps and strings.
+
+`STD.TYPE.COLLECTION.CLEAR` cannot clear a structured map if that would remove required keys from a `STD.TYPE.MAP<{...}>` contract.
 
 ### `STD["TYPE"]["COLLECTION"]["SIZE"](collection)`
 
