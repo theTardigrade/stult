@@ -1,0 +1,149 @@
+##
+
+EXAMPLE: tests/structured_map_contracts.stult
+
+This example checks structured map contracts.
+
+A structured map contract lists required keys, optional keys and, optionally, a
+wildcard contract for every other key. Without a wildcard, extra keys are rejected.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
+
+User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+	.role?: STD.TYPE.STRING
+}>>
+
+user<User> : {
+	.name: "Jake"
+	.age: 28
+}
+
+ASSERT.EQUAL(user.name, "Jake", "structured map contracts should allow required keys")
+ASSERT.EQUAL(user.age, 28, "structured map contracts should allow required numeric keys")
+
+user.role : "admin"
+ASSERT.EQUAL(user.role, "admin", "structured map contracts should allow optional keys to be added later")
+
+age_error : ""
+?{
+	user.age : "late twenties"
+}|{ (error)
+	@age_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", age_error), "structured map contracts should reject invalid required key mutation")
+
+role_error : ""
+?{
+	user.role : 123
+}|{ (error)
+	@role_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects string value, got number value", role_error), "structured map contracts should reject invalid optional key mutation")
+
+extra_error : ""
+?{
+	user.country : "UK"
+}|{ (error)
+	@extra_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("does not allow map key", extra_error), "structured map contracts should reject extra keys unless a wildcard is declared")
+
+missing_error : ""
+?{
+	missing<User> : {
+		.name: "Jakes"
+	}
+}|{ (error)
+	@missing_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("missing required map key", missing_error), "structured map contracts should reject missing required keys")
+
+extra_initial_error : ""
+?{
+	extra_initial<User> : {
+		.name: "Jake"
+		.age: 28
+		.country: "UK"
+	}
+}|{ (error)
+	@extra_initial_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("does not allow map key", extra_initial_error), "structured map contracts should reject extra keys during initial validation")
+
+StringExtras<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	_: STD.TYPE.STRING
+}>>
+
+profile<StringExtras> : {
+	.name: "Jake"
+	.country: "UK"
+}
+
+profile.city : "London"
+ASSERT.EQUAL(profile.city, "London", "structured map wildcard contracts should allow matching extra keys")
+
+wildcard_error : ""
+?{
+	profile.active : +
+}|{ (error)
+	@wildcard_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects string value, got bool value", wildcard_error), "structured map wildcard contracts should reject invalid extra keys")
+
+AnyExtras<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	_: *
+}>>
+
+open_profile<AnyExtras> : {
+	.name: "Jake"
+	.active: +
+	.score: 99
+}
+
+open_profile.notes : {:}
+ASSERT.TRUE(STD.TYPE.IS_MAP(open_profile.notes), "bare '*' should allow any extra key value in structured map contracts")
+
+NameText<STD.TYPE.CONTRACT> : <STD.TYPE.STRING>
+AliasedUser<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: NameText
+	.tags?: STD.TYPE.ARRAY<STD.TYPE.STRING>
+}>>
+
+aliased<AliasedUser> : {
+	.name: "Katherine"
+}
+aliased.tags : {"mathematics", "software"}
+ASSERT.EQUAL(aliased.tags[0], "mathematics", "structured map contracts should support contract aliases and nested contracts")
+
+aliased_tag_error : ""
+?{
+	aliased.tags[2] : 123
+}|{ (error)
+	@aliased_tag_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects string value, got number value", aliased_tag_error), "nested contracts in structured map fields should attach to nested collections")
+
+
+direct_user<STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+}>> : {
+	.name: "Harold"
+	.age: 86
+}
+ASSERT.EQUAL(direct_user.name, "Harold", "structured map contracts should work directly on binding declarations")
+
+clear_error : ""
+?{
+	STD.TYPE.COLLECTION.CLEAR(user)
+}|{ (error)
+	@clear_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("required structured map contract keys", clear_error), "structured maps with required keys should not be cleared")
