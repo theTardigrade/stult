@@ -1,0 +1,222 @@
+##
+
+EXAMPLE: tests/function_contracts.stult
+
+This example checks function parameter contracts and function signature contracts.
+
+Function parameter contracts are checked when a call binds arguments. Function
+signature contracts can be stored as reusable contract aliases and are checked at
+call time for arguments and return values.
+
+##
+
+ASSERT : STD.ERROR.ASSERT
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
+
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>)
+	(a + b)
+}
+
+ASSERT.EQUAL(SUM(2, 3), 5, "parameter contracts should allow valid numeric arguments")
+
+parameter_error : ""
+?{
+	SUM(2, "three")
+}|{ (error)
+	@parameter_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", parameter_error), "parameter contracts should reject invalid arguments")
+
+MaybeGreeting : { (name<STD.TYPE.STRING|STD.TYPE.VOID>?)
+	((name = _):("Hello"|"Hello, " + name))
+}
+
+ASSERT.EQUAL(MaybeGreeting(), "Hello", "optional contracted parameters should allow void when declared")
+ASSERT.EQUAL(MaybeGreeting("Ada"), "Hello, Ada", "optional contracted parameters should allow valid supplied values")
+
+optional_error : ""
+?{
+	MaybeGreeting(1)
+}|{ (error)
+	@optional_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects string or void value, got number value", optional_error), "optional contracted parameters should reject invalid supplied values")
+
+SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
+	total : 0
+
+	((values)) { (value)
+		@total :+ value
+	}
+
+	(total)
+}
+
+ASSERT.EQUAL(SUM_ALL(1, 2, 3), 6, "variadic parameter contracts should check the collected array")
+
+variadic_error : ""
+?{
+	SUM_ALL(1, "two", 3)
+}|{ (error)
+	@variadic_error : error
+}
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", variadic_error), "variadic parameter contracts should reject invalid collected values")
+
+NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
+	STD.TYPE.NUMBER
+	STD.TYPE.NUMBER
+): STD.TYPE.NUMBER>>
+
+ADD<NumberBinaryFunction> : { (a, b)
+	(a + b)
+}
+
+ASSERT.EQUAL(ADD(10, 5), 15, "function signature contracts should allow valid calls")
+
+signature_argument_error : ""
+?{
+	ADD(10, "five")
+}|{ (error)
+	@signature_argument_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function argument 2", signature_argument_error), "function signature contracts should identify invalid argument positions")
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", signature_argument_error), "function signature contracts should reject invalid arguments")
+
+signature_arity_error : ""
+?{
+	ADD(10)
+}|{ (error)
+	@signature_arity_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function contract expected 2 argument", signature_arity_error), "function signature contracts should enforce their arity")
+
+BAD_RETURN<NumberBinaryFunction> : { (a, b)
+	("not a number")
+}
+
+signature_return_error : ""
+?{
+	BAD_RETURN(1, 2)
+}|{ (error)
+	@signature_return_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function return", signature_return_error), "function signature contracts should identify invalid returns")
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", signature_return_error), "function signature contracts should reject invalid returns")
+
+Number<STD.TYPE.CONTRACT> : <STD.TYPE.NUMBER>
+NumberUnaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
+	Number
+): Number>>
+
+IDENTITY<NumberUnaryFunction> : { (value)
+	(value)
+}
+
+ASSERT.EQUAL(IDENTITY(123), 123, "function signature contracts should resolve aliases in parameter and return contracts")
+
+MAKE_DOUBLER : { ()
+	LocalNumber<STD.TYPE.CONTRACT> : <STD.TYPE.NUMBER>
+
+	({ (value<LocalNumber>)
+		(value * 2)
+	})
+}
+DOUBLE : MAKE_DOUBLER()
+
+ASSERT.EQUAL(DOUBLE(4), 8, "function parameter contracts should resolve local aliases when the function literal is created")
+
+local_alias_error : ""
+?{
+	DOUBLE("four")
+}|{ (error)
+	@local_alias_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", local_alias_error), "function parameter contracts should preserve resolved local aliases")
+
+DIFFERENCE : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a - b)
+}
+
+ASSERT.EQUAL(DIFFERENCE(10, 4), 6, "function return contracts should allow valid returns")
+
+inline_return_error : ""
+?{
+	BAD_INLINE_RETURN : { () : STD.TYPE.NUMBER
+		("not a number")
+	}
+
+	BAD_INLINE_RETURN()
+}|{ (error)
+	@inline_return_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function return", inline_return_error), "function return contracts should identify invalid returns")
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", inline_return_error), "function return contracts should reject invalid returns")
+
+LINE_END_RETURN_CONTRACT : { (value<STD.TYPE.NUMBER>) :
+	STD.TYPE.NUMBER
+
+	(value)
+}
+
+ASSERT.EQUAL(LINE_END_RETURN_CONTRACT(42), 42, "function return contract type may continue after a line-ending colon")
+
+EARLY_RETURN_NUMBER : { (value<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(value > 0) {
+		^(value)
+	}
+
+	(0)
+}
+
+ASSERT.EQUAL(EARLY_RETURN_NUMBER(5), 5, "function return contracts should check early returns")
+
+early_return_error : ""
+?{
+	EARLY_RETURN_BAD : { () : STD.TYPE.NUMBER
+		^("not a number")
+
+		(0)
+	}
+
+	EARLY_RETURN_BAD()
+}|{ (error)
+	@early_return_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function return", early_return_error), "function return contracts should identify invalid early returns")
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", early_return_error), "function return contracts should reject invalid early returns")
+
+compatible_parameter_contract<NumberBinaryFunction> : { (a<*>, b<STD.TYPE.NUMBER>)
+	(a + b)
+}
+
+ASSERT.EQUAL(compatible_parameter_contract(3, 4), 7, "inner parameter contracts may be as broad as the outer signature")
+
+parameter_conflict_error : ""
+?{
+	BAD_PARAMETER_CONTRACT<NumberBinaryFunction> : { (a<STD.TYPE.STRING>, b<STD.TYPE.STRING>)
+		(a + b)
+	}
+}|{ (error)
+	@parameter_conflict_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function parameter 1 contract", parameter_conflict_error), "conflicting inner and outer parameter contracts should fail at assignment")
+ASSERT.TRUE(IS_FOUND_IN("not compatible", parameter_conflict_error), "conflicting parameter contract errors should explain compatibility")
+
+return_conflict_error : ""
+?{
+	BAD_RETURN_CONTRACT<NumberBinaryFunction> : { (a, b) : STD.TYPE.STRING
+		(a + b)
+	}
+}|{ (error)
+	@return_conflict_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("function return contract", return_conflict_error), "conflicting inner and outer return contracts should fail at assignment")
+ASSERT.TRUE(IS_FOUND_IN("not compatible", return_conflict_error), "conflicting return contract errors should explain compatibility")
