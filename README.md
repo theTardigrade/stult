@@ -1,4 +1,3 @@
-
 # Stult
 
 Stult is a small programming language and runtime written in Go.
@@ -51,6 +50,7 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
     - [Unnamed contracts](#unnamed-contracts)
     - [Named contracts](#named-contracts)
     - [Structured map contracts](#structured-map-contracts)
+    - [Function contracts](#function-contracts)
     - [Union contracts](#union-contracts)
     - [Contract aliases](#contract-aliases)
     - [Contract syntax](#contract-syntax)
@@ -762,6 +762,7 @@ STD.TYPE.MAP
 STD.TYPE.MAP<contract>
 STD.TYPE.MAP<{ key-contracts }>
 STD.TYPE.FUNCTION
+STD.TYPE.FUNCTION<(parameter-contracts): return-contract>
 STD.TYPE.BUILTIN_FUNCTION
 STD.TYPE.CONTRACT
 ```
@@ -822,6 +823,87 @@ user<OpenUser> : {
 ```
 
 Structured map contracts stay attached to the map value, so aliases cannot bypass them.
+
+#### Function contracts
+
+Function parameters can have contracts too. The contract is checked when the function is called and the argument is bound to the parameter.
+
+```stult
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>)
+	(a + b)
+}
+
+SUM(2, 3)       # valid
+SUM(2, "three") # runtime error
+```
+
+Optional parameters can use contracts as well. If an optional parameter is omitted, it receives void, so include `STD.TYPE.VOID` when omission should be allowed.
+
+```stult
+GREET : { (name<STD.TYPE.STRING|STD.TYPE.VOID>?)
+	((name = _):("Hello"|"Hello, " + name))
+}
+```
+
+A variadic parameter contract applies to the collected array value.
+
+```stult
+SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
+	total : 0
+
+	((values)) { (value)
+		@total :+ value
+	}
+
+	(total)
+}
+```
+
+Function literals can also declare a return contract after the parameter list. The `:` must be on the same line as the closing `)`, but horizontal space is allowed. If the line ends with `:`, the contract itself may continue on the next line.
+
+```stult
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a + b)
+}
+
+SUM_LONG : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) :
+	STD.TYPE.NUMBER
+
+	(a + b)
+}
+```
+
+Use `STD.TYPE.FUNCTION<(...) : ...>` when you want a reusable function signature contract. The contracts inside the parentheses describe the arguments. The contract after `:` describes the return value.
+
+```stult
+NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
+	STD.TYPE.NUMBER
+	STD.TYPE.NUMBER
+): STD.TYPE.NUMBER>>
+
+ADD<NumberBinaryFunction> : { (a, b)
+	(a + b)
+}
+
+ADD(10, 5)     # valid
+ADD(10, "five") # runtime error
+```
+
+Function signature contracts are checked when the function is called. That means they can check arguments before the body runs and check the returned value after the body finishes.
+
+If a function has both an outer signature contract and inner parameter or return contracts, those contracts must be compatible when the function binding is created. Inner parameter contracts may be the same as or broader than the outer signature. Inner return contracts may be the same as or narrower than the outer signature.
+
+```stult
+ADD<NumberBinaryFunction> : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a + b)
+}
+
+BADD<NumberBinaryFunction> : { (a<STD.TYPE.STRING>, b<STD.TYPE.STRING>)
+	(a + b)
+} # runtime error when BADD is bound
+```
+
+Like collection contracts, function signature contracts stay attached to the function value, so aliases cannot bypass them.
 
 #### Union contracts
 
