@@ -32,6 +32,7 @@ func (p *Parser) currentLessLooksLikeBindingContractBeforeAssignment() bool {
 	tokens := p.tokensAhead(maxBindingContractLookaheadTokens)
 	angleDepth := 0
 	braceDepth := 0
+	parenDepth := 0
 	for index, token := range tokens {
 		switch token.Type {
 		case TokenLess:
@@ -55,8 +56,16 @@ func (p *Parser) currentLessLooksLikeBindingContractBeforeAssignment() bool {
 			if braceDepth > 0 {
 				braceDepth--
 			}
+		case TokenLParen:
+			if angleDepth > 0 {
+				parenDepth++
+			}
+		case TokenRParen:
+			if parenDepth > 0 {
+				parenDepth--
+			}
 		case TokenNewline, TokenComma:
-			if braceDepth == 0 {
+			if braceDepth == 0 && parenDepth == 0 {
 				return false
 			}
 		case TokenEOF:

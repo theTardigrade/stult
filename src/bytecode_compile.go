@@ -341,25 +341,27 @@ func bytecodeParameterFromFunctionParameter(
 		Name:        functionParameter.Token.Literal,
 		IsImmutable: functionParameter.Token.IsImmutable,
 		IsOptional:  functionParameter.IsOptional,
+		Contract:    functionParameter.Contract.Clone(),
 	}
 }
 
-func bytecodeVariadicParameterFromToken(token *Token) *BytecodeParameter {
-	if token == nil {
+func bytecodeVariadicParameterFromFunctionParameter(parameter *FunctionParameter) *BytecodeParameter {
+	if parameter == nil {
 		return nil
 	}
 
-	parameter := bytecodeParameterFromToken(*token)
+	bytecodeParameter := bytecodeParameterFromFunctionParameter(*parameter)
+	bytecodeParameter.IsOptional = false
 
-	return &parameter
+	return &bytecodeParameter
 }
 
-func bytecodeParameterFromToken(token Token) BytecodeParameter {
-	return BytecodeParameter{
-		Name:        token.Literal,
-		IsImmutable: token.IsImmutable,
-		IsOptional:  false,
+func cloneBindingContractPointer(contract *BindingContract) *BindingContract {
+	if contract == nil {
+		return nil
 	}
+
+	return contract.ClonePointer()
 }
 
 func (compiler *BytecodeCompiler) sourceSpanFromToken(token Token) BytecodeSourceSpan {

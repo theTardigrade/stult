@@ -35,6 +35,7 @@ type bundledBytecodeFunction struct {
 	Name              string
 	Parameters        []BytecodeParameter
 	VariadicParameter *BytecodeParameter
+	ReturnContract    *BindingContract
 	Upvalues          []BytecodeUpvalue
 	Chunk             *bundledBytecodeChunk
 }
@@ -198,6 +199,7 @@ func bundledBytecodeFunctionFromFunction(
 		Name:              function.Name,
 		Parameters:        append([]BytecodeParameter{}, function.Parameters...),
 		VariadicParameter: cloneBytecodeParameterPointer(function.VariadicParameter),
+		ReturnContract:    cloneBindingContractPointer(function.ReturnContract),
 		Upvalues:          append([]BytecodeUpvalue{}, function.Upvalues...),
 		Chunk:             chunk,
 	}, nil
@@ -301,6 +303,7 @@ func (function bundledBytecodeFunction) toBytecodeFunction() (BytecodeFunction, 
 		Name:              function.Name,
 		Parameters:        append([]BytecodeParameter{}, function.Parameters...),
 		VariadicParameter: cloneBytecodeParameterPointer(function.VariadicParameter),
+		ReturnContract:    cloneBindingContractPointer(function.ReturnContract),
 		Upvalues:          append([]BytecodeUpvalue{}, function.Upvalues...),
 		Chunk:             chunk,
 	}, nil

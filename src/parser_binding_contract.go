@@ -158,14 +158,28 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 			return BindingContract{}, false
 		}
 
-		if baseName != "ARRAY" && baseName != "MAP" {
-			p.errorAtCurrent("only STD.TYPE.ARRAY and STD.TYPE.MAP contracts can take nested contracts")
+		if baseName != "ARRAY" && baseName != "MAP" && baseName != "FUNCTION" {
+			p.errorAtCurrent("only STD.TYPE.ARRAY, STD.TYPE.MAP and STD.TYPE.FUNCTION contracts can take nested contracts")
 			return BindingContract{}, false
 		}
 
 		var element BindingContract
 		if p.current.Type == TokenLess {
 			p.advance()
+
+			if baseName == "FUNCTION" {
+				functionContract, ok := p.parseFunctionSignatureBindingContract()
+				if !ok {
+					return BindingContract{}, false
+				}
+
+				if !p.expectCurrent(TokenGreater, "expected '>' after function signature binding contract") {
+					return BindingContract{}, false
+				}
+
+				p.advance()
+				return functionContract, true
+			}
 
 			if baseName == "MAP" && p.current.Type == TokenLBrace {
 				structuredContract, ok := p.parseStructuredMapBindingContract()
@@ -193,6 +207,11 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 
 			p.advance()
 		} else {
+			if baseName == "FUNCTION" {
+				p.errorAtCurrent("STD.TYPE.FUNCTION signature contracts must use '<(...) : ...>'")
+				return BindingContract{}, false
+			}
+
 			var ok bool
 			element, ok = p.parseBindingContractType()
 			if !ok {
@@ -204,6 +223,73 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 	}
 
 	return contract, true
+}
+
+func (p *Parser) parseFunctionSignatureBindingContract() (BindingContract, bool) {
+	openParen := p.current
+	if !p.expectCurrent(TokenLParen, "expected '(' after STD.TYPE.FUNCTION '<'") {
+		return BindingContract{}, false
+	}
+
+	p.advance()
+	p.skipNewlines()
+
+	parameters := []BindingContract{}
+
+	if p.current.Type == TokenRParen {
+		p.advance()
+	} else {
+		for {
+			if p.current.Type == TokenEOF {
+				p.errorAtToken(openParen, "unterminated function signature contract")
+				return BindingContract{}, false
+			}
+
+			parameter, ok := p.parseBindingContractType()
+			if !ok {
+				return BindingContract{}, false
+			}
+
+			parameters = append(parameters, parameter)
+
+			if p.current.Type == TokenRParen {
+				p.advance()
+				break
+			}
+
+			if p.current.Type != TokenComma && p.current.Type != TokenNewline {
+				p.errorAtCurrent("expected comma, newline, or ')' after function signature parameter contract")
+				return BindingContract{}, false
+			}
+
+			p.skipSeparators()
+
+			if p.current.Type == TokenRParen {
+				p.advance()
+				break
+			}
+		}
+	}
+
+	parameterClose := p.previous
+	if p.current.Type != TokenColon || !tokensOnSameLine(parameterClose, p.current) {
+		p.errorAtCurrent("expected same-line ':' before function signature return contract")
+		return BindingContract{}, false
+	}
+
+	p.advance()
+	p.skipNewlines()
+
+	returnContract, ok := p.parseBindingContractType()
+	if !ok {
+		return BindingContract{}, false
+	}
+
+	return BindingContract{
+		Kind:               BindingContractFunctionKind,
+		FunctionParameters: parameters,
+		FunctionReturn:     returnContract.ClonePointer(),
+	}, true
 }
 
 func (p *Parser) parseStructuredMapBindingContract() (BindingContract, bool) {

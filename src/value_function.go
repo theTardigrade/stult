@@ -2,11 +2,13 @@ package main
 
 type Function struct {
 	Parameters        []FunctionParameter
-	VariadicParameter *Token
+	VariadicParameter *FunctionParameter
+	ReturnContract    *BindingContract
 	Body              []Statement
 	Returns           []Expression
 	Env               *Environment
 	DotMap            *Map
+	SignatureContract *BindingContract
 	BytecodeFunction  *BytecodeFunction
 	BytecodeUpvalues  []*bytecodeVMCell
 }
@@ -30,6 +32,10 @@ func NewBuiltinFunctionValue(fn BuiltinFunction) Value {
 func functionCanAcceptArgumentCount(fn *Function, count int) bool {
 	if fn == nil {
 		return false
+	}
+
+	if fn.SignatureContract != nil && fn.SignatureContract.Kind == BindingContractFunctionKind {
+		return count == len(fn.SignatureContract.FunctionParameters)
 	}
 
 	if fn.BytecodeFunction != nil {

@@ -101,9 +101,20 @@ func (i *Interpreter) evalExpression(expr Expression) (Value, error) {
 		return i.evalLeadingDotReceiverExpression(e)
 
 	case *FunctionLiteral:
+		parameters, variadicParameter, returnContract, err := i.resolveFunctionContracts(
+			e.Parameters,
+			e.VariadicParameter,
+			e.ReturnContract,
+			e.ReturnContractToken,
+		)
+		if err != nil {
+			return Value{}, err
+		}
+
 		return NewFunctionValue(&Function{
-			Parameters:        e.Parameters,
-			VariadicParameter: e.VariadicParameter,
+			Parameters:        parameters,
+			VariadicParameter: variadicParameter,
+			ReturnContract:    returnContract,
 			Body:              e.Body,
 			Returns:           e.Returns,
 			Env:               i.Env,
@@ -465,6 +476,64 @@ func (i *Interpreter) evalIndexExpression(expr *IndexExpression) (Value, error) 
 	default:
 		return Value{}, fmt.Errorf("cannot index non-collection value")
 	}
+}
+
+func (i *Interpreter) resolveFunctionContracts(
+	parameters []FunctionParameter,
+	variadicParameter *FunctionParameter,
+	returnContract *BindingContract,
+	returnContractToken Token,
+) ([]FunctionParameter, *FunctionParameter, *BindingContract, error) {
+	resolvedParameters := make([]FunctionParameter, len(parameters))
+	for index, parameter := range parameters {
+		resolved, err := i.resolveBindingContractAliases(parameter.Contract)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf(
+				"line %d, column %d: %w",
+				parameter.Token.StartOfLine,
+				parameter.Token.StartOfColumn,
+				err,
+			)
+		}
+
+		resolvedParameters[index] = parameter
+		resolvedParameters[index].Contract = resolved
+	}
+
+	var resolvedVariadicParameter *FunctionParameter
+
+	if variadicParameter != nil {
+		resolved, err := i.resolveBindingContractAliases(variadicParameter.Contract)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf(
+				"line %d, column %d: %w",
+				variadicParameter.Token.StartOfLine,
+				variadicParameter.Token.StartOfColumn,
+				err,
+			)
+		}
+
+		parameter := *variadicParameter
+		parameter.Contract = resolved
+		resolvedVariadicParameter = &parameter
+	}
+
+	var resolvedReturnContract *BindingContract
+	if returnContract != nil {
+		resolved, err := i.resolveBindingContractAliases(*returnContract)
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf(
+				"line %d, column %d: %w",
+				returnContractToken.StartOfLine,
+				returnContractToken.StartOfColumn,
+				err,
+			)
+		}
+
+		resolvedReturnContract = resolved.ClonePointer()
+	}
+
+	return resolvedParameters, resolvedVariadicParameter, resolvedReturnContract, nil
 }
 
 func (i *Interpreter) resolveBindingContractAliases(contract BindingContract) (BindingContract, error) {

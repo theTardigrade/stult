@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type BindingContractKind int
@@ -13,20 +14,23 @@ const (
 	BindingContractExactKind
 	BindingContractArrayKind
 	BindingContractMapKind
+	BindingContractFunctionKind
 	BindingContractUnionKind
 	BindingContractAliasKind
 )
 
 type BindingContract struct {
-	Kind            BindingContractKind
-	KindValue       ValueKind
-	HasKindValue    bool
-	Element         *BindingContract
-	Options         []BindingContract
-	AliasName       string
-	IsStructuredMap bool
-	MapFields       []BindingContractMapField
-	MapWildcard     *BindingContract
+	Kind               BindingContractKind
+	KindValue          ValueKind
+	HasKindValue       bool
+	Element            *BindingContract
+	Options            []BindingContract
+	AliasName          string
+	IsStructuredMap    bool
+	MapFields          []BindingContractMapField
+	MapWildcard        *BindingContract
+	FunctionParameters []BindingContract
+	FunctionReturn     *BindingContract
 }
 
 type BindingContractMapField struct {
@@ -100,6 +104,18 @@ func (contract BindingContract) Clone() BindingContract {
 	if contract.MapWildcard != nil {
 		wildcard := contract.MapWildcard.Clone()
 		cloned.MapWildcard = &wildcard
+	}
+
+	if contract.FunctionParameters != nil {
+		cloned.FunctionParameters = make([]BindingContract, len(contract.FunctionParameters))
+		for index, parameter := range contract.FunctionParameters {
+			cloned.FunctionParameters[index] = parameter.Clone()
+		}
+	}
+
+	if contract.FunctionReturn != nil {
+		functionReturn := contract.FunctionReturn.Clone()
+		cloned.FunctionReturn = &functionReturn
 	}
 
 	return cloned
@@ -207,6 +223,31 @@ func (contract *BindingContract) CheckAndLearn(name string, value Value) error {
 
 		return nil
 
+	case BindingContractFunctionKind:
+		if value.Kind != ValueFunction || value.Function == nil {
+			return fmt.Errorf(
+				"binding %q expects function value, got %s value",
+				name,
+				valueKindName(value.Kind),
+			)
+		}
+
+		expectedCount := len(contract.FunctionParameters)
+		if !functionCanAcceptArgumentCount(value.Function, expectedCount) {
+			return fmt.Errorf(
+				"binding %q expects function accepting %d argument(s)",
+				name,
+				expectedCount,
+			)
+		}
+
+		if err := checkFunctionImplementationCompatibility(name, value.Function, contract); err != nil {
+			return err
+		}
+
+		value.Function.SignatureContract = contract.ClonePointer()
+		return nil
+
 	case BindingContractUnionKind:
 		for index := range contract.Options {
 			option := contract.Options[index].Clone()
@@ -307,6 +348,240 @@ func (contract *BindingContract) CheckStructuredMapEntryAndLearn(name string, ke
 	return fmt.Errorf("%s does not allow map key %q", name, key)
 }
 
+func checkFunctionImplementationCompatibility(name string, fn *Function, signature *BindingContract) error {
+	if fn == nil || signature == nil || signature.Kind != BindingContractFunctionKind {
+		return nil
+	}
+
+	for index, promised := range signature.FunctionParameters {
+		implementation, ok := functionImplementationParameterContract(fn, index)
+		if !ok {
+			return fmt.Errorf(
+				"binding %q function parameter %d contract cannot be matched with signature parameter contract %s",
+				name,
+				index+1,
+				promised.SourceString(),
+			)
+		}
+
+		if !bindingContractAcceptsAll(implementation, promised) {
+			return fmt.Errorf(
+				"binding %q function parameter %d contract %s is not compatible with signature parameter contract %s",
+				name,
+				index+1,
+				implementation.SourceString(),
+				promised.SourceString(),
+			)
+		}
+	}
+
+	if fn.ReturnContract != nil && signature.FunctionReturn != nil &&
+		!bindingContractAcceptsAll(*signature.FunctionReturn, *fn.ReturnContract) {
+		return fmt.Errorf(
+			"binding %q function return contract %s is not compatible with signature return contract %s",
+			name,
+			fn.ReturnContract.SourceString(),
+			signature.FunctionReturn.SourceString(),
+		)
+	}
+
+	return nil
+}
+
+func functionImplementationParameterContract(fn *Function, index int) (BindingContract, bool) {
+	if fn.BytecodeFunction != nil {
+		return bytecodeImplementationParameterContract(*fn.BytecodeFunction, index)
+	}
+
+	if index < len(fn.Parameters) {
+		return fn.Parameters[index].Contract, true
+	}
+
+	if fn.VariadicParameter == nil {
+		return BindingContract{}, false
+	}
+
+	return variadicElementImplementationContract(fn.VariadicParameter.Contract)
+}
+
+func bytecodeImplementationParameterContract(function BytecodeFunction, index int) (BindingContract, bool) {
+	if index < len(function.Parameters) {
+		return function.Parameters[index].Contract, true
+	}
+
+	if function.VariadicParameter == nil {
+		return BindingContract{}, false
+	}
+
+	return variadicElementImplementationContract(function.VariadicParameter.Contract)
+}
+
+func variadicElementImplementationContract(contract BindingContract) (BindingContract, bool) {
+	switch contract.Kind {
+	case BindingContractAnyKind:
+		return BindingContract{Kind: BindingContractAnyKind}, true
+	case BindingContractArrayKind:
+		if contract.Element == nil {
+			return BindingContract{Kind: BindingContractAnyKind}, true
+		}
+		return contract.Element.Clone(), true
+	case BindingContractSameKind:
+		if !contract.HasKindValue {
+			return BindingContract{Kind: BindingContractAnyKind}, true
+		}
+		if contract.KindValue == ValueArray {
+			return BindingContract{Kind: BindingContractAnyKind}, true
+		}
+		return BindingContract{}, false
+	default:
+		return BindingContract{}, false
+	}
+}
+
+func bindingContractAcceptsAll(accepting BindingContract, offered BindingContract) bool {
+	if accepting.Kind == BindingContractAnyKind {
+		return true
+	}
+
+	if offered.Kind == BindingContractUnionKind {
+		for _, option := range offered.Options {
+			if !bindingContractAcceptsAll(accepting, option) {
+				return false
+			}
+		}
+		return true
+	}
+
+	if accepting.Kind == BindingContractUnionKind {
+		for _, option := range accepting.Options {
+			if bindingContractAcceptsAll(option, offered) {
+				return true
+			}
+		}
+		return false
+	}
+
+	if offered.Kind == BindingContractAnyKind {
+		return accepting.Kind == BindingContractAnyKind
+	}
+
+	if (accepting.Kind == BindingContractExactKind || accepting.Kind == BindingContractSameKind) &&
+		acceptsSingleKind(accepting, offered) {
+		return true
+	}
+
+	switch accepting.Kind {
+	case BindingContractArrayKind:
+		return arrayContractAcceptsAll(accepting, offered)
+	case BindingContractMapKind:
+		return mapContractAcceptsAll(accepting, offered)
+	case BindingContractFunctionKind:
+		return functionContractAcceptsAll(accepting, offered)
+	default:
+		return accepting.SourceString() == offered.SourceString()
+	}
+}
+
+func acceptsSingleKind(accepting BindingContract, offered BindingContract) bool {
+	acceptingKind, acceptingSingle := contractSingleValueKind(accepting)
+	offeredKind, offeredSingle := contractSingleValueKind(offered)
+	if !offeredSingle {
+		return false
+	}
+
+	if accepting.Kind == BindingContractSameKind && !accepting.HasKindValue {
+		return true
+	}
+
+	return acceptingSingle && acceptingKind == offeredKind
+}
+
+func contractSingleValueKind(contract BindingContract) (ValueKind, bool) {
+	switch contract.Kind {
+	case BindingContractExactKind:
+		return contract.KindValue, true
+	case BindingContractSameKind:
+		if contract.HasKindValue {
+			return contract.KindValue, true
+		}
+		return ValueVoid, false
+	case BindingContractArrayKind:
+		return ValueArray, true
+	case BindingContractMapKind:
+		return ValueMap, true
+	case BindingContractFunctionKind:
+		return ValueFunction, true
+	case BindingContractUnionKind:
+		if len(contract.Options) == 0 {
+			return ValueVoid, false
+		}
+
+		kind, ok := contractSingleValueKind(contract.Options[0])
+		if !ok {
+			return ValueVoid, false
+		}
+
+		for _, option := range contract.Options[1:] {
+			optionKind, ok := contractSingleValueKind(option)
+			if !ok || optionKind != kind {
+				return ValueVoid, false
+			}
+		}
+
+		return kind, true
+	default:
+		return ValueVoid, false
+	}
+}
+
+func arrayContractAcceptsAll(accepting BindingContract, offered BindingContract) bool {
+	if offered.Kind != BindingContractArrayKind {
+		return false
+	}
+
+	if accepting.Element == nil {
+		return true
+	}
+
+	if offered.Element == nil {
+		return false
+	}
+
+	return bindingContractAcceptsAll(*accepting.Element, *offered.Element)
+}
+
+func mapContractAcceptsAll(accepting BindingContract, offered BindingContract) bool {
+	if offered.Kind != BindingContractMapKind {
+		return false
+	}
+
+	if !accepting.IsStructuredMap && accepting.Element == nil {
+		return true
+	}
+
+	if accepting.IsStructuredMap || offered.IsStructuredMap {
+		return accepting.SourceString() == offered.SourceString()
+	}
+
+	if accepting.Element == nil {
+		return true
+	}
+
+	if offered.Element == nil {
+		return false
+	}
+
+	return bindingContractAcceptsAll(*accepting.Element, *offered.Element)
+}
+
+func functionContractAcceptsAll(accepting BindingContract, offered BindingContract) bool {
+	if offered.Kind != BindingContractFunctionKind {
+		return false
+	}
+
+	return accepting.SourceString() == offered.SourceString()
+}
+
 func (contract *BindingContract) HasRequiredStructuredMapFields() bool {
 	if contract == nil || contract.Kind != BindingContractMapKind || !contract.IsStructuredMap {
 		return false
@@ -345,6 +620,8 @@ func (contract BindingContract) ExpectedValueDescription() string {
 			return "map"
 		}
 		return "map of " + contract.Element.ExpectedValueDescription()
+	case BindingContractFunctionKind:
+		return "function matching " + contract.functionSignatureDescription()
 	case BindingContractUnionKind:
 		parts := make([]string, 0, len(contract.Options))
 		for _, option := range contract.Options {
@@ -449,7 +726,7 @@ func (contract BindingContract) resolveAliases(
 		delete(seen, contract.AliasName)
 		return resolved, err
 
-	case BindingContractArrayKind, BindingContractMapKind:
+	case BindingContractArrayKind, BindingContractMapKind, BindingContractFunctionKind:
 		resolved := contract.Clone()
 		if contract.Element != nil {
 			element, err := contract.Element.resolveAliases(lookup, seen)
@@ -482,6 +759,25 @@ func (contract BindingContract) resolveAliases(
 			resolved.MapWildcard = &wildcard
 		}
 
+		if contract.FunctionParameters != nil {
+			resolved.FunctionParameters = make([]BindingContract, len(contract.FunctionParameters))
+			for index := range contract.FunctionParameters {
+				parameter, err := contract.FunctionParameters[index].resolveAliases(lookup, seen)
+				if err != nil {
+					return BindingContract{}, err
+				}
+				resolved.FunctionParameters[index] = parameter
+			}
+		}
+
+		if contract.FunctionReturn != nil {
+			functionReturn, err := contract.FunctionReturn.resolveAliases(lookup, seen)
+			if err != nil {
+				return BindingContract{}, err
+			}
+			resolved.FunctionReturn = &functionReturn
+		}
+
 		return resolved, nil
 
 	case BindingContractUnionKind:
@@ -505,7 +801,7 @@ func (contract BindingContract) HasAlias() bool {
 	switch contract.Kind {
 	case BindingContractAliasKind:
 		return true
-	case BindingContractArrayKind, BindingContractMapKind:
+	case BindingContractArrayKind, BindingContractMapKind, BindingContractFunctionKind:
 		if contract.Element != nil && contract.Element.HasAlias() {
 			return true
 		}
@@ -514,7 +810,15 @@ func (contract BindingContract) HasAlias() bool {
 				return true
 			}
 		}
-		return contract.MapWildcard != nil && contract.MapWildcard.HasAlias()
+		if contract.MapWildcard != nil && contract.MapWildcard.HasAlias() {
+			return true
+		}
+		for _, parameter := range contract.FunctionParameters {
+			if parameter.HasAlias() {
+				return true
+			}
+		}
+		return contract.FunctionReturn != nil && contract.FunctionReturn.HasAlias()
 	case BindingContractUnionKind:
 		for _, option := range contract.Options {
 			if option.HasAlias() {
@@ -539,7 +843,7 @@ func (contract BindingContract) collectAliasNames(names *[]string, seen map[stri
 			seen[contract.AliasName] = true
 			*names = append(*names, contract.AliasName)
 		}
-	case BindingContractArrayKind, BindingContractMapKind:
+	case BindingContractArrayKind, BindingContractMapKind, BindingContractFunctionKind:
 		if contract.Element != nil {
 			contract.Element.collectAliasNames(names, seen)
 		}
@@ -548,6 +852,12 @@ func (contract BindingContract) collectAliasNames(names *[]string, seen map[stri
 		}
 		if contract.MapWildcard != nil {
 			contract.MapWildcard.collectAliasNames(names, seen)
+		}
+		for _, parameter := range contract.FunctionParameters {
+			parameter.collectAliasNames(names, seen)
+		}
+		if contract.FunctionReturn != nil {
+			contract.FunctionReturn.collectAliasNames(names, seen)
 		}
 	case BindingContractUnionKind:
 		for _, option := range contract.Options {
@@ -594,6 +904,8 @@ func (contract BindingContract) SourceString() string {
 			return "STD.TYPE.MAP"
 		}
 		return "STD.TYPE.MAP<" + contract.Element.SourceString() + ">"
+	case BindingContractFunctionKind:
+		return "STD.TYPE.FUNCTION<" + contract.functionSignatureSourceString() + ">"
 	case BindingContractUnionKind:
 		parts := make([]string, 0, len(contract.Options))
 		for _, option := range contract.Options {
@@ -605,6 +917,82 @@ func (contract BindingContract) SourceString() string {
 	default:
 		return "unknown"
 	}
+}
+
+func checkFunctionSignatureArguments(contract *BindingContract, args []Value) error {
+	if contract == nil || contract.Kind != BindingContractFunctionKind {
+		return nil
+	}
+
+	expectedCount := len(contract.FunctionParameters)
+	if len(args) != expectedCount {
+		return fmt.Errorf("function contract expected %d argument(s), got %d", expectedCount, len(args))
+	}
+
+	for index := range contract.FunctionParameters {
+		if err := contract.FunctionParameters[index].CheckAndLearn(
+			fmt.Sprintf("function argument %d", index+1),
+			args[index],
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func checkFunctionSignatureReturn(contract *BindingContract, value Value) (Value, error) {
+	if contract == nil || contract.Kind != BindingContractFunctionKind || contract.FunctionReturn == nil {
+		return value, nil
+	}
+
+	if err := contract.FunctionReturn.CheckAndLearn("function return", value); err != nil {
+		return Value{}, err
+	}
+
+	return value, nil
+}
+
+func checkFunctionReturnContracts(
+	returnContract *BindingContract,
+	signatureContract *BindingContract,
+	value Value,
+) (Value, error) {
+	if returnContract != nil {
+		if err := returnContract.CheckAndLearn("function return", value); err != nil {
+			return Value{}, err
+		}
+	}
+
+	return checkFunctionSignatureReturn(signatureContract, value)
+}
+
+func (contract BindingContract) functionSignatureDescription() string {
+	parameterDescriptions := make([]string, 0, len(contract.FunctionParameters))
+	for _, parameter := range contract.FunctionParameters {
+		parameterDescriptions = append(parameterDescriptions, parameter.ExpectedValueDescription())
+	}
+
+	returnDescription := "void"
+	if contract.FunctionReturn != nil {
+		returnDescription = contract.FunctionReturn.ExpectedValueDescription()
+	}
+
+	return "(" + joinContractMapSourceParts(parameterDescriptions) + ") returning " + returnDescription
+}
+
+func (contract BindingContract) functionSignatureSourceString() string {
+	parameterSources := make([]string, 0, len(contract.FunctionParameters))
+	for _, parameter := range contract.FunctionParameters {
+		parameterSources = append(parameterSources, parameter.SourceString())
+	}
+
+	returnSource := "STD.TYPE.VOID"
+	if contract.FunctionReturn != nil {
+		returnSource = contract.FunctionReturn.SourceString()
+	}
+
+	return "(" + joinContractMapSourceParts(parameterSources) + "): " + returnSource
 }
 
 func (contract BindingContract) structuredMapDescription() string {
@@ -684,9 +1072,15 @@ func joinContractSourceParts(parts []string) string {
 	if len(parts) == 0 {
 		return "unknown"
 	}
-	result := parts[0]
+
+	var result strings.Builder
+
+	result.WriteString(parts[0])
+
 	for _, part := range parts[1:] {
-		result += "|" + part
+		result.WriteByte('|')
+		result.WriteString(part)
 	}
-	return result
+
+	return result.String()
 }

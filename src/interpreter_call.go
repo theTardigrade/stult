@@ -42,6 +42,14 @@ func (i *Interpreter) evalCallExpression(call *CallExpression) (Value, error) {
 }
 
 func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
+	if fn == nil {
+		return Value{}, fmt.Errorf("invalid function")
+	}
+
+	if err := checkFunctionSignatureArguments(fn.SignatureContract, args); err != nil {
+		return Value{}, err
+	}
+
 	requiredCount := requiredFunctionParameterCount(fn.Parameters)
 	maxCount := len(fn.Parameters)
 
@@ -82,16 +90,25 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 	for index, parameter := range fn.Parameters {
 		parameterToken := parameter.Token
 
-		if parameterToken.Literal == "_" {
-			continue
-		}
-
 		value := NewVoidValue()
 		if index < len(args) {
 			value = args[index]
 		}
 
-		if err := callEnv.Set(parameterToken.Literal, value, parameterToken.IsImmutable); err != nil {
+		if parameterToken.Literal == "_" {
+			if err := parameter.Contract.CheckAndLearn("function parameter _", value); err != nil {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: %w",
+					parameterToken.StartOfLine,
+					parameterToken.StartOfColumn,
+					err,
+				)
+			}
+			continue
+		}
+
+		contractDeclaration := BindingContractDeclaration{Token: parameterToken, Contract: parameter.Contract}
+		if err := callEnv.SetWithContract(parameterToken.Literal, value, parameterToken.IsImmutable, &contractDeclaration); err != nil {
 			return Value{}, fmt.Errorf(
 				"line %d, column %d: %w",
 				parameterToken.StartOfLine,
@@ -101,25 +118,40 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 		}
 	}
 
-	if fn.VariadicParameter != nil && fn.VariadicParameter.Literal != "_" {
+	if fn.VariadicParameter != nil {
 		variadicStart := len(fn.Parameters)
 		if len(args) < variadicStart {
 			variadicStart = len(args)
 		}
 
 		variadicValues := append([]Value{}, args[variadicStart:]...)
+		variadicValue := NewArrayValue(variadicValues, false)
+		variadicToken := fn.VariadicParameter.Token
 
-		if err := callEnv.Set(
-			fn.VariadicParameter.Literal,
-			NewArrayValue(variadicValues, false),
-			fn.VariadicParameter.IsImmutable,
-		); err != nil {
-			return Value{}, fmt.Errorf(
-				"line %d, column %d: %w",
-				fn.VariadicParameter.StartOfLine,
-				fn.VariadicParameter.StartOfColumn,
-				err,
-			)
+		if variadicToken.Literal == "_" {
+			if err := fn.VariadicParameter.Contract.CheckAndLearn("variadic function parameter _", variadicValue); err != nil {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: %w",
+					variadicToken.StartOfLine,
+					variadicToken.StartOfColumn,
+					err,
+				)
+			}
+		} else {
+			contractDeclaration := BindingContractDeclaration{Token: variadicToken, Contract: fn.VariadicParameter.Contract}
+			if err := callEnv.SetWithContract(
+				variadicToken.Literal,
+				variadicValue,
+				variadicToken.IsImmutable,
+				&contractDeclaration,
+			); err != nil {
+				return Value{}, fmt.Errorf(
+					"line %d, column %d: %w",
+					variadicToken.StartOfLine,
+					variadicToken.StartOfColumn,
+					err,
+				)
+			}
 		}
 	}
 
@@ -139,7 +171,7 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 				case controlFlowBreak:
 					return Value{}, fmt.Errorf("break used outside loop")
 				case controlFlowReturn:
-					return flow.Value, nil
+					return checkFunctionReturnContracts(fn.ReturnContract, fn.SignatureContract, flow.Value)
 				}
 			}
 
@@ -151,7 +183,12 @@ func (i *Interpreter) callFunction(fn *Function, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("functions must return exactly one value for now")
 	}
 
-	return i.evalExpression(fn.Returns[0])
+	result, err := i.evalExpression(fn.Returns[0])
+	if err != nil {
+		return Value{}, err
+	}
+
+	return checkFunctionReturnContracts(fn.ReturnContract, fn.SignatureContract, result)
 }
 
 func requiredFunctionParameterCount(parameters []FunctionParameter) int {

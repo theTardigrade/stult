@@ -513,11 +513,24 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 	functionCompiler := NewBytecodeCompiler(functionName, compiler.filename, true, compiler)
 
 	for _, parameter := range expression.Parameters {
+		for _, alias := range parameter.Contract.AliasNames() {
+			functionCompiler.resolveUpvalue(alias)
+		}
 		functionCompiler.defineParameterLocal(parameter.Token)
 	}
 
 	if expression.VariadicParameter != nil {
-		functionCompiler.defineParameterLocal(*expression.VariadicParameter)
+		for _, alias := range expression.VariadicParameter.Contract.AliasNames() {
+			functionCompiler.resolveUpvalue(alias)
+		}
+
+		functionCompiler.defineParameterLocal(expression.VariadicParameter.Token)
+	}
+
+	if expression.ReturnContract != nil {
+		for _, alias := range expression.ReturnContract.AliasNames() {
+			functionCompiler.resolveUpvalue(alias)
+		}
 	}
 
 	if err := functionCompiler.compileStatementList(expression.Body); err != nil {
@@ -550,7 +563,8 @@ func (compiler *BytecodeCompiler) compileFunctionLiteral(expression *FunctionLit
 	function := BytecodeFunction{
 		Name:              functionName,
 		Parameters:        bytecodeParametersFromFunctionParameters(expression.Parameters),
-		VariadicParameter: bytecodeVariadicParameterFromToken(expression.VariadicParameter),
+		VariadicParameter: bytecodeVariadicParameterFromFunctionParameter(expression.VariadicParameter),
+		ReturnContract:    cloneBindingContractPointer(expression.ReturnContract),
 		Upvalues:          append([]BytecodeUpvalue{}, functionCompiler.chunk.Upvalues...),
 		Chunk:             functionCompiler.chunk,
 	}

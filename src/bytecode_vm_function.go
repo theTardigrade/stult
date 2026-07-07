@@ -11,21 +11,64 @@ func (vm *BytecodeVM) makeFunction(index int) error {
 		return fmt.Errorf("function index %d out of bounds", index)
 	}
 
-	function := &vm.chunk.Functions[index]
-	upvalues, err := vm.captureUpvalueCells(function.Upvalues)
+	function := vm.chunk.Functions[index]
+	resolvedFunction, err := vm.bytecodeFunctionWithResolvedParameterContracts(function)
+	if err != nil {
+		return err
+	}
+
+	upvalues, err := vm.captureUpvalueCells(resolvedFunction.Upvalues)
 	if err != nil {
 		return err
 	}
 
 	value := NewFunctionValue(&Function{
-		BytecodeFunction: function,
+		BytecodeFunction: &resolvedFunction,
 		BytecodeUpvalues: upvalues,
+		ReturnContract:   cloneBindingContractPointer(resolvedFunction.ReturnContract),
 		DotMap:           vm.currentDotMap,
 	})
 
 	vm.pushValue(value)
 
 	return nil
+}
+
+func (vm *BytecodeVM) bytecodeFunctionWithResolvedParameterContracts(function BytecodeFunction) (BytecodeFunction, error) {
+	resolvedFunction := function
+	resolvedFunction.Parameters = make([]BytecodeParameter, len(function.Parameters))
+
+	for index, parameter := range function.Parameters {
+		resolvedContract, err := vm.resolveBindingContractAliases(parameter.Contract)
+		if err != nil {
+			return BytecodeFunction{}, fmt.Errorf("function parameter %q: %w", parameter.Name, err)
+		}
+
+		resolvedFunction.Parameters[index] = parameter
+		resolvedFunction.Parameters[index].Contract = resolvedContract
+	}
+
+	if function.VariadicParameter != nil {
+		resolvedContract, err := vm.resolveBindingContractAliases(function.VariadicParameter.Contract)
+		if err != nil {
+			return BytecodeFunction{}, fmt.Errorf("variadic function parameter %q: %w", function.VariadicParameter.Name, err)
+		}
+
+		resolvedVariadicParameter := *function.VariadicParameter
+		resolvedVariadicParameter.Contract = resolvedContract
+		resolvedFunction.VariadicParameter = &resolvedVariadicParameter
+	}
+
+	if function.ReturnContract != nil {
+		resolvedContract, err := vm.resolveBindingContractAliases(*function.ReturnContract)
+		if err != nil {
+			return BytecodeFunction{}, fmt.Errorf("function return contract: %w", err)
+		}
+
+		resolvedFunction.ReturnContract = resolvedContract.ClonePointer()
+	}
+
+	return resolvedFunction, nil
 }
 
 func (vm *BytecodeVM) captureUpvalueCells(upvalues []BytecodeUpvalue) ([]*bytecodeVMCell, error) {
@@ -151,7 +194,15 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 	}
 
 	for index, parameter := range function.Parameters {
+		value := NewVoidValue()
+		if index < len(args) {
+			value = args[index]
+		}
+
 		if parameter.Name == "_" {
+			if err := parameter.Contract.CheckAndLearn("function parameter _", value); err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -160,17 +211,24 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			return fmt.Errorf("function local for parameter %q was not found", parameter.Name)
 		}
 
-		value := NewVoidValue()
-		if index < len(args) {
-			value = args[index]
-		}
-
-		if err := vm.storeLocal(localIndex, value, parameter.IsImmutable, true, false, BindingContract{}); err != nil {
+		if err := vm.storeLocal(localIndex, value, parameter.IsImmutable, true, true, parameter.Contract); err != nil {
 			return err
 		}
 	}
 
-	if function.VariadicParameter != nil && function.VariadicParameter.Name != "_" {
+	if function.VariadicParameter != nil {
+		variadicStart := len(function.Parameters)
+		if len(args) < variadicStart {
+			variadicStart = len(args)
+		}
+
+		extra := append([]Value{}, args[variadicStart:]...)
+		variadicValue := NewArrayValue(extra, false)
+
+		if function.VariadicParameter.Name == "_" {
+			return function.VariadicParameter.Contract.CheckAndLearn("variadic function parameter _", variadicValue)
+		}
+
 		localIndex, ok := vm.localIndexByName(function.VariadicParameter.Name)
 		if !ok {
 			return fmt.Errorf(
@@ -179,20 +237,13 @@ func (vm *BytecodeVM) bindFunctionArguments(function BytecodeFunction, args []Va
 			)
 		}
 
-		variadicStart := len(function.Parameters)
-		if len(args) < variadicStart {
-			variadicStart = len(args)
-		}
-
-		extra := append([]Value{}, args[variadicStart:]...)
-
 		if err := vm.storeLocal(
 			localIndex,
-			NewArrayValue(extra, false),
+			variadicValue,
 			function.VariadicParameter.IsImmutable,
 			true,
-			false,
-			BindingContract{},
+			true,
+			function.VariadicParameter.Contract,
 		); err != nil {
 			return err
 		}
@@ -331,9 +382,18 @@ func (vm *BytecodeVM) callFunction(fn *Function, args []Value) (Value, error) {
 		return Value{}, fmt.Errorf("invalid function")
 	}
 
+	if err := checkFunctionSignatureArguments(fn.SignatureContract, args); err != nil {
+		return Value{}, err
+	}
+
 	if fn.BytecodeFunction == nil {
 		return Value{}, fmt.Errorf("bytecode VM cannot call an interpreter function")
 	}
 
-	return vm.runFunction(*fn.BytecodeFunction, fn.BytecodeUpvalues, fn.DotMap, args)
+	result, err := vm.runFunction(*fn.BytecodeFunction, fn.BytecodeUpvalues, fn.DotMap, args)
+	if err != nil {
+		return Value{}, err
+	}
+
+	return checkFunctionReturnContracts(fn.ReturnContract, fn.SignatureContract, result)
 }

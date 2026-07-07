@@ -1,4 +1,3 @@
-
 # Versions
 
 This document summarises notable Stult changes by released version.

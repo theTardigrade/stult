@@ -1,6 +1,6 @@
 package main
 
-func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
+func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *FunctionParameter, bool) {
 	openParen := p.current
 	p.advance() // consume "("
 
@@ -29,8 +29,13 @@ func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
 				return nil, nil, false
 			}
 
-			variadicParameter := p.current
+			variadicToken := p.current
 			p.advance()
+
+			contractDeclaration, ok := p.parseBindingContractAfterToken(variadicToken, "variadic function parameter name")
+			if !ok {
+				return nil, nil, false
+			}
 
 			if p.current.Type == TokenQuestion {
 				p.errorAtCurrent("variadic function parameter cannot be optional")
@@ -47,10 +52,15 @@ func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
 			p.advance()
 
 			allParameters := functionParameterTokens(parameters)
-			allParameters = append(allParameters, variadicParameter)
+			allParameters = append(allParameters, variadicToken)
 
 			if !p.validateBindingNames(allParameters, "function parameter") {
 				return nil, nil, false
+			}
+
+			variadicParameter := FunctionParameter{Token: variadicToken}
+			if contractDeclaration != nil {
+				variadicParameter.Contract = contractDeclaration.Contract
 			}
 
 			return parameters, &variadicParameter, true
@@ -64,11 +74,21 @@ func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
 		parameterToken := p.current
 		p.advance()
 
+		contractDeclaration, ok := p.parseBindingContractAfterToken(parameterToken, "function parameter name")
+		if !ok {
+			return nil, nil, false
+		}
+
 		isOptional := false
 
 		if p.current.Type == TokenQuestion {
-			if !tokensTouch(parameterToken, p.current) {
-				p.errorAtCurrent("expected '?' to touch optional parameter name")
+			touchToken := parameterToken
+			if contractDeclaration != nil {
+				touchToken = p.previous
+			}
+
+			if !tokensTouch(touchToken, p.current) {
+				p.errorAtCurrent("expected '?' to touch optional parameter name or contract")
 				return nil, nil, false
 			}
 
@@ -80,10 +100,15 @@ func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *Token, bool) {
 			return nil, nil, false
 		}
 
-		parameters = append(parameters, FunctionParameter{
+		parameter := FunctionParameter{
 			Token:      parameterToken,
 			IsOptional: isOptional,
-		})
+		}
+		if contractDeclaration != nil {
+			parameter.Contract = contractDeclaration.Contract
+		}
+
+		parameters = append(parameters, parameter)
 
 		if p.current.Type == TokenRParen {
 			p.advance()

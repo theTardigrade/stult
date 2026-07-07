@@ -257,14 +257,17 @@ func (*IndexAssignmentStatement) statementNode() {}
 type FunctionParameter struct {
 	Token      Token
 	IsOptional bool
+	Contract   BindingContract
 }
 
 type FunctionLiteral struct {
-	Token             Token
-	Parameters        []FunctionParameter
-	VariadicParameter *Token
-	Body              []Statement
-	Returns           []Expression
+	Token               Token
+	Parameters          []FunctionParameter
+	VariadicParameter   *FunctionParameter
+	ReturnContract      *BindingContract
+	ReturnContractToken Token
+	Body                []Statement
+	Returns             []Expression
 }
 
 func (*FunctionLiteral) expressionNode() {}

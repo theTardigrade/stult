@@ -100,6 +100,12 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 		return nil
 	}
 
+	parameterClose := p.previous
+	returnContract, returnContractToken, ok := p.parseFunctionLiteralReturnContract(parameterClose)
+	if !ok {
+		return nil
+	}
+
 	body := []Statement{}
 
 	for {
@@ -161,11 +167,13 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 			p.advance()
 
 			return &FunctionLiteral{
-				Token:             openBrace,
-				Parameters:        parameters,
-				VariadicParameter: variadicParameter,
-				Body:              body,
-				Returns:           returns,
+				Token:               openBrace,
+				Parameters:          parameters,
+				VariadicParameter:   variadicParameter,
+				ReturnContract:      returnContract,
+				ReturnContractToken: returnContractToken,
+				Body:                body,
+				Returns:             returns,
 			}
 
 		default:
@@ -179,6 +187,27 @@ func (p *Parser) parseFunctionLiteral(openBrace Token) Expression {
 			}
 		}
 	}
+}
+
+func (p *Parser) parseFunctionLiteralReturnContract(parameterClose Token) (*BindingContract, Token, bool) {
+	if p.current.Type != TokenColon {
+		return nil, Token{}, true
+	}
+
+	if !tokensOnSameLine(parameterClose, p.current) {
+		return nil, Token{}, true
+	}
+
+	colon := p.current
+	p.advance() // consume ":"
+	p.skipNewlines()
+
+	contract, ok := p.parseBindingContractType()
+	if !ok {
+		return nil, Token{}, false
+	}
+
+	return contract.ClonePointer(), colon, true
 }
 
 func (p *Parser) isMapLiteralEntryStart() bool {

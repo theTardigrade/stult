@@ -112,6 +112,7 @@ type BytecodeParameter struct {
 	Name        string
 	IsImmutable bool
 	IsOptional  bool
+	Contract    BindingContract
 }
 
 type BytecodeLocal struct {
@@ -133,6 +134,7 @@ type BytecodeFunction struct {
 	Name              string
 	Parameters        []BytecodeParameter
 	VariadicParameter *BytecodeParameter
+	ReturnContract    *BindingContract
 	Upvalues          []BytecodeUpvalue
 	Chunk             *BytecodeChunk
 }
