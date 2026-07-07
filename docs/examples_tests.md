@@ -1,3 +1,4 @@
+
 # Examples (Tests)
 
 This document lists small public Stult programs used to exercise specific language or parser behaviours.
@@ -113,6 +114,9 @@ For documentation describing the ordinary examples, see [examples.md](examples.m
 
 - [Structured map contracts](../examples/tests/structured_map_contracts.stult)  
   Checks `STD.TYPE.MAP<{...}>` contracts, including required keys, optional keys, strict-by-default extra-key rejection, wildcard contracts, `_: *`, contract aliases inside structured fields, mutation enforcement and clear rejection when required keys would be removed.
+
+- [Function contracts](../examples/tests/function_contracts.stult)  
+  Checks function parameter contracts, inline return contracts, optional and variadic parameter contracts, reusable `STD.TYPE.FUNCTION<(...) : ...>` signature contracts, argument checking, return checking, compatibility errors and contract aliases inside signatures.
 
 ## Functions
 

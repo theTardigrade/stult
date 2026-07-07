@@ -1294,6 +1294,25 @@ Contract type namespace used by `STD.TYPE.CONTRACT` contracts. Contract values a
 
 Function type namespace used by `STD.TYPE.FUNCTION` contracts. User-defined functions are created with function literals.
 
+`STD.TYPE.FUNCTION` accepts any user-defined function value. Function parameters may declare contracts inline, and a function literal may declare a return contract with `:` on the same line as the closing parameter `)`.
+
+```stult
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a + b)
+}
+```
+
+`STD.TYPE.FUNCTION<(...) : ...>` describes a reusable function signature. The contracts inside the parentheses check call arguments, and the contract after `:` checks the return value.
+
+```stult
+NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
+	STD.TYPE.NUMBER
+	STD.TYPE.NUMBER
+): STD.TYPE.NUMBER>>
+```
+
+Signature contracts attach to the function value and are checked when the function is called. If a function has both an outer signature contract and inner parameter or return contracts, they must be compatible when the function binding is created.
+
 ## `STD["TYPE"]["BUILTIN_FUNCTION"]`
 
 Builtin-function type namespace used by `STD.TYPE.BUILTIN_FUNCTION` contracts. Builtin functions are provided by the standard library.
