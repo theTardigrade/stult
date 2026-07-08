@@ -70,7 +70,7 @@ Almost all of the examples listed in this file are also run by the Go test suite
   Shows how multiple files run in the order specified in a manifest file.
 
 - [Object-oriented programming project](../examples/projects/object_oriented_programming/)  
-  Demonstrates a reusable class-like helper built from maps, closures, shared prototype methods and manifest-based execution.
+  Demonstrates a reusable class-like helper built from maps, closures, shared prototype methods, runtime type contracts and manifest-based execution.
 
 - [Animated sine wave project](../examples/projects/animated_sine_wave/)  
   Animates an ASCII sine wave using multiple Stult files, trigonometric functions, cached wave rows, timed frames and manifest-based execution.
