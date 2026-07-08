@@ -74,29 +74,33 @@ func (p *Parser) parseFunctionParameters() ([]FunctionParameter, *FunctionParame
 		parameterToken := p.current
 		p.advance()
 
-		contractDeclaration, ok := p.parseBindingContractAfterToken(parameterToken, "function parameter name")
-		if !ok {
-			return nil, nil, false
-		}
-
 		isOptional := false
+		contractTouchToken := parameterToken
+		contractDescription := "function parameter name"
 
 		if p.current.Type == TokenQuestion {
-			touchToken := parameterToken
-			if contractDeclaration != nil {
-				touchToken = p.previous
-			}
-
-			if !tokensTouch(touchToken, p.current) {
-				p.errorAtCurrent("expected '?' to touch optional parameter name or contract")
+			if !tokensTouch(parameterToken, p.current) {
+				p.errorAtCurrent("expected '?' to touch optional parameter name")
 				return nil, nil, false
 			}
 
 			isOptional = true
 			optionalStarted = true
+			contractTouchToken = p.current
+			contractDescription = "optional function parameter marker"
 			p.advance()
 		} else if optionalStarted {
 			p.errorAtToken(parameterToken, "required function parameter cannot follow optional parameter")
+			return nil, nil, false
+		}
+
+		contractDeclaration, ok := p.parseBindingContractAfterToken(contractTouchToken, contractDescription)
+		if !ok {
+			return nil, nil, false
+		}
+
+		if p.current.Type == TokenQuestion {
+			p.errorAtCurrent("optional parameter marker must appear immediately after parameter name, before binding contract")
 			return nil, nil, false
 		}
 

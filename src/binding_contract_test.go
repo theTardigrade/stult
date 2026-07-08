@@ -71,6 +71,24 @@ func TestBindingContractsRejectCompoundAssignmentSyntax(t *testing.T) {
 	}
 }
 
+func TestBindingContractsRejectOptionalParameterMarkerAfterContract(t *testing.T) {
+	source := `GREET : { (name<STD.TYPE.STRING|STD.TYPE.VOID>?)
+	((name = _):("Hello"|"Hello, " + name))
+}`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+		})
+	}
+}
+
 func bindingContractRunModes() []bindingContractRunMode {
 	return []bindingContractRunMode{
 		{

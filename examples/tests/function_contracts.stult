@@ -27,12 +27,12 @@ parameter_error : ""
 }
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", parameter_error), "parameter contracts should reject invalid arguments")
 
-MaybeGreeting : { (name<STD.TYPE.STRING|STD.TYPE.VOID>?)
+MaybeGreeting : { (name?<STD.TYPE.STRING|STD.TYPE.VOID>)
 	((name = _):("Hello"|"Hello, " + name))
 }
 
 ASSERT.EQUAL(MaybeGreeting(), "Hello", "optional contracted parameters should allow void when declared")
-ASSERT.EQUAL(MaybeGreeting("Ada"), "Hello, Ada", "optional contracted parameters should allow valid supplied values")
+ASSERT.EQUAL(MaybeGreeting("John"), "Hello, John", "optional contracted parameters should allow valid supplied values")
 
 optional_error : ""
 ?{
@@ -40,6 +40,7 @@ optional_error : ""
 }|{ (error)
 	@optional_error : error
 }
+
 ASSERT.TRUE(IS_FOUND_IN("expects string or void value, got number value", optional_error), "optional contracted parameters should reject invalid supplied values")
 
 SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
@@ -60,6 +61,7 @@ variadic_error : ""
 }|{ (error)
 	@variadic_error : error
 }
+
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", variadic_error), "variadic parameter contracts should reject invalid collected values")
 
 NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(

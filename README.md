@@ -837,10 +837,10 @@ SUM(2, 3)       # valid
 SUM(2, "three") # runtime error
 ```
 
-Optional parameters can use contracts as well. If an optional parameter is omitted, it receives void, so include `STD.TYPE.VOID` when omission should be allowed.
+Optional parameters can use contracts as well. Write the `?` immediately after the parameter name, before the contract. If an optional parameter is omitted, it receives void, so include `STD.TYPE.VOID` when omission should be allowed.
 
 ```stult
-GREET : { (name<STD.TYPE.STRING|STD.TYPE.VOID>?)
+GREET : { (name?<STD.TYPE.STRING|STD.TYPE.VOID>)
 	((name = _):("Hello"|"Hello, " + name))
 }
 ```
