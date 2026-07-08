@@ -8,20 +8,27 @@ share one prototype map but keep separate state.
 The prototype contains shared data and shared methods. Each instance gets small
 wrapper methods that delegate to the shared prototype methods.
 
+The example also shows the counter contracts rejecting invalid method arguments
+and invalid instance-field mutation.
+
 It is intentionally a pattern example rather than new language syntax.
 
 ##
 
 WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+ASSERT : STD.ERROR.ASSERT
 ASSERT_EQUAL : STD.ERROR.ASSERT.EQUAL
+IS_FOUND_IN : STD.TYPE.STRING.IS_FOUND_IN
 
-first : COUNTER_CLASS.new({
+first<COUNTER_MODEL> : COUNTER_CLASS.new({
 	.count : 10
 })
 
-second : COUNTER_CLASS.new({
+second<COUNTER_MODEL> : COUNTER_CLASS.new({
 	.count : 100
 })
+
+ASSERT_EQUAL(COUNTER_CLASS.size(), 2, "size should count registered counters")
 
 ASSERT_EQUAL(first.kind(), "counter", "first counter should read shared prototype data")
 ASSERT_EQUAL(second.kind(), "counter", "second counter should read shared prototype data")
@@ -42,5 +49,25 @@ ASSERT_EQUAL(COUNTER_CLASS.get(second.CLASS_ID), second, "get should return the 
 
 ASSERT_EQUAL(COUNTER_CLASS.prototype.data.kind, "counter", "the class should expose its prototype data")
 ASSERT_EQUAL(COUNTER_CLASS.prototype.data.default_start, 0, "the class should expose its prototype defaults")
+
+add_error : ""
+?{
+	first.add("five")
+}|{ (error)
+	@add_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", add_error), "counter method contracts should reject invalid arguments")
+ASSERT_EQUAL(first.value(), 0, "failed method calls should not change counter state")
+
+field_error : ""
+?{
+	first.count : "zero"
+}|{ (error)
+	@field_error : error
+}
+
+ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", field_error), "counter model contracts should reject invalid field mutation")
+ASSERT_EQUAL(first.value(), 0, "failed field mutation should not change counter state")
 
 WRITE_LINE("MAKE_CLASS_FROM_PROTOTYPE example passed")

@@ -3,10 +3,17 @@
 EXAMPLE: projects/object_oriented_programming/make_class.stult
 
 This file defines MAKE_CLASS_FROM_PROTOTYPE, a small class-like helper
-built only from ordinary Stult maps, functions, closures and manifest ordering.
+built only from ordinary Stult maps, functions, closures, manifest ordering and
+runtime type contracts.
 
-MAKE_CLASS_FROM_PROTOTYPE receives a prototype map. Each prototype entry
-should be a function that receives the instance as its first argument.
+MAKE_CLASS_FROM_PROTOTYPE receives a prototype map with:
+
+- .data as optional shared prototype data and
+- .methods as a map of shared callable values.
+
+Each prototype method receives the instance as its first argument and the shared
+prototype as its second argument. Additional method-call arguments are forwarded
+after those two values.
 
 The returned class map has:
 
@@ -16,70 +23,69 @@ The returned class map has:
 - .prototype for the shared prototype map and
 - .models for the registry of instances.
 
-Each instance gets tiny wrapper methods. The wrappers look up the real instance
-by id and forward the call to the shared prototype method.
+The contracts below describe the generic class shape. Concrete classes can add
+narrower contracts for their own prototype data, methods and instance fields.
 
 ##
 
-MAKE_CLASS_FROM_PROTOTYPE : { (prototype)
-	RAISE : STD.ERROR.RAISE
-	IS_MAP : STD.TYPE.IS_MAP
-	IS_FUNCTION : STD.TYPE.IS_FUNCTION
-	IS_BUILTIN_FUNCTION : STD.TYPE.IS_BUILTIN_FUNCTION
+CALLABLE_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION|STD.TYPE.BUILTIN_FUNCTION>
+
+PROTOTYPE_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.data?: STD.TYPE.MAP<*>
+	.methods: STD.TYPE.MAP<CALLABLE_CONTRACT>
+}>>
+
+MODEL_REGISTRY_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<STD.TYPE.MAP<*>>>
+
+CLASS_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.prototype: PROTOTYPE_CONTRACT
+	.models: MODEL_REGISTRY_CONTRACT
+	.new: STD.TYPE.FUNCTION
+	.get: STD.TYPE.FUNCTION
+	.size: STD.TYPE.FUNCTION
+}>>
+
+MAKE_CLASS_FROM_PROTOTYPE : { (prototype<PROTOTYPE_CONTRACT>) : CLASS_CONTRACT
 	TEXT : STD.TYPE.STRING.NEW
+	SIZE : STD.TYPE.COLLECTION.SIZE
 
-	IS_CALLABLE : { (value)
-		(IS_FUNCTION(value) | IS_BUILTIN_FUNCTION(value))
-	}
+	next_id<STD.TYPE.NUMBER> : 0
+	models<MODEL_REGISTRY_CONTRACT> : {:}
 
-	(!IS_MAP(prototype)) {
-		RAISE("MAKE_CLASS_FROM_PROTOTYPE expects a prototype map")
-	}
+	new : { (fields?<STD.TYPE.MAP<*>|STD.TYPE.VOID>) : STD.TYPE.MAP<*>
+		@next_id :+ 1
 
-	(!IS_MAP(prototype.methods)) {
-		RAISE("MAKE_CLASS_FROM_PROTOTYPE expects prototype.methods to be a map")
-	}
+		id<STD.TYPE.STRING> : TEXT(next_id)
+		model<STD.TYPE.MAP<*>> : (fields = _):({:}|fields)
 
-	((prototype.methods)) { (prototype_method, method_name)
-		(!IS_CALLABLE(prototype_method)) {
-			RAISE("MAKE_CLASS_FROM_PROTOTYPE prototype method '" + method_name + "' must be a function")
+		model.CLASS_ID : id
+		model.CLASS_PROTOTYPE : prototype
+
+		models[id] : model
+
+		((prototype.methods)) { (prototype_method, method_name)
+			model[method_name] : { (...arguments)
+				self : models[id]
+				(prototype_method(self, prototype, arguments...))
+			}
 		}
+
+		(model)
 	}
 
-	next_id : 0
-	models : {:}
+	get : { (id<STD.TYPE.STRING|STD.TYPE.NUMBER>) : STD.TYPE.MAP<*>
+		(models[TEXT(id)])
+	}
+
+	size : { () : STD.TYPE.NUMBER
+		(SIZE(models))
+	}
 
 	({
 		.prototype : prototype
 		.models : models
-
-		.new : { (fields?)
-			((fields ! _) & !IS_MAP(fields)) {
-				RAISE("MAKE_CLASS_FROM_PROTOTYPE.new expects a map of fields, or no fields")
-			}
-
-			@next_id :+ 1
-
-			id : TEXT(next_id)
-			model : (fields = _):({:}|fields)
-
-			model.CLASS_ID : id
-			model.CLASS_PROTOTYPE : prototype
-
-			models[id] : model
-
-			((prototype.methods)) { (prototype_method, method_name)
-				model[method_name] : { (...arguments)
-					self : models[id]
-					(prototype_method(self, prototype, arguments...))
-				}
-			}
-
-			(model)
-		}
-
-		.get : { (id)
-			(models[TEXT(id)])
-		}
+		.new : new
+		.get : get
+		.size : size
 	})
 }

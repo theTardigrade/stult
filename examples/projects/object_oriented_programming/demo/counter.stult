@@ -8,40 +8,63 @@ it with MAKE_CLASS_FROM_PROTOTYPE.
 The method implementations are stored once in COUNTER_PROTOTYPE. Instances get
 small wrappers that delegate to these shared functions.
 
+The contracts in this file describe the counter-specific data and instance
+shape. They also make each prototype method validate its self, prototype and
+ordinary method arguments.
+
 ##
 
-STRING : STD.TYPE.STRING.NEW
+COUNTER_DATA_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.kind: STD.TYPE.STRING
+	.default_start: STD.TYPE.NUMBER
+}>>
 
-COUNTER_PROTOTYPE : {
+COUNTER_PROTOTYPE_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.data: COUNTER_DATA_CONTRACT
+	.methods: STD.TYPE.MAP<STD.TYPE.FUNCTION>
+}>>
+
+COUNTER_MODEL<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.count: STD.TYPE.NUMBER
+	.CLASS_ID?: STD.TYPE.STRING
+	.CLASS_PROTOTYPE?: COUNTER_PROTOTYPE_CONTRACT
+	.increment?: STD.TYPE.FUNCTION
+	.add?: STD.TYPE.FUNCTION
+	.reset?: STD.TYPE.FUNCTION
+	.kind?: STD.TYPE.FUNCTION
+	.value?: STD.TYPE.FUNCTION
+}>>
+
+COUNTER_PROTOTYPE<COUNTER_PROTOTYPE_CONTRACT> : {
 	.data : {
 		.kind : "counter"
 		.default_start : 0
 	}
 
 	.methods : {
-		.increment : { (self, prototype)
+		.increment : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
 			self.count :+ 1
 			(self.count)
 		}
 
-		.add : { (self, prototype, amount)
+		.add : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>, amount<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
 			self.count :+ amount
 			(self.count)
 		}
 
-		.reset : { (self, prototype)
+		.reset : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
 			self.count : prototype.data.default_start
 			(self.count)
 		}
 
-		.kind : { (self, prototype)
+		.kind : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.STRING
 			(prototype.data.kind)
 		}
 
-		.value : { (self, prototype)
+		.value : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
 			(self.count)
 		}
 	}
 }
 
-COUNTER_CLASS : MAKE_CLASS_FROM_PROTOTYPE(COUNTER_PROTOTYPE)
+COUNTER_CLASS<CLASS_CONTRACT> : MAKE_CLASS_FROM_PROTOTYPE(COUNTER_PROTOTYPE)
