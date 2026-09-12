@@ -10,8 +10,9 @@ import (
 	"unicode/utf8"
 )
 
-func NewStdFileMap() Value {
+func NewStdFileMap(runtime *RuntimeContext) Value {
 	entries := map[string]Binding{
+		"BUNDLED":  NewImmutableBinding(NewStdFileBundledMap(runtime)),
 		"COPY":     NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileCopy)),
 		"DELETE":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileDelete)),
 		"EXISTS":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdFileExists)),

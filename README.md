@@ -35,6 +35,9 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Evaluating source strings](#evaluating-source-strings)
   - [Dumping bytecode](#dumping-bytecode)
 - [Manifests](#manifests)
+  - [Running code declared in a manifest](#running-code-declared-in-a-manifest)
+  - [Bundling assets declared in a manifest](#storing-assets-in-a-manifest)
+  - [Formatting a manifest file's fields](#formatting-a-manifest-files-fields)
 - [Bundled executables](#bundled-executables)
 - [Language overview](#language-overview)
   - [Comments](#comments)
@@ -46,6 +49,14 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Bindings](#bindings)
     - [Outer bindings](#outer-bindings)
     - [Boolean bindings](#boolean-bindings)
+  - [Optional type system](#optional-type-system)
+    - [Unnamed contracts](#unnamed-contracts)
+    - [Named contracts](#named-contracts)
+    - [Structured map contracts](#structured-map-contracts)
+    - [Function contracts](#function-contracts)
+    - [Union contracts](#union-contracts)
+    - [Contract aliases](#contract-aliases)
+    - [Contract syntax](#contract-syntax)
   - [Operators](#operators)
   - [Compound assignment](#compound-assignment)
   - [Collections](#collections)
@@ -77,14 +88,6 @@ STULTON, Stult’s native data notation, uses the `.stulton` extension.
   - [Commas and newlines](#commas-and-newlines)
     - [Trailing commas](#trailing-commas)
     - [Splitting expressions across lines](#splitting-expressions-across-lines)
-  - [Optional type system](#optional-type-system)
-    - [Unnamed contracts](#unnamed-contracts)
-    - [Named contracts](#named-contracts)
-    - [Structured map contracts](#structured-map-contracts)
-    - [Function contracts](#function-contracts)
-    - [Union contracts](#union-contracts)
-    - [Contract aliases](#contract-aliases)
-    - [Contract syntax](#contract-syntax)
 - [Standard library](#standard-library)
 - [STULTON](#stulton)
 - [Repository layout](#repository-layout)
@@ -378,6 +381,10 @@ stult dump -e 'STD.IO.OUTPUT.WRITE_LINE("hello")'
 
 ## Manifests
 
+For detailed information about manifest files, please see [docs/manifests.md](docs/manifests.md).
+
+### Running code declared in a manifest
+
 A manifest-based project can list multiple Stult source files.
 
 Files run deterministically in the order specified in the manifest file. This allows one file to define bindings that later files can use.
@@ -413,8 +420,6 @@ A JSON manifest uses lowercase JSON-style fields:
 }
 ```
 
-Manifest field names are intentionally format-specific: use uppercase `RUN` in `manifest.stulton` and lowercase `run` in `manifest.json`.
-
 Run a project directory that contains a manifest:
 
 ```bash
@@ -433,7 +438,29 @@ Run from inside a project directory:
 stult run
 ```
 
-For more information about manifest files, please see [docs/manifests.md](docs/manifests.md).
+### Storing assets in a manifest
+
+Manifests can also declare named assets. Asset names are used by Stult code through `STD.FILE.BUNDLED`, while source paths stay in the manifest:
+
+```stulton
+{
+	"RUN": "main.stult"
+
+	"ASSETS": {
+		"CONFIG": "data/config.stulton"
+		"TEMPLATES": "templates"
+	}
+}
+```
+
+```stult
+CONFIG : STD.DATA.STULTON.PARSE(STD.FILE.BUNDLED.READ("CONFIG"))
+HELP : STD.FILE.BUNDLED.READ("TEMPLATES", "help.txt")
+```
+
+### Formatting a manifest file's fields
+
+Manifest field names are intentionally format-specific: use uppercase `RUN` and `ASSETS` in `manifest.stulton`, and lowercase `run` and `assets` in `manifest.json`.
 
 ## Bundled executables
 
@@ -445,8 +472,9 @@ A bytecode bundle embeds:
 
 - the Stult runtime,
 - a manifest,
-- compiled bytecode *and*
-- bytecode metadata needed to map manifest entries to bundled bytecode.
+- compiled bytecode,
+- bytecode metadata needed to map manifest entries to bundled bytecode *and*
+- any assets declared by the manifest.
 
 Build a bytecode bundle:
 
@@ -473,8 +501,9 @@ stult build --interpreter examples/projects/bool --output bool-app
 A source/interpreter bundle embeds:
 
 - the Stult runtime,
-- a manifest *and*
-- the `.stult` source files needed by that manifest.
+- a manifest,
+- the `.stult` source files needed by that manifest *and*
+- any assets declared by the manifest.
 
 In either case, run the generated executable directly:
 
@@ -654,6 +683,339 @@ The standard library also provides equivalent boolean bindings, which can be use
 ```stult
 TRUE : STD.TYPE.BOOL.TRUE
 FALSE : STD.TYPE.BOOL.FALSE
+```
+
+### Optional type system
+
+Stult is dynamic by default. A normal binding can be reassigned to any kind of value:
+
+```stult
+value : 0
+value : "zero"
+value : {:}
+```
+
+When you want a binding to stay within a particular shape, you can give it a contract when it is created.
+
+```stult
+amount<STD.TYPE.NUMBER> : 11
+amount : 12       # valid
+amount : "twelve" # runtime error
+```
+
+Contracts are optional. When you do use one, Stult checks it while the program runs.
+
+#### Unnamed contracts
+
+Unnamed contracts are the smallest contracts Stult provides.
+
+Use `<.>` when a binding should keep the same kind of value it started with:
+
+```stult
+count<.> : 0
+count : 1       # valid
+count : "one"   # runtime error
+```
+
+Use `<*>` when you want to be explicit that the binding should stay fully dynamic:
+
+```stult
+value<*> : 0
+value : "zero"  # valid
+value : {:}     # valid
+```
+
+#### Named contracts
+
+Named contracts use the standard-library type names directly inside the angle brackets:
+
+```stult
+amount<STD.TYPE.NUMBER> : 11
+name<STD.TYPE.STRING> : "test"
+flag<STD.TYPE.BOOL> : +
+```
+
+Array and map contracts can also describe the values they contain:
+
+```stult
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Ada", "Grace"}
+
+names[2] : "Katherine" # valid
+names[3] : 123         # runtime error
+```
+
+```stult
+flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
+	"dev": -
+	"prod": +
+}
+
+flags["test"] : +               # valid
+flags["temp"] : "not available" # runtime error
+```
+
+Map keys are always strings, so `STD.TYPE.MAP<contract>` describes the map’s values, not its keys. For maps where particular keys are expected, use a structured map contract.
+
+Use `STD.TYPE.COLLECTION` when any collection is allowed. It accepts arrays, maps and strings, and is equivalent to `STD.TYPE.ARRAY<*>|STD.TYPE.MAP<*>|STD.TYPE.STRING`.
+
+```stult
+value<STD.TYPE.COLLECTION> : {1, 2, 3}
+
+value : {:}      # valid
+value : "1-2-3" # valid
+value : -        # runtime error
+```
+
+`STD.TYPE.COLLECTION` does not take a nested contract. Use explicit array or map contracts when the contained values matter.
+
+Collection contracts stay attached to the collection itself. That means an alias cannot bypass the contract:
+
+```stult
+names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Example"}
+
+alias : names
+alias[1] : 123 # runtime error
+```
+
+Supported named contracts are:
+
+```text
+STD.TYPE.VOID
+STD.TYPE.NUMBER
+STD.TYPE.BOOL
+STD.TYPE.STRING
+STD.TYPE.COLLECTION
+STD.TYPE.ARRAY
+STD.TYPE.ARRAY<contract>
+STD.TYPE.MAP
+STD.TYPE.MAP<contract>
+STD.TYPE.MAP<{ key-contracts }>
+STD.TYPE.FUNCTION
+STD.TYPE.FUNCTION<(parameter-contracts): return-contract>
+STD.TYPE.BUILTIN_FUNCTION
+STD.TYPE.CONTRACT
+```
+
+#### Structured map contracts
+
+Use a structured map contract when a map should have particular keys.
+
+```stult
+User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+	.role?: STD.TYPE.STRING
+}>>
+
+user<User> : {
+	.name: "Jake"
+	.age: 28
+}
+
+user.role : "admin" # valid
+user.age : "late twenties" # runtime error
+```
+
+A key without `?` is required. A key with `?` is optional, but if it exists, its value must satisfy the key's contract.
+
+Structured map contracts are strict by default. Extra keys are rejected unless you add a wildcard entry.
+
+```stult
+User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	.age: STD.TYPE.NUMBER
+	_: STD.TYPE.STRING
+}>>
+
+user<User> : {
+	.name: "Ada"
+	.age: 37
+	.country: "UK" # valid because the wildcard accepts strings
+}
+
+user.active : + # runtime error
+```
+
+Use `_: *` when extra keys should be allowed with any kind of value.
+
+```stult
+OpenUser<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
+	.name: STD.TYPE.STRING
+	_: *
+}>>
+
+user<OpenUser> : {
+	.name: "Ada"
+	.active: +
+	.score: 99
+}
+```
+
+Structured map contracts stay attached to the map value, so aliases cannot bypass them.
+
+#### Function contracts
+
+Function parameters can have contracts too. The contract is checked when the function is called and the argument is bound to the parameter.
+
+```stult
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>)
+	(a + b)
+}
+
+SUM(2, 3)       # valid
+SUM(2, "three") # runtime error
+```
+
+Optional parameters can use contracts as well. Write the `?` immediately after the parameter name, before the contract. If an optional parameter is omitted, it receives void, so include `STD.TYPE.VOID` when omission should be allowed.
+
+```stult
+GREET : { (name?<STD.TYPE.STRING|STD.TYPE.VOID>)
+	((name = _):("Hello"|"Hello, " + name))
+}
+```
+
+A variadic parameter contract applies to the collected array value.
+
+```stult
+SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
+	total : 0
+
+	((values)) { (value)
+		@total :+ value
+	}
+
+	(total)
+}
+```
+
+Function literals can also declare a return contract after the parameter list. The `:` must be on the same line as the closing `)`, but horizontal space is allowed. If the line ends with `:`, the contract itself may continue on the next line.
+
+```stult
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a + b)
+}
+
+SUM_LONG : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) :
+	STD.TYPE.NUMBER
+
+	(a + b)
+}
+```
+
+Use `STD.TYPE.FUNCTION<(...) : ...>` when you want a reusable function signature contract. The contracts inside the parentheses describe the arguments. The contract after `:` describes the return value.
+
+```stult
+NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
+	STD.TYPE.NUMBER
+	STD.TYPE.NUMBER
+): STD.TYPE.NUMBER>>
+
+ADD<NumberBinaryFunction> : { (a, b)
+	(a + b)
+}
+
+ADD(10, 5)     # valid
+ADD(10, "five") # runtime error
+```
+
+Function signature contracts are checked when the function is called. That means they can check arguments before the body runs and check the returned value after the body finishes.
+
+If a function has both an outer signature contract and inner parameter or return contracts, those contracts must be compatible when the function binding is created. Inner parameter contracts may be the same as or broader than the outer signature. Inner return contracts may be the same as or narrower than the outer signature.
+
+```stult
+ADD<NumberBinaryFunction> : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+	(a + b)
+}
+
+BADD<NumberBinaryFunction> : { (a<STD.TYPE.STRING>, b<STD.TYPE.STRING>)
+	(a + b)
+} # runtime error when BADD is bound
+```
+
+Like collection contracts, function signature contracts stay attached to the function value, so aliases cannot bypass them.
+
+#### Union contracts
+
+Use `|` when more than one kind of value should be accepted:
+
+```stult
+value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
+
+value : +      # valid
+value : "test" # runtime error
+```
+
+Union contracts also work inside array and map contracts:
+
+```stult
+items<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
+	1, "two", 3, "four"
+}
+
+items[4] : 5      # valid
+items[5] : "six"  # valid
+items[6] : +      # runtime error
+```
+
+A union contract accepts a value when any one of its options accepts that value.
+
+#### Contract aliases
+
+When a contract gets long, you can store it in a binding and reuse it by name.
+
+```stult
+NumberOrStringArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>
+
+value<NumberOrStringArray> : {
+	1, "two", 3, "four"
+}
+
+value2<NumberOrStringArray> : {
+	"test", 99, 100, 101
+}
+```
+
+The expression `<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>` creates a contract value.
+
+`STD.TYPE.CONTRACT` is the standard type contract for those contract values:
+
+```stult
+STD.TYPE.IS_CONTRACT(NumberOrStringArray) # true
+```
+
+A binding used as a contract alias is checked at the point where it is used. Its current value must be a contract value:
+
+```stult
+Type<STD.TYPE.CONTRACT|STD.TYPE.NUMBER> : <STD.TYPE.NUMBER>
+Type : 21
+
+value<Type> : 1 # runtime error, because Type is currently a number
+```
+
+Changing an alias later does not change contracts that were already attached to earlier bindings.
+
+#### Contract syntax
+
+The contract marker must touch the binding name.
+
+```stult
+count_a<.> : 0   # valid
+count_b <.> : 0  # invalid
+```
+
+Contracts can only be added when a binding is created. Reassignments use the normal `name : value` form.
+
+```stult
+value<STD.TYPE.NUMBER> : 1
+value<STD.TYPE.NUMBER> : 2 # runtime error
+value : 2                  # valid
+```
+
+Immutable bindings can use contracts too, even though they cannot be reassigned:
+
+```stult
+LIMIT<STD.TYPE.NUMBER> : 10
+NAME<STD.TYPE.STRING> : "Example"
 ```
 
 ### Operators
@@ -1768,339 +2130,6 @@ label : (allowed) : (
 ```
 
 A newline normally ends the current statement or item. So if you want to continue an expression onto the next line, put the operator or branch separator at the end of the previous line, not at the start of the next one.
-
-### Optional type system
-
-Stult is dynamic by default. A normal binding can be reassigned to any kind of value:
-
-```stult
-value : 0
-value : "zero"
-value : {:}
-```
-
-When you want a binding to stay within a particular shape, you can give it a contract when it is created.
-
-```stult
-amount<STD.TYPE.NUMBER> : 11
-amount : 12       # valid
-amount : "twelve" # runtime error
-```
-
-Contracts are optional. When you do use one, Stult checks it while the program runs.
-
-#### Unnamed contracts
-
-Unnamed contracts are the smallest contracts Stult provides.
-
-Use `<.>` when a binding should keep the same kind of value it started with:
-
-```stult
-count<.> : 0
-count : 1       # valid
-count : "one"   # runtime error
-```
-
-Use `<*>` when you want to be explicit that the binding should stay fully dynamic:
-
-```stult
-value<*> : 0
-value : "zero"  # valid
-value : {:}     # valid
-```
-
-#### Named contracts
-
-Named contracts use the standard-library type names directly inside the angle brackets:
-
-```stult
-amount<STD.TYPE.NUMBER> : 11
-name<STD.TYPE.STRING> : "test"
-flag<STD.TYPE.BOOL> : +
-```
-
-Array and map contracts can also describe the values they contain:
-
-```stult
-names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Ada", "Grace"}
-
-names[2] : "Katherine" # valid
-names[3] : 123         # runtime error
-```
-
-```stult
-flags<STD.TYPE.MAP<STD.TYPE.BOOL>> : {
-	"dev": -
-	"prod": +
-}
-
-flags["test"] : +               # valid
-flags["temp"] : "not available" # runtime error
-```
-
-Map keys are always strings, so `STD.TYPE.MAP<contract>` describes the map’s values, not its keys. For maps where particular keys are expected, use a structured map contract.
-
-Use `STD.TYPE.COLLECTION` when any collection is allowed. It accepts arrays, maps and strings, and is equivalent to `STD.TYPE.ARRAY<*>|STD.TYPE.MAP<*>|STD.TYPE.STRING`.
-
-```stult
-value<STD.TYPE.COLLECTION> : {1, 2, 3}
-
-value : {:}      # valid
-value : "1-2-3" # valid
-value : -        # runtime error
-```
-
-`STD.TYPE.COLLECTION` does not take a nested contract. Use explicit array or map contracts when the contained values matter.
-
-Collection contracts stay attached to the collection itself. That means an alias cannot bypass the contract:
-
-```stult
-names<STD.TYPE.ARRAY<STD.TYPE.STRING>> : {"Example"}
-
-alias : names
-alias[1] : 123 # runtime error
-```
-
-Supported named contracts are:
-
-```text
-STD.TYPE.VOID
-STD.TYPE.NUMBER
-STD.TYPE.BOOL
-STD.TYPE.STRING
-STD.TYPE.COLLECTION
-STD.TYPE.ARRAY
-STD.TYPE.ARRAY<contract>
-STD.TYPE.MAP
-STD.TYPE.MAP<contract>
-STD.TYPE.MAP<{ key-contracts }>
-STD.TYPE.FUNCTION
-STD.TYPE.FUNCTION<(parameter-contracts): return-contract>
-STD.TYPE.BUILTIN_FUNCTION
-STD.TYPE.CONTRACT
-```
-
-#### Structured map contracts
-
-Use a structured map contract when a map should have particular keys.
-
-```stult
-User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
-	.name: STD.TYPE.STRING
-	.age: STD.TYPE.NUMBER
-	.role?: STD.TYPE.STRING
-}>>
-
-user<User> : {
-	.name: "Jake"
-	.age: 28
-}
-
-user.role : "admin" # valid
-user.age : "late twenties" # runtime error
-```
-
-A key without `?` is required. A key with `?` is optional, but if it exists, its value must satisfy the key's contract.
-
-Structured map contracts are strict by default. Extra keys are rejected unless you add a wildcard entry.
-
-```stult
-User<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
-	.name: STD.TYPE.STRING
-	.age: STD.TYPE.NUMBER
-	_: STD.TYPE.STRING
-}>>
-
-user<User> : {
-	.name: "Ada"
-	.age: 37
-	.country: "UK" # valid because the wildcard accepts strings
-}
-
-user.active : + # runtime error
-```
-
-Use `_: *` when extra keys should be allowed with any kind of value.
-
-```stult
-OpenUser<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
-	.name: STD.TYPE.STRING
-	_: *
-}>>
-
-user<OpenUser> : {
-	.name: "Ada"
-	.active: +
-	.score: 99
-}
-```
-
-Structured map contracts stay attached to the map value, so aliases cannot bypass them.
-
-#### Function contracts
-
-Function parameters can have contracts too. The contract is checked when the function is called and the argument is bound to the parameter.
-
-```stult
-SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>)
-	(a + b)
-}
-
-SUM(2, 3)       # valid
-SUM(2, "three") # runtime error
-```
-
-Optional parameters can use contracts as well. Write the `?` immediately after the parameter name, before the contract. If an optional parameter is omitted, it receives void, so include `STD.TYPE.VOID` when omission should be allowed.
-
-```stult
-GREET : { (name?<STD.TYPE.STRING|STD.TYPE.VOID>)
-	((name = _):("Hello"|"Hello, " + name))
-}
-```
-
-A variadic parameter contract applies to the collected array value.
-
-```stult
-SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
-	total : 0
-
-	((values)) { (value)
-		@total :+ value
-	}
-
-	(total)
-}
-```
-
-Function literals can also declare a return contract after the parameter list. The `:` must be on the same line as the closing `)`, but horizontal space is allowed. If the line ends with `:`, the contract itself may continue on the next line.
-
-```stult
-SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
-	(a + b)
-}
-
-SUM_LONG : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) :
-	STD.TYPE.NUMBER
-
-	(a + b)
-}
-```
-
-Use `STD.TYPE.FUNCTION<(...) : ...>` when you want a reusable function signature contract. The contracts inside the parentheses describe the arguments. The contract after `:` describes the return value.
-
-```stult
-NumberBinaryFunction<STD.TYPE.CONTRACT> : <STD.TYPE.FUNCTION<(
-	STD.TYPE.NUMBER
-	STD.TYPE.NUMBER
-): STD.TYPE.NUMBER>>
-
-ADD<NumberBinaryFunction> : { (a, b)
-	(a + b)
-}
-
-ADD(10, 5)     # valid
-ADD(10, "five") # runtime error
-```
-
-Function signature contracts are checked when the function is called. That means they can check arguments before the body runs and check the returned value after the body finishes.
-
-If a function has both an outer signature contract and inner parameter or return contracts, those contracts must be compatible when the function binding is created. Inner parameter contracts may be the same as or broader than the outer signature. Inner return contracts may be the same as or narrower than the outer signature.
-
-```stult
-ADD<NumberBinaryFunction> : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
-	(a + b)
-}
-
-BADD<NumberBinaryFunction> : { (a<STD.TYPE.STRING>, b<STD.TYPE.STRING>)
-	(a + b)
-} # runtime error when BADD is bound
-```
-
-Like collection contracts, function signature contracts stay attached to the function value, so aliases cannot bypass them.
-
-#### Union contracts
-
-Use `|` when more than one kind of value should be accepted:
-
-```stult
-value<STD.TYPE.NUMBER|STD.TYPE.BOOL> : 11
-
-value : +      # valid
-value : "test" # runtime error
-```
-
-Union contracts also work inside array and map contracts:
-
-```stult
-items<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>> : {
-	1, "two", 3, "four"
-}
-
-items[4] : 5      # valid
-items[5] : "six"  # valid
-items[6] : +      # runtime error
-```
-
-A union contract accepts a value when any one of its options accepts that value.
-
-#### Contract aliases
-
-When a contract gets long, you can store it in a binding and reuse it by name.
-
-```stult
-NumberOrStringArray<STD.TYPE.CONTRACT> : <STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>
-
-value<NumberOrStringArray> : {
-	1, "two", 3, "four"
-}
-
-value2<NumberOrStringArray> : {
-	"test", 99, 100, 101
-}
-```
-
-The expression `<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>` creates a contract value.
-
-`STD.TYPE.CONTRACT` is the standard type contract for those contract values:
-
-```stult
-STD.TYPE.IS_CONTRACT(NumberOrStringArray) # true
-```
-
-A binding used as a contract alias is checked at the point where it is used. Its current value must be a contract value:
-
-```stult
-Type<STD.TYPE.CONTRACT|STD.TYPE.NUMBER> : <STD.TYPE.NUMBER>
-Type : 21
-
-value<Type> : 1 # runtime error, because Type is currently a number
-```
-
-Changing an alias later does not change contracts that were already attached to earlier bindings.
-
-#### Contract syntax
-
-The contract marker must touch the binding name.
-
-```stult
-count_a<.> : 0   # valid
-count_b <.> : 0  # invalid
-```
-
-Contracts can only be added when a binding is created. Reassignments use the normal `name : value` form.
-
-```stult
-value<STD.TYPE.NUMBER> : 1
-value<STD.TYPE.NUMBER> : 2 # runtime error
-value : 2                  # valid
-```
-
-Immutable bindings can use contracts too, even though they cannot be reassigned:
-
-```stult
-LIMIT<STD.TYPE.NUMBER> : 10
-NAME<STD.TYPE.STRING> : "Example"
-```
 
 ## Standard library
 

@@ -8,7 +8,7 @@ func NewStdMap(runtime *RuntimeContext) Value {
 	entries := map[string]Binding{
 		"DATA":   NewImmutableBinding(NewStdDataMap()),
 		"ERROR":  NewImmutableBinding(NewStdErrorMap()),
-		"FILE":   NewImmutableBinding(NewStdFileMap()),
+		"FILE":   NewImmutableBinding(NewStdFileMap(runtime)),
 		"IO":     NewImmutableBinding(NewStdIOMap()),
 		"MATH":   NewImmutableBinding(NewStdMathMap()),
 		"SYSTEM": NewImmutableBinding(NewStdSystemMap(runtime)),

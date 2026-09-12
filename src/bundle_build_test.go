@@ -271,3 +271,150 @@ func executablePathForIntegrationTest(path string) string {
 
 	return path
 }
+
+func TestBuildManifestProjectBundleReadsNamedAssetsInBytecodeMode(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping bundle/build integration test in short mode")
+	}
+
+	runner := buildStultRunnerForIntegrationTest(t)
+	workDir := t.TempDir()
+	projectDir := filepath.Join(workDir, "asset-project")
+	writeNamedAssetProjectForIntegrationTest(t, projectDir)
+
+	outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "asset-bytecode"))
+
+	buildResult := runCommandForIntegrationTest(
+		t,
+		workDir,
+		runner,
+		"build",
+		"--bytecode",
+		projectDir,
+		"-o",
+		outputPath,
+	)
+	if buildResult.Err != nil {
+		t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
+	}
+
+	if err := os.RemoveAll(projectDir); err != nil {
+		t.Fatalf("could not remove project directory before bundled run: %v", err)
+	}
+
+	runResult := runCommandForIntegrationTest(t, workDir, outputPath)
+	if runResult.Err != nil {
+		t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
+	}
+	if runResult.Stdout != namedAssetProjectExpectedStdout() {
+		t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
+	}
+	if runResult.Stderr != "" {
+		t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
+	}
+}
+
+func TestBuildManifestProjectBundleReadsNamedAssetsInInterpreterMode(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping bundle/build integration test in short mode")
+	}
+
+	runner := buildStultRunnerForIntegrationTest(t)
+	workDir := t.TempDir()
+	projectDir := filepath.Join(workDir, "asset-project")
+	writeNamedAssetProjectForIntegrationTest(t, projectDir)
+
+	outputPath := executablePathForIntegrationTest(filepath.Join(workDir, "asset-interpreter"))
+
+	buildResult := runCommandForIntegrationTest(
+		t,
+		workDir,
+		runner,
+		"build",
+		"--interpreter",
+		projectDir,
+		"-o",
+		outputPath,
+	)
+	if buildResult.Err != nil {
+		t.Fatalf("build failed: %v\nstdout:\n%s\nstderr:\n%s", buildResult.Err, buildResult.Stdout, buildResult.Stderr)
+	}
+
+	if err := os.RemoveAll(projectDir); err != nil {
+		t.Fatalf("could not remove project directory before bundled run: %v", err)
+	}
+
+	runResult := runCommandForIntegrationTest(t, workDir, outputPath)
+	if runResult.Err != nil {
+		t.Fatalf("bundled executable failed: %v\nstdout:\n%s\nstderr:\n%s", runResult.Err, runResult.Stdout, runResult.Stderr)
+	}
+	if runResult.Stdout != namedAssetProjectExpectedStdout() {
+		t.Fatalf("unexpected bundled stdout: %q", runResult.Stdout)
+	}
+	if runResult.Stderr != "" {
+		t.Fatalf("unexpected bundled stderr: %q", runResult.Stderr)
+	}
+}
+
+func TestManifestProjectRunReadsNamedAssetsFromProjectDirectory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping run integration test in short mode")
+	}
+
+	runner := buildStultRunnerForIntegrationTest(t)
+	workDir := t.TempDir()
+	projectDir := filepath.Join(workDir, "asset-project")
+	writeNamedAssetProjectForIntegrationTest(t, projectDir)
+
+	for _, mode := range []string{"--bytecode", "--interpreter"} {
+		runResult := runCommandForIntegrationTest(t, workDir, runner, "run", mode, projectDir)
+		if runResult.Err != nil {
+			t.Fatalf("%s run failed: %v\nstdout:\n%s\nstderr:\n%s", mode, runResult.Err, runResult.Stdout, runResult.Stderr)
+		}
+		if runResult.Stdout != namedAssetProjectExpectedStdout() {
+			t.Fatalf("unexpected %s stdout: %q", mode, runResult.Stdout)
+		}
+		if runResult.Stderr != "" {
+			t.Fatalf("unexpected %s stderr: %q", mode, runResult.Stderr)
+		}
+	}
+}
+
+func writeNamedAssetProjectForIntegrationTest(t *testing.T, projectDir string) {
+	t.Helper()
+
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, ManifestStultonFilename), `{
+	"RUN": "main.stult"
+	"ASSETS": {
+		"CONFIG": "./data/config.stulton"
+		"BINARY": "./data/bytes.bin"
+		"TEMPLATES": "./templates"
+	}
+}
+`)
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, "main.stult"), `READ : STD.FILE.BUNDLED.READ
+WRITE_LINE : STD.IO.OUTPUT.WRITE_LINE
+JOIN : STD.TYPE.STRING.JOIN
+PARSE : STD.DATA.STULTON.PARSE
+
+config : PARSE(READ("CONFIG"))
+WRITE_LINE(config.label)
+WRITE_LINE(READ("TEMPLATES", "help.txt"))
+bytes : READ("BINARY", _, +)
+WRITE_LINE(bytes[0], "-", bytes[1])
+WRITE_LINE(JOIN(STD.FILE.BUNDLED.KEYS(), ","))
+WRITE_LINE(JOIN(STD.FILE.BUNDLED.LIST("TEMPLATES"), ","))
+`)
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, "data", "config.stulton"), `{"label": "example"}`)
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, "data", "bytes.bin"), string([]byte{65, 66}))
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, "templates", "help.txt"), "Help text.")
+	writeFileForIntegrationTest(t, filepath.Join(projectDir, "templates", "emails", "welcome.txt"), "Welcome.")
+}
+
+func namedAssetProjectExpectedStdout() string {
+	return "example\n" +
+		"Help text.\n" +
+		"65-66\n" +
+		"BINARY,CONFIG,TEMPLATES\n" +
+		"emails/welcome.txt,help.txt\n"
+}

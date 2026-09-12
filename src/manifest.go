@@ -22,13 +22,16 @@ type Manifest struct {
 
 	Run      []string
 	RunFiles []string
+	Assets   map[string]string
 }
 
 type manifestFile struct {
-	Run manifestRunList
+	Run    manifestRunList
+	Assets manifestAssetMap
 }
 
 type manifestRunList []string
+type manifestAssetMap map[string]string
 
 func LoadManifestFromFS(files fs.FS, filename string) (*Manifest, error) {
 	if strings.TrimSpace(filename) == "" {
@@ -64,10 +67,16 @@ func LoadManifestFromFS(files fs.FS, filename string) (*Manifest, error) {
 }
 
 func newManifest(filename string, dir string, file manifestFile) (*Manifest, error) {
+	assets, err := resolveManifestAssetSourcesFromFS(dir, file.Assets)
+	if err != nil {
+		return nil, fmt.Errorf("Manifest %q has invalid assets: %w", filename, err)
+	}
+
 	manifest := &Manifest{
-		Path: filename,
-		Dir:  dir,
-		Run:  []string(file.Run),
+		Path:   filename,
+		Dir:    dir,
+		Run:    []string(file.Run),
+		Assets: assets,
 	}
 
 	if err := manifest.validate(); err != nil {
@@ -105,20 +114,29 @@ func parseJSONManifest(bytes []byte) (manifestFile, error) {
 	if _, hasUpperRun := fields["RUN"]; hasUpperRun {
 		return manifestFile{}, fmt.Errorf(`manifest.json uses lowercase "run"; found "RUN"`)
 	}
-
-	runBytes, hasRun := fields["run"]
-	if !hasRun {
-		return manifestFile{}, nil
+	if _, hasUpperAssets := fields["ASSETS"]; hasUpperAssets {
+		return manifestFile{}, fmt.Errorf(`manifest.json uses lowercase "assets"; found "ASSETS"`)
 	}
 
-	var run manifestRunList
-	if err := json.Unmarshal(runBytes, &run); err != nil {
-		return manifestFile{}, err
+	var file manifestFile
+
+	if runBytes, hasRun := fields["run"]; hasRun {
+		var run manifestRunList
+		if err := json.Unmarshal(runBytes, &run); err != nil {
+			return manifestFile{}, err
+		}
+		file.Run = run
 	}
 
-	return manifestFile{
-		Run: run,
-	}, nil
+	if assetsBytes, hasAssets := fields["assets"]; hasAssets {
+		var assets manifestAssetMap
+		if err := json.Unmarshal(assetsBytes, &assets); err != nil {
+			return manifestFile{}, err
+		}
+		file.Assets = assets
+	}
+
+	return file, nil
 }
 
 func parseStultonManifest(bytes []byte) (manifestFile, error) {
@@ -144,20 +162,29 @@ func manifestFileFromStultonValue(value Value) (manifestFile, error) {
 	if value.Map.Has("run") {
 		return manifestFile{}, fmt.Errorf(`manifest.stulton uses uppercase "RUN"; found "run"`)
 	}
-
-	runBinding, hasRun := value.Map.Get("RUN")
-	if !hasRun {
-		return manifestFile{}, nil
+	if value.Map.Has("assets") {
+		return manifestFile{}, fmt.Errorf(`manifest.stulton uses uppercase "ASSETS"; found "assets"`)
 	}
 
-	run, err := manifestRunListFromValue(runBinding.Value)
-	if err != nil {
-		return manifestFile{}, fmt.Errorf("invalid manifest field %q: %w", "RUN", err)
+	var file manifestFile
+
+	if runBinding, hasRun := value.Map.Get("RUN"); hasRun {
+		run, err := manifestRunListFromValue(runBinding.Value)
+		if err != nil {
+			return manifestFile{}, fmt.Errorf("invalid manifest field %q: %w", "RUN", err)
+		}
+		file.Run = run
 	}
 
-	return manifestFile{
-		Run: run,
-	}, nil
+	if assetsBinding, hasAssets := value.Map.Get("ASSETS"); hasAssets {
+		assets, err := manifestAssetMapFromValue(assetsBinding.Value)
+		if err != nil {
+			return manifestFile{}, fmt.Errorf("invalid manifest field %q: %w", "ASSETS", err)
+		}
+		file.Assets = assets
+	}
+
+	return file, nil
 }
 
 func manifestRunListFromValue(value Value) (manifestRunList, error) {
@@ -196,6 +223,32 @@ func manifestRunListFromValue(value Value) (manifestRunList, error) {
 	default:
 		return nil, fmt.Errorf("run must be a string or an array of strings")
 	}
+}
+
+func manifestAssetMapFromValue(value Value) (manifestAssetMap, error) {
+	value = resolveSpecializedValue(value)
+
+	if value.Kind != ValueMap {
+		return nil, fmt.Errorf("assets must be a map from access names to source paths")
+	}
+	if value.Map == nil {
+		return nil, fmt.Errorf("assets map is invalid")
+	}
+
+	assets := manifestAssetMap{}
+	if err := value.Map.ForEach(func(name string, binding Binding) error {
+		path, err := manifestStringFromValue(binding.Value)
+		if err != nil {
+			return fmt.Errorf("asset %q path must be a string", name)
+		}
+
+		assets[name] = path
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	return assets, nil
 }
 
 func manifestStringFromValue(value Value) (string, error) {
@@ -251,6 +304,29 @@ func resolveManifestRunFilesFromFS(baseDir string, runFiles []string) []string {
 	}
 
 	return resolved
+}
+
+func resolveManifestAssetSourcesFromFS(baseDir string, assets map[string]string) (map[string]string, error) {
+	resolved := map[string]string{}
+
+	for name, source := range assets {
+		if err := validateManifestAssetName(name); err != nil {
+			return nil, fmt.Errorf("asset %q: %w", name, err)
+		}
+
+		cleanedSource, err := cleanManifestAssetSourcePath(source)
+		if err != nil {
+			return nil, fmt.Errorf("asset %q: %w", name, err)
+		}
+
+		if baseDir != "" {
+			cleanedSource = path.Clean(path.Join(baseDir, cleanedSource))
+		}
+
+		resolved[name] = cleanedSource
+	}
+
+	return resolved, nil
 }
 
 func cleanManifestFSPath(filename string) string {

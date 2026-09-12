@@ -53,7 +53,12 @@ func runEmbeddedBundle(files fs.FS) error {
 		return err
 	}
 
-	interpreter := NewInterpreterWithArgs(os.Args[1:])
+	runtime := NewRuntimeContext(os.Args[1:])
+	runtime.BundleAssets, err = NewEmbeddedBundleAssetStore(files)
+	if err != nil {
+		return err
+	}
+	interpreter := NewInterpreterWithRuntime(runtime)
 
 	return runManifestFromFS(interpreter, files, manifest.RunFiles)
 }
@@ -69,7 +74,12 @@ func runEmbeddedBytecodeBundle(files fs.FS) error {
 		return err
 	}
 
-	vm := NewBytecodeVM(os.Args[1:])
+	runtime := NewRuntimeContext(os.Args[1:])
+	runtime.BundleAssets, err = NewEmbeddedBundleAssetStore(files)
+	if err != nil {
+		return err
+	}
+	vm := NewBytecodeVMWithRuntime(runtime)
 
 	return runBundledBytecodeManifestFromFS(vm, files, manifest.RunFiles)
 }

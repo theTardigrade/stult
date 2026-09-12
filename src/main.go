@@ -313,7 +313,9 @@ func runManifestFileWithArgs(filename string, args []string) error {
 		return err
 	}
 
-	interpreter := NewInterpreterWithArgs(args)
+	runtime := NewRuntimeContext(args)
+	runtime.BundleAssets = NewProjectBundleAssetStore(files, manifest.Assets)
+	interpreter := NewInterpreterWithRuntime(runtime)
 
 	return runManifestFromFS(interpreter, files, manifest.RunFiles)
 }
@@ -324,7 +326,9 @@ func runManifestFileWithBytecode(filename string, args []string) error {
 		return err
 	}
 
-	vm := NewBytecodeVM(args)
+	runtime := NewRuntimeContext(args)
+	runtime.BundleAssets = NewProjectBundleAssetStore(files, manifest.Assets)
+	vm := NewBytecodeVMWithRuntime(runtime)
 
 	return runBytecodeManifestFromFS(vm, files, manifest.RunFiles)
 }

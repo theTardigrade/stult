@@ -18,11 +18,32 @@ func createProjectBundleArchiveWithOptions(
 
 	zipWriter := zip.NewWriter(&buffer)
 
+	manifestPath, found, err := findManifestInDirectory(projectDir)
+	if err != nil {
+		zipWriter.Close()
+		return nil, err
+	}
+	if !found {
+		zipWriter.Close()
+		return nil, fmt.Errorf(
+			"Project directory %q must contain %s or %s",
+			projectDir,
+			ManifestStultonFilename,
+			ManifestJSONFilename,
+		)
+	}
+
+	manifest, _, err := loadManifestFileFromFS(manifestPath)
+	if err != nil {
+		zipWriter.Close()
+		return nil, err
+	}
+
 	bytecodeRunFiles := map[string]string{}
 	bytecodePathsByBundlePath := map[string]string{}
 	bytecodePathsByAbsolutePath := map[string]string{}
 
-	err := filepath.WalkDir(projectDir, func(filename string, entry fs.DirEntry, walkErr error) error {
+	err = filepath.WalkDir(projectDir, func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
@@ -81,10 +102,16 @@ func createProjectBundleArchiveWithOptions(
 		return nil, err
 	}
 
+	if err := addProjectBundleAssets(zipWriter, projectDir, manifest); err != nil {
+		zipWriter.Close()
+		return nil, err
+	}
+
 	if options.RunBytecode {
 		if err := addProjectBundleBytecodeRunMap(
 			zipWriter,
 			projectDir,
+			manifest,
 			bytecodeRunFiles,
 			bytecodePathsByBundlePath,
 			bytecodePathsByAbsolutePath,
@@ -128,29 +155,11 @@ func createProjectBundleArchiveWithOptions(
 func addProjectBundleBytecodeRunMap(
 	zipWriter *zip.Writer,
 	projectDir string,
+	manifest *Manifest,
 	bytecodeRunFiles map[string]string,
 	bytecodePathsByBundlePath map[string]string,
 	bytecodePathsByAbsolutePath map[string]string,
 ) error {
-	manifestPath, found, err := findManifestInDirectory(projectDir)
-	if err != nil {
-		return err
-	}
-
-	if !found {
-		return fmt.Errorf(
-			"Project directory %q must contain %s or %s",
-			projectDir,
-			ManifestStultonFilename,
-			ManifestJSONFilename,
-		)
-	}
-
-	manifest, _, err := loadManifestFileFromFS(manifestPath)
-	if err != nil {
-		return err
-	}
-
 	for _, runFile := range manifest.RunFiles {
 		key := bytecodeBundleRunFileKey(runFile)
 

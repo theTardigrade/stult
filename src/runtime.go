@@ -1,12 +1,14 @@
 package main
 
 type RuntimeContext struct {
-	Args []string
+	Args         []string
+	BundleAssets *BundleAssetStore
 }
 
 func NewRuntimeContext(args []string) *RuntimeContext {
 	return &RuntimeContext{
-		Args: append([]string{}, args...),
+		Args:         append([]string{}, args...),
+		BundleAssets: NewEmptyBundleAssetStore(),
 	}
 }
 
