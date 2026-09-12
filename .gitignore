@@ -3,4 +3,5 @@ dist/
 **/__ignore/
 
 *.exe
+*.patch
 *.tmp.*
