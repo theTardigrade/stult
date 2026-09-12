@@ -948,7 +948,7 @@ value2<NumberOrStringArray> : {
 
 The expression `<STD.TYPE.ARRAY<STD.TYPE.NUMBER|STD.TYPE.STRING>>` creates a contract value.
 
-`STD.TYPE.CONTRACT` is the contract for those contract values:
+`STD.TYPE.CONTRACT` is the standard type contract for those contract values:
 
 ```stult
 STD.TYPE.IS_CONTRACT(NumberOrStringArray) # true
