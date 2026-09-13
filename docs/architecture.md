@@ -825,7 +825,7 @@ Because both runtime modes use the same standard library, changes to builtins us
 
 A manifest lists source files to run in order.
 
-Manifest loading normalizes STULTON and JSON manifests into one Go representation with `RunFiles`. STULTON manifests use the uppercase `RUN` field, while JSON manifests use the lowercase `run` field.
+Manifest loading normalizes STULTON and JSON manifests into one Go representation with `RunFiles` and named asset sources. STULTON manifests use uppercase `RUN` and `ASSETS` fields, while JSON manifests use lowercase `run` and `assets` fields.
 
 Manifest execution preserves one shared runtime state across all listed files.
 
@@ -836,6 +836,8 @@ For interpreter mode, that means one interpreter instance evaluates parsed progr
 Manifest order is therefore semantically important.
 
 A file listed earlier can define bindings used by later files.
+
+Manifest assets are named files or directories. During manifest-based development runs, `STD.FILE.BUNDLED` resolves those names against the project filesystem. During bundled execution, it resolves the same names against the embedded asset index.
 
 ## Bundled executables
 
@@ -876,6 +878,7 @@ manifest
 bytecode marker
 bytecode run map
 encoded bytecode chunks
+asset index and declared asset contents, when assets are declared
 ```
 
 It does not need original `.stult` source files at runtime.
@@ -891,6 +894,7 @@ A source/interpreter bundle embeds:
 ```text
 manifest
 .stult source files
+asset index and declared asset contents, when assets are declared
 ```
 
 At runtime, it loads source from the embedded archive and evaluates it through the tree-walk interpreter.

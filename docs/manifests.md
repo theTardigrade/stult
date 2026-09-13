@@ -11,6 +11,7 @@ This is useful for larger projects, reusable helper files, configuration files a
 - [Manifest filenames](#manifest-filenames)
 - [Basic STULTON manifest](#basic-stulton-manifest)
 - [Basic JSON manifest](#basic-json-manifest)
+- [Assets](#assets)
 - [Run order](#run-order)
 - [Shared runtime state](#shared-runtime-state)
 - [Paths](#paths)
@@ -75,6 +76,44 @@ A JSON manifest uses a lowercase `run` field:
 ```
 
 This has the same effect as the STULTON manifest above.
+
+## Assets
+
+A manifest can declare named assets with the `ASSETS` field. Assets are files or directories that are packaged with a bundled executable but are not executed.
+
+In a STULTON manifest, `ASSETS` is a map from access names to source paths:
+
+```stulton
+{
+	"RUN": "main.stult"
+
+	"ASSETS": {
+		"CONFIG": "./data/config.stulton"
+		"TEMPLATES": "./templates"
+	}
+}
+```
+
+In a JSON manifest, use lowercase `assets`:
+
+```json
+{
+	"run": "main.stult",
+	"assets": {
+		"CONFIG": "./data/config.stulton",
+		"TEMPLATES": "./templates"
+	}
+}
+```
+
+The build step determines whether each source path is a file or directory. A file asset is read by name. A directory asset is read by name plus a relative path inside that directory:
+
+```stult
+CONFIG : STD.DATA.STULTON.PARSE(STD.FILE.BUNDLED.READ("CONFIG"))
+HELP : STD.FILE.BUNDLED.READ("TEMPLATES", "help.txt")
+```
+
+Asset access names are case-sensitive strings. They must not be empty and must not contain path separators. Asset source paths are relative to the manifest directory, must not be absolute, and must not escape the manifest directory with `..`.
 
 ## Run order
 
@@ -197,7 +236,7 @@ Absolute paths can be useful for local scripts, but they make projects less port
 
 Manifest field names are format-specific.
 
-In `manifest.stulton`, use uppercase `RUN`:
+In `manifest.stulton`, use uppercase `RUN` and `ASSETS`:
 
 ```stulton
 {
@@ -207,9 +246,9 @@ In `manifest.stulton`, use uppercase `RUN`:
 }
 ```
 
-Lowercase `run` is not accepted in `manifest.stulton`.
+Lowercase `run` and `assets` are not accepted in `manifest.stulton`.
 
-In `manifest.json`, use lowercase `run`:
+In `manifest.json`, use lowercase `run` and `assets`:
 
 ```json
 {
@@ -219,7 +258,7 @@ In `manifest.json`, use lowercase `run`:
 }
 ```
 
-Uppercase `RUN` is not accepted in `manifest.json`.
+Uppercase `RUN` and `ASSETS` are not accepted in `manifest.json`.
 
 ## Single-file manifests
 

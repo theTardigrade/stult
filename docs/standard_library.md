@@ -28,7 +28,7 @@ STD["TIME"]
 STD["TYPE"]
 ```
 
-File-path helpers live under `STD.FILE.PATH`.
+File-path helpers live under `STD.FILE.PATH`. Bundled-asset helpers live under `STD.FILE.BUNDLED`.
 
 Dot access is syntax sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
 
@@ -72,6 +72,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["ERROR"]["ASSERT"]["EQUAL"](actual, expected, message?)`](#stderrorassertequalactual-expected-message)
   - [`STD["ERROR"]["RAISE"](message?)`](#stderrorraisemessage)
 - [`STD["FILE"]`](#stdfile)
+  - [`STD["FILE"]["BUNDLED"]`](#stdfilebundled)
+    - [`STD["FILE"]["BUNDLED"]["READ"](name, path?, useBytes?)`](#stdfilebundledreadname-path-usebytes)
+    - [`STD["FILE"]["BUNDLED"]["EXISTS"](name, path?)`](#stdfilebundledexistsname-path)
+    - [`STD["FILE"]["BUNDLED"]["LIST"](name, path?)`](#stdfilebundledlistname-path)
+    - [`STD["FILE"]["BUNDLED"]["KEYS"]()`](#stdfilebundledkeys)
   - [`STD["FILE"]["READ"](path, useBytes?, offset?, length?)`](#stdfilereadpath-usebytes-offset-length)
   - [`STD["FILE"]["WRITE"](path, content, append?)`](#stdfilewritepath-content-append)
   - [`STD["FILE"]["EXISTS"](path)`](#stdfileexistspath)
@@ -463,6 +468,70 @@ A raised error can be caught by a try-catch statement:
 ## `STD["FILE"]`
 
 File-system helpers.
+
+## `STD["FILE"]["BUNDLED"]`
+
+Read-only access to named assets declared in a manifest `ASSETS` field and packaged into bundled executables. During `stult run` of a manifest project, the same names read from the project directory relative to the manifest.
+
+File assets are read by access name. Directory assets are read by access name plus a relative path inside that directory.
+
+```stult
+CONFIG : STD.DATA.STULTON.PARSE(STD.FILE.BUNDLED.READ("CONFIG"))
+HELP : STD.FILE.BUNDLED.READ("TEMPLATES", "help.txt")
+LOGO_BYTES : STD.FILE.BUNDLED.READ("LOGO", _, +)
+```
+
+### `STD["FILE"]["BUNDLED"]["READ"](name, path?, useBytes?)`
+
+Reads a named bundled asset.
+
+For a file asset, omit `path` or pass `_`:
+
+```stult
+text : STD.FILE.BUNDLED.READ("CONFIG")
+bytes : STD.FILE.BUNDLED.READ("LOGO", _, +)
+```
+
+For a directory asset, pass a relative path inside that asset directory:
+
+```stult
+text : STD.FILE.BUNDLED.READ("TEMPLATES", "help.txt")
+bytes : STD.FILE.BUNDLED.READ("IMAGES", "logo.png", +)
+```
+
+`useBytes` defaults to `-`. Text mode requires valid UTF-8 and returns a string. Byte mode returns an array of byte numbers.
+
+It is an error to pass an inner path for a file asset, to omit the inner path for a directory asset, or to use an absolute path or `..` path that escapes the asset directory.
+
+### `STD["FILE"]["BUNDLED"]["EXISTS"](name, path?)`
+
+Returns whether a named asset exists. For directory assets, an optional relative path checks a file or subdirectory inside that asset directory.
+
+```stult
+STD.FILE.BUNDLED.EXISTS("CONFIG")
+STD.FILE.BUNDLED.EXISTS("TEMPLATES", "help.txt")
+```
+
+Unknown asset names return `-`.
+
+### `STD["FILE"]["BUNDLED"]["LIST"](name, path?)`
+
+Lists files inside a directory asset. Returned paths are sorted and relative to the asset directory. This mirrors `STD.FILE.LIST` by listing the contents of a file-like namespace, rather than listing asset access names.
+
+```stult
+STD.FILE.BUNDLED.LIST("TEMPLATES")
+STD.FILE.BUNDLED.LIST("TEMPLATES", "emails")
+```
+
+It is an error to call `LIST` with no arguments, to call `LIST` on a file asset, or to use an absolute path or `..` path that escapes the asset directory.
+
+### `STD["FILE"]["BUNDLED"]["KEYS"]()`
+
+Returns the sorted access names declared in the manifest `ASSETS` field.
+
+```stult
+STD.FILE.BUNDLED.KEYS()
+```
 
 ### `STD["FILE"]["READ"](path, useBytes?, offset?, length?)`
 

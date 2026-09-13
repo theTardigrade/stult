@@ -31,7 +31,7 @@ Source/interpreter bundles are available with the following command: `stult buil
 - [Troubleshooting](#troubleshooting)
   - [The project must have a manifest](#the-project-must-have-a-manifest)
   - [Do not use both manifest formats at once](#do-not-use-both-manifest-formats-at-once)
-  - [Non-Stult data files are not embedded](#non-stult-data-files-are-not-embedded)
+  - [Missing assets](#missing-assets)
   - [Bytecode bundles do not embed source files](#bytecode-bundles-do-not-embed-source-files)
   - [Absolute manifest paths](#absolute-manifest-paths)
   - [The output executable must not overwrite the running executable](#the-output-executable-must-not-overwrite-the-running-executable)
@@ -77,8 +77,9 @@ A bytecode bundle embeds:
 
 - the Stult runtime,
 - a manifest,
-- compiled bytecode *and*
-- bytecode metadata needed to map manifest entries to bundled bytecode.
+- compiled bytecode,
+- bytecode metadata needed to map manifest entries to bundled bytecode *and*
+- any assets declared by the manifest.
 
 Build a bytecode bundle:
 
@@ -101,8 +102,9 @@ This is the recommended bundle mode for ordinary distribution.
 A source/interpreter bundle embeds:
 
 - the Stult runtime,
-- a manifest
-- the `.stult` source files needed by that manifest.
+- a manifest,
+- the `.stult` source files needed by that manifest *and*
+- any assets declared by the manifest.
 
 Build a source/interpreter bundle:
 
@@ -289,6 +291,8 @@ manifest.stulton or manifest.json
 .stult-bytecode-bundle
 .stult-bytecode/run-map.json
 .stult-bytecode/... compiled bytecode files
+.stult-assets/index.json, when assets are declared
+.stult-assets/... declared asset contents, when assets are declared
 ```
 
 A source/interpreter bundle embeds:
@@ -296,9 +300,11 @@ A source/interpreter bundle embeds:
 ```text
 manifest.stulton or manifest.json
 .stult source files
+.stult-assets/index.json, when assets are declared
+.stult-assets/... declared asset contents, when assets are declared
 ```
 
-Other files are not embedded by default.
+Other files are not embedded unless they are declared as assets.
 
 For example, this project embeds the manifest and compiled bytecode in the default build:
 
@@ -309,17 +315,37 @@ my_tool/
   main.stult
 ```
 
-This project does not embed `data.csv`:
+This project embeds `data/config.stulton` and the files under `templates/` because the manifest declares them as assets:
 
 ```text
 my_other_tool/
   manifest.stulton
   bindings.stult
   main.stult
-  data.csv
+  data/config.stulton
+  templates/help.txt
 ```
 
-If a bundled program needs data, either embed the data in Stult source code or make sure the program reads it from an external path at runtime.
+```stulton
+{
+	"RUN": {
+		"bindings.stult"
+		"main.stult"
+	}
+
+	"ASSETS": {
+		"CONFIG": "data/config.stulton"
+		"TEMPLATES": "templates"
+	}
+}
+```
+
+Bundled code reads declared assets by access name:
+
+```stult
+CONFIG : STD.DATA.STULTON.PARSE(STD.FILE.BUNDLED.READ("CONFIG"))
+HELP : STD.FILE.BUNDLED.READ("TEMPLATES", "help.txt")
+```
 
 ## Subdirectories
 
@@ -568,11 +594,11 @@ Use either `manifest.stulton` or `manifest.json`.
 
 Do not include both in the same project root.
 
-### Non-Stult data files are not embedded
+### Missing assets
 
-Only Stult program files and bundle metadata are embedded by default.
+Only declared assets are embedded.
 
-If a program reads a file such as `data.csv`, that file must still exist at runtime unless its contents are embedded as a string in Stult source code.
+If `STD.FILE.BUNDLED.READ` cannot find an asset, check that the access name appears in the root manifest `ASSETS` field and that the source path exists at build time. If code uses `STD.FILE.READ`, the file must still exist on the runtime filesystem.
 
 ### Bytecode bundles do not embed source files
 
