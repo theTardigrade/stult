@@ -10,6 +10,7 @@ STD.ERROR
 STD.FILE
 STD.IO
 STD.MATH
+STD.NET
 STD.SYSTEM
 STD.TIME
 STD.TYPE
@@ -23,12 +24,13 @@ STD["ERROR"]
 STD["FILE"]
 STD["IO"]
 STD["MATH"]
+STD["NET"]
 STD["SYSTEM"]
 STD["TIME"]
 STD["TYPE"]
 ```
 
-File-path helpers live under `STD.FILE.PATH`. Bundled-asset helpers live under `STD.FILE.BUNDLED`.
+File-path helpers live under `STD.FILE.PATH`. Bundled-asset helpers live under `STD.FILE.BUNDLED`. Networking helpers live under `STD.NET`.
 
 Dot access is syntax sugar for string-key map access. This document keeps reference headings in bracket form so the underlying string keys are explicit, while examples use dot access where possible.
 
@@ -133,6 +135,11 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["MATH"]["TRIG"]["TAN"](radians)`](#stdmathtrigtanradians)
     - [`STD["MATH"]["TRIG"]["RADIANS"](degrees)`](#stdmathtrigradiansdegrees)
     - [`STD["MATH"]["TRIG"]["DEGREES"](radians)`](#stdmathtrigdegreesradians)
+- [`STD["NET"]`](#stdnet)
+  - [`STD["NET"]["HTTP"]`](#stdnethttp)
+    - [`STD["NET"]["HTTP"]["REQUEST_OPTIONS_CONTRACT"]`](#stdnethttprequest_options_contract)
+    - [`STD["NET"]["HTTP"]["REQUEST_RESPONSE_CONTRACT"]`](#stdnethttprequest_response_contract)
+    - [`STD["NET"]["HTTP"]["REQUEST"](url, options?)`](#stdnethttprequesturl-options)
 - [`STD["SYSTEM"]`](#stdsystem)
   - [`STD["SYSTEM"]["ARGS"]`](#stdsystemargs)
   - [`STD["SYSTEM"]["CWD"]()`](#stdsystemcwd)
@@ -1177,6 +1184,119 @@ Converts radians to degrees.
 ```stult
 STD.MATH.TRIG.DEGREES(STD.MATH.PI)
 ```
+
+## `STD["NET"]`
+
+Networking helpers.
+
+## `STD["NET"]["HTTP"]`
+
+HTTP helpers.
+
+### `STD["NET"]["HTTP"]["REQUEST_OPTIONS_CONTRACT"]`
+
+Reusable contract for the optional `options` map accepted by `STD.NET.HTTP.REQUEST`.
+
+Dotted contract aliases can use this value directly in contract position:
+
+```stult
+HTTP : STD.NET.HTTP
+
+options<HTTP.REQUEST_OPTIONS_CONTRACT> : {
+	.METHOD : "POST"
+	.MAX_BYTES : 1000000
+}
+```
+
+It can also be referenced through the full standard-library path:
+
+```stult
+options<STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT> : {
+	.METHOD : "GET"
+}
+```
+
+The contract checks the broad option shape: supported uppercase keys only, string `METHOD`, header arrays as arrays of string arrays, string/byte-array/void `BODY`, boolean `USE_BYTES`, numeric `TIMEOUT_MILLI`, numeric `MAX_BYTES` and boolean `FOLLOW_REDIRECTS`. HTTP-specific details such as valid URL syntax, non-empty methods, two-item header arrays and byte values from `0` to `255` are checked by `REQUEST` itself.
+
+### `STD["NET"]["HTTP"]["REQUEST_RESPONSE_CONTRACT"]`
+
+Reusable contract for the response map returned by `STD.NET.HTTP.REQUEST`.
+
+```stult
+HTTP : STD.NET.HTTP
+
+response<HTTP.REQUEST_RESPONSE_CONTRACT> : HTTP.REQUEST("https://example.com")
+```
+
+The response contract requires uppercase `STATUS`, `BODY`, `HEADERS` and `URL` fields.
+
+### `STD["NET"]["HTTP"]["REQUEST"](url, options?)`
+
+Makes a synchronous HTTP request.
+
+```stult
+response : STD.NET.HTTP.REQUEST("https://example.com")
+```
+
+The `url` argument must be a non-empty string.
+
+The optional `options` argument may be omitted or `_`. When provided, it must satisfy `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT`. Supported option fields are uppercase:
+
+```stult
+response : STD.NET.HTTP.REQUEST("https://example.com/items", {
+	.METHOD : "POST"
+	.HEADERS : {
+		{"content-type", "application/json"}
+		{"accept", "application/json"}
+	}
+	.BODY : STD.DATA.JSON.NEW({
+		.LABEL : "example"
+	})
+	.USE_BYTES : -
+	.TIMEOUT_MILLI : 5000
+	.MAX_BYTES : 1000000
+	.FOLLOW_REDIRECTS : +
+})
+```
+
+`METHOD` must be a non-empty string and defaults to `"GET"`.
+
+`HEADERS` must be an array of two-string arrays. Each inner array is `{key, value}`. Duplicate header keys are allowed and preserved.
+
+`BODY` may be a string, a byte array or `_`. String bodies are sent as UTF-8 text. Byte-array bodies follow the same byte-array rules as `STD.FILE.WRITE`.
+
+`USE_BYTES` must be a boolean or `_` and defaults to `-`. When `USE_BYTES` is `-`, the response body is returned as a string and must be valid UTF-8. When `USE_BYTES` is `+`, the response body is returned as an array of byte numbers.
+
+`TIMEOUT_MILLI` must be a non-negative whole number and defaults to `30000`. A value of `0` disables the request timeout.
+
+`MAX_BYTES` must be a non-negative whole number and defaults to `1000000`. If the response body exceeds `MAX_BYTES`, the function raises a runtime error.
+
+`FOLLOW_REDIRECTS` must be a boolean or `_` and defaults to `+`.
+
+Unknown option fields raise a runtime error.
+
+Returns a map:
+
+```stult
+{
+	.STATUS : 200
+	.BODY : "..."
+	.HEADERS : {
+		{"content-type", "application/json"}
+	}
+	.URL : "https://example.com/final"
+}
+```
+
+`STATUS` is the HTTP status code. Non-2xx statuses are returned normally and are not runtime errors.
+
+`BODY` is a string or byte array, depending on `USE_BYTES`.
+
+`HEADERS` is an array of two-string arrays.
+
+`URL` is the final response URL after redirects, or the original URL when redirects are not followed.
+
+Network failures, invalid URLs, invalid option values, timeouts and oversized responses raise runtime errors.
 
 ## `STD["SYSTEM"]`
 

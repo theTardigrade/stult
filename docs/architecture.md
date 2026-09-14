@@ -810,12 +810,13 @@ STD["DATA"]
 STD["FILE"]
 STD["IO"]
 STD["MATH"]
+STD["NET"]
 STD["SYSTEM"]
 STD["TIME"]
 STD["TYPE"]
 ```
 
-Builtins are Go functions wrapped as Stult callable values.
+Builtins are Go functions wrapped as Stult callable values. Standard-library maps may also expose immutable contract values for reusable builtin argument and result shapes, such as `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT` and `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT`; contract positions can reference such values through dotted contract aliases.
 
 Standard-library functions should return Stult values and errors, not print internal Go details.
 

@@ -693,6 +693,47 @@ func NewContractValue(contract BindingContract) Value {
 	return Value{Kind: ValueContract, Contract: &cloned}
 }
 
+func lookupBindingContractAliasPath(alias string, lookup BindingContractValueLookup) (Value, error) {
+	parts := strings.Split(alias, ".")
+	if len(parts) == 0 || parts[0] == "" {
+		return Value{}, fmt.Errorf("empty contract alias")
+	}
+
+	value, ok := lookup(parts[0])
+	if !ok {
+		return Value{}, fmt.Errorf("undefined contract alias %q", alias)
+	}
+
+	path := parts[0]
+	for _, part := range parts[1:] {
+		if part == "" {
+			return Value{}, fmt.Errorf("invalid contract alias path %q", alias)
+		}
+
+		value = resolveSpecializedValue(value)
+		if value.Kind != ValueMap || value.Map == nil {
+			return Value{}, fmt.Errorf("contract alias %q expected %q to be a map, got %s value", alias, path, valueKindName(value.Kind))
+		}
+
+		binding, ok := value.Map.Get(part)
+		if !ok {
+			return Value{}, fmt.Errorf("undefined contract alias %q", alias)
+		}
+		value = binding.Value
+		path += "." + part
+	}
+
+	return value, nil
+}
+
+func bindingContractAliasRootName(alias string) string {
+	if dot := strings.Index(alias, "."); dot >= 0 {
+		return alias[:dot]
+	}
+
+	return alias
+}
+
 func (contract BindingContract) ResolveAliases(lookup BindingContractValueLookup) (BindingContract, error) {
 	return contract.resolveAliases(lookup, map[string]bool{})
 }
@@ -711,9 +752,9 @@ func (contract BindingContract) resolveAliases(
 			return BindingContract{}, fmt.Errorf("cyclic contract alias %q", contract.AliasName)
 		}
 
-		value, ok := lookup(contract.AliasName)
-		if !ok {
-			return BindingContract{}, fmt.Errorf("undefined contract alias %q", contract.AliasName)
+		value, err := lookupBindingContractAliasPath(contract.AliasName, lookup)
+		if err != nil {
+			return BindingContract{}, err
 		}
 
 		value = resolveSpecializedValue(value)
@@ -839,9 +880,10 @@ func (contract BindingContract) AliasNames() []string {
 func (contract BindingContract) collectAliasNames(names *[]string, seen map[string]bool) {
 	switch contract.Kind {
 	case BindingContractAliasKind:
-		if contract.AliasName != "" && !seen[contract.AliasName] {
-			seen[contract.AliasName] = true
-			*names = append(*names, contract.AliasName)
+		root := bindingContractAliasRootName(contract.AliasName)
+		if root != "" && !seen[root] {
+			seen[root] = true
+			*names = append(*names, root)
 		}
 	case BindingContractArrayKind, BindingContractMapKind, BindingContractFunctionKind:
 		if contract.Element != nil {

@@ -1,4 +1,3 @@
-
 # Versions
 
 This document summarises notable Stult changes by released version.
@@ -27,6 +26,7 @@ This release is planned as the first stable Stult release.
 * Nested collection contracts may use named contracts, `<.>` or `<*>`.
 * Contract markers must touch the binding name and can only be used when the binding is created; map literal entries do not have their own angle-bracket contract syntax.
 * Added fallible expressions with `?(attempt | fallback)` for expression-level recovery from catchable runtime errors.
+* Added dotted contract aliases, so contract positions can reference contract values through map paths such as `HTTP.REQUEST_OPTIONS_CONTRACT`.
 
 #### Manifests and bundling
 
@@ -35,6 +35,7 @@ This release is planned as the first stable Stult release.
 #### Standard library
 
 * Added `STD.FILE.BUNDLED` for read-only access to named manifest assets through `READ`, `EXISTS`, `LIST` and `KEYS`.
+* Added `STD.NET.HTTP.REQUEST(url, options?)` for synchronous HTTP client requests, plus `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT` and `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT` contracts for the request option and response map shapes.
 
 #### Command line
 
@@ -457,4 +458,3 @@ STD["DATA"]
 This is the first public release of Stult.
 
 The version number is intentionally below v1.0.0. The language is usable, but the public surface is still expected to evolve before a stable v1.0.0 release.
-

@@ -11,6 +11,7 @@ func NewStdMap(runtime *RuntimeContext) Value {
 		"FILE":   NewImmutableBinding(NewStdFileMap(runtime)),
 		"IO":     NewImmutableBinding(NewStdIOMap()),
 		"MATH":   NewImmutableBinding(NewStdMathMap()),
+		"NET":    NewImmutableBinding(NewStdNetMap(runtime)),
 		"SYSTEM": NewImmutableBinding(NewStdSystemMap(runtime)),
 		"TIME":   NewImmutableBinding(NewStdTimeMap()),
 		"TYPE":   NewImmutableBinding(NewStdTypeMap()),

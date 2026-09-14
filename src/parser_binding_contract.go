@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (p *Parser) parseBindingContractAfterToken(
 	annotated Token,
@@ -95,12 +98,16 @@ func (p *Parser) parseBindingContractTerm() (BindingContract, bool) {
 			return BindingContract{}, false
 		}
 
-		if p.current.Literal == "STD" {
-			return p.parseNamedBindingContractType()
+		pathTokens, ok := p.parseBindingContractIdentifierPath()
+		if !ok {
+			return BindingContract{}, false
 		}
 
-		alias := p.current.Literal
-		p.advance()
+		if pathTokens[0].Literal == "STD" && len(pathTokens) >= 2 && pathTokens[1].Literal == "TYPE" {
+			return p.parseStdTypeBindingContractType(pathTokens)
+		}
+
+		alias := bindingContractIdentifierPathString(pathTokens)
 		return BindingContract{Kind: BindingContractAliasKind, AliasName: alias}, true
 
 	default:
@@ -109,30 +116,27 @@ func (p *Parser) parseBindingContractTerm() (BindingContract, bool) {
 	}
 }
 
-func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
-	pathTokens := []Token{}
-
-	if p.current.Type != TokenIdentifier || p.current.Literal != "STD" {
-		p.errorAtCurrent("expected STD.TYPE contract path")
-		return BindingContract{}, false
+func (p *Parser) parseBindingContractIdentifierPath() ([]Token, bool) {
+	if p.current.Type != TokenIdentifier {
+		p.errorAtCurrent("expected contract alias name")
+		return nil, false
 	}
 
-	pathTokens = append(pathTokens, p.current)
+	pathTokens := []Token{p.current}
 	previous := p.current
 	p.advance()
 
-	for len(pathTokens) < 3 {
-		if p.current.Type != TokenDot || !tokensTouch(previous, p.current) {
-			p.errorAtCurrent("expected '.' in STD.TYPE contract path")
-			return BindingContract{}, false
+	for p.current.Type == TokenDot {
+		if !tokensTouch(previous, p.current) {
+			break
 		}
 
 		dot := p.current
 		p.advance()
 
 		if p.current.Type != TokenIdentifier || !tokensTouch(dot, p.current) {
-			p.errorAtCurrent("expected identifier in STD.TYPE contract path")
-			return BindingContract{}, false
+			p.errorAtCurrent("expected identifier after '.' in contract alias path")
+			return nil, false
 		}
 
 		pathTokens = append(pathTokens, p.current)
@@ -140,7 +144,20 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 		p.advance()
 	}
 
-	if pathTokens[1].Literal != "TYPE" {
+	return pathTokens, true
+}
+
+func bindingContractIdentifierPathString(pathTokens []Token) string {
+	parts := make([]string, len(pathTokens))
+	for index, token := range pathTokens {
+		parts[index] = token.Literal
+	}
+
+	return strings.Join(parts, ".")
+}
+
+func (p *Parser) parseStdTypeBindingContractType(pathTokens []Token) (BindingContract, bool) {
+	if len(pathTokens) != 3 {
 		p.errorAtToken(pathTokens[1], "expected STD.TYPE contract path")
 		return BindingContract{}, false
 	}
@@ -152,6 +169,7 @@ func (p *Parser) parseNamedBindingContractType() (BindingContract, bool) {
 		return BindingContract{}, false
 	}
 
+	previous := pathTokens[len(pathTokens)-1]
 	if p.current.Type == TokenLess || p.current.Type == TokenContractSameKind || p.current.Type == TokenContractAny {
 		if !tokensTouch(previous, p.current) {
 			p.errorAtCurrent("expected nested binding contract to touch its collection contract")
