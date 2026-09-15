@@ -1,3 +1,4 @@
+
 ##
 
 EXAMPLE: projects/object_oriented_programming/make_class.stult
@@ -45,14 +46,14 @@ CLASS_CONTRACT<STD.TYPE.CONTRACT> : <STD.TYPE.MAP<{
 	.size: STD.TYPE.FUNCTION
 }>>
 
-MAKE_CLASS_FROM_PROTOTYPE : { (prototype<PROTOTYPE_CONTRACT>) : CLASS_CONTRACT
+MAKE_CLASS_FROM_PROTOTYPE : { (prototype<PROTOTYPE_CONTRACT>) : <CLASS_CONTRACT>
 	TEXT : STD.TYPE.STRING.NEW
 	SIZE : STD.TYPE.COLLECTION.SIZE
 
 	next_id<STD.TYPE.NUMBER> : 0
 	models<MODEL_REGISTRY_CONTRACT> : {:}
 
-	new : { (fields?<STD.TYPE.MAP<*>|STD.TYPE.VOID>) : STD.TYPE.MAP<*>
+	new : { (fields?<STD.TYPE.MAP<*>|STD.TYPE.VOID>) : <STD.TYPE.MAP<*>>
 		@next_id :+ 1
 
 		id<STD.TYPE.STRING> : TEXT(next_id)
@@ -73,11 +74,11 @@ MAKE_CLASS_FROM_PROTOTYPE : { (prototype<PROTOTYPE_CONTRACT>) : CLASS_CONTRACT
 		(model)
 	}
 
-	get : { (id<STD.TYPE.STRING|STD.TYPE.NUMBER>) : STD.TYPE.MAP<*>
+	get : { (id<STD.TYPE.STRING|STD.TYPE.NUMBER>) : <STD.TYPE.MAP<*>>
 		(models[TEXT(id)])
 	}
 
-	size : { () : STD.TYPE.NUMBER
+	size : { () : <STD.TYPE.NUMBER>
 		(SIZE(models))
 	}
 
@@ -89,3 +90,4 @@ MAKE_CLASS_FROM_PROTOTYPE : { (prototype<PROTOTYPE_CONTRACT>) : CLASS_CONTRACT
 		.size : size
 	})
 }
+

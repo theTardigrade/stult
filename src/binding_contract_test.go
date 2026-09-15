@@ -89,6 +89,24 @@ func TestBindingContractsRejectOptionalParameterMarkerAfterContract(t *testing.T
 	}
 }
 
+func TestFunctionLiteralReturnContractsRequireAngleBrackets(t *testing.T) {
+	source := `BAD : { () : STD.TYPE.NUMBER
+	(1)
+}`
+
+	for _, mode := range bindingContractRunModes() {
+		t.Run(mode.Name, func(t *testing.T) {
+			_, _, err := captureStdoutAndStderrForTest(t, func() error {
+				return mode.Run(source)
+			})
+
+			if err == nil {
+				t.Fatal("expected program to fail")
+			}
+		})
+	}
+}
+
 func bindingContractRunModes() []bindingContractRunMode {
 	return []bindingContractRunMode{
 		{

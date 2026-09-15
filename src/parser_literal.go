@@ -1,3 +1,4 @@
+
 package main
 
 func (p *Parser) parseFrozenCollectionLiteral() Expression {
@@ -202,12 +203,38 @@ func (p *Parser) parseFunctionLiteralReturnContract(parameterClose Token) (*Bind
 	p.advance() // consume ":"
 	p.skipNewlines()
 
-	contract, ok := p.parseBindingContractType()
-	if !ok {
+	if !isBindingContractStart(p.current.Type) {
+		p.errorAtCurrent("expected angle-bracketed function return contract after ':'")
 		return nil, Token{}, false
 	}
 
-	return contract.ClonePointer(), colon, true
+	switch p.current.Type {
+	case TokenContractSameKind, TokenContractAny:
+		contract, ok := p.parseBindingContractType()
+		if !ok {
+			return nil, Token{}, false
+		}
+
+		return contract.ClonePointer(), colon, true
+
+	case TokenLess:
+		p.advance()
+		contract, ok := p.parseBindingContractType()
+		if !ok {
+			return nil, Token{}, false
+		}
+
+		if !p.expectCurrent(TokenGreater, "expected '>' after function return contract") {
+			return nil, Token{}, false
+		}
+
+		p.advance()
+		return contract.ClonePointer(), colon, true
+
+	default:
+		p.errorAtCurrent("expected angle-bracketed function return contract after ':'")
+		return nil, Token{}, false
+	}
 }
 
 func (p *Parser) isMapLiteralEntryStart() bool {
@@ -426,3 +453,4 @@ func (p *Parser) parseRangeStepExpression() (Expression, bool) {
 
 	return step, true
 }
+

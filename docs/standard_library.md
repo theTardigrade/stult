@@ -1541,10 +1541,10 @@ Contract type namespace used by `STD.TYPE.CONTRACT` contracts. Contract values a
 
 Function type namespace used by `STD.TYPE.FUNCTION` contracts. User-defined functions are created with function literals.
 
-`STD.TYPE.FUNCTION` accepts any user-defined function value. Function parameters may declare contracts inline, and a function literal may declare a return contract with `:` on the same line as the closing parameter `)`.
+`STD.TYPE.FUNCTION` accepts any user-defined function value. Function parameters may declare contracts inline, and a function literal may declare an angle-bracketed return contract with `:` on the same line as the closing parameter `)`.
 
 ```stult
-SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 	(a + b)
 }
 ```

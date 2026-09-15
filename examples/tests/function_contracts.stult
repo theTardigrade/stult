@@ -139,7 +139,7 @@ local_alias_error : ""
 
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", local_alias_error), "function parameter contracts should preserve resolved local aliases")
 
-DIFFERENCE : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+DIFFERENCE : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 	(a - b)
 }
 
@@ -147,7 +147,7 @@ ASSERT.EQUAL(DIFFERENCE(10, 4), 6, "function return contracts should allow valid
 
 inline_return_error : ""
 ?{
-	BAD_INLINE_RETURN : { () : STD.TYPE.NUMBER
+	BAD_INLINE_RETURN : { () : <STD.TYPE.NUMBER>
 		("not a number")
 	}
 
@@ -160,14 +160,14 @@ ASSERT.TRUE(IS_FOUND_IN("function return", inline_return_error), "function retur
 ASSERT.TRUE(IS_FOUND_IN("expects number value, got string value", inline_return_error), "function return contracts should reject invalid returns")
 
 LINE_END_RETURN_CONTRACT : { (value<STD.TYPE.NUMBER>) :
-	STD.TYPE.NUMBER
+	<STD.TYPE.NUMBER>
 
 	(value)
 }
 
 ASSERT.EQUAL(LINE_END_RETURN_CONTRACT(42), 42, "function return contract type may continue after a line-ending colon")
 
-EARLY_RETURN_NUMBER : { (value<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+EARLY_RETURN_NUMBER : { (value<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 	(value > 0) {
 		^(value)
 	}
@@ -179,7 +179,7 @@ ASSERT.EQUAL(EARLY_RETURN_NUMBER(5), 5, "function return contracts should check 
 
 early_return_error : ""
 ?{
-	EARLY_RETURN_BAD : { () : STD.TYPE.NUMBER
+	EARLY_RETURN_BAD : { () : <STD.TYPE.NUMBER>
 		^("not a number")
 
 		(0)
@@ -213,7 +213,7 @@ ASSERT.TRUE(IS_FOUND_IN("not compatible", parameter_conflict_error), "conflictin
 
 return_conflict_error : ""
 ?{
-	BAD_RETURN_CONTRACT<NumberBinaryFunction> : { (a, b) : STD.TYPE.STRING
+	BAD_RETURN_CONTRACT<NumberBinaryFunction> : { (a, b) : <STD.TYPE.STRING>
 		(a + b)
 	}
 }|{ (error)

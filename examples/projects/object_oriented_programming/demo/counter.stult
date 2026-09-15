@@ -42,26 +42,26 @@ COUNTER_PROTOTYPE<COUNTER_PROTOTYPE_CONTRACT> : {
 	}
 
 	.methods : {
-		.increment : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
+		.increment : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : <STD.TYPE.NUMBER>
 			self.count :+ 1
 			(self.count)
 		}
 
-		.add : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>, amount<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+		.add : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>, amount<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 			self.count :+ amount
 			(self.count)
 		}
 
-		.reset : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
+		.reset : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : <STD.TYPE.NUMBER>
 			self.count : prototype.data.default_start
 			(self.count)
 		}
 
-		.kind : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.STRING
+		.kind : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : <STD.TYPE.STRING>
 			(prototype.data.kind)
 		}
 
-		.value : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : STD.TYPE.NUMBER
+		.value : { (self<COUNTER_MODEL>, prototype<COUNTER_PROTOTYPE_CONTRACT>) : <STD.TYPE.NUMBER>
 			(self.count)
 		}
 	}

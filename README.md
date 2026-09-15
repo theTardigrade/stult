@@ -2001,15 +2001,15 @@ SUM_ALL : { (...values<STD.TYPE.ARRAY<STD.TYPE.NUMBER>>)
 }
 ```
 
-Function literals can also declare a return contract after the parameter list. The `:` must be on the same line as the closing `)`, but horizontal space is allowed. If the line ends with `:`, the contract itself may continue on the next line.
+Function literals can also declare an angle-bracketed return contract after the parameter list. The `:` must be on the same line as the closing `)`, but horizontal space is allowed. If the line ends with `:`, the contract itself may continue on the next line.
 
 ```stult
-SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+SUM : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 	(a + b)
 }
 
 SUM_LONG : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) :
-	STD.TYPE.NUMBER
+	<STD.TYPE.NUMBER>
 
 	(a + b)
 }
@@ -2036,7 +2036,7 @@ Function signature contracts are checked when the function is called. That means
 If a function has both an outer signature contract and inner parameter or return contracts, those contracts must be compatible when the function binding is created. Inner parameter contracts may be the same as or broader than the outer signature. Inner return contracts may be the same as or narrower than the outer signature.
 
 ```stult
-ADD<NumberBinaryFunction> : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : STD.TYPE.NUMBER
+ADD<NumberBinaryFunction> : { (a<STD.TYPE.NUMBER>, b<STD.TYPE.NUMBER>) : <STD.TYPE.NUMBER>
 	(a + b)
 }
 
