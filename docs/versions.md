@@ -35,7 +35,8 @@ This release is planned as the first stable Stult release.
 #### Standard library
 
 * Added `STD.FILE.BUNDLED` for read-only access to named manifest assets through `READ`, `EXISTS`, `LIST` and `KEYS`.
-* Added `STD.NET.HTTP.REQUEST(url, options?)` for synchronous HTTP client requests, plus `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT` and `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT` contracts for the request option and response map shapes.
+* Added `STD.NET.HTTP.REQUEST(url, options?)` for synchronous HTTP client requests, plus `STD.NET.HTTP.REQUEST_HEADER_CONTRACT`, `STD.NET.HTTP.REQUEST_HEADERS_CONTRACT`, `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT` and `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT` contracts for reusable HTTP request/response shapes.
+* Added reusable standard-library data-shape contracts for parsed CSV rows (`STD.DATA.CSV.ROW_CONTRACT` and `STD.DATA.CSV.ROWS_CONTRACT`) and calendar snapshots (`STD.TIME.CALENDAR_CONTRACT`).
 
 #### Command line
 

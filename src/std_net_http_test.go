@@ -123,11 +123,12 @@ func TestStdNetHTTPRequestContractsCanBeUsedByUserCode(t *testing.T) {
 	source := fmt.Sprintf(`HTTP : STD.NET.HTTP
 ASSERT : STD.ERROR.ASSERT
 
+header<HTTP.REQUEST_HEADER_CONTRACT> : {"accept", "text/plain"}
+headers<HTTP.REQUEST_HEADERS_CONTRACT> : {header}
+
 options<HTTP.REQUEST_OPTIONS_CONTRACT> : {
 	.METHOD : "GET"
-	.HEADERS : {
-		{"accept", "text/plain"}
-	}
+	.HEADERS : headers
 	.MAX_BYTES : 100
 }
 

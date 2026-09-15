@@ -9,12 +9,22 @@ import (
 
 func NewStdCSVMap() Value {
 	entries := map[string]Binding{
-		"IS_VALID": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVIsValid)),
-		"NEW":      NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVNew)),
-		"PARSE":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVParse)),
+		"IS_VALID":      NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVIsValid)),
+		"NEW":           NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVNew)),
+		"PARSE":         NewImmutableBinding(NewBuiltinFunctionValue(builtinStdCSVParse)),
+		"ROW_CONTRACT":  NewImmutableBinding(NewContractValue(stdCSVRowContract())),
+		"ROWS_CONTRACT": NewImmutableBinding(NewContractValue(stdCSVRowsContract())),
 	}
 
 	return NewMapValue(entries, true)
+}
+
+func stdCSVRowContract() BindingContract {
+	return stdArrayContract(stdExactContract(ValueString))
+}
+
+func stdCSVRowsContract() BindingContract {
+	return stdArrayContract(stdCSVRowContract())
 }
 
 func builtinStdCSVNew(_ *RuntimeContext, args []Value) (Value, error) {

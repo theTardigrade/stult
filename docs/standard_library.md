@@ -56,6 +56,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
 
 - [`STD["DATA"]`](#stddata)
   - [`STD["DATA"]["CSV"]`](#stddatacsv)
+    - [`STD["DATA"]["CSV"]["ROW_CONTRACT"]`](#stddatacsvrow_contract)
+    - [`STD["DATA"]["CSV"]["ROWS_CONTRACT"]`](#stddatacsvrows_contract)
     - [`STD["DATA"]["CSV"]["NEW"](rows)`](#stddatacsvnewrows)
     - [`STD["DATA"]["CSV"]["PARSE"](text)`](#stddatacsvparsetext)
     - [`STD["DATA"]["CSV"]["IS_VALID"](text)`](#stddatacsvis_validtext)
@@ -137,6 +139,8 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
     - [`STD["MATH"]["TRIG"]["DEGREES"](radians)`](#stdmathtrigdegreesradians)
 - [`STD["NET"]`](#stdnet)
   - [`STD["NET"]["HTTP"]`](#stdnethttp)
+    - [`STD["NET"]["HTTP"]["REQUEST_HEADER_CONTRACT"]`](#stdnethttprequest_header_contract)
+    - [`STD["NET"]["HTTP"]["REQUEST_HEADERS_CONTRACT"]`](#stdnethttprequest_headers_contract)
     - [`STD["NET"]["HTTP"]["REQUEST_OPTIONS_CONTRACT"]`](#stdnethttprequest_options_contract)
     - [`STD["NET"]["HTTP"]["REQUEST_RESPONSE_CONTRACT"]`](#stdnethttprequest_response_contract)
     - [`STD["NET"]["HTTP"]["REQUEST"](url, options?)`](#stdnethttprequesturl-options)
@@ -146,6 +150,7 @@ Some standard-library functions accept variadic arguments. In signatures, `...na
   - [`STD["SYSTEM"]["ENV"](name)`](#stdsystemenvname)
   - [`STD["SYSTEM"]["EXIT"](code)`](#stdsystemexitcode)
 - [`STD["TIME"]`](#stdtime)
+  - [`STD["TIME"]["CALENDAR_CONTRACT"]`](#stdtimecalendar_contract)
   - [`STD["TIME"]["TIMESTAMP_MILLI"]()`](#stdtimetimestamp_milli)
   - [`STD["TIME"]["TIMESTAMP_NANO"]()`](#stdtimetimestamp_nano)
   - [`STD["TIME"]["SLEEP_MILLI"](milliseconds)`](#stdtimesleep_millimilliseconds)
@@ -212,6 +217,26 @@ Data encoding and decoding helpers.
 
 CSV encoding, parsing and validation helpers.
 
+### `STD["DATA"]["CSV"]["ROW_CONTRACT"]`
+
+Reusable contract for one parsed CSV row.
+
+It accepts an array of strings. It does not require a fixed number of fields.
+
+```stult
+row<STD.DATA.CSV.ROW_CONTRACT> : {"name", "score"}
+```
+
+### `STD["DATA"]["CSV"]["ROWS_CONTRACT"]`
+
+Reusable contract for parsed CSV rows.
+
+It accepts an array of `STD.DATA.CSV.ROW_CONTRACT` values. Rows may have different field counts.
+
+```stult
+rows<STD.DATA.CSV.ROWS_CONTRACT> : STD.DATA.CSV.PARSE("name,score\na,10\n")
+```
+
 ### `STD["DATA"]["CSV"]["NEW"](rows)`
 
 Encodes an array of row arrays as CSV text.
@@ -238,7 +263,7 @@ Parses CSV text into an array of row arrays.
 rows : STD.DATA.CSV.PARSE("name,score\na,10\nb,20\n")
 ```
 
-Returns an array of arrays of strings.
+Returns an array of arrays of strings. The return value satisfies `STD.DATA.CSV.ROWS_CONTRACT`.
 
 ### `STD["DATA"]["CSV"]["IS_VALID"](text)`
 
@@ -1193,6 +1218,29 @@ Networking helpers.
 
 HTTP helpers.
 
+### `STD["NET"]["HTTP"]["REQUEST_HEADER_CONTRACT"]`
+
+Reusable contract for one header entry accepted by, or returned from, `STD.NET.HTTP.REQUEST`.
+
+It accepts an array of strings. The contract intentionally does not enforce a fixed length; `REQUEST` itself requires each header entry to contain exactly two strings, `{key, value}`.
+
+```stult
+header<STD.NET.HTTP.REQUEST_HEADER_CONTRACT> : {"accept", "application/json"}
+```
+
+### `STD["NET"]["HTTP"]["REQUEST_HEADERS_CONTRACT"]`
+
+Reusable contract for a header list accepted by, or returned from, `STD.NET.HTTP.REQUEST`.
+
+It accepts an array of `STD.NET.HTTP.REQUEST_HEADER_CONTRACT` values.
+
+```stult
+headers<STD.NET.HTTP.REQUEST_HEADERS_CONTRACT> : {
+	{"content-type", "application/json"}
+	{"accept", "application/json"}
+}
+```
+
 ### `STD["NET"]["HTTP"]["REQUEST_OPTIONS_CONTRACT"]`
 
 Reusable contract for the optional `options` map accepted by `STD.NET.HTTP.REQUEST`.
@@ -1216,7 +1264,7 @@ options<STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT> : {
 }
 ```
 
-The contract checks the broad option shape: supported uppercase keys only, string `METHOD`, header arrays as arrays of string arrays, string/byte-array/void `BODY`, boolean `USE_BYTES`, numeric `TIMEOUT_MILLI`, numeric `MAX_BYTES` and boolean `FOLLOW_REDIRECTS`. HTTP-specific details such as valid URL syntax, non-empty methods, two-item header arrays and byte values from `0` to `255` are checked by `REQUEST` itself.
+The contract checks the broad option shape: supported uppercase keys only, string `METHOD`, `HEADERS` satisfying `STD.NET.HTTP.REQUEST_HEADERS_CONTRACT`, string/byte-array/void `BODY`, boolean `USE_BYTES`, numeric `TIMEOUT_MILLI`, numeric `MAX_BYTES` and boolean `FOLLOW_REDIRECTS`. HTTP-specific details such as valid URL syntax, non-empty methods, two-item header arrays and byte values from `0` to `255` are checked by `REQUEST` itself.
 
 ### `STD["NET"]["HTTP"]["REQUEST_RESPONSE_CONTRACT"]`
 
@@ -1228,7 +1276,7 @@ HTTP : STD.NET.HTTP
 response<HTTP.REQUEST_RESPONSE_CONTRACT> : HTTP.REQUEST("https://example.com")
 ```
 
-The response contract requires uppercase `STATUS`, `BODY`, `HEADERS` and `URL` fields.
+The response contract requires uppercase `STATUS`, `BODY`, `HEADERS` and `URL` fields. `HEADERS` satisfies `STD.NET.HTTP.REQUEST_HEADERS_CONTRACT`.
 
 ### `STD["NET"]["HTTP"]["REQUEST"](url, options?)`
 
@@ -1372,6 +1420,16 @@ This function does not return, because it terminates the process.
 
 Timestamps, sleep and calendar snapshots.
 
+### `STD["TIME"]["CALENDAR_CONTRACT"]`
+
+Reusable contract for the map returned by `STD.TIME.CALENDAR_LOCAL()` and `STD.TIME.CALENDAR_UTC()`.
+
+```stult
+now<STD.TIME.CALENDAR_CONTRACT> : STD.TIME.CALENDAR_LOCAL()
+```
+
+The contract requires the same uppercase fields returned by the calendar helpers: numeric `YEAR`, `MONTH`, `DAY`, `HOUR`, `MINUTE`, `SECOND`, `NANOSECOND`, `WEEKDAY`, `YEARDAY` and `OFFSET`, plus string `ZONE`.
+
 ### `STD["TIME"]["TIMESTAMP_MILLI"]()`
 
 Returns the current Unix timestamp in milliseconds.
@@ -1406,7 +1464,7 @@ Returns `_`.
 
 ### `STD["TIME"]["CALENDAR_LOCAL"]()`
 
-Returns a map describing the current local time.
+Returns a map describing the current local time. The return value satisfies `STD.TIME.CALENDAR_CONTRACT`.
 
 ```stult
 now : STD.TIME.CALENDAR_LOCAL()
@@ -1438,7 +1496,7 @@ Returns a map describing the current UTC time and date.
 utc : STD.TIME.CALENDAR_UTC()
 ```
 
-The returned map has the same keys as `CALENDAR_LOCAL`.
+The returned map has the same keys as `CALENDAR_LOCAL`. The return value satisfies `STD.TIME.CALENDAR_CONTRACT`.
 
 ## `STD["TYPE"]`
 

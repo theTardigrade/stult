@@ -37,6 +37,8 @@ func NewStdNetHTTPMap(runtime *RuntimeContext) Value {
 
 	entries := map[string]Binding{
 		"REQUEST":                   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdNetHTTPRequest)),
+		"REQUEST_HEADER_CONTRACT":   NewImmutableBinding(NewContractValue(stdNetHTTPRequestHeaderContract())),
+		"REQUEST_HEADERS_CONTRACT":  NewImmutableBinding(NewContractValue(stdNetHTTPRequestHeadersContract())),
 		"REQUEST_OPTIONS_CONTRACT":  NewImmutableBinding(NewContractValue(stdNetHTTPRequestOptionsContract())),
 		"REQUEST_RESPONSE_CONTRACT": NewImmutableBinding(NewContractValue(stdNetHTTPRequestResponseContract())),
 	}
@@ -203,93 +205,46 @@ func stdNetHTTPRequestOptionsArg(args []Value) (stdNetHTTPRequestOptions, error)
 	return options, nil
 }
 
-func stdNetHTTPRequestOptionsContract() BindingContract {
-	stringContract := stdNetHTTPExactContract(ValueString)
-	numberContract := stdNetHTTPExactContract(ValueNumber)
-	boolContract := stdNetHTTPExactContract(ValueBool)
-	voidContract := stdNetHTTPExactContract(ValueVoid)
-	headerPairContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: stringContract.ClonePointer(),
-	}
-	headersContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: headerPairContract.ClonePointer(),
-	}
-	bodyBytesContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: numberContract.ClonePointer(),
-	}
-	bodyContract := stdNetHTTPUnionContract(
-		stringContract,
-		bodyBytesContract,
-		voidContract,
-	)
+func stdNetHTTPRequestHeaderContract() BindingContract {
+	return stdArrayContract(stdExactContract(ValueString))
+}
 
-	return BindingContract{
-		Kind:            BindingContractMapKind,
-		IsStructuredMap: true,
-		MapFields: []BindingContractMapField{
-			{Key: "BODY", Contract: bodyContract, IsOptional: true},
-			{Key: "FOLLOW_REDIRECTS", Contract: boolContract, IsOptional: true},
-			{Key: "HEADERS", Contract: headersContract, IsOptional: true},
-			{Key: "MAX_BYTES", Contract: numberContract, IsOptional: true},
-			{Key: "METHOD", Contract: stringContract, IsOptional: true},
-			{Key: "TIMEOUT_MILLI", Contract: numberContract, IsOptional: true},
-			{Key: "USE_BYTES", Contract: boolContract, IsOptional: true},
-		},
-	}
+func stdNetHTTPRequestHeadersContract() BindingContract {
+	return stdArrayContract(stdNetHTTPRequestHeaderContract())
+}
+
+func stdNetHTTPRequestBodyContract() BindingContract {
+	return stdUnionContract(
+		stdExactContract(ValueString),
+		stdArrayContract(stdExactContract(ValueNumber)),
+		stdExactContract(ValueVoid),
+	)
+}
+
+func stdNetHTTPRequestOptionsContract() BindingContract {
+	return stdStructuredMapContract(
+		stdOptionalMapField("BODY", stdNetHTTPRequestBodyContract()),
+		stdOptionalMapField("FOLLOW_REDIRECTS", stdExactContract(ValueBool)),
+		stdOptionalMapField("HEADERS", stdNetHTTPRequestHeadersContract()),
+		stdOptionalMapField("MAX_BYTES", stdExactContract(ValueNumber)),
+		stdOptionalMapField("METHOD", stdExactContract(ValueString)),
+		stdOptionalMapField("TIMEOUT_MILLI", stdExactContract(ValueNumber)),
+		stdOptionalMapField("USE_BYTES", stdExactContract(ValueBool)),
+	)
 }
 
 func stdNetHTTPRequestResponseContract() BindingContract {
-	stringContract := stdNetHTTPExactContract(ValueString)
-	numberContract := stdNetHTTPExactContract(ValueNumber)
-	headerPairContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: stringContract.ClonePointer(),
-	}
-	headersContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: headerPairContract.ClonePointer(),
-	}
-	bodyBytesContract := BindingContract{
-		Kind:    BindingContractArrayKind,
-		Element: numberContract.ClonePointer(),
-	}
-	bodyContract := stdNetHTTPUnionContract(
-		stringContract,
-		bodyBytesContract,
+	bodyContract := stdUnionContract(
+		stdExactContract(ValueString),
+		stdArrayContract(stdExactContract(ValueNumber)),
 	)
 
-	return BindingContract{
-		Kind:            BindingContractMapKind,
-		IsStructuredMap: true,
-		MapFields: []BindingContractMapField{
-			{Key: "BODY", Contract: bodyContract},
-			{Key: "HEADERS", Contract: headersContract},
-			{Key: "STATUS", Contract: numberContract},
-			{Key: "URL", Contract: stringContract},
-		},
-	}
-}
-
-func stdNetHTTPExactContract(kind ValueKind) BindingContract {
-	return BindingContract{
-		Kind:      BindingContractExactKind,
-		KindValue: kind,
-	}
-}
-
-func stdNetHTTPUnionContract(options ...BindingContract) BindingContract {
-	cloned := make([]BindingContract, len(options))
-	for index := range options {
-		cloned[index] = options[index].Clone()
-	}
-
-	return BindingContract{
-		Kind:    BindingContractUnionKind,
-		Options: cloned,
-	}
+	return stdStructuredMapContract(
+		stdRequiredMapField("BODY", bodyContract),
+		stdRequiredMapField("HEADERS", stdNetHTTPRequestHeadersContract()),
+		stdRequiredMapField("STATUS", stdExactContract(ValueNumber)),
+		stdRequiredMapField("URL", stdExactContract(ValueString)),
+	)
 }
 
 func stdNetHTTPStringArg(name string, arg Value, position int) (string, error) {

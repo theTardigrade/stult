@@ -11,14 +11,33 @@ const maxStdTimeSleepMilliseconds = math.MaxInt64 / int64(time.Millisecond)
 
 func NewStdTimeMap() Value {
 	entries := map[string]Binding{
-		"CALENDAR_LOCAL":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeLocalCalendar)),
-		"CALENDAR_UTC":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeUTCCalendar)),
-		"SLEEP_MILLI":     NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliSleep)),
-		"TIMESTAMP_MILLI": NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliTimestamp)),
-		"TIMESTAMP_NANO":  NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeNanoTimestamp)),
+		"CALENDAR_CONTRACT": NewImmutableBinding(NewContractValue(stdTimeCalendarContract())),
+		"CALENDAR_LOCAL":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeLocalCalendar)),
+		"CALENDAR_UTC":      NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeUTCCalendar)),
+		"SLEEP_MILLI":       NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliSleep)),
+		"TIMESTAMP_MILLI":   NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeMilliTimestamp)),
+		"TIMESTAMP_NANO":    NewImmutableBinding(NewBuiltinFunctionValue(builtinStdTimeNanoTimestamp)),
 	}
 
 	return NewMapValue(entries, true)
+}
+
+func stdTimeCalendarContract() BindingContract {
+	numberContract := stdExactContract(ValueNumber)
+
+	return stdStructuredMapContract(
+		stdRequiredMapField("DAY", numberContract),
+		stdRequiredMapField("HOUR", numberContract),
+		stdRequiredMapField("MINUTE", numberContract),
+		stdRequiredMapField("MONTH", numberContract),
+		stdRequiredMapField("NANOSECOND", numberContract),
+		stdRequiredMapField("OFFSET", numberContract),
+		stdRequiredMapField("SECOND", numberContract),
+		stdRequiredMapField("WEEKDAY", numberContract),
+		stdRequiredMapField("YEAR", numberContract),
+		stdRequiredMapField("YEARDAY", numberContract),
+		stdRequiredMapField("ZONE", stdExactContract(ValueString)),
+	)
 }
 
 func builtinStdTimeLocalCalendar(_ *RuntimeContext, args []Value) (Value, error) {

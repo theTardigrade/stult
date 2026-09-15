@@ -816,7 +816,7 @@ STD["TIME"]
 STD["TYPE"]
 ```
 
-Builtins are Go functions wrapped as Stult callable values. Standard-library maps may also expose immutable contract values for reusable builtin argument and result shapes, such as `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT` and `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT`; contract positions can reference such values through dotted contract aliases.
+Builtins are Go functions wrapped as Stult callable values. Standard-library maps may also expose immutable contract values for reusable builtin argument, result and data shapes, such as `STD.NET.HTTP.REQUEST_OPTIONS_CONTRACT`, `STD.NET.HTTP.REQUEST_RESPONSE_CONTRACT`, `STD.DATA.CSV.ROWS_CONTRACT` and `STD.TIME.CALENDAR_CONTRACT`; contract positions can reference such values through dotted contract aliases.
 
 Standard-library functions should return Stult values and errors, not print internal Go details.
 
